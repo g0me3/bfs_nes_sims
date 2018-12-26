@@ -46,18 +46,16 @@ _nmi_busy_flag:
 		.BYTE	0
 _nmi_flag:
 		.BYTE	0
-byte_13:
+byte_13_unused:
 		.BYTE	0
-byte_14:
+_scroll_mode_idx:
 		.BYTE	0
 _tmp15:
 		.BYTE	0,0
 _tmp17:
 		.BYTE	0
-_tmp18:
-		.BYTE	0
-_word15_v_h_selector:
-		.BYTE	0
+_ptr18:
+		.BYTE	0,0
 _mmc5_operation_in_progress_flag:
 		.BYTE	0
 _frames_counter:
@@ -446,7 +444,10 @@ _info_maps_cur_row:
 _info_maps_cur_col:
 		.BYTE	0
 _unref_14:
-		.BYTE	0,0,0,0
+		.BYTE	0,0
+
+		_tpos	_last_water_tile_pos				; NEW: new var for ship deploy
+
 _maps_info_mode_idx:
 		.BYTE	0
 byte_114:

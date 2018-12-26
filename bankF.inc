@@ -559,7 +559,7 @@ loc_18A478:
 		LDA		_scr_mode_idx
 		BNE		loc_18A48B
 		LDA		#$00
-		STA		byte_14
+		STA		_scroll_mode_idx
 		LDA		#$1E
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
@@ -569,7 +569,7 @@ loc_18A48B:
 		CMP		#$03
 		BEQ		loc_18A49E
 		LDA		#$02
-		STA		byte_14
+		STA		_scroll_mode_idx
 		LDA		#$DE
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
@@ -588,7 +588,7 @@ IRQ:
 		TYA
 		PHA
 		LDA		_MMC5_IRQ_ENABLE
-		LDA		byte_14
+		LDA		_scroll_mode_idx
 		BEQ		loc_18A4BE
 		CMP		#$01
 		BEQ		sub_18A4E4
@@ -609,7 +609,7 @@ loc_18A4BE:
 		STA		_PPU_SCROLL
 		STX		_PPU_SCROLL
 		LDA		#$01
-		STA		byte_14
+		STA		_scroll_mode_idx
 		LDA		#$26
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
@@ -628,7 +628,7 @@ sub_18A4E4:
 		JSR		_delay
 		JSR		_ppu_scrolls_reload
 		LDA		#$02
-		STA		byte_14
+		STA		_scroll_mode_idx
 		LDA		#$DE
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
@@ -865,15 +865,15 @@ loc_18A71A:
 		LDY		#$FF
 loc_18A739:
 		INX
-		STY		_word15_v_h_selector
-		STA		_tmp18
+		STY		_ptr18+1
+		STA		_ptr18
 		LDY		#$00
 loc_18A740:
 		LDA		_extnt_queue_buf,X
 		INX
 		STA		(_tmp15),Y
 		JSR		_inc_word15_v_h
-		DEC		_tmp18
+		DEC		_ptr18
 		BNE		loc_18A740
 		BEQ		loc_18A71A
 loc_18A74F:
@@ -1046,7 +1046,7 @@ _jmp_ptrDC:
 
 ; =============== S U B	R O U T	I N E =======================================
 _inc_word15_v_h:
-		LDA		_word15_v_h_selector
+		LDA		_ptr18+1
 		BNE		loc_18A866
 		INCW	_tmp15
 		RTS

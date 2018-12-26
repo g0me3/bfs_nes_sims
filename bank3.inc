@@ -1855,7 +1855,7 @@ loc_58D49:
 		STA		_tmp17
 		TXA
 		ADC		#$20
-		STA		_tmp18
+		STA		_ptr18
 		LDX		_ppu_queue_pos_tail
 		DEX
 		DEX
@@ -1864,7 +1864,7 @@ loc_58D49:
 		STX		_ppu_queue_pos_tail
 		LDY		_scroll_msg_end_char
 		PPUQMOVB	_tmp17,OP_NOP,0				; draw one char at a time,
-		PPUQMOVB	_tmp18,OP_NOP,0				; the rest is up to scroll
+		PPUQMOVB	_ptr18,OP_NOP,0				; the rest is up to scroll
 		PPUQMOVB	#$01,OP_NOP,0
 		LDA		(_tmp15),Y
 		CMP		#$FF

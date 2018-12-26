@@ -207,9 +207,9 @@ loc_11E1A2:
 		BNE		loc_11E230
 loc_11E1F2:
 		LSR		_tmpE6
-		BCS		loc_11E230						; test if airplane in flight as well
-		LDY		_airports_count
-		BEQ		.no_airports
+		BCS		loc_11E23F						; test if airplane in flight as well
+;		LDY		_airports_count					; redundant, already checked
+;		BEQ		.no_airports
 		ORA		#$02
 		STA		_obj_active_flags				; start to take off animation
 		LDA		#$84
@@ -235,6 +235,7 @@ loc_11E1F2:
 		STA		_obj_active_flags
 ; NEW: implement a ship starting procedures, not implemented here at all
 ; -
+loc_11E23F:
 		LDA		_sea_ports_count
 		BEQ		._no_sea_ports
 		LDA		_obj_active_flags				; test if obj already deployed
@@ -243,14 +244,12 @@ loc_11E1F2:
 		LDA		_obj_active_flags
 		ORA		#$04
 		STA		_obj_active_flags
-		LDA		_obj_pos._ship._X				; temp ship pos and direction
-		CLC
-		ADC		#$02							; EXPERIMENTAL: sale to 2 tiles right
-		STA		_obj_dst_pos._ship._X
+		LDA		_obj_pos._ship._X				; set start pos to end pos
+		STA		_obj_dst_pos._ship._X			; usually bottom-rightmost water tile
 		LDY		_obj_pos._ship._Y
 		STY		_obj_dst_pos._ship._Y
-		LDA		#$02
-		STA		_obj_cur_spr_idx._ship			; select right orienter tile
+		LDA		#$07							; upper left direction
+		STA		_obj_cur_spr_idx._ship			; select right oriented tile
 		BNE		loc_11E230						; test if already deployed
 ._no_sea_ports:
 		LDA		_obj_active_flags				; no sea ports - no floating objects
@@ -306,12 +305,12 @@ loc_11E23D:
 ; =============== S U B	R O U T	I N E =======================================
 _collect_map_tiles_stats:
 		LDY		_last_map_tile_read
-		CPY		#$EB							; TODO: fix me, tile unused,
-		BNE		loc_11E2EA						; there is no code, so may remove this
-		NOP
-loc_11E2EA:
+;		CPY		#$EB							; REDUNDANT: fix me, tile unused,
+;		BNE		loc_11E2EA						; there is no code, so may remove this
+;		NOP
+;loc_11E2EA:
 		CPY		#$90
-		BCC		loc_11E2FB
+		BCC		loc_11E2FB						; there are no electic tiles under 90
 		LDA		_map_tiles_flags_tbl,Y
 		BPL		loc_11E2FB
 		INCW	_electrics_count
@@ -321,20 +320,23 @@ loc_11E2FB:
 		INCW	_map_buldozered_tiles_count
 		RTS
 loc_11E308:
-		LDA		_last_map_tile_read
-		CMP		#$E6
+;		LDA		_last_map_tile_read				; _last_map_tile_read here still in Y
+;		CMP		#$E6
+		CPY		#$E6
 		BNE		loc_11E312
 		JMP		_fire_tile_collect
 loc_11E312:
-		CMP		#$B5
+;		CMP		#$B5
+		CPY		#$B5
 		BNE		loc_11E319
 		JMP		_flooded_tile_collect
 loc_11E319:
-		CMP		#$B6
+;		CMP		#$B6
+		CPY		#$B6
 		BNE		loc_11E320
 		JMP		_polluted_tile_collect
 loc_11E320:
-		TAY
+;		TAY
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#$20
 		BEQ		loc_11E32B
@@ -362,6 +364,8 @@ loc_11E34E:
 		STY		_corruption_anim_flag
 locret_11E355:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _non_destructable_collect:
 		LDA		_last_map_tile_read
 		CMP		#$B2
@@ -375,6 +379,13 @@ loc_11E36A:
 		BCC		locret_11E387
 		CMP		#$CE
 		BCS		loc_11E37B
+; NEW: new code to handle properly ship deploy
+; -
+		CMP		#$BD
+		BNE		.no_open_water
+		MOVW	_last_water_tile_pos,_tmp_map_pos	; store last water tile position
+.no_open_water:
+; -
 		INCW	_map_shore_tiles_count
 		RTS
 loc_11E37B:
@@ -383,6 +394,8 @@ loc_11E37B:
 		INCW	_map_unbuldozered_tiles_count
 locret_11E387:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _fire_tile_collect:
 		JSR		_rand
 		CMP		#$F0
@@ -409,6 +422,8 @@ loc_11E3B5:
 		DEX
 		BPL		loc_11E396
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _flooded_tile_collect:
 		LDA		_disaster_tiles_to_flood_count
 		BEQ		loc_11E405
@@ -453,6 +468,8 @@ loc_11E405:
 		JSR		_map_tile_write
 locret_11E411:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _polluted_tile_collect:
 		JSR		_rand
 		BNE		locret_11E423
@@ -463,9 +480,11 @@ _polluted_tile_collect:
 		JSR		_map_tile_write
 locret_11E423:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _road_tile_collect:
 		INCW	_roads_count
-loc_11E42C:
+.loop_road_tile_collect:
 		LDA		_map_tiles_flags_tbl,Y
 		BMI		locret_11E456
 		LDA		_road_fund_rate
@@ -487,7 +506,8 @@ loc_11E452:
 		JSR		_map_tile_write
 locret_11E456:
 		RTS
-		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _rails_collect:
 		INCW	_rails_count
 		LDA		_obj_active_flags
@@ -547,7 +567,9 @@ loc_11E4C8:
 		ORA		#$08
 		STA		_obj_active_flags
 _no_train_start:
-		JMP		loc_11E42C
+		JMP		.loop_road_tile_collect
+
+; =============== S U B	R O U T	I N E =======================================
 _collect_general_buildings_stats:
 		JSR		_test_power_grid_map_bit
 		STA		_tmp_last_read_map_tile_power_state
@@ -845,6 +867,7 @@ loc_11E726:
 		JMP		_tmp_map_pos_restore
 locret_11E72B:
 		RTS
+
 _twin_area_ofsX_list:
 		.BYTE	$00,$00,$02,$FE
 _twin_area_ofsY_list:
@@ -1020,7 +1043,6 @@ loc_11E879:
 		LDA		_obj_active_flags
 		AND		#$04
 		BNE		locret_11E8AC
-; REDUNDANT: use regular sea tile, correct end of buffer check
 ; -
 ;		LDY		#>[_wram_map_buf]				; UNFINISHED very briefly written code
 ;		STY		_tmpE7							; to search a special symbol in the sea
@@ -1043,14 +1065,22 @@ loc_11E894:
 ;		CMP		#>[_power_grid_map_buf]
 ;		BNE		loc_11E888
 ;		BEQ		locret_11E8AC
-loc_11E8A0:
+;loc_11E8A0:
 ; -
-		LDA		_tmp_map_pos._X
-		CLC
-		ADC		#$03
-		STA		_obj_pos._ship._X
-		LDA		_tmp_map_pos._Y
-		STA		_obj_pos._ship._Y
+; MORE NOTES: the code above should look for at least one sea tile on the map
+; then code below just get the position of the sea port and set the
+; ship deploy offset on it. this is incorrect.
+; with no proper placement at the beginning, it may just stuck inside the
+; port
+; the code here should either search for nearest sea tile around the port
+; or use other saved data of any sea tile already found.
+;
+;		LDA		_tmp_map_pos._X
+;		STA		_obj_pos._ship._X
+;		LDA		_tmp_map_pos._Y
+;		STA		_obj_pos._ship._Y
+;-
+		MOVW	_obj_pos._ship,_last_water_tile_pos
 locret_11E8AC:
 		RTS
 loc_11E8AD:

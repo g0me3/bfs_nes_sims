@@ -1,7 +1,7 @@
 	NEW BUGS
 
 - sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner. can't reproduce it every time. because of that I'm not completely shure it is new bug, but not the something old.
-- ship does not created nor initialized properly. the code for plane creation should be used.
+- ship rotates in the opposite direction to the current position.
 
 	WHAT DONE
 
@@ -190,7 +190,7 @@ BB-BC	electric+rail				D2		11010011
 BD		water						05		00000101
 BE-CD	ground/water shores			06		00000110
 CE-DF	unbuldozered ground			46		01000110
-E0-E1	water+road					05		00000101	*unused
+E0-E1	water+road					05		00000101
 E2-E3	water+rail					15		00010101
 E4-E5	water+electric				85		10000101
 E6		fire ground					00		00000000
@@ -198,7 +198,7 @@ E7-EA	disaster ground anim		00		00000000
 EB-EC	water+road copy				05		00000101	*unused
 ED-FC	road/water diagonal			05		00000101	*unused
 FD		-							-		-
-FE		special water ship start	05		00000101	*unused
+FE		special water tile			05		00000101	*unused
 FF		-							-		-
 
 		FLAG BITS	76543210
