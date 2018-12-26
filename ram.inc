@@ -17,6 +17,7 @@ _tmp5:
 		.BYTE	0
 _tmp6:
 		.BYTE	0,0
+_tmp8:
 		.BYTE	0
 byte_9:
 		.BYTE	0

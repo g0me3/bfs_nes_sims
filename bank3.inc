@@ -293,7 +293,9 @@ _game_msg_apu_types_list:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_display:
 		PUSHB	_ptr0
-		JSR		_far_wnd_header_draw			; TODO: optimize me! call to far call
+;		JSR		_far_wnd_header_draw			; OPTIMIZED
+		FJSRA	_wnd_header_draw,PRG0,PRG0
+;-
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -320,9 +322,9 @@ loc_5829C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_far_wnd_header_draw:
-		FJSRA	_wnd_header_draw,PRG0,PRG0
-		RTS
+;_far_wnd_header_draw:
+;		FJSRA	_wnd_header_draw,PRG0,PRG0
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_line_pos_calc:

@@ -1370,16 +1370,22 @@ loc_BB84:
 		LDA		_wnd_pos_ofs_Y,X
 		STA		_tmp3
 		JSR		_wnd_header_pos_calc
-		LDA		_game_msg_idx
-		ASL
-		CLC
-		ADC		_ptr0+1
-		ADC		_game_msg_idx
-		TAX
+;		LDA		_game_msg_idx					; OPTIMIZED
+;		ASL										; -
+;		CLC										; -
+;		ADC		_ptr0+1							; -
+;		ADC		_game_msg_idx					; -
+;		TAX										; -
+		LDX		_game_msg_idx
 		LDA		_wnd_header_tlm_lo,X
 		STA		_tmp2
 		LDA		_wnd_header_tlm_hi,X
 		STA		_tmp3
+		LDX		_ptr0+1							; ADDED
+		LDA		_wnd_header_char_delta,X		; -
+		STA		_ptr0							; -
+		LDA		_wnd_header_space_table,X		; -
+		STA		_tmp8							; -
 		JSR		_wnd_header_queue
 		DEC		_ptr0+1
 		BPL		loc_BB84
@@ -1387,8 +1393,8 @@ loc_BB84:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_pos_calc:
-		CIADDB	_tmp4,_cur_screen_tile._Y,#$01,_ptr0+1,#$1E	; tmp4=((Y/2)+1)%$1E
-		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,  #$20	; tmp5= (X/2)   %$20
+		CIADDB	_tmp4,_cur_screen_tile._Y,#$01,_ptr0+1,#$1E	; tmp4=((Y/2)+(ptr0+1)+1)%$1E
+		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,  #$20	; tmp5=((X/2)+tmp2)%$20
 		LDA		#$20
 		SEC
 		SBC		_tmp5
@@ -1422,11 +1428,19 @@ _wnd_header_queue:
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
 		PPUQMOVB	_tmp4,OP_NOP,0
+loc_BC1A:
 		PPUQMOVB	_tmp5,OP_ORA,#$20
 		PPUQMOVB	_tmp6,OP_NOP,0
 loc_BC1B:
 		LDA		(_tmp2),Y
 		INY
+		CMP		#$20							; ADDED
+		BEQ		loc_BC1C						; -
+		CLC										; -
+		ADC		_ptr0							; -
+		.BYTE	$2C								; -
+loc_BC1C:										; -
+		LDA		_tmp8							; -
 		PPUQMOVA
 		DEC		_tmp6
 		BNE		loc_BC1B
@@ -1436,9 +1450,10 @@ loc_BC1B:
 		LDA		#$00
 		STA		_tmp6+1
 		PPUQMOVB	_tmp4,OP_AND,#$E0
-		PPUQMOVB	_tmp5,OP_ORA,#$20
-		PPUQMOVB	_tmp6,OP_NOP,0
-		JMP		loc_BC1B
+;		PPUQMOVB	_tmp5,OP_ORA,#$20			; OPTIMIZED
+;		PPUQMOVB	_tmp6,OP_NOP,0				; -
+;		JMP		loc_BC1B						; -
+		JMP		loc_BC1A
 loc_BC49:
 		STX		_ppu_queue_pos_head
 		RTS
@@ -1452,125 +1467,207 @@ _wnd_pos_ofs_Y:
 		.BYTE	$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$08,$08,$08,$08,$0B
 		.BYTE	$04,$05,$09,$07
 
+_wnd_header_char_delta:
+		.BYTE	[-$40]&$FF,$00,$40
+_wnd_header_space_table:
+		.BYTE	$00,$00,$81
+
+; OPTIMIZED: here is three rows of the same message in 24x8 letters,
+; middle row indexes are the same as corresponding ASCII codes
+; but upper and lower are shifted, but it is the same letters (except spaces)
+; unneeded data replaced with on-the-fly calcs, obviously cannot be used
+; with anything except this particular kind of fonts.
+; size of routine reduced by half
+
 ;		DELTA	-0x40			0				+0x40
+;_wnd_header_tlm_lo:
+;		.BYTE	<[byte_BD6C],	<[aGoodjob],	<[byte_BE90]
+;		.BYTE	<[byte_BD74],	<[aTown],		<[byte_BE98]
+;		.BYTE	<[byte_BD78],	<[aCity],		<[byte_BE9C]
+;		.BYTE	<[byte_BD7C],	<[aCapital],	<[byte_BEA0]
+;		.BYTE	<[byte_BD83],	<[aMetropolis],	<[byte_BEA7]
+;		.BYTE	<[byte_BD8D],	<[aMegaropolis],<[byte_BEB1]
+;		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
+;		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
+;		.BYTE	<[byte_BDA3],	<[aCrime],		<[byte_BEC7]
+;		.BYTE	<[byte_BDA8],	<[aMonsterattack],<[byte_BECC]
+;		.BYTE	<[byte_BDB6],	<[aEarthquake],	<[byte_BEDA]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC7],	<[aSistercity],	<[byte_BEEB]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDDA],	<[aHowtoloan],	<[byte_BEFE]
+;		.BYTE	<[byte_BDE5],	<[aFire],		<[byte_BF09]
+;		.BYTE	<[byte_BDE9],	<[aFlood],		<[byte_BF0D]
+;		.BYTE	<[byte_BDEE],	<[aAircrash],	<[byte_BF12]
+;		.BYTE	<[byte_BDF7],	<[aTornade],	<[byte_BF1B]
+;_wnd_header_tlm_hi:
+;		.BYTE	>[byte_BD6C],	>[aGoodjob],	>[byte_BE90]
+;		.BYTE	>[byte_BD74],	>[aTown],		>[byte_BE98]
+;		.BYTE	>[byte_BD78],	>[aCity],		>[byte_BE9C]
+;		.BYTE	>[byte_BD7C],	>[aCapital],	>[byte_BEA0]
+;		.BYTE	>[byte_BD83],	>[aMetropolis],	>[byte_BEA7]
+;		.BYTE	>[byte_BD8D],	>[aMegaropolis],>[byte_BEB1]
+;		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
+;		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
+;		.BYTE	>[byte_BDA3],	>[aCrime],		>[byte_BEC7]
+;		.BYTE	>[byte_BDA8],	>[aMonsterattack],>[byte_BECC]
+;		.BYTE	>[byte_BDB6],	>[aEarthquake],	>[byte_BEDA]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC7],	>[aSistercity],	>[byte_BEEB]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDDA],	>[aHowtoloan],	>[byte_BEFE]
+;		.BYTE	>[byte_BDE5],	>[aFire],		>[byte_BF09]
+;		.BYTE	>[byte_BDE9],	>[aFlood],		>[byte_BF0D]
+;		.BYTE	>[byte_BDEE],	>[aAircrash],	>[byte_BF12]
+;		.BYTE	>[byte_BDF7],	>[aTornade],	>[byte_BF1B]
+
 _wnd_header_tlm_lo:
-		.BYTE	<[byte_BD6C],	<[aGoodjob],	<[byte_BE90]
-		.BYTE	<[byte_BD74],	<[aTown],		<[byte_BE98]
-		.BYTE	<[byte_BD78],	<[aCity],		<[byte_BE9C]
-		.BYTE	<[byte_BD7C],	<[aCapital],	<[byte_BEA0]
-		.BYTE	<[byte_BD83],	<[aMetropolis],	<[byte_BEA7]
-		.BYTE	<[byte_BD8D],	<[aMegaropolis],<[byte_BEB1]
-		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
-		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
-		.BYTE	<[byte_BDA3],	<[aCrime],		<[byte_BEC7]
-		.BYTE	<[byte_BDA8],	<[aMonsterattack],<[byte_BECC]
-		.BYTE	<[byte_BDB6],	<[aEarthquake],	<[byte_BEDA]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC7],	<[aSistercity],	<[byte_BEEB]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-		.BYTE	<[byte_BDDA],	<[aHowtoloan],	<[byte_BEFE]
-		.BYTE	<[byte_BDE5],	<[aFire],		<[byte_BF09]
-		.BYTE	<[byte_BDE9],	<[aFlood],		<[byte_BF0D]
-		.BYTE	<[byte_BDEE],	<[aAircrash],	<[byte_BF12]
-		.BYTE	<[byte_BDF7],	<[aTornade],	<[byte_BF1B]
+		.BYTE	<[aGoodjob]
+		.BYTE	<[aTown]
+		.BYTE	<[aCity]
+		.BYTE	<[aCapital]
+		.BYTE	<[aMetropolis]
+		.BYTE	<[aMegaropolis]
+		.BYTE	<[aTrafficjam]
+		.BYTE	<[aTrafficjam]
+		.BYTE	<[aCrime]
+		.BYTE	<[aMonsterattack]
+		.BYTE	<[aEarthquake]
+		.BYTE	<[aPresent]
+		.BYTE	<[aSistercity]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPractice]
+		.BYTE	<[aPractice]
+		.BYTE	<[aPractice]
+		.BYTE	<[aPractice]
+		.BYTE	<[aHowtoloan]
+		.BYTE	<[aFire]
+		.BYTE	<[aFlood]
+		.BYTE	<[aAircrash]
+		.BYTE	<[aTornade]
 _wnd_header_tlm_hi:
-		.BYTE	>[byte_BD6C],	>[aGoodjob],	>[byte_BE90]
-		.BYTE	>[byte_BD74],	>[aTown],		>[byte_BE98]
-		.BYTE	>[byte_BD78],	>[aCity],		>[byte_BE9C]
-		.BYTE	>[byte_BD7C],	>[aCapital],	>[byte_BEA0]
-		.BYTE	>[byte_BD83],	>[aMetropolis],	>[byte_BEA7]
-		.BYTE	>[byte_BD8D],	>[aMegaropolis],>[byte_BEB1]
-		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
-		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
-		.BYTE	>[byte_BDA3],	>[aCrime],		>[byte_BEC7]
-		.BYTE	>[byte_BDA8],	>[aMonsterattack],>[byte_BECC]
-		.BYTE	>[byte_BDB6],	>[aEarthquake],	>[byte_BEDA]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC7],	>[aSistercity],	>[byte_BEEB]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-		.BYTE	>[byte_BDDA],	>[aHowtoloan],	>[byte_BEFE]
-		.BYTE	>[byte_BDE5],	>[aFire],		>[byte_BF09]
-		.BYTE	>[byte_BDE9],	>[aFlood],		>[byte_BF0D]
-		.BYTE	>[byte_BDEE],	>[aAircrash],	>[byte_BF12]
-		.BYTE	>[byte_BDF7],	>[aTornade],	>[byte_BF1B]
+		.BYTE	>[aGoodjob]
+		.BYTE	>[aTown]
+		.BYTE	>[aCity]
+		.BYTE	>[aCapital]
+		.BYTE	>[aMetropolis]
+		.BYTE	>[aMegaropolis]
+		.BYTE	>[aTrafficjam]
+		.BYTE	>[aTrafficjam]
+		.BYTE	>[aCrime]
+		.BYTE	>[aMonsterattack]
+		.BYTE	>[aEarthquake]
+		.BYTE	>[aPresent]
+		.BYTE	>[aSistercity]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPractice]
+		.BYTE	>[aPractice]
+		.BYTE	>[aPractice]
+		.BYTE	>[aPractice]
+		.BYTE	>[aHowtoloan]
+		.BYTE	>[aFire]
+		.BYTE	>[aFlood]
+		.BYTE	>[aAircrash]
+		.BYTE	>[aTornade]
 
-; FIXME: here is three rows of the same message in 24x8 letters,
-; middle row indexes are the same as corresponding ASCII codes,
-; but upper and lower are shifted, but it is the same letters
-; may be optimized to keep only single headers table.
-
-byte_BD6C:
-		.BYTE	$07,$2F,$2F,$24,$00,$2A,$2F,$22
-byte_BD74:
-		.BYTE	$14,$2F,$37,$2E
-byte_BD78:
-		.BYTE	$03,$29,$34,$39
-byte_BD7C:
-		.BYTE	$03,$21,$30,$29,$34,$21,$2C
-byte_BD83:
-		.BYTE	$0D,$25,$34,$32,$2F,$30,$2F,$2C,$29,$33
-byte_BD8D:
-		.BYTE	$0D,$25,$27,$21,$32,$2F,$30,$2F,$2C,$29,$33
-byte_BD98:
-		.BYTE	$14,$32,$21,$26,$26,$29,$23,$00,$2A,$21,$2D
-byte_BDA3:
-		.BYTE	$03,$32,$29,$2D,$25
-byte_BDA8:
-		.BYTE	$0D,$2F,$2E,$33,$34,$25,$32,$00,$21,$34,$34,$21,$23,$2B
-byte_BDB6:
-		.BYTE	$05,$21,$32,$34,$28,$31,$35,$21,$2B,$25
-byte_BDC0:
-		.BYTE	$10,$32,$25,$33,$25,$2E,$34
-byte_BDC7:
-		.BYTE	$13,$29,$33,$34,$25,$32,$00,$03,$29,$34,$39
-byte_BDD2:
-		.BYTE	$10,$32,$21,$23,$34,$29,$23,$25
-byte_BDDA:
-		.BYTE	$08,$2F,$37,$00,$14,$2F,$00,$0C,$2F,$21,$2E
-byte_BDE5:
-		.BYTE	$06,$29,$32,$25
-byte_BDE9:
-		.BYTE	$06,$2C,$2F,$2F,$24
-byte_BDEE:
-		.BYTE	$01,$29,$32,$00,$23,$32,$21,$33,$28
-byte_BDF7:
-		.BYTE	$14,$2F,$32,$2E,$21,$24,$25
+;byte_BD6C:
+;		.BYTE	$07,$2F,$2F,$24,$00,$2A,$2F,$22
+;byte_BD74:
+;		.BYTE	$14,$2F,$37,$2E
+;byte_BD78:
+;		.BYTE	$03,$29,$34,$39
+;byte_BD7C:
+;		.BYTE	$03,$21,$30,$29,$34,$21,$2C
+;byte_BD83:
+;		.BYTE	$0D,$25,$34,$32,$2F,$30,$2F,$2C,$29,$33
+;byte_BD8D:
+;		.BYTE	$0D,$25,$27,$21,$32,$2F,$30,$2F,$2C,$29,$33
+;byte_BD98:
+;		.BYTE	$14,$32,$21,$26,$26,$29,$23,$00,$2A,$21,$2D
+;byte_BDA3:
+;		.BYTE	$03,$32,$29,$2D,$25
+;byte_BDA8:
+;		.BYTE	$0D,$2F,$2E,$33,$34,$25,$32,$00,$21,$34,$34,$21,$23,$2B
+;byte_BDB6:
+;		.BYTE	$05,$21,$32,$34,$28,$31,$35,$21,$2B,$25
+;byte_BDC0:
+;		.BYTE	$10,$32,$25,$33,$25,$2E,$34
+;byte_BDC7:
+;		.BYTE	$13,$29,$33,$34,$25,$32,$00,$03,$29,$34,$39
+;byte_BDD2:
+;		.BYTE	$10,$32,$21,$23,$34,$29,$23,$25
+;byte_BDDA:
+;		.BYTE	$08,$2F,$37,$00,$14,$2F,$00,$0C,$2F,$21,$2E
+;byte_BDE5:
+;		.BYTE	$06,$29,$32,$25
+;byte_BDE9:
+;		.BYTE	$06,$2C,$2F,$2F,$24
+;byte_BDEE:
+;		.BYTE	$01,$29,$32,$00,$23,$32,$21,$33,$28
+;byte_BDF7:
+;		.BYTE	$14,$2F,$32,$2E,$21,$24,$25
 aGoodjob:
-		.BYTE	"Good",0,"job"
+		.BYTE	"Good job"
 aTown:
 		.BYTE	"Town"
 aCity:
@@ -1582,65 +1679,65 @@ aMetropolis:
 aMegaropolis:
 		.BYTE	"Megaropolis"
 aTrafficjam:
-		.BYTE	"Traffic",0,"jam"
+		.BYTE	"Traffic jam"
 aCrime:
 		.BYTE	"Crime"
 aMonsterattack:
-		.BYTE	"Monster",0,"attack"
+		.BYTE	"Monster attack"
 aEarthquake:
 		.BYTE	"Earthquake"
 aPresent:
 		.BYTE	"Present"
 aSistercity:
-		.BYTE	"Sister",0,"City"
+		.BYTE	"Sister City"
 aPractice:
 		.BYTE	"Practice"
 aHowtoloan:
-		.BYTE	"How",0,"To",0,"Loan"
+		.BYTE	"How To Loan"
 aFire:
 		.BYTE	"Fire"
 aFlood:
 		.BYTE	"Flood"
 aAircrash:
-		.BYTE	"Air",0,"crash"
+		.BYTE	"Air crash"
 aTornade:
 		.BYTE	"Tornade"
-byte_BE90:
-		.BYTE	$87,$AF,$AF,$A4,$81,$AA,$AF,$A2
-byte_BE98:
-		.BYTE	$94,$AF,$B7,$AE
-byte_BE9C:
-		.BYTE	$83,$A9,$B4,$B9
-byte_BEA0:
-		.BYTE	$83,$A1,$B0,$A9,$B4,$A1,$AC
-byte_BEA7:
-		.BYTE	$8D,$A5,$B4,$B2,$AF,$B0,$AF,$AC,$A9,$B3
-byte_BEB1:
-		.BYTE	$8D,$A5,$A7,$A1,$B2,$AF,$B0,$AF,$AC,$A9,$B3
-byte_BEBC:
-		.BYTE	$94,$B2,$A1,$A6,$A6,$A9,$A3,$81,$AA,$A1,$AD
-byte_BEC7:
-		.BYTE	$83,$B2,$A9,$AD,$A5
-byte_BECC:
-		.BYTE	$8D,$AF,$AE,$B3,$B4,$A5,$B2,$81,$A1,$B4,$B4,$A1,$A3,$AB
-byte_BEDA:
-		.BYTE	$85,$A1,$B2,$B4,$A8,$B1,$B5,$A1,$AB,$A5
-byte_BEE4:
-		.BYTE	$90,$B2,$A5,$B3,$A5,$AE,$B4
-byte_BEEB:
-		.BYTE	$93,$A9,$B3,$B4,$A5,$B2,$81,$83,$A9,$B4,$B9
-byte_BEF6:
-		.BYTE	$90,$B2,$A1,$A3,$B4,$A9,$A3,$A5
-byte_BEFE:
-		.BYTE	$88,$AF,$B7,$81,$94,$AF,$81,$8C,$AF,$A1,$AE
-byte_BF09:
-		.BYTE	$86,$A9,$B2,$A5
-byte_BF0D:
-		.BYTE	$86,$AC,$AF,$AF,$A4
-byte_BF12:
-		.BYTE	$81,$A9,$B2,$81,$A3,$B2,$A1,$B3,$A8
-byte_BF1B:
-		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
+;byte_BE90:
+;		.BYTE	$87,$AF,$AF,$A4,$81,$AA,$AF,$A2
+;byte_BE98:
+;		.BYTE	$94,$AF,$B7,$AE
+;byte_BE9C:
+;		.BYTE	$83,$A9,$B4,$B9
+;byte_BEA0:
+;		.BYTE	$83,$A1,$B0,$A9,$B4,$A1,$AC
+;byte_BEA7:
+;		.BYTE	$8D,$A5,$B4,$B2,$AF,$B0,$AF,$AC,$A9,$B3
+;byte_BEB1:
+;		.BYTE	$8D,$A5,$A7,$A1,$B2,$AF,$B0,$AF,$AC,$A9,$B3
+;byte_BEBC:
+;		.BYTE	$94,$B2,$A1,$A6,$A6,$A9,$A3,$81,$AA,$A1,$AD
+;byte_BEC7:
+;		.BYTE	$83,$B2,$A9,$AD,$A5
+;byte_BECC:
+;		.BYTE	$8D,$AF,$AE,$B3,$B4,$A5,$B2,$81,$A1,$B4,$B4,$A1,$A3,$AB
+;byte_BEDA:
+;		.BYTE	$85,$A1,$B2,$B4,$A8,$B1,$B5,$A1,$AB,$A5
+;byte_BEE4:
+;		.BYTE	$90,$B2,$A5,$B3,$A5,$AE,$B4
+;byte_BEEB:
+;		.BYTE	$93,$A9,$B3,$B4,$A5,$B2,$81,$83,$A9,$B4,$B9
+;byte_BEF6:
+;		.BYTE	$90,$B2,$A1,$A3,$B4,$A9,$A3,$A5
+;byte_BEFE:
+;		.BYTE	$88,$AF,$B7,$81,$94,$AF,$81,$8C,$AF,$A1,$AE
+;byte_BF09:
+;		.BYTE	$86,$A9,$B2,$A5
+;byte_BF0D:
+;		.BYTE	$86,$AC,$AF,$AF,$A4
+;byte_BF12:
+;		.BYTE	$81,$A9,$B2,$81,$A3,$B2,$A1,$B3,$A8
+;byte_BF1B:
+;		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
 
 		SECTION_END	1
 
