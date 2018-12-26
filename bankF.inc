@@ -1784,355 +1784,6 @@ _apu_dpcm_allow:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tlm_res_unpack:
-		JSR		_apu_dpcm_forbid
-		LDA		_PPU_STATUS
-		STX		_ptr0
-		STY		_ptr0+1
-		LDY		#$00
-		LDA		(_ptr0),Y
-		STA		_tmp2
-		INY
-		LDA		(_ptr0),Y
-		STA		_tmp3
-		INY
-		LDA		(_ptr0),Y
-		STA		_tmp5AE
-loc_18AC59:
-		INY
-		LDA		(_ptr0),Y
-		STA		_tmp6
-		INY
-		LDA		(_ptr0),Y
-		STA		_tmp6+1
-		TYA
-		PHA
-		JSR		_tlm_unpack
-		PLA
-		TAY
-		DEC		_tmp5AE
-		BNE		loc_18AC59
-		JMP		_apu_dpcm_allow
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_unpack:
-		LDA		_tmp2
-		STA		_tmp4
-		LDA		_tmp3
-		STA		_tmp5
-loc_18AC7A:
-		LDY		#$00
-		LDA		(_tmp6),Y
-		CMP		#$FF
-		BNE		loc_18AC83
-		RTS
-loc_18AC83:
-		AND		#$E0
-		CMP		#$E0
-		BNE		loc_18ACA9
-		LDA		(_tmp6),Y
-		ASL
-		ASL
-		ASL
-		AND		#$E0
-		PHA
-		LDA		(_tmp6),Y
-		INY
-		AND		#$03
-		STA		word_5A9+1
-		LDA		(_tmp6),Y
-		INY
-		STA		word_5A9
-		INCW	word_5A9
-		BNE		loc_18ACBA
-loc_18ACA9:
-		PHA
-		LDA		(_tmp6),Y
-		INY
-		AND		#$1F
-		CLC
-		ADC		#$01
-		STA		word_5A9
-		LDA		#$00
-		STA		word_5A9+1
-loc_18ACBA:
-		PLA
-		BPL		loc_18ACC0
-		JMP		loc_18AD56
-loc_18ACC0:
-		LDX		_tmp3
-		STX		_PPU_ADDR
-		LDX		_tmp2
-		STX		_PPU_ADDR
-		LDX		word_5A9+1
-		STX		_tmp5AD
-		LDX		word_5A9
-		BNE		loc_18ACD8
-		DEC		_tmp5AD
-loc_18ACD8:
-		CMP		#$20
-		BEQ		loc_18AD12
-		CMP		#$40
-		BEQ		loc_18AD23
-		CMP		#$60
-		BEQ		loc_18AD42
-loc_18ACE4:
-		LDA		(_tmp6),Y
-		INY
-		BNE		loc_18ACEB
-		INC		_tmp6+1
-loc_18ACEB:
-		STA		_PPU_DATA
-		DEX
-		BNE		loc_18ACE4
-		DEC		_tmp5AD
-		BPL		loc_18ACE4
-loc_18ACF6:
-		TYA
-		CLC
-		ADC		_tmp6
-		STA		_tmp6
-		BCC		loc_18AD00
-		INC		_tmp6+1
-loc_18AD00:
-		LDA		_tmp2
-		CLC
-		ADC		word_5A9
-		STA		_tmp2
-		LDA		_tmp3
-		ADC		word_5A9+1
-		STA		_tmp3
-		JMP		loc_18AC7A
-loc_18AD12:
-		LDA		(_tmp6),Y
-		INY
-loc_18AD15:
-		STA		_PPU_DATA
-		DEX
-		BNE		loc_18AD15
-		DEC		_tmp5AD
-		BPL		loc_18AD15
-		JMP		loc_18ACF6
-loc_18AD23:
-		LDA		(_tmp6),Y
-		INY
-		STA		_PPU_DATA
-		LDA		(_tmp6),Y
-		DEY
-		STA		_PPU_DATA
-		DEX
-		BNE		loc_18AD23
-		DEC		_tmp5AD
-		BPL		loc_18AD23
-		INY
-		INY
-		ASL		word_5A9
-		ROL		word_5A9+1
-		JMP		loc_18ACF6
-loc_18AD42:
-		LDA		(_tmp6),Y
-		INY
-loc_18AD45:
-		STA		_PPU_DATA
-		CLC
-		ADC		#$01
-		DEX
-		BNE		loc_18AD45
-		DEC		_tmp5AD
-		BPL		loc_18AD45
-		JMP		loc_18ACF6
-loc_18AD56:
-		PHA
-		LDA		(_tmp6),Y
-		INY
-		STA		_tmp5AC
-		LDA		(_tmp6),Y
-		INY
-		CLC
-		ADC		_tmp4
-		STA		_tmp5AB
-		LDA		_tmp5
-		ADC		_tmp5AC
-		STA		_tmp5AC
-		TYA
-		CLC
-		ADC		_tmp6
-		STA		_tmp6
-		BCC		loc_18AD78
-		INC		_tmp6+1
-loc_18AD78:
-		LDA		word_5A9
-		BNE		loc_18AD80
-		DEC		word_5A9+1
-loc_18AD80:
-		PLA
-		CMP		#$80
-		BEQ		loc_18AD8D
-		CMP		#$A0
-		BEQ		loc_18ADA1
-		CMP		#$C0
-		BEQ		loc_18ADB8
-loc_18AD8D:
-		JSR		sub_18ADC9
-		JSR		_tlm_get_reverse_ppu_data
-		JSR		_tlm_send_ppu_data
-		INC		_tmp5AC
-		DEC		word_5A9+1
-		BPL		loc_18AD8D
-		JMP		loc_18AC7A
-loc_18ADA1:
-		JSR		sub_18ADC9
-		JSR		_tlm_get_reverse_ppu_data
-		JSR		_tlm_rotate_data
-		JSR		_tlm_send_ppu_data
-		INC		_tmp5AC
-		DEC		word_5A9+1
-		BPL		loc_18ADA1
-		JMP		loc_18AC7A
-loc_18ADB8:
-		JSR		sub_18ADC9
-		JSR		_tlm_get_ppu_data
-		JSR		_tlm_send_ppu_data
-		DEC		word_5A9+1
-		BPL		loc_18ADB8
-		JMP		loc_18AC7A
-
-; =============== S U B	R O U T	I N E =======================================
-sub_18ADC9:
-		LDX		word_5A9
-		LDA		word_5A9+1
-		BEQ		loc_18ADD3
-		LDX		#$00
-loc_18ADD3:
-		STX		_tmp5AF
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_get_reverse_ppu_data:
-		LDA		_tmp5AC
-		STA		_PPU_ADDR
-		LDA		_tmp5AB
-		STA		_PPU_ADDR
-		LDA		_PPU_DATA
-loc_18ADE6:
-		LDA		_PPU_DATA
-		STA		_ppu_queue_buf,X
-		DEX
-		BNE		loc_18ADE6
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_send_ppu_data:
-		LDX		_tmp5AF
-		LDA		_tmp3
-		STA		_PPU_ADDR
-		LDA		_tmp2
-		STA		_PPU_ADDR
-loc_18ADFD:
-		LDA		_ppu_queue_buf,X
-		STA		_PPU_DATA
-		DEX
-		BNE		loc_18ADFD
-		DEC		_tmp5AF
-		LDA		_tmp5AF
-		SEC
-		ADC		_tmp2
-		STA		_tmp2
-		BCC		locret_18AE15
-		INC		_tmp3
-locret_18AE15:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_rotate_data:
-		LDX		_tmp5AF
-loc_18AE19:
-		LDA		_ppu_queue_buf,X
-		STA		_tmp5AD
-		LDY		#$08
-loc_18AE21:
-		ASL		_tmp5AD
-		ROR
-		DEY
-		BNE		loc_18AE21
-		STA		_ppu_queue_buf,X
-		DEX
-		BNE		loc_18AE19
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_get_ppu_data:
-		STX		_tmp5AD
-		DEC		_tmp5AD
-		LDA		_tmp5AB
-		CLC
-		SBC		_tmp5AD
-		STA		_tmp5AB
-		TAY
-		LDA		_tmp5AC
-		SBC		#$00
-		STA		_tmp5AC
-		STA		_PPU_ADDR
-		STY		_PPU_ADDR
-		LDA		_PPU_DATA
-		LDA		_PPU_DATA
-		LDX		#$00
-loc_18AE56:
-		INX
-		LDA		_PPU_DATA
-		STA		_ppu_queue_buf,X
-		CPX		_tmp5AF
-		BNE		loc_18AE56
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_lib_queue:
-		LDA		_tlm_lib,X
-		STA		_ptr0
-		LDA		_tlm_lib+1,X
-		STA		_ptr0+1
-		LDA		_tlm_lib+2,X
-		STA		_ptr2
-		LDA		_tlm_lib+3,X
-		STA		_ptr2+1
-		LDY		#$00
-		PPUQSTART
-loc_B8CE4:
-		LDA		(_ptr0),Y
-		CMP		#$FF
-		BEQ		loc_B8CF7
-		PPUQMOVA
-		INY
-		BNE		loc_B8CE4
-loc_B8CF7:
-		PPUQEND
-		LDY		#$00
-		EXTQSTART
-loc_B8CFD:
-		LDA		(_ptr2),Y
-		CMP		#$FF
-		BEQ		loc_B8D10
-		EXTQMOVA
-		INY
-		BNE		loc_B8CFD
-loc_B8D10:
-		EXTQEND
-		RTS
-
-_tlm_lib:
-		.WORD	_tlm_nt_bank_loan0,_tlm_extnt_bank_loan0			; 00 PRG7
-		.WORD	_tlm_nt_bank_loan1,_tlm_extnt_bank_loan1			; 04 PRG7
-		.WORD	_tlm_nt_bank_loan2,_tlm_extnt_bank_loan2			; 08 PRG7
-		.WORD	_tlm_nt_bank_loan3,_tlm_extnt_bank_loan3			; 0C PRG7
-		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def		; 10 PRG7
-		.WORD	_tlm_nt_new_game_push,_tlm_extnt_new_game_push		; 14 PRG9
-		.WORD	_tlm_nt_next_map_push,_tlm_extnt_next_map_push		; 18 PRG9
-		.WORD	_tlm_nt_next_map_release,_tlm_extnt_netx_map_release; 1C PRG9
-		.WORD	_tlm_nt_bank_icon,_tlm_extnt_bank_icon				; 20 PRG9
-		.WORD	_tlm_nt_bank_loan,_tlm_extnt_bank_loan				; 24 PRG9
-		.WORD	_tlm_nt_bank_no_loan,_tlm_extnt_bank_no_loan		; 28 PRG9
-
-; =============== S U B	R O U T	I N E =======================================
 _goto_alert_spr_draw:
 		LDA		_goto_alert_req
 		BNE		loc_18AE69
@@ -3612,7 +3263,7 @@ loc_18BB97:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tlm_send:
+_ppu_rle_unpack_loop:
 		STA		_PPU_ADDR
 		INY
 		LDA		(_ptr0),Y
@@ -3656,11 +3307,364 @@ locret_18BBEC:
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_tlm_transfer:
+_ppu_rle_unpack:
 		LDY		#$00
 		LDA		(_ptr0),Y						; 00 - ent of stream code
-		BNE		_tlm_send
+		BNE		_ppu_rle_unpack_loop
 		JMP		_ppu_reset
+
+; =============== S U B	R O U T	I N E =======================================
+_res_ppu_lz_unpack:
+		JSR		_apu_dpcm_forbid
+		LDA		_PPU_STATUS
+		STX		_ptr0
+		STY		_ptr0+1
+		LDY		#$00
+		LDA		(_ptr0),Y
+		STA		_tmp2
+		INY
+		LDA		(_ptr0),Y
+		STA		_tmp3
+		INY
+		LDA		(_ptr0),Y
+		STA		_tmp5AE
+loc_18AC59:
+		INY
+		LDA		(_ptr0),Y
+		STA		_tmp6
+		INY
+		LDA		(_ptr0),Y
+		STA		_tmp6+1
+		TYA
+		PHA
+		JSR		_ppu_lz_unpack
+		PLA
+		TAY
+		DEC		_tmp5AE
+		BNE		loc_18AC59
+		JMP		_apu_dpcm_allow
+
+; =============== S U B	R O U T	I N E =======================================
+_ppu_lz_unpack:
+		LDA		_tmp2
+		STA		_tmp4
+		LDA		_tmp3
+		STA		_tmp5
+loc_18AC7A:
+		LDY		#$00
+		LDA		(_tmp6),Y
+		CMP		#$FF
+		BNE		loc_18AC83
+		RTS
+loc_18AC83:
+		AND		#$E0
+		CMP		#$E0
+		BNE		loc_18ACA9
+		LDA		(_tmp6),Y
+		ASL
+		ASL
+		ASL
+		AND		#$E0
+		PHA
+		LDA		(_tmp6),Y
+		INY
+		AND		#$03
+		STA		word_5A9+1
+		LDA		(_tmp6),Y
+		INY
+		STA		word_5A9
+		INCW	word_5A9
+		BNE		loc_18ACBA
+loc_18ACA9:
+		PHA
+		LDA		(_tmp6),Y
+		INY
+		AND		#$1F
+		CLC
+		ADC		#$01
+		STA		word_5A9
+		LDA		#$00
+		STA		word_5A9+1
+loc_18ACBA:
+		PLA
+		BPL		loc_18ACC0
+		JMP		loc_18AD56
+loc_18ACC0:
+		LDX		_tmp3
+		STX		_PPU_ADDR
+		LDX		_tmp2
+		STX		_PPU_ADDR
+		LDX		word_5A9+1
+		STX		_tmp5AD
+		LDX		word_5A9
+		BNE		loc_18ACD8
+		DEC		_tmp5AD
+loc_18ACD8:
+		CMP		#$20
+		BEQ		loc_18AD12
+		CMP		#$40
+		BEQ		loc_18AD23
+		CMP		#$60
+		BEQ		loc_18AD42
+loc_18ACE4:
+		LDA		(_tmp6),Y
+		INY
+		BNE		loc_18ACEB
+		INC		_tmp6+1
+loc_18ACEB:
+		STA		_PPU_DATA
+		DEX
+		BNE		loc_18ACE4
+		DEC		_tmp5AD
+		BPL		loc_18ACE4
+loc_18ACF6:
+		TYA
+		CLC
+		ADC		_tmp6
+		STA		_tmp6
+		BCC		loc_18AD00
+		INC		_tmp6+1
+loc_18AD00:
+		LDA		_tmp2
+		CLC
+		ADC		word_5A9
+		STA		_tmp2
+		LDA		_tmp3
+		ADC		word_5A9+1
+		STA		_tmp3
+		JMP		loc_18AC7A
+loc_18AD12:
+		LDA		(_tmp6),Y
+		INY
+loc_18AD15:
+		STA		_PPU_DATA
+		DEX
+		BNE		loc_18AD15
+		DEC		_tmp5AD
+		BPL		loc_18AD15
+		JMP		loc_18ACF6
+loc_18AD23:
+		LDA		(_tmp6),Y
+		INY
+		STA		_PPU_DATA
+		LDA		(_tmp6),Y
+		DEY
+		STA		_PPU_DATA
+		DEX
+		BNE		loc_18AD23
+		DEC		_tmp5AD
+		BPL		loc_18AD23
+		INY
+		INY
+		ASL		word_5A9
+		ROL		word_5A9+1
+		JMP		loc_18ACF6
+loc_18AD42:
+		LDA		(_tmp6),Y
+		INY
+loc_18AD45:
+		STA		_PPU_DATA
+		CLC
+		ADC		#$01
+		DEX
+		BNE		loc_18AD45
+		DEC		_tmp5AD
+		BPL		loc_18AD45
+		JMP		loc_18ACF6
+loc_18AD56:
+		PHA
+		LDA		(_tmp6),Y
+		INY
+		STA		_tmp5AC
+		LDA		(_tmp6),Y
+		INY
+		CLC
+		ADC		_tmp4
+		STA		_tmp5AB
+		LDA		_tmp5
+		ADC		_tmp5AC
+		STA		_tmp5AC
+		TYA
+		CLC
+		ADC		_tmp6
+		STA		_tmp6
+		BCC		loc_18AD78
+		INC		_tmp6+1
+loc_18AD78:
+		LDA		word_5A9
+		BNE		loc_18AD80
+		DEC		word_5A9+1
+loc_18AD80:
+		PLA
+		CMP		#$80
+		BEQ		loc_18AD8D
+		CMP		#$A0
+		BEQ		loc_18ADA1
+		CMP		#$C0
+		BEQ		loc_18ADB8
+loc_18AD8D:
+		JSR		_get_lz_pos
+		JSR		_get_lz_reverse_date
+		JSR		_send_lz_data
+		INC		_tmp5AC
+		DEC		word_5A9+1
+		BPL		loc_18AD8D
+		JMP		loc_18AC7A
+loc_18ADA1:
+		JSR		_get_lz_pos
+		JSR		_get_lz_reverse_date
+		JSR		_get_lz_rotate_data
+		JSR		_send_lz_data
+		INC		_tmp5AC
+		DEC		word_5A9+1
+		BPL		loc_18ADA1
+		JMP		loc_18AC7A
+loc_18ADB8:
+		JSR		_get_lz_pos
+		JSR		_get_lz_raw_date
+		JSR		_send_lz_data
+		DEC		word_5A9+1
+		BPL		loc_18ADB8
+		JMP		loc_18AC7A
+
+; =============== S U B	R O U T	I N E =======================================
+_get_lz_pos:
+		LDX		word_5A9
+		LDA		word_5A9+1
+		BEQ		loc_18ADD3
+		LDX		#$00
+loc_18ADD3:
+		STX		_tmp5AF
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_lz_reverse_date:
+		LDA		_tmp5AC
+		STA		_PPU_ADDR
+		LDA		_tmp5AB
+		STA		_PPU_ADDR
+		LDA		_PPU_DATA
+loc_18ADE6:
+		LDA		_PPU_DATA
+		STA		_ppu_queue_buf,X
+		DEX
+		BNE		loc_18ADE6
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_send_lz_data:
+		LDX		_tmp5AF
+		LDA		_tmp3
+		STA		_PPU_ADDR
+		LDA		_tmp2
+		STA		_PPU_ADDR
+loc_18ADFD:
+		LDA		_ppu_queue_buf,X
+		STA		_PPU_DATA
+		DEX
+		BNE		loc_18ADFD
+		DEC		_tmp5AF
+		LDA		_tmp5AF
+		SEC
+		ADC		_tmp2
+		STA		_tmp2
+		BCC		locret_18AE15
+		INC		_tmp3
+locret_18AE15:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_lz_rotate_data:
+		LDX		_tmp5AF
+loc_18AE19:
+		LDA		_ppu_queue_buf,X
+		STA		_tmp5AD
+		LDY		#$08
+loc_18AE21:
+		ASL		_tmp5AD
+		ROR
+		DEY
+		BNE		loc_18AE21
+		STA		_ppu_queue_buf,X
+		DEX
+		BNE		loc_18AE19
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_lz_raw_date:
+		STX		_tmp5AD
+		DEC		_tmp5AD
+		LDA		_tmp5AB
+		CLC
+		SBC		_tmp5AD
+		STA		_tmp5AB
+		TAY
+		LDA		_tmp5AC
+		SBC		#$00
+		STA		_tmp5AC
+		STA		_PPU_ADDR
+		STY		_PPU_ADDR
+		LDA		_PPU_DATA
+		LDA		_PPU_DATA
+		LDX		#$00
+loc_18AE56:
+		INX
+		LDA		_PPU_DATA
+		STA		_ppu_queue_buf,X
+		CPX		_tmp5AF
+		BNE		loc_18AE56
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_tlm_lib_queue:
+		LDA		_tlm_lib,X
+		STA		_ptr0
+		LDA		_tlm_lib+1,X
+		STA		_ptr0+1
+		LDA		_tlm_lib+2,X
+		STA		_ptr2
+		LDA		_tlm_lib+3,X
+		STA		_ptr2+1
+		LDY		#$00
+		PPUQSTART
+loc_B8CE4:
+		LDA		(_ptr0),Y
+		CMP		#$FF
+		BEQ		loc_B8CF7
+		PPUQMOVA
+		INY
+		BNE		loc_B8CE4
+loc_B8CF7:
+		PPUQEND
+		LDY		#$00
+		EXTQSTART
+loc_B8CFD:
+		LDA		(_ptr2),Y
+		CMP		#$FF
+		BEQ		loc_B8D10
+		EXTQMOVA
+		INY
+		BNE		loc_B8CFD
+loc_B8D10:
+		EXTQEND
+		RTS
+
+_tlm_lib:
+		.WORD	_tlm_nt_bank_loan0,_tlm_extnt_bank_loan0			; 00 PRG7
+		.WORD	_tlm_nt_bank_loan1,_tlm_extnt_bank_loan1			; 04 PRG7
+		.WORD	_tlm_nt_bank_loan2,_tlm_extnt_bank_loan2			; 08 PRG7
+		.WORD	_tlm_nt_bank_loan3,_tlm_extnt_bank_loan3			; 0C PRG7
+		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def		; 10 PRG7
+		.WORD	_tlm_nt_new_game_push,_tlm_extnt_new_game_push		; 14 PRG9
+		.WORD	_tlm_nt_next_map_push,_tlm_extnt_next_map_push		; 18 PRG9
+		.WORD	_tlm_nt_next_map_release,_tlm_extnt_netx_map_release; 1C PRG9
+		.WORD	_tlm_nt_bank_icon,_tlm_extnt_bank_icon				; 20 PRG9
+		.WORD	_tlm_nt_bank_loan,_tlm_extnt_bank_loan				; 24 PRG9
+		.WORD	_tlm_nt_bank_no_loan,_tlm_extnt_bank_no_loan		; 28 PRG9
+		.WORD	_tlm_nt_back_button_press,_tlm_extnt_back_button_press		; 2C PRG1
+		.WORD	_tlm_nt_space_press,_tlm_extnt_space_press					; 30 PRG1
+		.WORD	_tlm_nt_end_press,_tlm_extnt_end_press						; 34 PRG1
+		.WORD	_tlm_nt_all_buttons_release,_tlm_extnt_all_buttons_release	; 38 PRG1
 
 ; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================

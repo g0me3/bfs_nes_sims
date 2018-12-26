@@ -765,7 +765,7 @@ _title_sub0_init:
 		LDA		#$08
 		STA		_mmc5_nt_mode_shadow
 		STA		_MMC5_NT_MODE					; draw initial title screen
-		JSRXY	_tlm_res_unpack,_tlm_res_title_main
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_title_main
 		JSR		_wait_for_nmi
 		JSR		_ppu_reset
 		LDX		#$00
@@ -826,7 +826,7 @@ _title_sub2_menu_draw:
 		BNE		loc_B858C
 		LDXY	_tlm_res_title_menu_continue
 loc_B858C:
-		JSR		_tlm_res_unpack
+		JSR		_res_ppu_lz_unpack
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B859E
 		LDA		_cur_game_mode

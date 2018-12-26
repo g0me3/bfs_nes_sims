@@ -42,21 +42,21 @@ _game_setup_subs_list:
 _game_setup_sub_exec:
 		LDA		_game_setup_sub_idx
 		JSR		_switch
-		.WORD	_game_setup00_new_city_gen
-		.WORD	_game_setup01_name_input_init
-		.WORD	_game_setup02_name_input_input
-		.WORD	_game_setup03_dummy
-		.WORD	_game_setup04_break
-		.WORD	_game_setup05_scenario_init
-		.WORD	_game_setup06_scenario_select_input
-		.WORD	_game_setup07_scenario_intro_init
-		.WORD	_game_setup08_scenario_intro_draw
-		.WORD	_game_setup09_practice_msg_init
-		.WORD	_game_setup0A_practice_msg_draw
-		.WORD	_game_setup0B_scenario_over_init
-		.WORD	_game_setup0C_scenario_over_input
-		.WORD	_game_setup0D_difficult_init
-		.WORD	_game_setup0E_difficult_input
+		.WORD	_game_setup00_new_city_gen				; city gen start
+		.WORD	_game_setup01_name_input_init			; city gen
+		.WORD	_game_setup02_name_input_input			; city gen jump 0D
+		.WORD	_game_setup03_game_start_init			; continue start
+		.WORD	_game_setup04_game_start				; continue stop
+		.WORD	_game_setup05_scenario_init				; scenario start
+		.WORD	_game_setup06_scenario_select_input		; scenario
+		.WORD	_game_setup07_scenario_intro_init		; scenario
+		.WORD	_game_setup08_scenario_intro_draw		; scenario stop
+		.WORD	_game_setup09_practice_msg_init			; practice start
+		.WORD	_game_setup0A_practice_msg_draw			; practice stop
+		.WORD	_game_setup0B_scenario_over_init		; game over start
+		.WORD	_game_setup0C_scenario_over_input		; game over jump 05/0F
+		.WORD	_game_setup0D_difficult_init			; city gen continues
+		.WORD	_game_setup0E_difficult_input			; city gen stop
 		.WORD	_game_setup0F_all_complete_init
 		.WORD	_game_setup10_all_complete_input
 
@@ -71,8 +71,8 @@ _game_setup_sub_exec:
 ;		.BYTE	<[_game_setup00_new_city_gen]
 ;		.BYTE	<[_game_setup01_name_input_init]
 ;		.BYTE	<[_game_setup02_name_input_input]
-;		.BYTE	<[_game_setup03_dummy]
-;		.BYTE	<[_game_setup04_break]
+;		.BYTE	<[_game_setup03_game_start_init]
+;		.BYTE	<[_game_setup04_game_start]
 ;		.BYTE	<[_game_setup05_scenario_init]
 ;		.BYTE	<[_game_setup06_scenario_select_input]
 ;		.BYTE	<[_game_setup07_scenario_intro_init]
@@ -89,8 +89,8 @@ _game_setup_sub_exec:
 ;		.BYTE	>[_game_setup00_new_city_gen]
 ;		.BYTE	>[_game_setup01_name_input_init]
 ;		.BYTE	>[_game_setup02_name_input_input]
-;		.BYTE	>[_game_setup03_dummy]
-;		.BYTE	>[_game_setup04_break]
+;		.BYTE	>[_game_setup03_game_start_init]
+;		.BYTE	>[_game_setup04_game_start]
 ;		.BYTE	>[_game_setup05_scenario_init]
 ;		.BYTE	>[_game_setup06_scenario_select_input]
 ;		.BYTE	>[_game_setup07_scenario_intro_init]
@@ -104,36 +104,57 @@ _game_setup_sub_exec:
 ;		.BYTE	>[_game_setup0F_all_complete_init]
 ;		.BYTE	>[_game_setup10_all_complete_input]
 
+; OPTIMIZED, merged
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup05_scenario_init:
-		LDA		#$01
-		STA		_game_core_state				; scenario select screen setup
-		JSR		_ppu_queues_reset				; shut down the screen
-		JSR		_pal_fade_out
-		JSR		_render_off
-		LDY		#$80
+_game_setup_screen_init:
+		JSR		_ppu_queues_reset				; reset queue buffers
+		JSR		_pal_fade_out					; fade out
+		JSR		_render_off						; render off
+		LDY		#$80							; prepare vars
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
 		LDY		#$01
 		STY		_scr_mode_idx					; set screen modes
 		INY
 		STY		_scr_res_idx
-		DEC		_mmc5_operation_in_progress_flag
+		DEC		_mmc5_operation_in_progress_flag; enter critical section
 		LDA		#$08
-		STA		_mmc5_nt_mode_shadow
+		STA		_mmc5_nt_mode_shadow			; set mode
 		STA		_MMC5_NT_MODE
+		JMP		_spr_clear						; ready to ppu unpack
+
+; =============== S U B	R O U T	I N E =======================================
+_game_setup05_scenario_init:
+;		JSR		_ppu_queues_reset				; REDUNDANT
+;		JSR		_pal_fade_out
+;		JSR		_render_off
+;		LDY		#$80
+;		STY		_game_wnd_spr_mode_flag
+;		STY		_ppu_ctrl_shadow
+;		LDY		#$01
+;		STY		_scr_mode_idx
+;		INY
+;		STY		_scr_res_idx
+;		DEC		_mmc5_operation_in_progress_flag
+;		LDA		#$08
+;		STA		_mmc5_nt_mode_shadow
+;		STA		_MMC5_NT_MODE
+;		JSR		_spr_clear
+; -
+		JSR		_game_setup_screen_init			; OPTIMIZED
+; -
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		.extra_scenarios				;  all scenarios are beaten, unlock full screen
-		JSRXY	_tlm_res_unpack,_tlm_res_scenario_normal
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_scenario_normal
 		LDY		#$03							; or load the regular one with 6 scenarios
 		BNE		loc_240B2
 .extra_scenarios:
 		LDXY	_tlm_res_scenario_complete		; tlm for this scenario is in extra bank
-		FJSRA	_tlm_res_unpack,SRAM,PRGA
+		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA
 		LDY		#$04
 loc_240B2:
 		STY		_tmp6D4							; tmp var for number or icons per row
-		JSR		_ppu_queues_reset
+;		JSR		_ppu_queues_reset				; REDUNDANT, already clear
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		JSR		_scenario_closed_screen_update	; draw "CLOSED" icons on beaten scenarios
@@ -142,13 +163,18 @@ loc_240B2:
 		LDA		#$00
 		STA		_tmp6D0+1
 		STA		_tmp6D0
-		JSR		_render_on						; ppu work done, restart renders and fade in
-		INC		_mmc5_operation_in_progress_flag
-		LDA		#$02
-		STA		_screen_pal_cur_spr_idx
 		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
+		LDA		#$02
+		STA		_screen_pal_cur_spr_idx
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_game_setup_screen_start:
 		INC		_game_setup_sub_idx
+		JSR		_render_on						; ppu work done, restart renders and fade in
+		INC		_mmc5_operation_in_progress_flag
 		JMP		_pal_fade_in
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -303,7 +329,7 @@ _game_setup06_scenario_select_input:
 		DEC		_main_sub_idx
 		JMP		_pal_fade_out
 loc_2420C:
-		JMP		_common_select_cursor_control		; or else draw regular cursor
+		JMP		_common_select_cursor_control	; or else draw regular cursor
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_select_input:
@@ -374,19 +400,14 @@ _game_setup07_scenario_intro_init:
 		JSR		_pal_fade_out
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
-		JSR		_spr_clear						; empty wnd draw
-		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
+		JSR		_spr_clear						; common full-screen window draw
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd
 		LDY		_scenario_idx					; scenario name header draw
 		LDA		_scenario_intro_header_lib_lo,Y
 		STA		_ptr0
 		LDA		_scenario_intro_header_lib_hi,Y
 		STA		_ptr0+1
-		JSR		_tlm_transfer
-		JSR		_render_on
-		INC		_mmc5_operation_in_progress_flag
-		LDA		#$11
-		STA		_screen_pal_cur_bg_idx
-		JSR		_pal_fade_in
+		JSR		_ppu_rle_unpack
 ; OPTIMIZED, common lib, indexes 0-7 for scenarios
 		LDA		_scenario_idx					; now load scenario message data
 		JSR		_msg_lib_load					; for printout routine
@@ -399,8 +420,14 @@ _game_setup07_scenario_intro_init:
 ;		STY		_tmp6D9
 ;		DEY
 ;		STY		_tmp6D8
-		INC		_game_setup_sub_idx				; skip to the next sub
-		RTS
+		LDA		#$11
+		STA		_screen_pal_cur_bg_idx
+; REDUNDANT
+;		INC		_game_setup_sub_idx				; skip to the next sub
+;		JSR		_render_on
+;		INC		_mmc5_operation_in_progress_flag
+;		JMP		_pal_fade_in
+		JMP		_game_setup_screen_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup08_scenario_intro_draw:
@@ -409,9 +436,9 @@ _game_setup08_scenario_intro_draw:
 		BPL		loc_242EC
 		APUA_SE	_SE_IDX_CLICK					; skip scenario intro if pressed
 		JSR		_scenario_map_load				; load scenario map from PPU ROM
-		INC		_main_sub_idx					; go to the game
+		INC		_main_sub_idx					; go to the main game
 		LDA		#_MUS_IDX_STOP
-		STA		_apu_mus_idx_req
+		STA		_apu_mus_idx_req				; stop the music, already fade out by map load
 		RTS
 loc_242EC:
 		BVC		locret_242F7					; test if B pressed
@@ -561,21 +588,27 @@ _scenario_map_load:
 		LDA		#$03
 		STA		_MMC5_CHR_SIZE					; restore CHR bank size 1K
 		JSR		_apu_dpcm_allow					; allow dpcm back
-		LDY		_scenario_idx
-		LDX		_scenario_titles_ofs_lib,Y		; load predefined town name for scenario
-		LDY		#$01
-loc_243F1:
-		LDA		_scenario_town_names_list,X		; copy data
-		BMI		loc_243FD
-		STA		_city._name,Y
-		INX
-		INY
-		BNE		loc_243F1
-loc_243FD:
-		STY		_city._name						; store name buf len
-		INC		_mmc5_operation_in_progress_flag; restart ppu
+; REDUNDANT
+;		LDY		_scenario_idx
+;		LDX		_scenario_titles_ofs_lib,Y		; load predefined town name for scenario
+;		LDY		#$01
+;loc_243F1:
+;		LDA		_scenario_town_names_list,X		; copy data
+;		BMI		loc_243FD
+;		STA		_city._name,Y
+;		INX
+;		INY
+;		BNE		loc_243F1
+;loc_243FD:
+;		STY		_city._name						; store name buf len
+; -
+		LDX 	_scenario_idx					; OPTIMIZED, default city name, scenario name
+		LDY		#$00
+		JSR		_set_default_name
+; -
 		LDA		_mmc5_chr_banks_shadow+3		; restore CHR3 BANK
 		STA		_MMC5_CHR_BANKSA+3
+		INC		_mmc5_operation_in_progress_flag; restart ppu
 		JMP		_render_on
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -585,7 +618,7 @@ _scenario_map_unpack:
 		STA		_tmp6
 		AND		#$F0
 		CMP		#$80
-		BNE		.raw_tiles					; object code as is
+		BNE		.raw_tiles						; object code as is
 		LDA		_tmp6
 		CMP		#$8F
 		BNE		.dict_tiles						; 8F, RLE code next two bytes are
@@ -751,33 +784,59 @@ _special_tiles_list:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup01_name_input_init:
-		JSR		_ppu_queues_reset				; shut down the screen again
+_game_setup00_new_city_gen:
+		JSR		_ppu_queues_reset
 		JSR		_pal_fade_out
-		JSR		_render_off
-		LDA		#$08
+		LDA		#$24
 		STA		_mmc5_nt_mode_shadow
 		STA		_MMC5_NT_MODE
-		LDY		#$80
-		STY		_game_wnd_spr_mode_flag
-		STY		_ppu_ctrl_shadow
-		LDY		#$01
-		STY		_scr_mode_idx
-		STY		_game_core_state
-		INY
-		STY		_scr_res_idx
-		DEC		_mmc5_operation_in_progress_flag
-		JSR		_spr_clear
+		LDA		#$07
+		STA		_scr_res_idx
+		LDA		#$00
+		STA		_scr_res_control_flags
+		FJSRA	_scr_res_common,SRAM,PRG9
+		LDA		_title_sub_idx
+		BEQ		loc_249F4
+		DEC		_main_sub_idx
+		JSR		_pal_fade_out
+loc_249F4:
+		INC		_game_setup_sub_idx
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_game_setup01_name_input_init:
+; REDUNDANT
+;		JSR		_ppu_queues_reset
+;		JSR		_pal_fade_out
+;		JSR		_render_off
+;		LDY		#$80
+;		STY		_game_wnd_spr_mode_flag
+;		STY		_ppu_ctrl_shadow
+;		LDY		#$01
+;		STY		_scr_mode_idx
+;		INY
+;		STY		_scr_res_idx
+;		DEC		_mmc5_operation_in_progress_flag
+;		LDA		#$08
+;		STA		_mmc5_nt_mode_shadow
+;		STA		_MMC5_NT_MODE
+;		JSR		_spr_clear
+; -
+		JSR		_game_setup_screen_init			; OPTIMIZED
+; -
 		LDXY	_tlm_res_name_init				; draw external tilemap for namy input screen
-		FJSRA	_tlm_res_unpack,SRAM,PRGA
+		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA
 		LDA		#$00
 		STA		byte_6DC+2
 		LDA		#$02
 		STA		_MMC5_CHR_MODE					; unpack upper part of the input screen
-		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
-		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
-		JSR		_name_input_char_nt_queue		; draw name buffer (now empty)
-		JSR		_name_input_char_extnt_queue
+;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
+;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
+		LDX		#$04							; OPTIMIZED
+		JSR		_rle_tlm_queue
+;		JSR		_name_input_char_nt_queue		; REDUNDANT. draw name buffer (now empty)
+;		JSR		_name_input_char_extnt_queue
+		JSR		_name_input_name_buf_queue		; OPTIMIZED, called both at the same time, merge
 ;loc_24549:
 ;		JSR		_ppu_dequeue					; REDUNDANT, merged
 ;		JSR		_extnt_dequeue
@@ -790,8 +849,6 @@ _game_setup01_name_input_init:
 		STA		_MMC5_CHR_BANKSA+2				; set CHR banks for sprites here
 		LDA		#$2D
 		STA		_MMC5_CHR_BANKSA+3
-		INC		_mmc5_operation_in_progress_flag
-		JSR		_render_on
 		LDA		#$CD							; init starting cursor position
 		STA		_tmp6CC
 		LDA		#$A6
@@ -799,22 +856,27 @@ _game_setup01_name_input_init:
 		LDA		#$00
 		STA		_tmp6D0+1
 		STA		_tmp6D0
-		INC		_game_setup_sub_idx
 		LDA		#$09
 		STA		_screen_pal_cur_bg_idx			; init palettes
 		LDA		#$07
 		STA		_screen_pal_cur_spr_idx
-		JMP		_pal_fade_in					; show screen
+; REDUNDANT
+;		INC		_game_setup_sub_idx
+;		JSR		_render_on
+;		INC		_mmc5_operation_in_progress_flag
+;		JMP		_pal_fade_in					; show screen
+		JMP		_game_setup_screen_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup02_name_input_input:
 		JSR		_name_input_cursor_move_control	; main name input handler
 		JSR		_common_select_cursor_control		; calling all stuff for input handling
-		JSR		_name_input_button_push_control	; printing and storing input data
+		JSR		_name_input_char_select	; printing and storing input data
 		JSR		_name_input_button_push_draw
 		JSR		_name_input_char_store
-		JSR		_name_input_char_nt_queue
-		JSR		_name_input_char_extnt_queue
+;		JSR		_name_input_char_nt_queue		; REDUNDANT
+;		JSR		_name_input_char_extnt_queue
+		JSR		_name_input_name_buf_queue		; OPTIMIZED, called both at the same time, merge
 		JSR		_spr_finish
 		BIT		_pad0_autorep_press
 		BVC		locret_245A9
@@ -829,23 +891,27 @@ _name_input_next_scr:
 		INC		byte_6DC+2
 		JSR		_ppu_queues_reset
 		JSR		_name_input_clear_header_area	; redraw only upper portion of the screen
-		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_word
-		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_word
+;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_word
+;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_word
+		LDX		#$08							; OPTIMIZED
+		JSR		_rle_tlm_queue
 		JMP		_buffers_wait_flush
 loc_245C9:
-		LDA		#$0D
+		LDA		#$0D							; jump to difficult setting
 		STA		_game_setup_sub_idx				; if 1, then we at fav word input,
 		RTS										; then go to difficult setup
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_previous_scr:
 		LDA		byte_6DC+2						; if we at name input screen
-		BEQ		loc_245EE						; then jump to the title menu
+		BEQ		loc_245EE						; then jump to the city gen screen
 		DEC		byte_6DC+2
 		JSR		_ppu_queues_reset				; or return from fav word screen back
 		JSR		_name_input_clear_header_area	; redraw upper part with name input again
-		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
-		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
+;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
+;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
+		LDX		#$04							; OPTIMIZED
+		JSR		_rle_tlm_queue
 		JMP		_buffers_wait_flush
 loc_245EE:
 		LDA		#$00
@@ -856,8 +922,10 @@ loc_245EE:
 ; clear upper part of the name input screen for new header.
 ;
 _name_input_clear_header_area:
-		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_clear_area
-		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
+;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_clear_area
+;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
+		LDX		#$00							; OPTIMIZED
+		JSR		_rle_tlm_queue
 		JMP		_buffers_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -912,15 +980,19 @@ _name_input_button_push_draw:
 		BNE		.push_wait						; if anim already started, skip
 		CPY		#$20							; else anim frame, draw push
 		BNE		loc_24676						; two special buttons here
-		JSRXY	_rle_nt_res_queue,_tlm_nt_space_press
-		JSRXY	_rle_extnt_res_queue,_tlm_extnt_space_press
-		JMP		_buffers_wait_flush					; FIX
+;		JSRXY	_rle_nt_res_queue,_tlm_nt_space_press
+;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_space_press
+		LDX		#$30
+		JSR		_tlm_lib_queue					; OPTIMIZED
+		JMP		_buffers_wait_flush				; FIX
 loc_24676:
 		CPY		#$0C
 		BNE		locret_246DB
-		JSRXY	_rle_nt_res_queue,_tlm_nt_back_button_press
-		JSRXY	_rle_extnt_res_queue,_tlm_extnt_back_button_press
-		JMP		_buffers_wait_flush					; FIX
+;		JSRXY	_rle_nt_res_queue,_tlm_nt_back_button_press	; REDUNDANT
+;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_back_button_press
+		LDX		#$2C
+		JSR		_tlm_lib_queue					; OPTIMIZED
+		JMP		_buffers_wait_flush				; FIX
 .push_wait:
 		CMP		#$01							; last anim frame, release buttons
 		BEQ		_all_buttons_release_draw		; all at once.
@@ -958,8 +1030,10 @@ locret_246DB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _all_buttons_release_draw:
-		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
-		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
+;		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
+;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
+		LDX		#$38
+		JSR		_tlm_lib_queue					; OPTIMIZED
 		JMP		_buffers_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1054,33 +1128,36 @@ loc_24746:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_name_input_button_push_control:
+_name_input_char_select:
 		LDA		_pad0_autorep_press
-		BPL		loc_247BD
-		LDA		_tmp6D3
+		BPL		.no_a_pushed
+		APUA_SE	_SE_IDX_CLICK					; OPTIMIZED
+		LDA		_tmp6D3							; Y * 12 + X
 		ASL
 		ADC		_tmp6D3
 		ASL
 		ASL
 		ADC		_tmp6D2
 		TAY
-		LDA		_input_chars_tbl,Y
-		STA		byte_6DC+1
-		STA		byte_6DC+6
-		BPL		loc_247A1
+		LDA		_input_chars_tbl,Y				; get keyboard char idx
+		STA		byte_6DC+1						; char display tmp var init
+		STA		byte_6DC+6						; copy for extnt
+		BPL		.no_enter_pushed				; enter has code $FF
 		LDY		#$00
-		STY		byte_6DC+1
+		STY		byte_6DC+1						; so reset previous chars
 		INY
 		STY		byte_6DC+6
-		APUA_SE	_SE_IDX_CLICK
+;		APUA_SE	_SE_IDX_CLICK					; REDUNDANT, make sound (why twice?)
 		LDA		#$08
-		STA		byte_6DC+3
-		JSRXY	_rle_nt_res_queue,_tlm_nt_end_press
-		JSRXY	_rle_extnt_res_queue,_tlm_extnt_end_press
+		STA		byte_6DC+3						; delay counter load
+;		JSRXY	_rle_nt_res_queue,_tlm_nt_end_press	; queue enter button push animation
+;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_end_press
+		LDX		#$34
+		JSR		_tlm_lib_queue					; OPTIMIZED
 		JSR		_buffers_wait_flush
 		JMP		_name_input_next_scr
-loc_247A1:
-		LDA		_tmp6CC
+.no_enter_pushed:
+		LDA		_tmp6CC							; prepare button push parameters
 		SEC
 		SBC		#$04
 		STA		byte_6DC+4
@@ -1090,12 +1167,13 @@ loc_247A1:
 		STA		byte_6DC+5
 		LDA		#$10
 		STA		byte_6DC+3
-		APUA_SE	_SE_IDX_CLICK
+;		APUA_SE	_SE_IDX_CLICK					; REDUNDANT
 		RTS
-loc_247BD:
+.no_a_pushed:
 		LDA		#$00
 		STA		byte_6DC+1
 		RTS
+
 _input_chars_tbl:
 		.BYTE	$31,$32,$33,$34,$35,$36,$37,$38,$39,$30,$08,$0C
 		.BYTE	$51,$57,$45,$52,$54,$59,$55,$49,$4F,$50,$00,$20
@@ -1105,55 +1183,58 @@ _input_chars_tbl:
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_char_store:
 		LDA		byte_6DC+1
-		BEQ		locret_24842
-		LDX		byte_6DC+2
+		BEQ		locret_24842					; if not zero, we have char to store
+		LDX		byte_6DC+2						; get the name buffer idx
 		LDA		_name_store_buf_lo,X
 		STA		_ptr0
 		LDA		#>[_city]
-		STA		_ptr0+1
+		STA		_ptr0+1							; get the ptr
 		LDY		#$00
 		LDA		(_ptr0),Y
-		STA		_tmp2
+		STA		_tmp2							; store current length of name
 		LDA		byte_6DC+1
 		CMP		#$08
-		BNE		loc_24821
-		LDY		_tmp2
+		BNE		loc_24821						; code = 08?
+		LDY		_tmp2							; yes, do erase char
 		DEY
 		BEQ		locret_24842
-		LDA		#$7C
+		LDA		#$7C							; put empty space into current char
 		STA		(_ptr0),Y
-		TYA
-		LDY		#$00
-		STA		(_ptr0),Y
-		BEQ		locret_24842
+;		TYA										; REDUNDANT, update name length
+;		LDY		#$00
+;		STA		(_ptr0),Y
+;		BEQ		locret_24842
+		BNE		.length_update					; OPTIMIZED
 loc_24821:
 		CMP		#$0C
-		BNE		loc_24834
-		LDA		#$7C
+		BNE		loc_24834						; code = 0C?
+		LDA		#$7C							; yes, do clear all
 		LDY		#$0A
 loc_24829:
-		STA		(_ptr0),Y
+		STA		(_ptr0),Y						; just fill with 7C
 		DEY
 		BNE		loc_24829
 		LDA		#$01
-		STA		(_ptr0),Y
+		STA		(_ptr0),Y						; and store length 1 (+1 of name length always)
 		BNE		locret_24842
 loc_24834:
-		LDY		_tmp2
+		LDY		_tmp2							; final test if we at the end of the buffer
 		CPY		#$0B
 		BEQ		locret_24842
-		STA		(_ptr0),Y
+		STA		(_ptr0),Y						; if not, store char
 		INY
-		TYA
+.length_update:
+		TYA										; update length as well
 		LDY		#$00
 		STA		(_ptr0),Y
 locret_24842:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_name_input_char_nt_queue:
-		LDX		byte_6DC+2
-		LDA		_name_store_buf_lo,X
+;_name_input_char_nt_queue:						; REDUNDANT
+_name_input_name_buf_queue:
+		LDX		byte_6DC+2						; get the name idx we entering
+		LDA		_name_store_buf_lo,X			; get the corresponding ram ofs
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
@@ -1161,33 +1242,33 @@ _name_input_char_nt_queue:
 ;		LDY		byte_6DC+2
 ;		LDA		byte_248BF,Y					; REDUNDANT
 ;		PPUQMOVA
-		PPUQMOVB	#$0B,OP_NOP,0				; OPTIMIZED
+		PPUQMOVB	#$0B,OP_NOP,0				; OPTIMIZED, fixed
 ;		LDA		byte_248C1,Y					; REDUNDANT
 ;		PPUQMOVA
-		PPUQMOVB	#$21,OP_NOP,0				; OPTIMIZED
+		PPUQMOVB	#$21,OP_NOP,0				; OPTIMIZED, fixed
 		PPUQMOVB	#$0A,OP_NOP,0
 		LDY		#$01
 loc_2486A:
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y						; read full name to queue
 		PPUQMOVA
 		INY
 		CPY		#$0B
 		BNE		loc_2486A
 		PPUQEND
-		RTS
-
+;		RTS										; REDUNDANT
+;
 ; =============== S U B	R O U T	I N E =======================================
-_name_input_char_extnt_queue:
-		LDX		byte_6DC+2
-		LDA		_name_store_buf_lo,X
-		STA		_ptr0
-		LDA		#>[_city]
-		STA		_ptr0+1
+;_name_input_char_extnt_queue:
+;		LDX		byte_6DC+2						; already in _ptr0 here
+;		LDA		_name_store_buf_lo,X
+;		STA		_ptr0
+;		LDA		#>[_city]
+;		STA		_ptr0+1
 		EXTQSTART
 ;		LDY		byte_6DC+2						; REDUNDANT
 ;		LDA		byte_248BF,Y
 ;		EXTQMOVA
-		EXTQMOVB	#$0B,OP_NOP,0				; OPTIMIZEd
+		EXTQMOVB	#$0B,OP_NOP,0				; OPTIMIZED
 ;		LDA		byte_248C1,Y					; REDUNDANT
 ;		CLC
 ;		ADC		#$3C
@@ -1196,16 +1277,16 @@ _name_input_char_extnt_queue:
 		EXTQMOVB	#$0A,OP_NOP,0
 		LDY		#$01
 loc_248A2:
-		STX		_tmp3
+		STX		_tmp3							; ppu queue idx backup
 		LDX		#$8B
-		LDA		(_ptr0),Y
-		CMP		#$7C
+		LDA		(_ptr0),Y						; here we just need to replace
+		CMP		#$7C							; 7C is a empty char filler, "-"
 		BEQ		loc_248AE
-		LDX		#$0B
+		LDX		#$0B							; the rest uses 0B extnt
 loc_248AE:
 		TXA
 		LDX		_tmp3
-		EXTQMOVA
+		EXTQMOVA								; store
 		INY
 		CPY		#$0B
 		BNE		loc_248A2
@@ -1222,264 +1303,46 @@ _name_store_buf_lo:
 ;		.BYTE	$21,$21
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup0D_difficult_init:
-		JSR		_ppu_queues_reset
-		JSR		_pal_fade_out
-		JSR		_render_off
-		DEC		_mmc5_operation_in_progress_flag
-		JSRXY	_tlm_res_unpack,_tlm_res_game_play_level
-		JSR		_difficult_scr_cursor_draw
-		LDA		#$00
-		STA		_tmp6D0+1
-		STA		_tmp6D0
-		INC		_mmc5_operation_in_progress_flag
-		JSR		_render_on
-		INC		_game_setup_sub_idx
-		JMP		_pal_fade_in
+_game_setup03_game_start_init:
+		INC		_game_setup_sub_idx				; dummy leftover
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup0E_difficult_input:
-		JSR		_difficult_scr_cursor_move		; cursor movement input test
-		JSR		_common_select_cursor_control	; cursor draw
-		BIT		_pad0_autorep_press
-		BPL		loc_2493D						; press A button
-		APUA_SE	_SE_IDX_CLICK
-		LDA		_city._name
-		CMP		#$01
-		BNE		loc_24916						; test city name if empty
-		LDY		#$08							; get default name "SIMCITY"
-		LDX		_scenario_titles_ofs_lib,Y
-		LDY		#$01
-loc_24907:
-		LDA		_scenario_town_names_list,X		; write default name to buffer
-		BMI		loc_24913
-		STA		_city._name,Y
-		INX
-		INY
-		BNE		loc_24907
-loc_24913:
-		STY		_city._name
-loc_24916:
-		LDA		_city._sister_name				; the same for sister city name
-		CMP		#$01
-		BNE		loc_24933
-		LDY		#$08
-		LDX		_scenario_titles_ofs_lib,Y		; in this mode only it has a value
-		LDY		#$01
-loc_24924:
-		LDA		_scenario_town_names_list,X
-		BMI		loc_24930
-		STA		_city._sister_name,Y
-		INX
-		INY
-		BNE		loc_24924
-loc_24930:
-		STY		_city._sister_name
-loc_24933:
-		INC		_main_sub_idx
-		LDA		#_MUS_IDX_STOP
-		STA		_apu_mus_idx_req
+_game_setup04_game_start:
+		INC		_main_sub_idx					; this routine stops the music
+		LDA		#_MUS_IDX_STOP					; fade out the screen and go to
+		STA		_apu_mus_idx_req				; the main game routine.
 		JMP		_pal_fade_out
-loc_2493D:
-		BVC		locret_24944					; press the B button
-		LDA		#$01
-		STA		_game_setup_sub_idx				; return to name entry
-locret_24944:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_difficult_scr_cursor_move:
-		LDA		_pad0_autorep_press				; up-down test
-		AND		#$0C
-		BEQ		locret_2496C
-		LDY		_city._difficult				; change difficult up down
-		CMP		#$04
-		BNE		.diff_up						; test for button
-		CPY		#$02							; down pressed, test if max value already
-		BEQ		locret_2496C
-		INY										; increment menu option
-		BNE		.diff_store
-.diff_up:
-		CPY		#$00
-		BEQ		locret_2496C					; for up test min value 0
-		DEY										; if not, decrease
-.diff_store:
-		APUA_SE	_SE_IDX_CLICK								; play se
-		STY		_city._difficult				; common store
-		JMP		_difficult_scr_cursor_draw		; highlit difficult option
-locret_2496C:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_difficult_scr_cursor_draw:
-		EXTQSTART
-		LDY		#$02
-loc_24971:
-		LDA		off_249B0,Y
-		EXTQMOVA
-		LDA		off_249B3,Y
-		EXTQMOVA
-		LDA		byte_249B6,Y
-		STA		_extnt_queue_buf,X
-		STA		_tmp2
-		INX
-		LDA		#$8B
-		CPY		_city._difficult
-		BNE		loc_24991
-		LDA		#$4B
-loc_24991:
-		EXTQMOVA
-		DEC		_tmp2
-		BNE		loc_24991
-		DEY
-		BPL		loc_24971
-		EXTQEND
-		LDY		_city._difficult
-		LDA		byte_249B9,Y
-		STA		_tmp6CE
-		LDA		#$50
-		STA		_tmp6CC
-		JMP		_common_select_cursor_control
-
-off_249B0:
-		.BYTE	<[_MMC5_EXRAM+$1A6]
-		.BYTE	<[_MMC5_EXRAM+$1E6]
-		.BYTE	<[_MMC5_EXRAM+$226]
-off_249B3:
-		.BYTE	>[_MMC5_EXRAM+$1A6]
-		.BYTE	>[_MMC5_EXRAM+$1E6]
-		.BYTE	>[_MMC5_EXRAM+$226]
-byte_249B6:
-		.BYTE	$04,$06,$04
-byte_249B9:
-		.BYTE	$6E,$7E,$8E
-
-; =============== S U B	R O U T	I N E =======================================
-_game_setup03_dummy:
-		INC		_game_setup_sub_idx
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_game_setup04_break:
-		INC		_main_sub_idx
-		LDA		#_MUS_IDX_STOP
-		STA		_apu_mus_idx_req
-		JMP		_pal_fade_out
-
-; =============== S U B	R O U T	I N E =======================================
-_game_setup00_new_city_gen:
-		JSR		_ppu_queues_reset
-		JSR		_pal_fade_out
-		LDA		#$24
-		STA		_mmc5_nt_mode_shadow
-		STA		_MMC5_NT_MODE
-		LDA		#$07
-		STA		_scr_res_idx
-		LDA		#$00
-		STA		_scr_res_control_flags
-		FJSRA	_scr_res_common,SRAM,PRG9
-		LDA		_title_sub_idx
-		BEQ		loc_249F4
-		DEC		_main_sub_idx
-		JSR		_pal_fade_out
-loc_249F4:
-		INC		_game_setup_sub_idx
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_rle_nt_res_queue:
-		STY		_ptr0+1
-		STX		_ptr0
-		LDY		#$00
-		PPUQSTART
-loc_24A00:
-		LDA		(_ptr0),Y
-		BEQ		loc_24A28
-		BMI		loc_24A16
-		INY
-		STA		_tmp2
-loc_24A09:
-		LDA		(_ptr0),Y
-		PPUQMOVA
-		INY
-		DEC		_tmp2
-		BNE		loc_24A09
-		BEQ		loc_24A00
-loc_24A16:
-		INY
-		AND		#$7F
-		STA		_tmp2
-		LDA		(_ptr0),Y
-loc_24A1D:
-		PPUQMOVA
-		DEC		_tmp2
-		BNE		loc_24A1D
-		INY
-		BNE		loc_24A00
-loc_24A28:
-		STA		_ppu_queue_buf,X
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_rle_extnt_res_queue:
-		STY		_ptr0+1
-		STX		_ptr0
-		LDY		#$00
-		EXTQSTART
-loc_24A36:
-		LDA		(_ptr0),Y
-		BEQ		loc_24A5E
-		BMI		loc_24A4C
-		INY
-		STA		_tmp2
-loc_24A3F:
-		LDA		(_ptr0),Y
-		EXTQMOVA
-		INY
-		DEC		_tmp2
-		BNE		loc_24A3F
-		BEQ		loc_24A36
-loc_24A4C:
-		INY
-		AND		#$7F
-		STA		_tmp2
-		LDA		(_ptr0),Y
-loc_24A53:
-		EXTQMOVA
-		DEC		_tmp2
-		BNE		loc_24A53
-		INY
-		BNE		loc_24A36
-loc_24A5E:
-		STA		_extnt_queue_buf,X
-		EXTQEND
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup09_practice_msg_init:
-		JSR		_ppu_queues_reset
-		JSR		_pal_fade_out
-		JSR		_render_off
-		LDY		#$80
-		STY		_game_wnd_spr_mode_flag
-		STY		_ppu_ctrl_shadow
-		LDY		#$01
-		STY		_scr_mode_idx
-		INY
-		STY		_scr_res_idx
-		DEC		_mmc5_operation_in_progress_flag
-		JSR		_spr_clear
-		LDA		#$08
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
-		MOVWO	_ptr0,_tlm_practice_wnd_header
-		JSR		_tlm_transfer
+; REDUNDANT
+;		JSR		_ppu_queues_reset
+;		JSR		_pal_fade_out
+;		JSR		_render_off
+;		LDY		#$80
+;		STY		_game_wnd_spr_mode_flag
+;		STY		_ppu_ctrl_shadow
+;		LDY		#$01
+;		STY		_scr_mode_idx
+;		INY
+;		STY		_scr_res_idx
+;		DEC		_mmc5_operation_in_progress_flag
+;		LDA		#$08
+;		STA		_mmc5_nt_mode_shadow
+;		STA		_MMC5_NT_MODE
+;		JSR		_spr_clear
+; -
+		JSR		_game_setup_screen_init			; OPTIMIZED
+; -
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd	; unpack common full screen window
+		MOVWO	_ptr0,_tlm_practice_wnd_header				; and particular window header separately
+		JSR		_ppu_rle_unpack
 ; OPTIMIZED, library idx 0A, 0B now
 		LDA		_tmp6D5
 		CLC
 		ADC		#$0A
-		JSR		_msg_lib_load
+		JSR		_msg_lib_load					; prepare one of two pactice msgs
 ; -
 ; REDUNDANT
 ;		LDXY	_practice_msg0
@@ -1494,69 +1357,76 @@ _game_setup09_practice_msg_init:
 ;		STY		_tmp6D9
 ;		DEY
 ;		STY		_tmp6D8
-		JSR		_render_on
-		INC		_mmc5_operation_in_progress_flag
 		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
-		INC		_game_setup_sub_idx
-		JMP		_pal_fade_in
+; REDUNDANT
+;		INC		_game_setup_sub_idx
+;		JSR		_render_on						; return screen back, fade in
+;		INC		_mmc5_operation_in_progress_flag
+;		JMP		_pal_fade_in
+		JMP		_game_setup_screen_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0A_practice_msg_draw:
-		JSR		_msg_print_out_handler
+		JSR		_msg_print_out_handler			; practice mode briefing display
 		BIT		_pad0_autorep_press
 		BVC		loc_24AE4
-		LDA		#$02
+		LDA		#$02							; press B to return to the title menu
 		STA		_title_sub_idx
 		DEC		_main_sub_idx
 		JMP		_pal_fade_out
 loc_24AE4:
 		BPL		locret_24B0D
-		APUA_SE	_SE_IDX_CLICK
-		LDA		_tmp6D5
-		BNE		loc_24AF6
-		INC		_tmp6D5
-		DEC		_game_setup_sub_idx
+		APUA_SE	_SE_IDX_CLICK					; press A to skip briefing
+		LDA		_tmp6D5							; there are two briefing screens
+		BNE		loc_24AF6						; if current is the first one
+		INC		_tmp6D5							; increment briefing idx and
+		DEC		_game_setup_sub_idx				; warp to the briefing init screen again
 		RTS
 loc_24AF6:
-		LDA		#$08
-		STA		_scenario_idx
+		LDA		#$08							; or else start a new game, special
+		STA		_scenario_idx					; scenario index map 8
 		JSR		_scenario_map_load
 		LDA		#$00
-		STA		_scenario_idx
-		INC		_main_sub_idx
+		STA		_scenario_idx					; return back index to 0
+		INC		_main_sub_idx					; start a new game
 		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
-		JMP		_pal_fade_out
+;		JMP		_pal_fade_out					; REDUNDANT, already fade by map load
 locret_24B0D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0B_scenario_over_init:
-		JSR		_ppu_queues_reset
-		JSR		_pal_fade_out
-		JSR		_render_off
-		LDY		#$80
-		STY		_game_wnd_spr_mode_flag
-		STY		_ppu_ctrl_shadow
-		LDY		#$01
-		STY		_scr_mode_idx
-		INY
-		STY		_scr_res_idx
-		DEC		_mmc5_operation_in_progress_flag
-		LDA		#$08
-		STA		_MMC5_NT_MODE
-		JSR		_spr_clear
-		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
-		LDA		_scenario_result_idx
-		CMP		#$01
-		BEQ		loc_24B49
-		MOVWO	_ptr0,_tlm_scenario_loose_header
-		JSR		_tlm_transfer
+; REDUNDANT
+;		JSR		_ppu_queues_reset
+;		JSR		_pal_fade_out
+;		JSR		_render_off
+;		LDY		#$80
+;		STY		_game_wnd_spr_mode_flag
+;		STY		_ppu_ctrl_shadow
+;		LDY		#$01
+;		STY		_scr_mode_idx
+;		INY
+;		STY		_scr_res_idx
+;		DEC		_mmc5_operation_in_progress_flag
+;		LDA		#$08
+;		STA		_mmc5_nt_mode_shadow
+;		STA		_MMC5_NT_MODE
+;		JSR		_spr_clear
+; -
+		JSR		_game_setup_screen_init			; OPTIMIZED
+; -
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd	; draw common full-screen window
+		LDA		_scenario_result_idx			; actually, this window already have "YOU ARE A WINNER!"
+		CMP		#$01							; header which overwriting with other header elswhere
+		BEQ		loc_24B49						; but here it is already there
+		MOVWO	_ptr0,_tlm_scenario_loose_header; so we need another header header only for lose scenario
+		JSR		_ppu_rle_unpack
 loc_24B49:
 		LDA		_scenario_result_idx
 		CMP		#$01
-		BNE		loc_24B6C
+		BNE		loc_24B6C						; if scenario completed, update completion flags in sram
 		JSR		_sram_on
 		LDY		_scenario_idx
 		LDA		_city._scenarios_clear_flags
@@ -1582,55 +1452,237 @@ loc_24B6C:
 ;		STY		_tmp6D9
 ;		DEY
 ;		STY		_tmp6D8
-		JSR		_render_on
-		INC		_mmc5_operation_in_progress_flag
 		LDA		#$10
 		STA		_screen_pal_cur_bg_idx
-		INC		_game_setup_sub_idx
-		JMP		_pal_fade_in
+; REDUNDANT
+;		INC		_game_setup_sub_idx
+;		JSR		_render_on
+;		INC		_mmc5_operation_in_progress_flag
+;		JMP		_pal_fade_in
+		JMP		_game_setup_screen_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0C_scenario_over_input:
-		JSR		_msg_print_out_handler
-		LDA		_pad0_autorep_press
+		JSR		_msg_print_out_handler			; similar header as for practice screen
+		LDA		_pad0_autorep_press				; but A/B skips alltogether
 		AND		#$C0
 		BEQ		locret_24BC1
 		LDA		#$00
-		STA		_scenario_result_idx
+		STA		_scenario_result_idx			; reset scenario results for new game
 		LDX		#$05
-		LDA		_city._all_scenarios_are_clear_ram_flag
+		LDA		_city._all_scenarios_are_clear_ram_flag	; if we already beat all, just select another scenario
 		BNE		loc_24BBE
-		LDA		_city._scenarios_clear_flags
+		LDA		_city._scenarios_clear_flags	; else check if we beat all by bitmasks
 		CMP		#$3F
 		BNE		loc_24BBE
-		LDX		#$0F
+		LDX		#$0F							; if yes, then jump to ending
 loc_24BBE:
 		STX		_game_setup_sub_idx
 locret_24BC1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup0F_all_complete_init:
-		JSR		_ppu_queues_reset
+_game_setup0D_difficult_init:
+		JSR		_ppu_queues_reset				; much more simpler game setup
 		JSR		_pal_fade_out
 		JSR		_render_off
-		LDY		#$80
-		STY		_game_wnd_spr_mode_flag
-		STY		_ppu_ctrl_shadow
-		LDY		#$01
-		STY		_scr_mode_idx
-		INY
-		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
-		LDA		#$08
-		STA		_MMC5_NT_MODE
-		JSR		_spr_clear
-		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
-		MOVWO	_ptr0,_tlm_all_complete
-		JSR		_tlm_transfer
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_game_play_level
+		JSR		_difficult_scr_cursor_draw
+		LDA		#$00
+		STA		_tmp6D0+1
+		STA		_tmp6D0
+; REDUNDANT
+;		INC		_game_setup_sub_idx
+;		JSR		_render_on
+;		INC		_mmc5_operation_in_progress_flag
+;		JMP		_pal_fade_in
+		JMP		_game_setup_screen_start
+
+; =============== S U B	R O U T	I N E =======================================
+_game_setup0E_difficult_input:
+		JSR		_difficult_scr_cursor_move		; cursor movement input test
+		JSR		_common_select_cursor_control	; cursor draw
+		BIT		_pad0_autorep_press
+		BPL		loc_2493D						; press A button
+		APUA_SE	_SE_IDX_CLICK
+; REDUNDANT
+;		LDA		_city._name						; test for default names
+;		CMP		#$01
+;		BNE		loc_24916						; test if city name is empty
+;		LDY		#$08							; get default name "SIMCITY"
+;		LDX		_scenario_titles_ofs_lib,Y
+;		LDY		#$01
+;loc_24907:
+;		LDA		_scenario_town_names_list,X		; write default name to buffer
+;		BMI		loc_24913
+;		STA		_city._name,Y
+;		INX
+;		INY
+;		BNE		loc_24907
+;loc_24913:
+;		STY		_city._name
+;loc_24916:
+; -
+		LDX		#$08							; OPTIMIZED, default city name, SIMCITY
+		LDY		#$00
+		JSR		_set_default_name
+; -
+; REDUNDANT
+;		LDA		_city._sister_name				; the same for sister city name
+;		CMP		#$01
+;		BNE		loc_24933
+;		LDY		#$08
+;		LDX		_scenario_titles_ofs_lib,Y		; in this mode only it has a value
+;		LDY		#$01
+;loc_24924:
+;		LDA		_scenario_town_names_list,X
+;		BMI		loc_24930
+;		STA		_city._sister_name,Y
+;		INX
+;		INY
+;		BNE		loc_24924
+;loc_24930:
+;		STY		_city._sister_name
+; -
+		LDX		#$08							; OPTIMIZED, default sister city name, SIMCITY
+		LDY		#$0B
+		JSR		_set_default_name
+; -
+loc_24933:
+;		INC		_main_sub_idx					; REDUNDANT, go to the main game, with fade out
+;		LDA		#_MUS_IDX_STOP
+;		STA		_apu_mus_idx_req
+;		JMP		_pal_fade_out
+		JMP		_game_setup04_game_start		; OPTIMIZED
+loc_2493D:
+		BVC		locret_24944					; press the B button
+		LDA		#$01
+		STA		_game_setup_sub_idx				; return to name entry
+locret_24944:
+		RTS
+
+; OPTIMIZED, merged common routine, may be used for other names initialization
+; further
+;
+; =============== S U B	R O U T	I N E =======================================
+_set_default_name:
+		LDA		_city._name,Y					; test for default names
+		CMP		#$01
+		BNE		locret_24916					; test if city name is empty
+		TYA										; backup start of name buffer
+		PHA
+		LDA		_scenario_titles_ofs_lib,X		; load ofs for name in library
+		TAX
+		INY
+loc_249070:
+		LDA		_scenario_town_names_list,X		; write default name to buffer
+		BMI		loc_249130
+		STA		_city._name,Y
+		INX
+		INY
+		BNE		loc_249070
+loc_249130:
+		PLA										; restore name buf start
+		TAX										; X = start of name buf again
+		TYA										; A = Y = name len
+		STA		_city._name,X
+locret_24916:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_difficult_scr_cursor_move:
+		LDA		_pad0_autorep_press				; up-down test
+		AND		#$0C
+		BEQ		locret_2496C
+		LDY		_city._difficult				; change difficult up down
+		CMP		#$04
+		BNE		.diff_up						; test for button
+		CPY		#$02							; down pressed, test if max value already
+		BEQ		locret_2496C
+		INY										; increment menu option
+		BNE		.diff_store
+.diff_up:
+		CPY		#$00
+		BEQ		locret_2496C					; for up test min value 0
+		DEY										; if not, decrease
+.diff_store:
+		APUA_SE	_SE_IDX_CLICK					; play se
+		STY		_city._difficult				; common store
+		JMP		_difficult_scr_cursor_draw		; highlit difficult option
+locret_2496C:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_difficult_scr_cursor_draw:
+		EXTQSTART								; menu highlighted with extnt codes
+		LDY		#$02							; draw all three options at a time
+loc_24971:
+		LDA		_diff_scr_extnt_ofs_list_lo,Y	; load pos for cur line
+		EXTQMOVA
+		LDA		_diff_scr_extnt_ofs_list_hi,Y
+		EXTQMOVA
+		LDA		_diff_scr_extnt_len_list,Y		; load len for cur line (easy/hard are shorter)
+		EXTQMOVA
+		STA		_tmp2							; store size as well as tmp counter
+		LDA		#$8B
+		CPY		_city._difficult				; select extnt byte for highlighted option
+		BNE		loc_24991
+		LDA		#$4B							; default byte for other options
+loc_24991:
+		EXTQMOVA
+		DEC		_tmp2
+		BNE		loc_24991						; fill
+		DEY
+		BPL		loc_24971						; repeat for all options
+		EXTQEND
+		LDY		_city._difficult
+		LDA		_diff_scr_cursor_pos_list,Y		; set the cursor position for an option
+		STA		_tmp6CE
+		LDA		#$50
+		STA		_tmp6CC
+		JMP		_common_select_cursor_control	; draw cursor
+
+_diff_scr_extnt_ofs_list_lo:
+		.BYTE	<[_MMC5_EXRAM+$1A6]
+		.BYTE	<[_MMC5_EXRAM+$1E6]
+		.BYTE	<[_MMC5_EXRAM+$226]
+_diff_scr_extnt_ofs_list_hi:
+		.BYTE	>[_MMC5_EXRAM+$1A6]
+		.BYTE	>[_MMC5_EXRAM+$1E6]
+		.BYTE	>[_MMC5_EXRAM+$226]
+_diff_scr_extnt_len_list:
+		.BYTE	$04,$06,$04
+_diff_scr_cursor_pos_list:
+		.BYTE	$6E,$7E,$8E
+
+; =============== S U B	R O U T	I N E =======================================
+_game_setup0F_all_complete_init:
+; REDUNDANT
+;		JSR		_ppu_queues_reset
+;		JSR		_pal_fade_out
+;		JSR		_render_off
+;		LDY		#$80
+;		STY		_game_wnd_spr_mode_flag
+;		STY		_ppu_ctrl_shadow
+;		LDY		#$01
+;		STY		_scr_mode_idx
+;		INY
+;		STY		_scr_res_idx
+;		DEC		_mmc5_operation_in_progress_flag
+;		LDA		#$08
+;		STA		_mmc5_nt_mode_shadow
+;		STA		_MMC5_NT_MODE
+;		JSR		_spr_clear
+; -
+		JSR		_game_setup_screen_init			; OPTIMIZED
+; -
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd	; this is a game complete
+		MOVWO	_ptr0,_tlm_all_complete						; screen
+		JSR		_ppu_rle_unpack
 ; OPTIMIZED, msg idx 0C
 		LDA		#$0C
-		JSR		_msg_lib_load
+		JSR		_msg_lib_load								; all complete message load
 ; REDUNDANT
 ;		MOVWO	_tmp6D6,_all_scenarios_clear_msg
 ;		LDY		#$00
@@ -1640,76 +1692,271 @@ _game_setup0F_all_complete_init:
 ;		STY		_tmp6D8
 		JSR		_sram_on
 		LDA		#$01
-		STA		_city._all_scenarios_are_clear_ram_flag
-		STA		_sram_vars._all_scenarios_are_clear_ram_flag
+		STA		_city._all_scenarios_are_clear_ram_flag		; set all complete global flag
+		STA		_sram_vars._all_scenarios_are_clear_ram_flag; now it's stored in sram forever
 		FJSRA	_sram_sum_reinit,SRAM,PRG3
 		JSR		_sram_off
-		JSR		_render_on
-		INC		_mmc5_operation_in_progress_flag
 		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
-		INC		_game_setup_sub_idx
-		JMP		_pal_fade_in
+; REDUNDANT
+;		INC		_game_setup_sub_idx
+;		JSR		_render_on
+;		INC		_mmc5_operation_in_progress_flag
+;		JMP		_pal_fade_in
+		JMP		_game_setup_screen_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup10_all_complete_input:
-		JSR		_msg_print_out_handler
-		LDA		_pad0_autorep_press
+		JSR		_msg_print_out_handler			; the same as for scenario complete screen
+		LDA		_pad0_autorep_press				; A/B skips message
 		AND		#$C0
 		BEQ		locret_24C44
 		LDA		#$00
-		STA		_scenario_result_idx
-		LDA		#$05
+		STA		_scenario_result_idx			; but now you will jump to scenario screen
+		LDA		#$05							; in any case
 		STA		_game_setup_sub_idx
 locret_24C44:
 		RTS
 
+; REDUNDANT, two functions to send another type of tilemaps: RLE-packed queue
+; lists, both called in conjunction always so why we don't merge them and
+; make same librarification as for other similar routines?
+; this routine used only in this bank, so no need to store it in system bank
+;
+; usage of this routine here is kinda redundant, for small arrays it used
+; just as method to determine the data size, not for pack it.. so it may
+; be converted to regular _tlm_lib_queue reoutine instead.
+;
+; repeated bytes less than 5 in size aren't so optimal though, only 1 byte
+; per 4 will be saved...
+;
+; TODO, all this stuff may be removed if we'd using the same rle codes for
+; dequeue routines and store already rle packed data into the buffer
+;
+; =============== S U B	R O U T	I N E =======================================
+;_rle_nt_res_queue:
+_rle_tlm_queue:
+		LDA		_rle_tlm_lib,X					; OPTIMIZED, librarification
+		STA		_ptr0
+		LDA		_rle_tlm_lib+1,X
+		STA		_ptr0+1
+		LDA		_rle_tlm_lib+2,X
+		STA		_ptr4
+		LDA		_rle_tlm_lib+3,X
+		STA		_ptr4+1
+;		STY		_ptr0+1							; store ptr in X/Y
+;		STX		_ptr0
+		LDY		#$00
+		PPUQSTART
+.nt_rle_fetch:
+		LDA		(_ptr0),Y						; fetch RLE code
+		BEQ		.nt_rle_stop
+		BMI		.nt_rle_repeat
+		INY										; bit 80 clear, copy code
+		STA		_tmp2							; store copy counter
+.nt_rle_copy:
+		LDA		(_ptr0),Y						; copy data
+		PPUQMOVA
+		INY
+		DEC		_tmp2
+		BNE		.nt_rle_copy
+		BEQ		.nt_rle_fetch					; fetch again
+.nt_rle_repeat:
+		INY										; bit 80 set, repeat mode
+		AND		#$7F							; clear bit
+		STA		_tmp2							; the rest is repeat counter
+		LDA		(_ptr0),Y						; read byte to repeat
+loc_24A1D:
+		PPUQMOVA								; store
+		DEC		_tmp2
+		BNE		loc_24A1D
+		INY
+		BNE		.nt_rle_fetch					; fetch again
+.nt_rle_stop:
+		STA		_ppu_queue_buf,X				; store zero as stop contition for ppu queue
+		PPUQEND									; exit
+;		RTS
+; REDUNDANT, merged
+; =============== S U B	R O U T	I N E =======================================
+;_rle_extnt_res_queue:
+;		STY		_ptr0+1							; the same for extnt, except another buffer used
+;		STX		_ptr0
+		LDY		#$00
+		EXTQSTART
+loc_24A36:
+		LDA		(_ptr4),Y
+		BEQ		loc_24A5E
+		BMI		loc_24A4C
+		INY
+		STA		_tmp2
+loc_24A3F:
+		LDA		(_ptr4),Y
+		EXTQMOVA
+		INY
+		DEC		_tmp2
+		BNE		loc_24A3F
+		BEQ		loc_24A36
+loc_24A4C:
+		INY
+		AND		#$7F
+		STA		_tmp2
+		LDA		(_ptr4),Y
+loc_24A53:
+		EXTQMOVA
+		DEC		_tmp2
+		BNE		loc_24A53
+		INY
+		BNE		loc_24A36
+loc_24A5E:
+		STA		_extnt_queue_buf,X
+		EXTQEND
+		RTS
+
+_rle_tlm_lib:
+		.WORD	_rle_tlm_nt_clear_area,_rle_tlm_extnt_clear_area	; 00
+		.WORD	_rle_tlm_nt_input_name,_rle_tlm_extnt_input_name	; 04
+		.WORD	_rle_tlm_nt_input_word,_rle_tlm_extnt_input_word	; 08
+
+; OPTIMIZED, not RLE anymore, moved to simple tlm transfer routine instead.
 _tlm_nt_back_button_press:
-		.BYTE	$0A,$1A,$22,$02,$C0,$C0,$3A,$22,$02,$C4,$DA,$00
+;		.BYTE	$0A		; RLE copy
+		.BYTE	$1A,$22,$02,$C0,$C0,$3A,$22,$02,$C4,$DA
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_extnt_back_button_press:
-		.BYTE	$0A,$1A,$5E,$02,$0A,$0A,$3A,$5E,$02,$0A,$0A,$00
+;		.BYTE	$0A		; RLE copy
+		.BYTE	$1A,$5E,$02,$0A,$0A,$3A,$5E,$02,$0A,$0A
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_nt_space_press:
-		.BYTE	$0B,$58,$22,$04,$C2,$C3,$C2,$C2,$78,$22,$01,$C1,$00
+;		.BYTE	$0B		; RLE copy
+		.BYTE	$58,$22,$04,$C2,$C3,$C2,$C2,$78,$22,$01,$C1
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_extnt_space_press:
-		.BYTE	$0B,$58,$5E,$04,$0A,$0A,$0A,$0A,$78,$5E,$01,$0A,$00
+;		.BYTE	$0B		; RLE copy
+		.BYTE	$58,$5E,$04,$0A,$0A,$0A,$0A,$78,$5E,$01,$0A
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_nt_end_press:
-		.BYTE	$15,$B8,$22,$04,$C0,$C0,$C0,$C0,$D8,$22,$04,$B0,$B1,$B2,$B3,$F8
-		.BYTE	$22,$04,$C0,$C1,$C2,$C3,$00
+;		.BYTE	$15		; RLE copy
+		.BYTE	$B8,$22,$04,$C0,$C0,$C0,$C0,$D8,$22,$04,$B0,$B1,$B2,$B3,$F8,$22,$04,$C0,$C1,$C2,$C3
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_extnt_end_press:
-		.BYTE	$15,$B8,$5E,$04,$0A,$0A,$0A,$0A,$D8,$5E,$04,$C8,$C8,$C8,$C8,$F8
-		.BYTE	$5E,$04,$C8,$C8,$C8,$C8,$00
+;		.BYTE	$15		; RLE copy
+		.BYTE	$B8,$5E,$04,$0A,$0A,$0A,$0A,$D8,$5E,$04,$C8,$C8,$C8,$C8,$F8,$5E,$04,$C8,$C8,$C8,$C8
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_nt_all_buttons_release:
-		.BYTE	$2A,$1A,$22,$02,$C1,$C1,$3A,$22,$02,$43,$4C,$58,$22,$04,$2A,$4E
-		.BYTE	$2A,$2A,$78,$22,$01,$DD,$B8,$22,$04,$C1,$C1,$C1,$C1,$D8,$22,$04
-		.BYTE	$A1,$A2,$A3,$A4,$F8,$22,$04,$B1,$B2,$B3,$B4,$00
+;		.BYTE	$2A		; RLE copy
+		.BYTE	$1A,$22,$02,$C1,$C1,$3A,$22,$02,$43,$4C,$58,$22,$04,$2A,$4E,$2A
+		.BYTE	$2A,$78,$22,$01,$DD,$B8,$22,$04,$C1,$C1,$C1,$C1,$D8,$22,$04,$A1
+		.BYTE	$A2,$A3,$A4,$F8,$22,$04,$B1,$B2,$B3,$B4
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
 _tlm_extnt_all_buttons_release:
-		.BYTE	$2A,$1A,$5E,$02,$06,$06,$3A,$5E,$02,$8B,$8B,$58,$5E,$04,$07,$07
-		.BYTE	$07,$07,$78,$5E,$01,$89,$B8,$5E,$04,$06,$06,$06,$06,$D8,$5E,$04
-		.BYTE	$CA,$CA,$CA,$CA,$F8,$5E,$04,$CA,$CA,$CA,$CA,$00
+;		.BYTE	$2A		; RLE copy
+		.BYTE	$1A,$5E,$02,$06,$06,$3A,$5E,$02,$8B,$8B,$58,$5E,$04,$07,$07,$07
+		.BYTE	$07,$78,$5E,$01,$89,$B8,$5E,$04,$06,$06,$06,$06,$D8,$5E,$04,$CA
+		.BYTE	$CA,$CA,$CA,$F8,$5E,$04,$CA,$CA,$CA,$CA
+		.BYTE	$FF
+;		.BYTE	$00		; RLE stop
+
+; RLE data left
 _rle_tlm_nt_clear_area:
-		.BYTE	$03,$42,$21,$1C,$9C,$DD,$03,$22,$21,$1C,$9C,$DD,$03,$02,$21,$1C
-		.BYTE	$9C,$DD,$03,$E2,$20,$1C,$9C,$DD,$03,$C2,$20,$1C,$9C,$DD,$03,$A2
-		.BYTE	$20,$1C,$9C,$DD,$03,$82,$20,$1C,$9C,$DD,$00
+		.BYTE	$03		; RLE copy
+		.BYTE	$42,$21,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$03		; RLE code
+		.BYTE	$22,$21,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$03		; RLE code
+		.BYTE	$02,$21,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$03		; RLE code
+		.BYTE	$E2,$20,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$03		; RLE code
+		.BYTE	$C2,$20,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$03		; RLE code
+		.BYTE	$A2,$20,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$03		; RLE code
+		.BYTE	$82,$20,$1C
+		.BYTE	$9C,$DD	; RLE repeat
+		.BYTE	$00		; RLE stop
 _rle_tlm_extnt_clear_area:
-		.BYTE	$03,$42,$5D,$1C,$9C,$86,$03,$22,$5D,$1C,$9C,$86,$03,$02,$5D,$1C
-		.BYTE	$9C,$86,$03,$E2,$5C,$1C,$9C,$86,$03,$C2,$5C,$1C,$9C,$86,$03,$A2
-		.BYTE	$5C,$1C,$9C,$86,$03,$82,$5C,$1C,$9C,$86,$00
+		.BYTE	$03		; RLE copy
+		.BYTE	$42,$5D,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$03		; RLE copy
+		.BYTE	$22,$5D,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$03		; RLE copy
+		.BYTE	$02,$5D,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$03		; RLE copy
+		.BYTE	$E2,$5C,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$03		; RLE copy
+		.BYTE	$C2,$5C,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$03		; RLE copy
+		.BYTE	$A2,$5C,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$03		; RLE copy
+		.BYTE	$82,$5C,$1C
+		.BYTE	$9C,$86	; RLE repeat
+		.BYTE	$00		; RLE stop
 _rle_tlm_nt_input_name:
-		.BYTE	$04,$83,$20,$1A,$A5,$98,$A6,$43,$A7,$A3,$20,$1A,$B5,$DF,$86,$8C
-		.BYTE	$8C,$C5,$AB,$DF,$88,$8D,$C5,$AD,$DF,$8A,$C2,$AB,$7B,$79,$C4,$DF
-		.BYTE	$AE,$AC,$C6,$87,$DF,$B7,$C3,$20,$1A,$B5,$DF,$96,$9C,$89,$D5,$BB
-		.BYTE	$DF,$98,$9D,$D5,$BD,$DF,$9A,$D2,$BB,$8B,$DF,$D4,$DF,$BE,$BC,$D6
-		.BYTE	$97,$DF,$B7,$E3,$20,$1A,$B5,$F9,$F9,$F9,$99,$8B,$F9,$01,$7A,$88
-		.BYTE	$F9,$05,$B7,$03,$21,$1A,$B5,$98,$DC,$05,$B7,$23,$21,$1A,$B5,$98
-		.BYTE	$DC,$05,$B7,$43,$21,$1A,$C5,$98,$C6,$01,$C7,$00
+		.BYTE	$04		; RLE copy
+		.BYTE	$83,$20,$1A,$A5
+		.BYTE	$98,$A6	; RLE repeat
+		.BYTE	$43		; RLE copy
+		.BYTE	$A7,$A3,$20,$1A,$B5,$DF,$86,$8C,$8C,$C5,$AB,$DF,$88,$8D,$C5,$AD
+		.BYTE	$DF,$8A,$C2,$AB,$7B,$79,$C4,$DF,$AE,$AC,$C6,$87,$DF,$B7,$C3,$20
+		.BYTE	$1A,$B5,$DF,$96,$9C,$89,$D5,$BB,$DF,$98,$9D,$D5,$BD,$DF,$9A,$D2
+		.BYTE	$BB,$8B,$DF,$D4,$DF,$BE,$BC,$D6,$97,$DF,$B7,$E3,$20,$1A,$B5,$F9
+		.BYTE	$F9,$F9,$99
+		.BYTE	$8B,$F9	; RLE repeat
+		.BYTE	$01		; RLE copy
+		.BYTE	$7A
+		.BYTE	$88,$F9	; RLE repeat
+		.BYTE	$05		; RLE copy
+		.BYTE	$B7,$03,$21,$1A,$B5
+		.BYTE	$98,$DC	; RLE repeat
+		.BYTE	$05		; RLE copy
+		.BYTE	$B7,$23,$21,$1A,$B5
+		.BYTE	$98,$DC	; RLE repeat
+		.BYTE	$05		; RLE copy
+		.BYTE	$B7,$43,$21,$1A,$C5
+		.BYTE	$98,$C6	; RLE repeat
+		.BYTE	$01		; RLE copy
+		.BYTE	$C7
+		.BYTE	$00		; RLE stop
 _rle_tlm_extnt_input_name:
-		.BYTE	$03,$83,$5C,$1A,$9A,$CA,$42,$A3,$5C,$1A,$CA,$01,$01,$01,$01,$00
-		.BYTE	$00,$01,$01,$01,$00,$00,$01,$01,$00,$00,$01,$01,$00,$01,$00,$00
-		.BYTE	$00,$01,$01,$CA,$C3,$5C,$1A,$CA,$01,$01,$01,$01,$00,$00,$01,$01
-		.BYTE	$01,$00,$00,$01,$01,$00,$00,$01,$01,$00,$01,$00,$00,$00,$01,$01
-		.BYTE	$CA,$E3,$5C,$1A,$CA,$80,$80,$80,$01,$8B,$80,$0E,$01,$80,$80,$80
-		.BYTE	$80,$80,$80,$80,$80,$CA,$03,$5D,$1A,$CA,$98,$06,$05,$CA,$23,$5D
-		.BYTE	$1A,$CA,$98,$06,$04,$CA,$43,$5D,$1A,$9A,$CA,$00
+		.BYTE	$03		; RLE copy
+		.BYTE	$83,$5C,$1A
+		.BYTE	$9A,$CA	; RLE repeat
+		.BYTE	$42		; RLE copy
+		.BYTE	$A3,$5C,$1A,$CA,$01,$01,$01,$01,$00,$00,$01,$01,$01,$00,$00,$01
+		.BYTE	$01,$00,$00,$01,$01,$00,$01,$00,$00,$00,$01,$01,$CA,$C3,$5C,$1A
+		.BYTE	$CA,$01,$01,$01,$01,$00,$00,$01,$01,$01,$00,$00,$01,$01,$00,$00
+		.BYTE	$01,$01,$00,$01,$00,$00,$00,$01,$01,$CA,$E3,$5C,$1A,$CA,$80,$80
+		.BYTE	$80,$01
+		.BYTE	$8B,$80	; RLE repeat
+		.BYTE	$0E		; RLE copy
+		.BYTE	$01,$80,$80,$80,$80,$80,$80,$80,$80,$CA,$03,$5D,$1A,$CA
+		.BYTE	$98,$06	; RLE repeat
+		.BYTE	$05		; RLE copy
+		.BYTE	$CA,$23,$5D,$1A,$CA
+		.BYTE	$98,$06	; RLE repeat
+		.BYTE	$04		; RLE copy
+		.BYTE	$CA,$43,$5D,$1A
+		.BYTE	$9A,$CA	; RLE repeat
+		.BYTE	$00		; RLE stop
 _rle_tlm_nt_input_word:
 		.BYTE	$04,$82,$20,$1C,$A5,$9A,$A6,$47,$A7,$A2,$20,$1C,$B5,$DF,$86,$8C
 		.BYTE	$8C,$C5,$AB,$DF,$88,$8D,$C5,$AD,$DF,$A6,$AC,$C7,$8D,$AD,$C2,$AB

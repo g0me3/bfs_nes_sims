@@ -510,9 +510,9 @@ _scr_common_draw:
 		LDA		#$01
 		JSR		_ppu_area_fill					; clear EXTNT mapper do NT3 with 01
 		MOVWO	_ptr0,_tlm_info_maps_nt_common
-;		JSR		_tlm_transfer					; REDUNDANT, merged
+;		JSR		_ppu_rle_unpack					; REDUNDANT, merged
 ;		MOVWO	_ptr0,_tlm_info_maps_extnt_common
-		JMP		_tlm_transfer
+		JMP		_ppu_rle_unpack
 loc_A0A9A:
 ; OPTIMIZED, 156 bytes less
 ; -
@@ -529,7 +529,7 @@ loc_A0A9B:
 		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		JSR		_tlm_res_unpack
+		JSR		_res_ppu_lz_unpack
 		POPB	_MMC5_NT_MODE
 		RTS
 ; -
@@ -567,42 +567,42 @@ loc_A0A9B:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_tlm_res_unpack,_tlm_res_scr1
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr1
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res2_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_tlm_res_unpack,_tlm_res_scr2
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr2
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res3_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_tlm_res_unpack,_tlm_res_scr3
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr3
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res4_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_tlm_res_unpack,_tlm_res_scr4
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr4
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res5_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_tlm_res_unpack,_tlm_res_scr5
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr5
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res7_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_tlm_res_unpack,_tlm_res_scr7
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr7
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res6_draw:
@@ -616,7 +616,7 @@ loc_A0A9B:
 ;loc_A0B5E:
 ;		LDXY	_tlm_res_scr6B
 ;loc_A0B62:
-;		JSR		_tlm_res_unpack
+;		JSR		_res_ppu_lz_unpack
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ; -

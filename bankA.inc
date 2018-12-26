@@ -2147,9 +2147,9 @@ loc_105198:
 .scenario_failed:
 		LDA		#$02
 loc_10519E:
-		STA		_scenario_result_idx
+		STA		_scenario_result_idx			; set additional scenario result flag
 		LDA		#$0B
-		STA		_game_setup_sub_idx
+		STA		_game_setup_sub_idx				; special case for scenario over mode
 		DEC		_main_sub_idx
 		RTS
 
