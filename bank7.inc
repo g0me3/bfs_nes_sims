@@ -1130,7 +1130,7 @@ loc_B8A8A:
 		STA		_city._loan_period					; just only for 21 year
 ; REDUNDANT, never used here, the loan amount fixed to 500
 ; and calculated manually at _fiscal_year_results_calc
-;		MOVWI	_fund_alloc._loan_fee,500			; 500 a year
+;		MOVWI	_loan_fee,500						; 500 a year
 		INC		_tmp118+2
 		RTS
 loc_B8AA2:
@@ -1977,10 +1977,10 @@ _scr_res_hndl2_B_budget_input:
 		BCS		.budget_screen_exit_test		; the rest are budget adjustments
 ; REDUNDANT, called from PRG9, call back PRG9 as far routine
 ; -
-; 		FJSRA	_budget_funds_recalc,PRG7,PRG9
+; 		FJSRA	_budget_cur_fund_update,PRG7,PRG9
 ; -
 ; OPTIMIZED, here both functions are in the same CPU space
- 		JSR		_budget_funds_recalc
+ 		JSR		_budget_cur_fund_update
 ; -
 		RTS
 .budget_screen_exit_test:
@@ -1992,7 +1992,7 @@ _scr_res_hndl2_B_budget_input:
 		LDA		#$00							; REDUNDANT, not needed here, vars are clear
 		STA		_budget_display_timer			; always upon entering this screen and always
 		STA		_budget_display_timer+1
-		JSR		_budget_funds_amount_test		; calc amount of total funds, if less than budget, can't skip
+		JSR		_budget_funds_alloc_sum_test		; calc amount of total funds, if less than budget, can't skip
 		BCC		.budget_screen_animate
 		LDA		_budget_screen_return_to_info_maps_flag
 		BEQ		.budget_normal_exit
@@ -2025,29 +2025,30 @@ _scr_res_hndl2_B_budget_input:
 		STA		_scr_res_control_flags
 		JMP		_pal_fade_out
 
-; REDUNDANT, merged with _budget_funds_amount_test
+; REDUNDANT, merged with _budget_funds_alloc_sum_test
 ; =============== S U B	R O U T	I N E =======================================
 ;_budget_amount_test:
 ;		LDY		#$00
 ;		LDX		#$03
 ;		SEC
 ;loc_B9298:
-;		LDA		_end_of_year_money,Y
-;		SBC		_funds_alloc_sum,Y
+;		LDA		_budget_money,Y
+;		SBC		_budget_funds_alloc_sum,Y
 ;		INY
 ;		DEX
 ;		BNE		loc_B9298
 ;		RTS
 
+; REDUNDANT, moved to PRG9 locally
 ; =============== S U B	R O U T	I N E =======================================
-_save_taxes_data:
-		LDA		_fund_alloc._tax
-		STA		_city._tax_rate
-		MOVW	_fire_fund_alloc,_fund_alloc._fire
-		MOVW	_police_fund_alloc,_fund_alloc._police
-		MOVW	_road_fund_alloc,_fund_alloc._trans
-		MOVW	_education_fund_alloc,_fund_alloc._education
-		RTS
+;_save_taxes_data:
+;		LDA		_budget_fund_alloc._tax
+;		STA		_city._tax_rate
+;		MOVW	_fund_alloc_fire,_budget_fund_alloc._fire
+;		MOVW	_fund_alloc_police,_budget_fund_alloc._police
+;		MOVW	_fund_alloc_trans,_budget_fund_alloc._trans
+;		MOVW	_fund_alloc_education,_budget_fund_alloc._education
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_screen_dpad_test:

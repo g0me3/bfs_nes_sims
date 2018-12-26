@@ -2366,7 +2366,7 @@ loc_EAEEC:
 		STA		_tmp118+2
 		LDA		#$A0
 		STA		_scr_res_control_flags			; draw static values for budget screen calculated
-		MOVD	_ptr0,_taxes_collected			; in _fiscal_year_results_calc before calling this
+		MOVD	_ptr0,_city_taxes_collected			; in _fiscal_year_results_calc before calling this
 		JSR		_hex_to_dec99999				; draw function
 		LDA		#$01
 		JSR		_printf_num_lib
@@ -2423,26 +2423,26 @@ loc_EAFD0:
 		LDX		#$03							; to fund all objects
 		CLC
 loc_EAFD5:
-		LDA		_taxes_collected,Y				; first we calc the overall money colledcted by this year
+		LDA		_city_taxes_collected,Y			; first we calc the overall money colledcted by this year
 		ADC		_city._money,Y
-		STA		_end_of_year_money,Y			; temporary value for planning the budget
+		STA		_budget_money,Y					; temporary value for planning the budget
 		INY
 		DEX
 		BNE		loc_EAFD5
 		JSR		_budget_funds_alloc_calc		; calc allocated value by previously calculated fund rates
 		JSR		_budget_funds_alloc_sum_calc	; sum of all funds minus loaned money
-		JSR		_budget_funds_amount_test		; test if funds are enough
-		BCS		loc_EAFF8						; if funding is enough, do additional
-		LDA		#$08							; education funding
-		JSR		_budget_tax_subtract
-		JSR		_budget_funds_alloc_sum_calc	; final corrections if there is no much money
-		JSR		_budget_fund_rates_recalc
+		JSR		_budget_funds_alloc_sum_test	; test if you can afford full funding
+		BCS		loc_EAFF8						; if you haven't enough money for funding all on 100 percent
+		LDA		#$08							; start to decrease values from edu to police continuosly
+		JSR		_budget_funds_alloc_adjust		; unless money are enough finally.
+		JSR		_budget_funds_alloc_sum_calc	; recalculate sum one more time as we changed allocations here
+		JSR		_budget_funds_rate_recalc		; also recalculate a new rates for funds
 loc_EAFF8:
 		LDY		#$00
 		STY		_budget_tax_cur_pos
 ; -
 loc_EAFFD:
-		JSR		_budget_tax_cur_draw			; now draw calculated values
+		JSR		_budget_cur_fund_draw			; now draw calculated values
 		LDY		_budget_tax_cur_pos
 		INY
 		INY
@@ -2501,6 +2501,449 @@ _tlm_extnt_bank_loan:
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl2_B_budget_input:
 		FJSRA	_scr_res_hndl2_B_budget_input,PRG7,PRG9
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_cur_fund_update:
+;		FJSRA	_budget_cur_fund_alloc_update,PRG6,PRG9; REDUNDANT, now local
+		JSR		_budget_cur_fund_alloc_update	; apply allocated funds value changes for cur column
+		JSR		_budget_funds_alloc_sum_calc	; same as at the budget init, summing
+		JSR		_budget_funds_alloc_sum_test	; testing
+		BCS		_budget_cur_fund_draw			; skip to draw if all is ok
+		LDA		_budget_tax_cur_pos				; or recalculate if money aren't enough
+		JSR		_budget_funds_alloc_adjust		; if overall money aren't enough, decrease allocations automatically
+		JSR		_budget_funds_alloc_sum_calc	; this will clamp the last value to it's max always
+		JSR		_budget_cur_fund_rate_recalc
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_cur_fund_draw:
+;		JSR		_taxes_alloc_hex_to_dec9999		; REDUNDANT
+; OPTIMIZED, unufication
+		LDA		_budget_tax_cur_pos				; get currently selected budget screen row
+		AND		#$FE
+		TAY
+		LDA		_budget_fund_alloc,Y					; get the current allocated funding amount
+		STA		_ptr0
+		LDA		_budget_fund_alloc+1,Y
+		STA		_ptr0+1
+		JSR		_hex_to_dec9999
+; -
+		LDY		_budget_tax_cur_pos				; draw decimal converted value
+		LDA		_budget_fund_print_idx_list,Y	; common for tax value threated as alloc amount here
+		JSR		_printf_num_lib
+		LDA		_budget_tax_cur_pos				; now, for all other than tax positions need to
+		AND		#$FE							; draw percents as well
+		BEQ		loc_EB328
+		JSR		_budget_cur_fund_rate_recalc	; calc current allocation percentage
+		LDA		#$00
+		STA		_ptr0+1
+		LDA		_budget_tax_cur_pos				; get the rate value (0-100)
+		LSR
+		TAY
+		DEY
+		LDA		_budget_fund_rate,Y
+		STA		_ptr0
+		JSR		_hex_to_dec9999					; to decimal
+		LDY		_budget_tax_cur_pos				; also library draw
+		LDA		_budget_tax_print_idx_list,Y
+		JSR		_printf_num_lib
+		JSR		_budget_cash_flow_draw			; calc and draw cash flow and current funds fields
+loc_EB328:
+;		FJSRA	_save_taxes_data,PRG7,PRG9
+; OPTIMIZED
+		LDA		_budget_fund_alloc._tax			; update ingame values
+		STA		_city._tax_rate
+		MOVW	_fund_alloc_fire,_budget_fund_alloc._fire
+		MOVW	_fund_alloc_police,_budget_fund_alloc._police
+		MOVW	_fund_alloc_trans,_budget_fund_alloc._trans
+		MOVW	_fund_alloc_education,_budget_fund_alloc._education
+; -
+		RTS
+
+; FIX, now local
+; -
+; =============== S U B	R O U T	I N E =======================================
+_budget_cur_fund_alloc_update:
+		LDA		_budget_tax_cur_pos				; cur pos corresponds to particular
+		AND		#$FE							; tax on screen, bits 1-7, so already
+; REDUNDANT, optimized
+;		TAX										; multiplied by 2, just mask lower bit
+;		LDA		_fund_reqest_vars_list,X		; get the var ofs by idx
+;		STA		_ptr0
+;		LDA		_fund_reqest_vars_list+1,X
+;		STA		_ptr0+1
+;		LDY		#$00
+;		LDA		(_ptr0),Y						; read requested fund value if any
+;		STA		_tmp2							; this will be the max value of funding
+;		INY
+;		LDA		(_ptr0),Y
+; OPTIMIZED
+		JSR		_budget_get_fund_reqest_by_idx
+		STX		_tmp2
+; -
+		STA		_tmp3
+		BNE		loc_A0118
+		LDA		_tmp2
+		BNE		loc_A0118
+		RTS										; zero, nothing to fund, nothing to increase
+loc_A0118:
+		LDA		_budget_tax_adjust_value		; this is actually a counter, when you press
+		LSR										; buttons on budget screen, if non-zero, then
+		LSR										; value need adjustment, if button is held
+		LSR										; higher nibbles reaches $3x, so we may change
+		LSR										; higher digits of the desired value up to 1000
+		ASL
+		TAX										; extract digit idx for adjust, mul2, because of words
+		LDA		_budget_tax_cur_pos				; now, lower bit is exactly what arrow is pressed
+		LSR										; up or down, so we need to increase or decrease
+		BCC		.do_decrease
+		ASL										; do increase here
+		TAY
+		LDA		_budget_fund_alloc,Y			; Y = tax idx * 2
+		CLC
+		ADC		_inc_table,X					;
+		STA		_ptr0
+		LDA		_budget_fund_alloc+1,Y
+		ADC		_inc_table+1,X
+		STA		_ptr0+1							; store result in tmp var
+		CMP		_tmp3							; compare with max value needed
+		BCC		.apply_adjust
+		BNE		.clamp_to_max
+		LDA		_ptr0
+		CMP		_tmp2
+		BCC		.apply_adjust
+		BEQ		.apply_adjust
+.clamp_to_max:
+		LDA		_tmp2							; more than need, fix to max value
+		STA		_budget_fund_alloc,Y
+		LDA		_tmp3
+		STA		_budget_fund_alloc+1,Y
+		RTS
+.apply_adjust:
+		LDA		_ptr0+1							; update increased value
+.apply_adjust_ex:
+		STA		_budget_fund_alloc+1,Y
+		LDA		_ptr0
+		STA		_budget_fund_alloc,Y
+		RTS
+.do_decrease:
+		ASL
+		TAY
+		LDA		_budget_fund_alloc,Y			; the same for decrease
+		SEC
+		SBC		_inc_table,X
+		STA		_ptr0
+		LDA		_budget_fund_alloc+1,Y
+		SBC		_inc_table+1,X					; test against 0 instead
+		BCS		.apply_adjust_ex				; OPTIMIZE a little
+;		BCS		loc_A017A
+		LDA		#$00
+		STA		_budget_fund_alloc,Y			; store minimal value
+		STA		_budget_fund_alloc+1,Y
+		RTS
+;loc_A017A:										; REDUNDANT
+;		STA		_budget_fund_alloc+1,Y
+;		LDA		_ptr0
+;		STA		_budget_fund_alloc,Y
+;		RTS
+
+_inc_table:
+		.WORD	1
+		.WORD	10
+		.WORD	100
+		.WORD	1000
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_get_fund_reqest_by_idx:
+		TAY										; already multiplied by 2 here
+		LDA		_fund_reqest_vars_list,Y		; get the var ofs
+		STA		_ptr0
+		LDA		_fund_reqest_vars_list+1,Y
+		STA		_ptr0+1
+		LDY		#$00
+		LDA		(_ptr0),Y						; read requested fund value if any
+		TAX										; lower to X
+		INY
+		LDA		(_ptr0),Y						; higher to A
+		RTS
+
+_fund_reqest_vars_list:
+		.WORD	_max_tax_rate					; used for calculate maximum for overall tax rate
+		.WORD	_fund_request_fire
+		.WORD	_fund_request_police
+		.WORD	_fund_request_trans
+		.WORD	_fund_request_education
+;		.WORD	0								; unused missing fund parameter of the earlier versions (medicine?)
+; -
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_funds_alloc_sum_test:
+		LDY		#$00							; subtract all money including taxes
+		LDX		#$03							; with sum of allocated funds
+		SEC
+loc_EB335:
+		LDA		_budget_money,Y
+		SBC		_budget_funds_alloc_sum,Y
+		INY
+		DEX
+		BNE		loc_EB335
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_funds_alloc_adjust:
+		AND		#$FE							; prepare counters
+		PHA
+		LDX		#$03
+		LDY		#$00
+		SEC
+loc_EB348:
+		LDA		_budget_funds_alloc_sum,Y				; get the delta of money left after funding
+		SBC		_budget_money,Y			; will be negative if money are enough, and positive
+		STA		_ptr0,Y							; if not.
+		INY
+		DEX
+		BNE		loc_EB348
+		PLA
+		TAY
+loc_EB357:
+		LDA		_budget_fund_alloc,Y					; so subtract delta from cur funding value if positive
+		SEC										; thus we decrease it for amount we missing
+		SBC		_ptr0
+		LDA		_budget_fund_alloc+1,Y					; if value is negative, we just add it and never exceed the 0 here
+		SBC		_ptr0+1
+		LDA		#$00
+		SBC		_tmp2
+		BCS		loc_EB38B						; if we add, no carry set. if we subtract, carry set on positive result
+		LDA		_ptr0							; negative result means we have not cover the deficit with current funding only
+		SEC										; so subtract full value of it,..
+		SBC		_budget_fund_alloc,Y
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		_budget_fund_alloc+1,Y
+		STA		_ptr0+1
+		LDA		_tmp2
+		SBC		#$00
+		STA		_tmp2
+		LDA		#$00
+		STA		_budget_fund_alloc,Y					; then zero it. drop that fund at all
+		STA		_budget_fund_alloc+1,Y
+		DEY
+		DEY
+		BNE		loc_EB357						; and go to the upper funding value to readjust
+loc_EB389:
+		BEQ		loc_EB389						; debug assert if we have no money at all, should be impossible
+loc_EB38B:
+		LDA		_budget_fund_alloc,Y					; when we reach positive value, adjust alloc to it so we will have
+		SEC										; allocation for exactly money we have not loess no more
+		SBC		_ptr0
+		STA		_budget_fund_alloc,Y
+		LDA		_budget_fund_alloc+1,Y
+		SBC		_ptr0+1
+		STA		_budget_fund_alloc+1,Y
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_funds_alloc_sum_calc:
+		LDA		#$00							; clear tmp sum
+		STA		_tmp0
+		STA		_tmp1
+		STA		_tmp2
+		LDY		#$02
+loc_EB3A7:
+		LDA		_budget_fund_alloc,Y			; all 4 allocated funds summing
+		CLC
+		ADC		_tmp0
+		STA		_tmp0
+		LDA		_budget_fund_alloc+1,Y
+		ADC		_tmp1
+		STA		_tmp1
+		LDA		#$00
+		ADC		_tmp2
+		STA		_tmp2
+		INY
+		INY
+		CPY		#$0A
+		BCC		loc_EB3A7
+		LDY		#$02
+loc_EB3C4:
+		LDA		_tmp0,Y							; store sum and
+		STA		_budget_funds_alloc_sum,Y
+		STA		_budget_funds_alloc_sum_loan,Y	; a sum including loan
+		DEY
+		BPL		loc_EB3C4
+		BIT		_city._bank_flags				; special case if you have loaned
+		BVC		locret_EB3E7					; recalculate loaned sum
+; FIXME
+		LDX		#$03
+		LDY		#$00
+		CLC
+loc_EB3DA:
+		LDA		_tmp0,Y							; adjust alloc sum with loan
+		ADC		_bank_loan_amount,Y
+		STA		_budget_funds_alloc_sum_loan,Y
+		INY
+		DEX
+		BNE		loc_EB3DA
+locret_EB3E7:
+		RTS
+_bank_loan_amount:
+		.BYTE	$F4,$01,$00						; FIXME, one more hardcoded loan amount, 500 in 3-bytes value here!
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_funds_rate_recalc:
+		LDA		#$02
+		STA		_budget_tax_cur_pos
+loc_EB3F0:
+		JSR		_budget_cur_fund_rate_recalc
+		JSR		_wait_for_nmi
+		INC		_budget_tax_cur_pos
+		INC		_budget_tax_cur_pos
+		LDA		_budget_tax_cur_pos
+		CMP		#$0A
+		BCC		loc_EB3F0
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_cash_flow_draw:
+		JSR		_budget_cash_flow_calc			; got amount calculated and sign already in queue
+		JSR		_hex_to_dec9999999				; now convert to decimal string
+		LDA		#$11
+		JSR		_printf_num_lib					; and display
+		LDX		#$03
+		LDY		#$00
+		SEC
+loc_EB414:
+		LDA		_budget_money,Y					; calc current funds amount
+		SBC		_budget_funds_alloc_sum_loan,Y
+		STA		_tmp0,Y
+		INY
+		DEX
+		BNE		loc_EB414
+		LDA		_tmp2
+		BPL		loc_EB428
+		INC		byte_6CB
+loc_EB428:
+		JSR		_hex_to_dec9999999				; can't be negative, so just convert to decimal
+		LDA		#$13
+		JMP		_printf_num_lib					; and display
+
+; =============== S U B	R O U T	I N E =======================================
+; this function calculated allocated amount for all fundings by previously calculated
+; and stored funding rates in percent by formula request * rate / 100
+;
+_budget_funds_alloc_calc:
+		LDA		#$02							; cur_pos = 0 is a special case for city tax value
+		STA		_budget_tax_cur_pos
+loc_EB450:
+		AND		#$FE
+; REDUNDANT, merged
+;		TAY
+;		LDA		_fund_reqest_vars_list,Y		; get the fund request var ptr
+;		STA		_ptr0
+;		LDA		_fund_reqest_vars_list+1,Y
+;		STA		_ptr0+1
+;		LDY		#$00
+;		LDA		(_ptr0),Y						; read actual value
+;		TAX
+;		INY
+;		LDA		(_ptr0),Y
+; OPTIMIZED
+		JSR		_budget_get_fund_reqest_by_idx
+; -
+		STX		_ptr0
+		STA		_ptr0+1
+		LDA		_budget_tax_cur_pos				; get corresponding fund rate
+		LSR
+		TAY
+		DEY
+		LDA		_budget_fund_rate,Y
+		TAX
+		JSR		_mmc5_mul16to8_fast				; request * rate
+;		LDY		#$02							; REDUNDANT, moved to mul
+;loc_EB478:
+;		LDA		_tmp0,Y							; store result
+;		STA		_tmp3,Y
+;		DEY
+;		BPL		loc_EB478
+		LDA		#$64							; request * rate / 100
+		STA		_tmp0
+		LDA		#$00
+		STA		_tmp1
+		STA		_tmp2
+		JSR		_div24
+		LDA		_budget_tax_cur_pos				; store fund alloc values
+		AND		#$FE
+		TAY
+		TXA
+		STA		_budget_fund_alloc,Y
+		LDA		_tmp6
+		STA		_budget_fund_alloc+1,Y
+;		JSR		_wait_for_nmi					; REDUNDANT, wait what?! here?!
+		INC		_budget_tax_cur_pos				; calc for all 4 funding positions
+		INC		_budget_tax_cur_pos
+		LDA		_budget_tax_cur_pos
+		CMP		#$0A
+		BCC		loc_EB450
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; as against the previous one function, this one calculates the funding rate
+; for allocated / requested values since we change exactly allocated value
+; at the budget screen by formula alloc * 100 / request
+;
+_budget_cur_fund_rate_recalc:
+		LDA		_budget_tax_cur_pos
+		AND		#$FE
+		TAY
+		PHA
+		LDA		_budget_fund_alloc,Y
+		STA		_ptr0
+		LDA		_budget_fund_alloc+1,Y
+		STA		_ptr0+1
+		LDX		#100
+		JSR		_mmc5_mul16to8_fast				; allocated funds * 100
+;		LDY		#$02							; REDUNDANT, move to mul
+;loc_EB4C6:
+;		LDA		_tmp0,Y							; backup result
+;		STA		_tmp3,Y
+;		DEY
+;		BPL		loc_EB4C6
+		PLA
+; REDUNDANT
+;		TAY
+;		LDA		_fund_reqest_vars_list,Y		; get fund requested amount
+;		STA		_ptr0
+;		LDA		_fund_reqest_vars_list+1,Y
+;		STA		_ptr0+1
+;		LDY		#$00
+;		LDA		(_ptr0),Y						; read fund request amount
+;		TAX
+;		INY
+;		LDA		(_ptr0),Y
+; -
+; OPTIMIZED
+		JSR		_budget_get_fund_reqest_by_idx
+; -
+		STA		_ptr0+1
+		BNE		loc_EB4EF						; division by zero test
+		CPX		#$00
+		BNE		loc_EB4EF
+		LDX		#$64							; default value for div by zero case 100
+		BNE		loc_EB4F8
+loc_EB4EF:
+		STX		_ptr0
+		LDA		#$00
+		STA		_tmp2
+		JSR		_div24							; X=alloc*100/request = allocation percent
+loc_EB4F8:
+		LDA		_budget_tax_cur_pos				; adjust cur tax pos to _budget_fund_rate structure
+		LSR										; Y = (_budget_tax_cur_pos>>1) - 1
+		TAY
+		DEY
+		TXA
+		STA		_budget_fund_rate,Y				; store result
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2603,7 +3046,7 @@ loc_EB10D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl3_B_city_eval_input:
-		BIT		_pad0_autorep_press
+		BIT		_pad0_autorep_press				; simple skip test, simpliest of all here
 		BVC		locret_EB11F
 		LDA		#$40
 		STA		_scr_res_control_flags
@@ -2612,154 +3055,159 @@ locret_EB11F:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl4_A_city_overview_init:
-		PUSHB	_cur_info_maps_button_idx
-		LDA		#$0B
-		STA		_cur_info_maps_button_idx
+		PUSHB	_cur_info_maps_button_idx		; use the same critical section enter
+		LDA		#$0B							; as for info screens, but here, so we
+		STA		_cur_info_maps_button_idx		; need to hack it somehow
 		JSR		_thread_lock_flag_set
-		POPB	_cur_info_maps_button_idx
-		INC		_game_core_state
+		POPB	_cur_info_maps_button_idx		; restore hacked value
+		INC		_game_core_state				; suspend THREAD1
 		LDA		#$00
-		STA		_tmp118+4
+		STA		_tmp118+4						; init counter
 		INC		_scr_res_idx
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl4_B_city_overview_input:
+		LDA		_tmp118+4						; values are $00 to $20, 33 in total
+		CMP		#$21
+		BCS		.overwiew_skip_test
+		JSR		_city_param_overview_draw		; draw current
+		INC		_tmp118+4						; to the next value
 		LDA		_tmp118+4
 		CMP		#$21
-		BCS		loc_EB153
-		JSR		sub_EB162
-		LDA		_tmp118+4
-		CLC
-		ADC		#$01
-		STA		_tmp118+4
-		CMP		#$21
-		BCC		locret_EB161
-loc_EB153:
-		BIT		_pad0_autorep_press
+		BCC		locret_EB161					; unless draw all can't skip
+.overwiew_skip_test:
+		BIT		_pad0_autorep_press				; finally we could skip
 		BVC		locret_EB161
 		LDA		#$40
-		STA		_scr_res_control_flags
-		LDA		#$00
-		STA		_game_core_state
+		STA		_scr_res_control_flags			; set control flags to signal main loop
+		LDA		#$00							; we need exit
+		STA		_game_core_state				; unlock THREAD1
 locret_EB161:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EB162:
-		CMP		#$0E
-		BCC		loc_EB1A7
-		BEQ		loc_EB1C5
+_city_param_overview_draw:
+		CMP		#$0E							; different types of numbers should be displayed here
+		BCC		.overview00_0D
+		BEQ		.overview_0E
 		CMP		#$0F
-		BEQ		locret_EB177
+		BEQ		.overview_0F
 		CMP		#$13
-		BCC		loc_EB1DC
+		BCC		.overview10_12
 		CMP		#$1B
-		BCC		loc_EB178
-		JMP		loc_EB214
-locret_EB177:
+		BCC		.overview13_1A					; 2-byte var, parks/ground/shores stats
+		JMP		.overview1B_20
+.overview_0F:									; dummy
 		RTS
-loc_EB178:
-		LDA		_tmp118+4
+.overview13_1A:
+		LDA		_tmp118+4						; these values are written twice in two modes
 		SEC
 		SBC		#$13
 		AND		#$FE
 		TAX
-		LDA		_parks_counter,X
+		LDA		_parks_counter,X				; read 2-bytes at once
 		STA		_ptr0
 		LDA		_parks_counter+1,X
 		STA		_ptr0+1
-		LDA		_tmp118+4
+		LDA		_tmp118+4						; then check if odd or even counters here
 		LSR
-		BCC		loc_EB198
-		LDA		#$90
-		LDY		#$16
-		JMP		loc_EB226
-loc_EB198:
-		LSR		_ptr0+1
+		BCC		.ground_count					; of odd, then print percent of overall map square
+		LDA		#<[5776]						; 76*76 = 5776 a total number of tiles on map
+		LDY		#>[5776]
+		JMP		.overwiew_percent_printf		; printf percent of value out of 5776
+.ground_count:
+		LSR		_ptr0+1							; if even, then write overall area size in square km probationally
+		ROR		_ptr0							; we have only 3 digits to display there, so div8
+		LSR		_ptr0+1							; 5776/8 = 722 max 3 digits voila!
 		ROR		_ptr0
 		LSR		_ptr0+1
 		ROR		_ptr0
-		LSR		_ptr0+1
-		ROR		_ptr0
-		JMP		loc_EB1B9
-loc_EB1A7:
-		LDA		_tmp118+4
-		JSR		_get_constr_count_by_idx
+		JMP		.overwiev_dec999_printf			; printf regular decimal value
+.overview00_0D:
+		LDA		_tmp118+4						; all regular counters
+		JSR		_overview_get_var_by_idx		; read 2-bytes value in any case, even for 1-byte vars!
 		LDX		_tmp118+4
-		LDA		byte_EB52B,X
-		BNE		loc_EB1B9
-loc_EB1B5:
-		LDA		#$00
+		LDA		_overview_value_size_list,X		; then check if var is 1-byte
+		BNE		.overwiev_dec999_printf			; if not (1), skip to printf
+.overwiev_dec99_printf:
+		LDA		#$00							; if yes (0), zero the higher nibble for convinience
 		STA		_ptr0+1
-loc_EB1B9:
-		JSR		_hex_to_dec9999
+.overwiev_dec999_printf:
+		JSR		_hex_to_dec9999					; printf regular number
 		LDX		_tmp118+4
-		LDA		byte_EB539,X
+		LDA		_overview_printf_lib_list,X
 		JMP		_printf_num_lib
-loc_EB1C5:
-		LDA		_coal_power_station_count
-		CLC
-		ADC		_nuke_power_station_count
+.overview_0E:
+		LDA		_coal_power_station_count		; power stations here summed, only 36 value is used (E)
+		CLC										; value F skipped, not used printf idx 3F then. so probably
+		ADC		_nuke_power_station_count		; there were separate display of coal/power stations before
 		STA		_ptr0
 		LDA		#$00
 		ADC		#$00
-		STA		_ptr0+1
-		JSR		_hex_to_dec9999
-		LDA		#$36
-		JMP		_printf_num_lib
-loc_EB1DC:
-		LDA		_tmp118+4
-		JSR		_get_constr_count_by_idx
-		JSR		_hex_to_dec9999
-		PUSHB	_ptr0
+		STA		_ptr0+1							; coal+nukes may be 128+128 max, so we can have 256 here or $100 in hex
+;		JSR		_hex_to_dec9999					; OPTIMIZED
+;		LDA		#$36
+;		JMP		_printf_num_lib
+		JMP		.overwiev_dec999_printf
+.overview10_12:
+		LDA		_tmp118+4						; here we have 2-byte values
+		JSR		_overview_get_var_by_idx
+		JSR		_hex_to_dec9999					; to decimal first (4-digits max)
+		PUSHB	_ptr0							; backup lower digit
 		LDY		#$03
 		LDX		#$00
 loc_EB1EC:
-		LDA		_ptr0+1,X
+		LDA		_ptr0+1,X						; shift one digit ahead (div 10)
 		STA		_ptr0,X
 		INX
 		DEY
 		BNE		loc_EB1EC
-		LDX		_tmp118+4
-		LDA		byte_EB539,X
+		LDX		_tmp118+4						; print higher digits up to decimal dot
+		LDA		_overview_printf_lib_list,X
 		JSR		_printf_num_lib
-		POPB	_ptr0
+		POPB	_ptr0							; pop decimal after dot
 		LDA		#$00
 		STA		_ptr0+1
 		STA		_tmp2
 		STA		_tmp3
 		LDX		_tmp118+4
-		LDA		byte_EB539,X
+		LDA		_overview_printf_lib_list,X		; printf as well
 		CLC
 		ADC		#$03
-		JMP		_printf_num_lib
-loc_EB214:
-		LDA		_tmp118+4
-		SEC
+		JMP		_printf_num_lib					; next 3 idenxes are for this
+.overview1B_20:
+		LDA		_tmp118+4						; for developement states of map
+		SEC										; 6 parameters
 		SBC		#$1B
-		JSR		_get_constr_count_by_idx
+		JSR		_overview_get_var_by_idx
 		LDA		_stats._total
 		LDY		_stats._total+1
-		JMP		loc_EB226
-loc_EB226:
-		PHA
+;		JMP		.overwiew_percent_printf		; REDUNDANT
+.overwiew_percent_printf:
+		PHA										; store divider
 		TYA
 		PHA
-		LDX		#$64
+		LDX		#100							; multiply _tmp0/tmp1 * 100
 		JSR		_mmc5_mul16to8_fast
-		LDX		#$02
-loc_EB230:
-		LDA		_ptr0,X
-		STA		_tmp3,X
-		DEX
-		BPL		loc_EB230
-		POPB	_ptr0+1
+;		LDX		#$02							; REDUNDANT, moved to mul, since used everywhere
+;loc_EB230:
+;		LDA		_tmp0,X
+;		STA		_tmp3,X
+;		DEX
+;		BPL		loc_EB230
+		POPB	_ptr0+1							; restore divider
 		POPB	_ptr0
+; NOTE, here we have copy-paste error, this div-by-zero test tests the higher
+; nibble of divider first in other place here, but we have lower nibble to
+; test in this place, then must test higher obviously. this code does calc
+; for lover only, so any values like 256, 512 will be displayed as 0
+;
+		BNE		loc_EB247						; test for div by zero
+;		LDA		_ptr0							; BUG
+		LDA		_ptr0+1							; FIX, easiest way to fix this without code rearrangement
 		BNE		loc_EB247
-		LDA		_ptr0
-		BNE		loc_EB247
-		LDX		#$00
+		LDX		#$00							; default value then 0
 		BEQ		loc_EB24E
 loc_EB247:
 		LDA		#$00
@@ -2767,15 +3215,22 @@ loc_EB247:
 		JSR		_div24
 loc_EB24E:
 		STX		_ptr0
-		JMP		loc_EB1B5
+		JMP		.overwiev_dec99_printf
+
+_overview_value_size_list:
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$00,$00,$00,$00,$00
+_overview_printf_lib_list:
+		.BYTE	$22,$24,$26,$28,$2A,$2C,$2E,$2F,$30,$31,$32,$33,$34,$35,$36,$3F	; note F aren't used here!
+		.BYTE	$40,$41,$42,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$23,$25,$27,$29,$2B
+		.BYTE	$2D
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_constr_count_by_idx:
+_overview_get_var_by_idx:
 		ASL
 		TAX
-		LDA		off_EB26C,X
+		LDA		_overview_var_ptr_list,X
 		STA		_ptr0
-		LDA		off_EB26C+1,X
+		LDA		_overview_var_ptr_list+1,X
 		STA		_ptr0+1
 		LDY		#$00
 		LDA		(_ptr0),Y
@@ -2786,7 +3241,7 @@ _get_constr_count_by_idx:
 		STX		_ptr0
 		RTS
 
-off_EB26C:
+_overview_var_ptr_list:
 		.WORD	_RCI_counts._R				; 00
 		.WORD	_RCI_counts._I				; 01
 		.WORD	_RCI_counts._C				; 02
@@ -2801,8 +3256,8 @@ off_EB26C:
 		.WORD	_police_stations_count		; 0B
 		.WORD	_airports_count				; 0C
 		.WORD	_sea_ports_count			; 0D
-		.WORD	_roads_count				; 0E
-		.WORD	_roads_count				; 0F
+		.WORD	_roads_count				; 0E	; *unused* REDUNDANT
+		.WORD	_roads_count				; 0F	; *unused* REDUNDANT
 		.WORD	_roads_count				; 10
 		.WORD	_rails_count				; 11
 		.WORD	_electrics_count			; 12
@@ -2846,446 +3301,11 @@ _far_scr_res_hndl6_B_bank_input:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_budget_funds_recalc:
-;		FJSRA	_budget_cur_alloc_adjust,PRG6,PRG9; REDUNDANT, now local
-		JSR		_budget_cur_alloc_adjust		; apply allocated funds value changes for cur column
-		JSR		_budget_funds_alloc_sum_calc
-		JSR		_budget_funds_amount_test
-		BCS		_budget_tax_cur_draw
-		LDA		_budget_tax_cur_pos
-		JSR		_budget_tax_subtract
-		JSR		_budget_funds_alloc_sum_calc
-		JSR		_budget_cur_fund_rate_recalc
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_tax_cur_draw:
-;		JSR		_taxes_alloc_hex_to_dec9999		; REDUNDANT
-; OPTIMIZED, unufication
-		LDA		_budget_tax_cur_pos				; get currently selected budget screen row
-		AND		#$FE
-		TAY
-		LDA		_fund_alloc,Y					; get the current allocated funding amount
-		STA		_ptr0
-		LDA		_fund_alloc+1,Y
-		STA		_ptr0+1
-		JSR		_hex_to_dec9999
-; -
-		LDY		_budget_tax_cur_pos				; draw decimal converted value
-		LDA		_budget_fund_print_idx_list,Y	; common for tax value threated as alloc amount here
-		JSR		_printf_num_lib
-		LDA		_budget_tax_cur_pos				; now, for all other than tax positions need to
-		AND		#$FE							; draw percents as well
-		BEQ		loc_EB328
-		JSR		_budget_cur_fund_rate_recalc	; calc current allocation percentage
-		LDA		#$00
-		STA		_ptr0+1
-		LDA		_budget_tax_cur_pos				; get the rate value (0-100)
-		LSR
-		TAY
-		DEY
-		LDA		_fund_rate,Y
-		STA		_ptr0
-		JSR		_hex_to_dec9999					; to decimal
-		LDY		_budget_tax_cur_pos				; also library draw
-		LDA		_budget_tax_print_idx_list,Y
-		JSR		_printf_num_lib
-		JSR		_budget_cash_flow_draw			; calc and draw cash flow and current funds fields
-loc_EB328:
-		FJSRA	_save_taxes_data,PRG7,PRG9
-		RTS
-
-; FIX, now local
-; -
-; =============== S U B	R O U T	I N E =======================================
-_budget_cur_alloc_adjust:
-		LDA		_budget_tax_cur_pos				; cur pos corresponds to particular
-		AND		#$FE							; tax on screen, bits 1-7, so already
-; REDUNDANT, optimized
-;		TAX										; multiplied by 2, just mask lower bit
-;		LDA		_fund_reqest_vars_list,X		; get the var ofs by idx
-;		STA		_ptr0
-;		LDA		_fund_reqest_vars_list+1,X
-;		STA		_ptr0+1
-;		LDY		#$00
-;		LDA		(_ptr0),Y						; read requested fund value if any
-;		STA		_tmp2							; this will be the max value of funding
-;		INY
-;		LDA		(_ptr0),Y
-; OPTIMIZED
-		JSR		_get_fund_request_by_idx
-		STX		_tmp2
-; -
-		STA		_tmp3
-		BNE		loc_A0118
-		LDA		_tmp2
-		BNE		loc_A0118
-		RTS										; zero, nothing to fund, nothing to increase
-loc_A0118:
-		LDA		_budget_tax_adjust_value		; this is actually a counter, when you press
-		LSR										; buttons on budget screen, if non-zero, then
-		LSR										; value need adjustment, if button is held
-		LSR										; higher nibbles reaches $3x, so we may change
-		LSR										; higher digits of the desired value up to 1000
-		ASL
-		TAX										; extract digit idx for adjust, mul2, because of words
-		LDA		_budget_tax_cur_pos				; now, lower bit is exactly what arrow is pressed
-		LSR										; up or down, so we need to increase or decrease
-		BCC		.do_decrease
-		ASL										; do increase here
-		TAY
-		LDA		_fund_alloc,Y					; Y = tax idx * 2
-		CLC
-		ADC		_inc_table,X					;
-		STA		_ptr0
-		LDA		_fund_alloc+1,Y
-		ADC		_inc_table+1,X
-		STA		_ptr0+1							; store result in tmp var
-		CMP		_tmp3							; compare with max value needed
-		BCC		.apply_adjust
-		BNE		.clamp_to_max
-		LDA		_ptr0
-		CMP		_tmp2
-		BCC		.apply_adjust
-		BEQ		.apply_adjust
-.clamp_to_max:
-		LDA		_tmp2							; more than need, fix to max value
-		STA		_fund_alloc,Y
-		LDA		_tmp3
-		STA		_fund_alloc+1,Y
-		RTS
-.apply_adjust:
-		LDA		_ptr0+1							; update increased value
-.apply_adjust_ex:
-		STA		_fund_alloc+1,Y
-		LDA		_ptr0
-		STA		_fund_alloc,Y
-		RTS
-.do_decrease:
-		ASL
-		TAY
-		LDA		_fund_alloc,Y					; the same for decrease
-		SEC
-		SBC		_inc_table,X
-		STA		_ptr0
-		LDA		_fund_alloc+1,Y
-		SBC		_inc_table+1,X					; test against 0 instead
-		BCS		.apply_adjust_ex				; OPTIMIZE a little
-;		BCS		loc_A017A
-		LDA		#$00
-		STA		_fund_alloc,Y					; store minimal value
-		STA		_fund_alloc+1,Y
-		RTS
-;loc_A017A:										; REDUNDANT
-;		STA		_fund_alloc+1,Y
-;		LDA		_ptr0
-;		STA		_fund_alloc,Y
-;		RTS
-
-_inc_table:
-		.WORD	1
-		.WORD	10
-		.WORD	100
-		.WORD	1000
-
-; =============== S U B	R O U T	I N E =======================================
-_get_fund_request_by_idx:
-		TAY										; already multiplied by 2 here
-		LDA		_fund_reqest_vars_list,Y		; get the var ofs
-		STA		_ptr0
-		LDA		_fund_reqest_vars_list+1,Y
-		STA		_ptr0+1
-		LDY		#$00
-		LDA		(_ptr0),Y						; read requested fund value if any
-		TAX										; lower to X
-		INY
-		LDA		(_ptr0),Y						; higher to A
-		RTS
-
-_fund_reqest_vars_list:
-		.WORD	_max_tax_rate					; used for calculate maximum for overall tax rate
-		.WORD	_fund_request_fire
-		.WORD	_fund_request_police
-		.WORD	_fund_request_trans
-		.WORD	_fund_request_education
-		.WORD	0
-; -
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_funds_amount_test:
-		LDY		#$00
-		LDX		#$03
-		SEC
-loc_EB335:
-		LDA		_end_of_year_money,Y
-		SBC		_funds_alloc_sum,Y
-		INY
-		DEX
-		BNE		loc_EB335
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_tax_subtract:
-		AND		#$FE
-		PHA
-		LDX		#$03
-		LDY		#$00
-		SEC
-loc_EB348:
-		LDA		_funds_alloc_sum,Y
-		SBC		_end_of_year_money,Y
-		STA		_ptr0,Y
-		INY
-		DEX
-		BNE		loc_EB348
-		PLA
-		TAY
-loc_EB357:
-		LDA		_fund_alloc,Y
-		SEC
-		SBC		_ptr0
-		LDA		_fund_alloc+1,Y
-		SBC		_ptr0+1
-		LDA		#$00
-		SBC		_tmp2
-		BCS		loc_EB38B
-		LDA		_ptr0
-		SEC
-		SBC		_fund_alloc,Y
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_fund_alloc+1,Y
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		#$00
-		STA		_tmp2
-		LDA		#$00
-		STA		_fund_alloc,Y
-		STA		_fund_alloc+1,Y
-		DEY
-		DEY
-		BNE		loc_EB357
-loc_EB389:
-		BEQ		loc_EB389
-loc_EB38B:
-		LDA		_fund_alloc,Y
-		SEC
-		SBC		_ptr0
-		STA		_fund_alloc,Y
-		LDA		_fund_alloc+1,Y
-		SBC		_ptr0+1
-		STA		_fund_alloc+1,Y
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_funds_alloc_sum_calc:
-		LDA		#$00							; clear tmp sum
-		STA		_tmp0
-		STA		_tmp1
-		STA		_tmp2
-		LDY		#$02
-loc_EB3A7:
-		LDA		_fund_alloc,Y					; all 4 allocated funds summing
-		CLC
-		ADC		_tmp0
-		STA		_tmp0
-		LDA		_fund_alloc+1,Y
-		ADC		_tmp1
-		STA		_tmp1
-		LDA		#$00
-		ADC		_tmp2
-		STA		_tmp2
-		INY
-		INY
-		CPY		#$0A
-		BCC		loc_EB3A7
-		LDY		#$02
-loc_EB3C4:
-		LDA		_tmp0,Y							; store sum and
-		STA		_funds_alloc_sum,Y
-		STA		_funds_alloc_sum_loan,Y			; a sum including loan
-		DEY
-		BPL		loc_EB3C4
-		BIT		_city._bank_flags				; special case if you have loaned
-		BVC		locret_EB3E7					; recalculate loaned sum
-; FIXME
-		LDX		#$03
-		LDY		#$00
-		CLC
-loc_EB3DA:
-		LDA		_tmp0,Y
-		ADC		_bank_loan_amount,Y
-		STA		_funds_alloc_sum_loan,Y
-		INY
-		DEX
-		BNE		loc_EB3DA
-locret_EB3E7:
-		RTS
-_bank_loan_amount:
-		.BYTE	$F4,$01,$00
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_fund_rates_recalc:
-		LDA		#$02
-		STA		_budget_tax_cur_pos
-loc_EB3F0:
-		JSR		_budget_cur_fund_rate_recalc
-		JSR		_wait_for_nmi
-		INC		_budget_tax_cur_pos
-		INC		_budget_tax_cur_pos
-		LDA		_budget_tax_cur_pos
-		CMP		#$0A
-		BCC		loc_EB3F0
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_cash_flow_draw:
-		JSR		_budget_cash_flow_calc			; got amount calculated and sign already in queue
-		JSR		_hex_to_dec9999999				; now convert to decimal string
-		LDA		#$11
-		JSR		_printf_num_lib					; and display
-		LDX		#$03
-		LDY		#$00
-		SEC
-loc_EB414:
-		LDA		_end_of_year_money,Y			; calc current funds amount
-		SBC		_funds_alloc_sum_loan,Y
-		STA		_tmp0,Y
-		INY
-		DEX
-		BNE		loc_EB414
-		LDA		_tmp2
-		BPL		loc_EB428
-		INC		byte_6CB
-loc_EB428:
-		JSR		_hex_to_dec9999999				; can't be negative, so just convert to decimal
-		LDA		#$13
-		JMP		_printf_num_lib					; and display
-
-; =============== S U B	R O U T	I N E =======================================
 _thread_lock_flag_set:
 		LDA		_cur_info_maps_button_idx
 		ORA		#$80
 		STA		_thread_priority_req
 		JMP		_wait_for_nmi
-
-; =============== S U B	R O U T	I N E =======================================
-; this function calculated allocated amount for all fundings by previously calculated
-; and stored funding rates in percent by formula request * rate / 100
-;
-_budget_funds_alloc_calc:
-		LDA		#$02							; cur_pos = 0 is a special case for city tax value
-		STA		_budget_tax_cur_pos
-loc_EB450:
-		AND		#$FE
-; REDUNDANT, merged
-;		TAY
-;		LDA		_fund_reqest_vars_list,Y		; get the fund request var ptr
-;		STA		_ptr0
-;		LDA		_fund_reqest_vars_list+1,Y
-;		STA		_ptr0+1
-;		LDY		#$00
-;		LDA		(_ptr0),Y						; read actual value
-;		TAX
-;		INY
-;		LDA		(_ptr0),Y
-; OPTIMIZED
-		JSR		_get_fund_request_by_idx
-; -
-		STX		_ptr0
-		STA		_ptr0+1
-		LDA		_budget_tax_cur_pos				; get corresponding fund rate
-		LSR
-		TAY
-		DEY
-		LDA		_fund_rate,Y
-		TAX
-		JSR		_mmc5_mul16to8_fast				; request * rate
-		LDY		#$02
-loc_EB478:
-		LDA		_tmp0,Y							; store result
-		STA		_tmp3,Y
-		DEY
-		BPL		loc_EB478
-		LDA		#$64							; request * rate / 100
-		STA		_tmp0
-		LDA		#$00
-		STA		_tmp1
-		STA		_tmp2
-		JSR		_div24
-		LDA		_budget_tax_cur_pos				; store fund alloc values
-		AND		#$FE
-		TAY
-		TXA
-		STA		_fund_alloc,Y
-		LDA		_tmp6
-		STA		_fund_alloc+1,Y
-;		JSR		_wait_for_nmi					; REDUNDANT, wait what?! here?!
-		INC		_budget_tax_cur_pos				; calc for all 4 funding positions
-		INC		_budget_tax_cur_pos
-		LDA		_budget_tax_cur_pos
-		CMP		#$0A
-		BCC		loc_EB450
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; as against the previous one function, this one calculates the funding rate
-; for allocated / requested values since we change exactly allocated value
-; at the budget screen by formula alloc * 100 / request
-;
-_budget_cur_fund_rate_recalc:
-		LDA		_budget_tax_cur_pos
-		AND		#$FE
-		TAY
-		PHA
-		LDA		_fund_alloc,Y
-		STA		_ptr0
-		LDA		_fund_alloc+1,Y
-		STA		_ptr0+1
-		LDX		#100
-		JSR		_mmc5_mul16to8_fast				; allocated funds * 100
-		LDY		#$02
-loc_EB4C6:
-		LDA		_ptr0,Y							; backup result
-		STA		_tmp3,Y
-		DEY
-		BPL		loc_EB4C6
-		PLA
-; REDUNDANT
-;		TAY
-;		LDA		_fund_reqest_vars_list,Y		; get fund requested amount
-;		STA		_ptr0
-;		LDA		_fund_reqest_vars_list+1,Y
-;		STA		_ptr0+1
-;		LDY		#$00
-;		LDA		(_ptr0),Y						; read fund request amount
-;		TAX
-;		INY
-;		LDA		(_ptr0),Y
-; -
-; OPTIMIZED
-		JSR		_get_fund_request_by_idx
-; -
-		STA		_ptr0+1
-		BNE		loc_EB4EF						; division by zero test
-		CPX		#$00
-		BNE		loc_EB4EF
-		LDX		#$60							; dummy value to avoid division by zero
-		BNE		loc_EB4F8						; anyway alloc*100 = 0, so we will get 0 anyway
-loc_EB4EF:
-		STX		_ptr0
-		LDA		#$00
-		STA		_tmp2
-		JSR		_div24							; X=alloc*100/request = allocation percent
-loc_EB4F8:
-		LDA		_budget_tax_cur_pos				; adjust cur tax pos to _fund_rate structure
-		LSR										; Y = (_budget_tax_cur_pos>>1) - 1
-		TAY
-		DEY
-		TXA
-		STA		_fund_rate,Y					; store result
-		RTS
 
 ; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
@@ -3308,22 +3328,17 @@ loc_EB4F8:
 ;		POPB	_ptr0+1
 ;		JMP		(_ptr0)
 
+; RE-REDUNDANT, moved to system bank, merged
 ; =============== S U B	R O U T	I N E =======================================
-_adc_ptr0:
-		CLC
-		ADC		_ptr0
-		STA		_ptr0
-		BCC		locret_EB52A
-		INC		_ptr0+1
-locret_EB52A:
-		RTS
+;_adc_ptr0:
+;		CLC
+;		ADC		_ptr0
+;		STA		_ptr0
+;		BCC		locret_EB52A
+;		INC		_ptr0+1
+;locret_EB52A:
+;		RTS
 
-byte_EB52B:
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$00,$00,$00,$00,$00
-byte_EB539:
-		.BYTE	$22,$24,$26,$28,$2A,$2C,$2E,$2F,$30,$31,$32,$33,$34,$35,$36,$3F
-		.BYTE	$40,$41,$42,$37,$38,$39,$3A,$3B,$3C,$3D,$3E,$23,$25,$27,$29,$2B
-		.BYTE	$2D
 byte_EB55A:
 		.BYTE	$5F,$5F,$28,$28,$00,$00,$50,$50,$28,$28,$50,$50,$00,$00,$50,$50
 byte_EB56A:
@@ -3359,7 +3374,7 @@ off_EB5A0:
 		.WORD	_land_value_map_buf
 		.WORD	_fire_radius_map_buf
 		.WORD	_police_radius_map_buf
-; REDUNDANT
+; REDUNDANT, merged, moved to system bank
 ;_special_tiles_ofs_list:
 ;		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
 byte_EB5C3:
@@ -3677,28 +3692,37 @@ locret_EB9FE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; input args: 16bit _ptr0 * reg X, store 24bit _ptr0/tmp2
+; input args: 16bit _tmp0 * reg X, store 24bit _tmp0-tmp2, _tmp3_tmp5
 ;
 _mmc5_mul16to8_fast:
-		LDA		_ptr0+1
+		LDA		_tmp1
 		STA		_MMC5_MUL0
 		STX		_MMC5_MUL1
 		LDA		_MMC5_MUL0
 		STA		_tmp2
 		LDA		_MMC5_MUL1
-		STA		_tmp3
-		LDA		_ptr0
+		STA		_tmp5
+		LDA		_tmp0
 		STA		_MMC5_MUL0
 ;		LDA		#$64					; FIX: WTF LDA $64 redundant
 		LDA		_MMC5_MUL0
-		STA		_ptr0
+		STA		_tmp0
+		STA		_tmp3
 		LDA		_MMC5_MUL1
 		CLC
 		ADC		_tmp2
-		STA		_ptr0+1
-		LDA		_tmp3
+		STA		_tmp1
+		STA		_tmp4
+		LDA		_tmp5
 		ADC		#$00
 		STA		_tmp2
+		STA		_tmp5
+;		LDX		#$02					; OPTIMIZED, store results in _tmp3 for div operations
+;loc_EB230:								; stored directly to vars in code
+;		LDA		_tmp0,X
+;		STA		_tmp3,X
+;		DEX
+;		BPL		loc_EB230
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3709,8 +3733,8 @@ _budget_cash_flow_calc:
 		LDX		#$03
 		SEC
 loc_EBAB4:
-		LDA		_taxes_collected,Y				; subtract funds
-		SBC		_funds_alloc_sum,Y
+		LDA		_city_taxes_collected,Y				; subtract funds
+		SBC		_budget_funds_alloc_sum,Y
 		STA		_ptr0,Y
 		INY
 		DEX
@@ -3722,8 +3746,8 @@ loc_EBAB4:
 		LDX		#$03
 		SEC
 loc_EBACC:
-		LDA		_funds_alloc_sum,Y					; calc negative value
-		SBC		_taxes_collected,Y
+		LDA		_budget_funds_alloc_sum,Y					; calc negative value
+		SBC		_city_taxes_collected,Y
 		STA		_ptr0,Y
 		INY
 		DEX
@@ -3907,17 +3931,17 @@ _printf_num_screen_pos_list_lo:
 		.BYTE	<[$25CA]
 		.BYTE	<[$25EA]
 		.BYTE	<[$260A]
-		.BYTE	<[$0000]
+		.BYTE	<[$0000]	; 06
 		.BYTE	<[$25B0]
 		.BYTE	<[$25D0]
 		.BYTE	<[$25F0]
 		.BYTE	<[$2610]
-		.BYTE	<[$0000]
+		.BYTE	<[$0000]	; 0B
 		.BYTE	<[$25B8]
 		.BYTE	<[$25D8]
 		.BYTE	<[$25F8]
 		.BYTE	<[$2618]
-		.BYTE	<[$0000]
+		.BYTE	<[$0000]	; 10
 		.BYTE	<[$26B1]
 		.BYTE	<[$26D1]
 		.BYTE	<[$2711]
@@ -4106,9 +4130,9 @@ _city_eval_vars_list:
 ;		LDA		_budget_tax_cur_pos				; -
 ;		AND		#$FE							; -
 ;		TAY										; -
-;		LDA		_fund_alloc,Y					; -
+;		LDA		_budget_fund_alloc,Y					; -
 ;		STA		_ptr0							; -
-;		LDA		_fund_alloc+1,Y					; -
+;		LDA		_budget_fund_alloc+1,Y					; -
 ;		STA		_ptr0+1							; -
 ;
 ; !FALLTHROUGH!

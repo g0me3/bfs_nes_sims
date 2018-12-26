@@ -545,12 +545,12 @@ loc_10445D:
 loc_1044A3:
 		LDA		#$07
 		STA		_city._tax_rate						; default tax rate always 7
-		STA		_fund_alloc._tax
+		STA		_budget_fund_alloc._tax
 		LDA		#$0F
-		STA		_police_fund_rate					; def funding rate, will be recalculated anyways
-		STA		_fire_fund_rate						; mostly redundant here too
+		STA		_fund_rate_police					; def funding rate, will be recalculated anyways
+		STA		_fund_rate_fire						; mostly redundant here too
 		LDA		#$20
-		STA		_road_fund_rate
+		STA		_fund_rate_trans
 		LDA		#$26
 		STA		_cur_population_dencity
 		STA		_cur_population_dencity+1
@@ -890,13 +890,13 @@ loc_1046EB:
 		PUSHW	_tmp6CC							; *tax value
 		JSR		_mmc5_mul16to16
 		PLA
-		POPD	_taxes_collected
+		POPD	_city_taxes_collected
 		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings, then taxes
 		ORA		_cur_RCI_levels_sum.INT			; does not calculated, skip budget screen at all
 		BNE		.do_budget_screen
 		LDA		#$0F
-		STA		_police_fund_rate
-		STA		_fire_fund_rate
+		STA		_fund_rate_police
+		STA		_fund_rate_fire
 		RTS
 .do_budget_screen:
 		LDA		#$01							; or else set the budget screen request
@@ -907,18 +907,18 @@ loc_1047C7:
 		BNE		loc_1047C7						; the budget screen were displayed, and
 		LDA		_city._money					; player has finished adjustements, so
 		CLC										; now all fundings are recalculated
-		ADC		_taxes_collected				; and we can finally spend our money
+		ADC		_city_taxes_collected				; and we can finally spend our money
 		STA		_city._money					; note, that budget can't get more money
 		LDA		_city._money+1					; than you have, so further subtraction never
-		ADC		_taxes_collected+1				; goes over
+		ADC		_city_taxes_collected+1				; goes over
 		STA		_city._money+1
 		BCC		loc_1047E4
 		INC		_city._money+2					; first add taxes collected to our money
 loc_1047E4:
-		SUBDW	_city._money,_road_fund_alloc	; subtract funds
-		SUBDW	_city._money,_fire_fund_alloc
-		SUBDW	_city._money,_police_fund_alloc
-		SUBDW	_city._money,_education_fund_alloc
+		SUBDW	_city._money,_fund_alloc_trans	; subtract funds
+		SUBDW	_city._money,_fund_alloc_fire
+		SUBDW	_city._money,_fund_alloc_police
+		SUBDW	_city._money,_fund_alloc_education
 		LDA		_city._loan_period				; if loan period isn't zero
 		BEQ		loc_10486C
 		DEC		_city._loan_period				; decrement loan year count
@@ -929,11 +929,11 @@ loc_1047E4:
 loc_104856:
 		SUBDI16	_city._money,500				; loan amount hardcoded here, the var never used
 loc_10486C:
-		LDA		_taxes_collected
+		LDA		_city_taxes_collected
 		SEC
 		SBC		_fund_request_trans
 		STA		_tmpE6
-		LDA		_taxes_collected+1
+		LDA		_city_taxes_collected+1
 		SBC		_fund_request_trans+1
 		STA		_tmpE7
 		LDA		_tmpE6
@@ -959,9 +959,9 @@ loc_1048A9:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_road_fund_alloc
+		LDA		_fund_alloc_trans
 		STA		_tmpE7
-		LDA		_road_fund_alloc+1
+		LDA		_fund_alloc_trans+1
 		STA		_tmpE8
 		LDA		_fund_request_trans
 		STA		_tmpEA
@@ -977,7 +977,7 @@ loc_1048A9:
 		PLA
 		TXA
 loc_1048D7:
-		STA		_road_fund_rate
+		STA		_fund_rate_trans
 		LDA		_fund_request_police
 		ORA		_fund_request_police+1
 		BNE		loc_1048E6
@@ -987,9 +987,9 @@ loc_1048E6:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_police_fund_alloc
+		LDA		_fund_alloc_police
 		STA		_tmpE7
-		LDA		_police_fund_alloc+1
+		LDA		_fund_alloc_police+1
 		STA		_tmpE8
 		LDA		_fund_request_police
 		STA		_tmpEA
@@ -1007,7 +1007,7 @@ loc_10490B:
 		PLA
 		PLA
 loc_104914:
-		STA		_police_fund_rate
+		STA		_fund_rate_police
 		LDA		_fund_request_fire
 		ORA		_fund_request_fire+1
 		BNE		loc_104923
@@ -1017,9 +1017,9 @@ loc_104923:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_fire_fund_alloc
+		LDA		_fund_alloc_fire
 		STA		_tmpE7
-		LDA		_fire_fund_alloc+1
+		LDA		_fund_alloc_fire+1
 		STA		_tmpE8
 		LDA		_fund_request_fire
 		STA		_tmpEA
@@ -1037,7 +1037,7 @@ loc_104948:
 		PLA
 		PLA
 loc_104951:
-		STA		_fire_fund_rate
+		STA		_fund_rate_fire
 		RTS
 _trans_fund_coefs_lo:
 		.BYTE	$B3,$E6,$33
@@ -1461,7 +1461,7 @@ loc_104CE4:
 		BEQ		loc_104CEC
 		JSR		_tmpE6_multiply_217
 loc_104CEC:
-		LDA		_road_fund_rate
+		LDA		_fund_rate_trans
 		CMP		#$20
 		BEQ		loc_104D0A
 		LDA		_tmpE6
@@ -1473,17 +1473,17 @@ loc_104CEC:
 loc_104CFE:
 		LDA		_tmpE6
 		SEC
-		SBC		_road_fund_rate
+		SBC		_fund_rate_trans
 		STA		_tmpE6
 		BCS		loc_104D0A
 		DEC		_tmpE7
 loc_104D0A:
-		LDA		_police_fund_rate
+		LDA		_fund_rate_police
 		CMP		#$0F
 		BCS		loc_104D14
 		JSR		sub_104E54
 loc_104D14:
-		LDA		_fire_fund_rate
+		LDA		_fund_rate_fire
 		CMP		#$0F
 		BCS		loc_104D1E
 		JSR		sub_104E54
@@ -2337,6 +2337,9 @@ loc_1052EA:
 ; FIX, since we don't know exactly var used here, it's safe to just recalc
 ; the value here directly, as in the overall info screen
 ;
+; NOTE, here may be 128+128 max, so if 256 will be zero as well with carry
+; but highly impossible it will happen someday.
+;
 		LDA		_coal_power_station_count
 		CLC
 		ADC		_nuke_power_station_count
@@ -2405,7 +2408,7 @@ _scroll_msg0C_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0D_test:
-		LDA		_road_fund_rate
+		LDA		_fund_rate_trans
 		CMP		#$16
 		BCS		nullsub_5
 		CMPWI	_roads_count,30
@@ -2414,7 +2417,7 @@ _scroll_msg0D_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0E_test:
-		LDA		_fire_fund_rate
+		LDA		_fund_rate_fire
 		CMP		#$0B
 		BCS		nullsub_5
 		CMPWI	_cur_RCI_levels_sum,$0014	; 0.14fp
@@ -2423,7 +2426,7 @@ _scroll_msg0E_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0F_test:
-		LDA		_police_fund_rate
+		LDA		_fund_rate_police
 		CMP		#$0B
 		BCS		nullsub_5
 		CMPWI	_cur_RCI_levels_sum,$0014	; 0.14fp

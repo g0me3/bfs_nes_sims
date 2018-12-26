@@ -226,7 +226,6 @@ OTHER_WIDX			EQU 4
 {1}._police:		.WORD	0
 {1}._trans:			.WORD	0
 {1}._education:		.WORD	0
-{1}._loan_fee:		.WORD	0
 	ENDM
 
 	MAC	_tsprarg

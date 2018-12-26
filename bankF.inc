@@ -156,7 +156,7 @@ loc_18A09D:
 		LDX		#$04
 		LDA		#100
 loc_18A0F0:
-		STA		_fund_rate,X
+		STA		_budget_fund_rate,X
 		DEX
 		BPL		loc_18A0F0
 ;		JSR		_sram_on						; REDUNDANT
@@ -468,7 +468,7 @@ loc_18A356:
 		BEQ		loc_18A382						; thread 0 should be MUL-safe, only using
 		LDA		_mmc5_mul1_shadow				; need to check carefully. the THREAD0 code
 		STA		_MMC5_MUL1						; definitely does not care about MUL params
-		LDA		_mmc5_mul0_shadow
+		LDA		_mmc5_mul0_shadow				; but muls can be changed by THREAD1 instead... hmm
 		STA		_MMC5_MUL0
 loc_18A382:
 		LDA		_earthquake_shake_req
@@ -3224,16 +3224,6 @@ _sprA0:
 		SECTION_END	10F
 
 ; =============== S U B	R O U T	I N E =======================================
-_rand:
-		LDA		_rand_seed						; result of operations here
-		STA		_rand_seed+2					; depends on undefined C state
-		ADC		_rand_seed+1					; upon entry, so calcs are
-		STA		_rand_seed						; semi-random by itself
-		ADC		_rand_seed+2
-		STA		_rand_seed+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _ppu_area_fill:
 		JSR		_ppu_set_hor_increment
 		STX		_PPU_ADDR
@@ -3261,8 +3251,6 @@ loc_18BB97:
 ;		STA		_PPU_CTRL
 ;		PLA
 ;		RTS
-
-; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _res_ppu_unpack:
@@ -3305,14 +3293,8 @@ loc_18BBAC:
 		DEX
 		BNE		.send_loop
 		INY
-;		JSR		_adc_ptr0						; REDUNDANT
-		TYA										; OPTIMIZED
-		CLC
-		ADC		_ptr0
-		STA		_ptr0
-		BCC		locret_18BBEC
-		INC		_ptr0+1
-locret_18BBEC:
+		TYA
+		JSR		_adc_ptr0
 		JMP		_res_ppu_unpack_loop
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3668,17 +3650,35 @@ _tlm_lib:
 		.WORD	_tlm_nt_end_press,_tlm_extnt_end_press						; 34 PRG1
 		.WORD	_tlm_nt_all_buttons_release,_tlm_extnt_all_buttons_release	; 38 PRG1
 
-; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-;_adc_ptr0:
-;		TYA
-;		CLC
-;		ADC		_ptr0
-;		STA		_ptr0
-;		BCC		locret_18BBEC
-;		INC		_ptr0+1
-;locret_18BBEC:
-;		RTS
+_rand:
+		LDA		_rand_seed						; result of operations here
+		STA		_rand_seed+2					; depends on undefined C state
+		ADC		_rand_seed+1					; upon entry, so calcs are
+		STA		_rand_seed						; semi-random by itself
+		ADC		_rand_seed+2
+		STA		_rand_seed+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_rand_clamp:
+		PHA
+		JSR		_rand
+		PHA
+		JSR		_mmc5_mul8to8
+		PLA
+		PLA
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_adc_ptr0:
+		CLC
+		ADC		_ptr0
+		STA		_ptr0
+		BCC		locret_18BBEC
+		INC		_ptr0+1
+locret_18BBEC:
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_adc_tmp2_unref:
@@ -3690,16 +3690,6 @@ _tlm_lib:
 ;		INC		_tmp3
 ;locret_18BBF7:
 ;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_rand_clamp:
-		PHA
-		JSR		_rand
-		PHA
-		JSR		_mmc5_mul8to8
-		PLA
-		PLA
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; input:

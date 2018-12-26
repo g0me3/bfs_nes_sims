@@ -792,15 +792,28 @@ _tmp582:
 		.BYTE	0
 _main_sub_idx:
 		.BYTE	0
+
+; budget calc vars
+;
+_loan_fee:
+		.WORD	0
+_budget_display_timer:
+		.WORD	0
 _budget_tax_cur_pos:
 		.BYTE	0
 
-		_tfund16 _fund_alloc
+		_tfund16 _budget_fund_alloc
 
-		_tfund8	_fund_rate
+		_tfund8	_budget_fund_rate
 
-_budget_display_timer:
-		.WORD	0
+_budget_funds_alloc_sum:
+		.BYTE	0,0,0
+_budget_funds_alloc_sum_loan:
+		.BYTE	0,0,0
+_budget_money:
+		.BYTE	0,0,0
+; -
+
 _cur_graphs_button_press_idx:
 		.BYTE	0
 _prev_graphs_button_press_idx:
@@ -861,38 +874,47 @@ _airplane_crash_req:
 		.BYTE	0
 _budget_scr_draw_req:
 		.BYTE	0
-_taxes_collected:
+_city_taxes_collected:
 		.BYTE	0,0,0
-_fund_request_trans:
-		.BYTE	0,0
-_road_fund_alloc:
-		.BYTE	0,0
-_police_fund_alloc:
-		.BYTE	0,0
-_fire_fund_alloc:
-		.BYTE	0,0
-_education_fund_alloc:
-		.BYTE	0,0
-_funds_alloc_sum:
-		.BYTE	0,0,0
-_funds_alloc_sum_loan:
-		.BYTE	0,0,0
-_end_of_year_money:
-		.BYTE	0,0,0
+
+; global city funding parameters
+;
+; rate of funding, recalculated twice: in THREAD1 while collecting data
+; and in THREAD0 when adjusting the budget, has a default values
+; at the beginning of the game
+;
+_fund_rate_police:
+		.BYTE	0
+_fund_rate_fire:
+		.BYTE	0
+_fund_rate_trans:
+		.BYTE	0
+;
+; requested funding amounts recalculated every time by THREAD1
+;
 _fund_request_police:
 		.BYTE	0,0
 _fund_request_fire:
 		.BYTE	0,0
+_fund_request_trans:
+		.BYTE	0,0
 _fund_request_education:
 		.BYTE	0,0
+;
+; actual current funding amounts
+;
+_fund_alloc_police:
+		.BYTE	0,0
+_fund_alloc_fire:
+		.BYTE	0,0
+_fund_alloc_trans:
+		.BYTE	0,0
+_fund_alloc_education:
+		.BYTE	0,0
+; -
+
 _traffic_level_value:
 		.BYTE	0,0
-_road_fund_rate:
-		.BYTE	0
-_police_fund_rate:
-		.BYTE	0
-_fire_fund_rate:
-		.BYTE	0
 _doing_a_good_job_votes:
 		.BYTE	0
 _doing_a_bad_job_votes:
@@ -916,6 +938,9 @@ _worst_problem_percents:
 
 _earthquake_shake_req:
 		.BYTE	0
+
+; -
+; following are set of various statistics of the city
 _total_RCI_counts:
 		.BYTE	0,0
 
@@ -923,6 +948,12 @@ _total_RCI_counts:
 
 _wrong_var:
 		.BYTE	0,0
+
+; these vars are accessed individually in the statistic
+; crawler, however, for the overview screen they are put
+; into ptr list and accessed via indexes, if you change
+; it's order, make sure you change indexes as well
+;
 _R_hospitals_count:
 		.BYTE	0,0
 _R_schools_count:
@@ -948,8 +979,15 @@ _rails_count:
 _electrics_count:
 		.BYTE	0,0
 
+; structured already, access can be indirect or individual
+; as well.
+;
 		_tdev	_stats
 
+; NOTE, following counters are used as an array of similar
+; parameters and accessed indirectly! so don't change its
+; order!
+;
 _parks_counter:
 		.BYTE	0,0
 _map_unbuldozered_tiles_count:
@@ -958,6 +996,9 @@ _map_buldozered_tiles_count:
 		.BYTE	0,0
 _map_shore_tiles_count:
 		.BYTE	0,0
+; end if statistic parameters
+; -
+
 _corruption_anim_flag:
 		.BYTE	0
 

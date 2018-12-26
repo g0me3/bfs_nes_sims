@@ -491,14 +491,14 @@ _road_tile_collect:
 .loop_road_tile_collect:
 		LDA		_map_tiles_flags_tbl,Y
 		BMI		locret_11E456
-		LDA		_road_fund_rate
+		LDA		_fund_rate_trans
 		CMP		#$1E
 		BCS		locret_11E456
 		JSR		_rand
 		BNE		locret_11E456
 		JSR		_rand
 		AND		#$3F
-		CMP		_road_fund_rate
+		CMP		_fund_rate_trans
 		BCC		locret_11E456
 		LDX		#$BD
 		LDA		_map_tiles_flags_tbl,Y
@@ -971,7 +971,7 @@ loc_11E7E0:
 		BCS		loc_11E7EE
 		INC		_police_stations_count
 loc_11E7EE:
-		LDA		_police_fund_rate
+		LDA		_fund_rate_police
 		STA		_tmpE7
 		JSR		_test_4x4_building_for_surrond_transports
 		BCS		loc_11E7FA
@@ -995,7 +995,7 @@ loc_11E80E:
 		BCS		loc_11E81C
 		INC		_fire_stations_count
 loc_11E81C:
-		LDA		_fire_fund_rate
+		LDA		_fund_rate_fire
 		STA		_tmpE7
 		JSR		_test_4x4_building_for_surrond_transports
 		BCS		loc_11E828
