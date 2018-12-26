@@ -1236,11 +1236,7 @@ loc_1368FC:
 		STA		_tmp3
 		BNE		loc_1368DB
 loc_136920:
-		LDA		_tmp5
-		BEQ		loc_136932
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_136932
 		STA		_tmp2
 		LDA		#$20
 		STA		_tmp3
@@ -1298,11 +1294,7 @@ loc_136977:
 		STA		_tmp3
 		BNE		loc_136956
 loc_13699B:
-		LDA		_tmp5
-		BEQ		loc_1369AD
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_1369AD
 		STA		_tmp2
 		LDA		#>[_MMC5_EXRAM]
 		STA		_tmp3
@@ -1411,11 +1403,7 @@ loc_136A75:
 		INC		_ptr0
 		DEC		_tmp2
 		BNE		loc_136A2D
-		LDA		_tmp3
-		BEQ		loc_136A90
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
+		DO_WRAP	_tmp2,_tmp3,loc_136A90
 		DEC		_ptr0
 		LDA		_ptr0
 		AND		#$E0
@@ -1469,11 +1457,7 @@ loc_136AF2:
 		INC		_ptr0
 		DEC		_tmp2
 		BNE		loc_136AAA
-		LDA		_tmp3
-		BEQ		loc_136B0D
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
+		DO_WRAP	_tmp2,_tmp3,loc_136B0D
 		DEC		_ptr0
 		LDA		_ptr0
 		AND		#$E0
@@ -1516,11 +1500,7 @@ loc_136B43:
 		LDA		byte_7A
 		AND		#$E0
 		STA		byte_7A
-		LDA		byte_7F
-		BEQ		loc_136B56
-		STA		byte_7E
-		LDA		#$00
-		STA		byte_7F
+		DO_WRAP	byte_7E,byte_7F,loc_136B56
 		JMP		loc_136B2A
 loc_136B56:
 		LDA		byte_80
@@ -1559,11 +1539,7 @@ loc_136B98:
 		CLC
 		DEC		byte_82
 		BNE		loc_136B98
-		LDA		byte_83
-		BEQ		locret_136BF8
-		STA		byte_82
-		LDA		#$00
-		STA		byte_83
+		DO_WRAP	byte_82,byte_83,locret_136BF8
 		LDX		byte_80
 		PPUQMOVB	byte_7A,OP_AND,#$1F
 		PPUQMOVB	#$20,OP_NOP,0
@@ -1691,11 +1667,7 @@ loc_136CD6:
 		INY
 		DEC		_tmp2
 		BNE		loc_136CD6
-		LDA		_tmp3
-		BEQ		loc_136D03
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
+		DO_WRAP	_tmp2,_tmp3,loc_136D03
 		PPUQMOVB	byte_7A,OP_AND,#$E0
 		PPUQMOVB	byte_7B,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
@@ -1717,11 +1689,7 @@ loc_136D1F:
 		INY
 		DEC		byte_7E
 		BNE		loc_136D1F
-		LDA		byte_7F
-		BEQ		loc_136D4F
-		STA		byte_7E
-		LDA		#$00
-		STA		byte_7F
+		DO_WRAP	byte_7E,byte_7F,loc_136D4F
 		EXTQMOVB	byte_7A,OP_AND,#$E0
 		EXTQMOVB	byte_7B,OP_ADD,#$3C
 		EXTQMOVB	byte_7E,OP_NOP,0
@@ -2026,31 +1994,14 @@ loc_136F5D:
 		INY
 		DEC		_tmp4
 		BNE		loc_136F5D
-		LDA		_tmp5
-		BEQ		loc_136F89
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_136F89
 		EXTQMOVB	byte_7A,OP_AND,#$E0
-;		EXTQMOVB	byte_7B,OP_NOP,0
-;		EXTQMOVB	_tmp4,OP_NOP,0
-;		JMP		loc_136F5D
 		JMP		loc_136F5C
 loc_136F89:
-		LDA		byte_7A
-		CLC
-		ADC		#$20
-		STA		byte_7A
-		LDA		byte_7B
-		ADC		#$00
-		STA		byte_7B
+		ADDW8	byte_7A,#$20
 		DEC		_tmp2
 		BNE		loc_136F43
-		LDA		_tmp3
-		BEQ		loc_136FB0
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
+		DO_WRAP	_tmp2,_tmp3,loc_136FB0
 		LDA		byte_7A
 		AND		#$1F
 		STA		byte_7A
@@ -3307,6 +3258,7 @@ _wnd_nt_backup_queue0:
 		LDA		_wnd_line_tmp_height
 		STA		_ptr0+1
 		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_NOP,0
+loc_13781C:
 		PPUQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#$20
 		PPUQMOVB	_ptr0,OP_NOP,0
 loc_13781D:
@@ -3321,15 +3273,9 @@ loc_13782A:
 		PPUQMOVA
 		DEC		_ptr0
 		BNE		loc_13781D
-		LDA		_ptr0+1
-		BEQ		loc_137856
-		STA		_ptr0
-		LDA		#$00
-		STA		_ptr0+1
+		DO_WRAP	_ptr0,_ptr0+1,loc_137856
 		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$E0
-		PPUQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#$20
-		PPUQMOVB	_ptr0,OP_NOP,0
-		JMP		loc_13781D
+		JMP		loc_13781C
 loc_137856:
 		PPUQEND
 		RTS
@@ -3363,11 +3309,7 @@ loc_13788D:
 		PPUQMOVA
 		DEC		_ptr0
 		BNE		loc_137880
-		LDA		_ptr0+1
-		BEQ		loc_1378B9
-		STA		_ptr0
-		LDA		#$00
-		STA		_ptr0+1
+		DO_WRAP	_ptr0,_ptr0+1,loc_1378B9
 		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$1F
 		PPUQMOVB	#$20,OP_NOP,0
 		PPUQMOVB	_ptr0,OP_ORA,#$80
@@ -3390,6 +3332,7 @@ _wnd_extnt_backup_queue0:
 		LDA		_wnd_line_tmp_height
 		STA		_ptr0+1
 		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_NOP,0
+loc_1378E0:
 		EXTQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_ptr0,OP_NOP,0
 loc_1378E1:
@@ -3404,15 +3347,9 @@ loc_1378EE:
 		EXTQMOVA
 		DEC		_ptr0
 		BNE		loc_1378E1
-		LDA		_ptr0+1
-		BEQ		loc_13791A
-		STA		_ptr0
-		LDA		#$00
-		STA		_ptr0+1
+		DO_WRAP	_ptr0,_ptr0+1,loc_13791A
 		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$E0
-		EXTQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_ptr0,OP_NOP,0
-		JMP		loc_1378E1
+		JMP		loc_1378E0
 loc_13791A:
 		EXTQEND
 		RTS
@@ -3445,11 +3382,7 @@ loc_137951:
 		EXTQMOVA
 		DEC		_ptr0
 		BNE		loc_137944
-		LDA		_ptr0+1
-		BEQ		loc_13797D
-		STA		_ptr0
-		LDA		#$00
-		STA		_ptr0+1
+		DO_WRAP	_ptr0,_ptr0+1,loc_13797D
 		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$1F
 		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
 		EXTQMOVB	_ptr0,OP_ORA,#$80
@@ -3613,11 +3546,7 @@ loc_137AD2:
 		INY
 		DEC		_tmp6
 		BNE		loc_137AD2
-		LDA		_tmp6+1
-		BEQ		loc_137B01
-		STA		_tmp6
-		LDA		#$00
-		STA		_tmp6+1
+		DO_WRAP	_tmp6,_tmp6+1,loc_137B01
 		LDA		_ptr0
 		AND		#$1F
 		STA		_ppu_queue_buf,Y
@@ -3636,11 +3565,7 @@ loc_137B01:
 		INC		_ptr0
 		JMP		loc_137AB8
 loc_137B0A:
-		LDA		_tmp5
-		BEQ		loc_137B1D
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_137B1D
 		LDA		_ptr0
 		AND		#$E0
 		STA		_ptr0
@@ -4066,11 +3991,7 @@ sub_137E2A:
 		INC		_tmp_tile_pos._X
 		DEC		byte_6A
 		BNE		loc_137E6A
-		LDA		byte_6B
-		BEQ		loc_137E6C
-		STA		byte_6A
-		LDA		#$00
-		STA		byte_6B
+		DO_WRAP	byte_6A,byte_6B,loc_137E6C
 		LDX		byte_62
 		PPUQMOVB	byte_66,OP_AND,#$E0
 		PPUQMOVB	byte_67,OP_NOP,0

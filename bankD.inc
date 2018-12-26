@@ -4488,11 +4488,7 @@ loc_59B66:
 		PPUQMOVA
 		DEC		_tmp2
 		BNE		loc_59B66
-		LDA		_tmp3
-		BEQ		loc_59B93
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
+		DO_WRAP	_tmp2,_tmp3,loc_59B93
 		PPUQMOVB	_ptr0,OP_AND,#$E0
 		JMP		loc_59B65
 loc_59B93:

@@ -162,11 +162,12 @@ loc_88138:
 		LDY		_cur_obj_pos._Y
 		JMP		_far_fire_or_destroy_map_tile_ex
 loc_88149:
-		LDA		_city._cur_year
-		SEC
-		SBC		#$9E
-		LDA		_city._cur_year+1
-		SBC		#$07
+;		LDA		_city._cur_year
+;		SEC
+;		SBC		#$9E
+;		LDA		_city._cur_year+1
+;		SBC		#$07
+		CMPWI	_city._cur_year,1950
 		BCS		loc_88121
 		LDA		_obj_spr_idx,Y
 		CLC

@@ -135,11 +135,7 @@ loc_7011E:
 		INY
 		DEC		_tmp4
 		BNE		loc_7011E
-		LDA		_tmp5
-		BEQ		loc_7014D
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_7014D
 		EXTQMOVB	_tmp2,OP_AND,#$E0
 		JMP		loc_7011D
 loc_7014D:
@@ -158,11 +154,7 @@ loc_70167:
 		INY
 		DEC		_tmp4
 		BNE		loc_70167
-		LDA		_tmp5
-		BEQ		loc_70196
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_70196
 		PPUQMOVB	_tmp2,OP_AND,#$E0
 		JMP		loc_70166
 loc_70196:
@@ -222,6 +214,7 @@ loc_701D5:
 
 byte_7020D:
 		.BYTE	$00,$03,$06
+
 _game_msg_presentss_list:
 		.BYTE	$80,$80,$00,$80,$80,$80,$80,$80,$80,$80,$80,$01,$80,$02,$03,$04
 		.BYTE	$05,$06,$07,$08,$09,$80,$0A,$0B,$0C,$0D,$0E,$80,$80,$80,$80,$80
@@ -231,36 +224,31 @@ _game_msg_presentss_list:
 _game_msg_presents_icon_line_draw:
 		TYA
 		PHA
+		PUSHB	_tmp4
+		PUSHB	_tmp5
 		EXTQSTART
 		EXTQMOVB	_tmp2,OP_NOP,0
+loc_70251:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		STA		_tmp6
-		LDA		_tmp5
-		STA		_tmp6+1
-		INX
+		EXTQMOVB	_tmp4,OP_NOP,0
 loc_70252:
 		LDA		(word_C3),Y
 		EXTQMOVA
 		INY
-		DEC		_tmp6
+		DEC		_tmp4
 		BNE		loc_70252
-		LDA		_tmp6+1
-		BEQ		loc_70280
-		STA		_tmp6
-		LDA		#$00
-		STA		_tmp6+1
+		DO_WRAP	_tmp4,_tmp5,loc_70280
 		EXTQMOVB	_tmp2,OP_AND,#$E0
-		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_tmp6,OP_NOP,0
-		JMP		loc_70252
+		JMP		loc_70251
 loc_70280:
 		EXTQEND
+		POPB	_tmp5
+		POPB	_tmp4
 		PLA
 		TAY
 		PPUQSTART
 		PPUQMOVB	_tmp2,OP_NOP,0
+loc_70299:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_7029A:
@@ -269,15 +257,9 @@ loc_7029A:
 		INY
 		DEC		_tmp4
 		BNE		loc_7029A
-		LDA		_tmp5
-		BEQ		loc_702C8
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_702C8
 		PPUQMOVB	_tmp2,OP_AND,#$E0
-		PPUQMOVB	_tmp3,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_7029A
+		JMP		loc_70299
 loc_702C8:
 		PPUQEND
 		RTS

@@ -1385,11 +1385,7 @@ loc_18AA80:
 		INX
 		DEC		byte_9F
 		BNE		loc_18AA6D
-		LDA		byte_A0
-		BEQ		loc_18AAAF
-		STA		byte_9F
-		LDA		#$00
-		STA		byte_A0
+		DO_WRAP	byte_9F,byte_A0,loc_18AAAF
 		LDA		_wnd_line_tmp_ppu_ofs
 		AND		#$E0
 		TAY
@@ -1437,11 +1433,7 @@ loc_18AAE5:
 		INX
 		DEC		byte_9F
 		BNE		loc_18AAD2
-		LDA		byte_A0
-		BEQ		loc_18AAAF
-		STA		byte_9F
-		LDA		#$00
-		STA		byte_A0
+		DO_WRAP	byte_9F,byte_A0,loc_18AAAF
 		LDA		_game_wnd_spr_mode_flag
 		BEQ		loc_18AB01
 		LDA		_wnd_line_tmp_ppu_ofs
@@ -1496,11 +1488,7 @@ loc_18AB4E:
 		INCW	word_9B
 		DEC		byte_9F
 		BNE		loc_18AB3D
-		LDA		byte_A0
-		BEQ		loc_18AB71
-		STA		byte_9F
-		LDA		#$00
-		STA		byte_A0
+		DO_WRAP	byte_9F,byte_A0,loc_18AB71
 		LDA		_wnd_line_tmp_ppu_ofs
 		AND		#$E0
 		STA		word_9B
@@ -1528,11 +1516,7 @@ loc_18AB8C:
 		ADDW8	word_9B,#$20
 		DEC		byte_9F
 		BNE		loc_18AB7B
-		LDA		byte_A0
-		BEQ		loc_18AB71
-		STA		byte_9F
-		LDA		#$00
-		STA		byte_A0
+		DO_WRAP	byte_9F,byte_A0,loc_18AB71
 		LDA		_wnd_line_tmp_ppu_ofs
 		AND		#$1F
 		STA		word_9B

@@ -306,15 +306,8 @@ loc_BC1C:										; -
 		PPUQMOVA
 		DEC		_tmp6
 		BNE		loc_BC1B
-		LDA		_tmp7
-		BEQ		loc_BC49
-		STA		_tmp6
-		LDA		#$00
-		STA		_tmp7
+		DO_WRAP	_tmp6,_tmp7,loc_BC49
 		PPUQMOVB	_tmp4,OP_AND,#$E0
-;		PPUQMOVB	_tmp5,OP_ORA,#$20			; REDUNDANT, dupe of the code
-;		PPUQMOVB	_tmp6,OP_NOP,0				; at the beginning of the loop,
-;		JMP		loc_BC1B						; reuse them with longer jump
 		JMP		loc_BC1A						; OPTIMIZED
 loc_BC49:
 		PPUQEND
@@ -689,17 +682,14 @@ loc_58371:
 		EXTQMOVB	#$0B,OP_NOP,0
 		DEC		_tmp4
 		BNE		loc_58371
-		LDA		_tmp5
-		BEQ		loc_5839E
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_5839E
 		EXTQMOVB	_tmp2,OP_AND,#$E0
 		JMP		loc_58370
 loc_5839E:
 		EXTQEND
 		POPB	_tmp5
 		POPB	_tmp4
+; -
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp2,OP_NOP,0
@@ -719,15 +709,8 @@ loc_583CC:
 		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_583BE
-		LDA		_tmp5
-		BEQ		loc_583F7
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_583F7
 		PPUQMOVB	_tmp2,OP_AND,#$E0
-;		PPUQMOVB	_tmp3,OP_ORA,#$20
-;		PPUQMOVB	_tmp4,OP_NOP,0
-;		JMP		loc_583BE
 		JMP		loc_583BD
 loc_583F7:
 		PPUQEND
@@ -827,7 +810,6 @@ _game_msg_presents_pos_calc:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_line_clear:
 		EXTQSTART
-		LDY		#$0B
 		PUSHB		_tmp4
 		PUSHB		_tmp5
 		EXTQMOVB	_tmp2,OP_NOP,0
@@ -835,15 +817,10 @@ loc_584FA:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
 loc_584FB:
-		TYA
-		EXTQMOVA
+		EXTQMOVB	#$0B,OP_NOP,0
 		DEC		_tmp4
 		BNE		loc_584FB
-		LDA		_tmp5
-		BEQ		loc_58527
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_58527
 		EXTQMOVB	_tmp2,OP_AND,#$E0
 		JMP		loc_584FA
 loc_58527:
@@ -851,21 +828,15 @@ loc_58527:
 		POPB	_tmp5
 		POPB	_tmp4
 		PPUQSTART
-		LDY		#$20
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_58540:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58541:
-		TYA
-		PPUQMOVA
+		EXTQMOVB	#$20,OP_NOP,0
 		DEC		_tmp4
 		BNE		loc_58541
-		LDA		_tmp5
-		BEQ		loc_5856D
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_5856D
 		PPUQMOVB	_tmp2,OP_AND,#$E0
 		JMP		loc_58540
 loc_5856D:
@@ -1268,11 +1239,7 @@ loc_5889A:
 		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_588C5
-		LDA		_tmp5
-		BEQ		loc_588CE
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_588CE
 		PPUQMOVB	_tmp2,OP_AND,#$E0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
@@ -1365,11 +1332,7 @@ loc_58963:
 		STA		byte_51B
 		DEC		_tmp4
 		BNE		loc_58990
-		LDA		_tmp5
-		BEQ		loc_58998
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
+		DO_WRAP	_tmp4,_tmp5,loc_58998
 		PPUQMOVB	_tmp2,OP_AND,#$E0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
@@ -1594,10 +1557,6 @@ _game_msg_wnd_line_draw:
 		LDX		_tmp0
 		LDY		_game_msg_wnd_nt_ofs_list,X
 		STY		_tmp6+1
-;		LDA		_tmp3
-;		STA		_tmp5
-;		LDA		_tmp4
-;		STA		_tmp6
 		PUSHB	_tmp3
 		PUSHB	_tmp4
 		PPUQSTART
@@ -1611,19 +1570,11 @@ loc_58B38:
 		PPUQMOVA
 		DEC		_tmp3
 		BNE		loc_58B38
-		LDA		_tmp4
-		BEQ		loc_58B67
-		STA		_tmp3
-		LDA		#$00
-		STA		_tmp4
+		DO_WRAP	_tmp3,_tmp4,loc_58B67
 		PPUQMOVB	_ptr0+1,OP_AND,#$E0
-;		PPUQMOVB	_tmp2,OP_ORA,#$20
-;		PPUQMOVB	_tmp3,OP_NOP,0
-;		JMP		loc_58B38
 		JMP		loc_58B37
 loc_58B67:
 		LDY		_tmp6+1
-;		STX		_tmp6+1
 		PPUQEND
 		POPB	_tmp4
 		POPB	_tmp3
@@ -1638,19 +1589,10 @@ loc_58B81:
 		EXTQMOVA
 		DEC		_tmp3
 		BNE		loc_58B81
-		LDA		_tmp4
-		BEQ		loc_58BB0
-		STA		_tmp3
-		LDA		#$00
-		STA		_tmp4
+		DO_WRAP	_tmp3,_tmp4,loc_58BB0
 		EXTQMOVB	_ptr0+1,OP_AND,#$E0
-;		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
-;		EXTQMOVB	_tmp3,OP_NOP,0
-;		JMP		loc_58B81
 		JMP		loc_58B80
 loc_58BB0:
-;		LDY		_tmp6+1
-;		STY		_ppu_queue_pos_head
 		EXTQEND
 		RTS
 
