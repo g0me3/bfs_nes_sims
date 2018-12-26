@@ -3827,6 +3827,16 @@ _rand:
 		STA		_rand_seed+1
 		RTS
 
+; ADDED, new common helper for added scrollers.
+; =============== S U B	R O U T	I N E =======================================
+_scroll_message_restart:
+		STA		_scroll_msg_idx
+		LDY		#$00
+		STY		_scroll_msg_start_pos
+		DEY
+		STY		_scroll_msg_active_flag
+		RTS
+
 ; =============== S U B	R O U T	I N E =======================================
 _rand_clamp_A:
 		PHA

@@ -334,7 +334,7 @@ loc_104296:
 .power_search_loop0:
 		INCW	_tmp6CE							; for every entry in the power nodes list, increase power consumption
 		CMPW	_tmp6CE,_tmp6CC					; then compare with max possible according to power stations number
-		BCS		locret_1042F9
+		BCS		.brownout
 		LDX		_tmp6D0							; load near tile idx and change cur pos to it
 		JSR		_jump_to_near_to_tmp_map_pos_tile; at the beginning of loop, this is out power station tile
 		JSR		_power_grid_set					; set the power grid flag for current tile
@@ -366,11 +366,11 @@ loc_104296:
 		LDA		_tmp6D2
 		BNE		.power_search_loop0				; search until we have no more tiles to power up
 		JMP		.power_grid_recalc_loop			; then we jump to retch another power node from list
-locret_1042F9:
+.brownout:
+; NEW, brownouts message reimplemented
+		LDA		#$17
+		JMP		_scroll_message_restart
 ; -
-; TODO: put brownouts scroller message start here.
-; -
-		RTS
 
 ; REDUNDANT, merged with _jump_to_near_to_tmp_map_pos_tile, moved to system bank
 ; =============== S U B	R O U T	I N E =======================================
@@ -1901,7 +1901,7 @@ _events_selector:
 		LDX		#$00							; double triggering by accident
 		LDY		#$00
 .next_byte_loop:
-		LDA		_city._events_flags,X		; first fetch event triggers
+		LDA		_city._events_flags,X			; first fetch event triggers
 		STA		_tmpE6
 .bits_loop:
 		LSR		_tmpE6							; exctract bit
@@ -2200,9 +2200,9 @@ _register_new_event:
 		TYA
 		AND		#$07
 		TAY
-		LDA		_city._events_flags,X		; read flags, set corresponding one
+		LDA		_city._events_flags,X			; read flags, set corresponding one
 		ORA		_bitmasks,Y
-		STA		_city._events_flags,X		; _game_msg_idx already set, Y missnig
+		STA		_city._events_flags,X			; _game_msg_idx already set, Y missnig
 		BNE		_new_event_break				; unconditional jump
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2233,7 +2233,7 @@ _new_event_break:
 ; =============== S U B	R O U T	I N E =======================================
 _check_for_free_present_slot:
 		LDX		#$02
-		LDA		_city._events_flags		; WEIRD, test if city status acquired, but why?
+		LDA		_city._events_flags				; WEIRD, test if city status acquired, but why?
 		AND		#$04
 		BEQ		loc_105069						; if no, only 3 slots are available
 		LDX		#$03

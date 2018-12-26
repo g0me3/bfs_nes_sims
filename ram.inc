@@ -371,7 +371,9 @@ _building_name_and_cost_hud_src_ofs:
 		.BYTE	0
 _game_msg_idx:
 		.BYTE	0
-_prev_game_msg_idx:
+;_prev_game_msg_idx:							; REDUNDANT, unused anymore
+;		.BYTE	0
+_game_msg_awaits_flag:
 		.BYTE	0
 word_DA:
 		.BYTE	0,0
@@ -459,14 +461,14 @@ _mini_map_need_redraw_flag:
 		.BYTE	0
 _thread1_flags:
 		.BYTE	0,0
-_unref_13:
-		.BYTE	0,0,0
+;_unref_13:
+;		.BYTE	0,0,0
 _mini_map_cur_row:
 		.BYTE	0
 _mini_map_cur_col:
 		.BYTE	0
-_unref_14:
-		.BYTE	0,0
+;_unref_14:
+;		.BYTE	0,0
 
 		_tpos	_last_water_tile_pos				; NEW: new var for ship deploy
 
@@ -527,8 +529,8 @@ _title_sub_idx:
 		.BYTE	0
 _cur_obj_idx:
 		.BYTE	0
-_unref_16:
-		.BYTE	0
+;_unref_16:
+;		.BYTE	0
 _obj_tornado_counter:
 		.BYTE	0
 _obj_plane_anim_idx:
@@ -615,10 +617,8 @@ _hud_date_redraw_req:
 		.BYTE	0
 _tmp514:
 		.BYTE	0
-_game_msg_awaits_flag:
-		.BYTE	0
-_unref_5:
-		.BYTE	0
+;_unref_5:
+;		.BYTE	0
 _tmp_popul_hex:
 		.BYTE	0,0,0
 _tmp51A:
@@ -718,8 +718,8 @@ _tmp547:
 
 		_tobj4b	_obj_spr_delta
 
-_unref?:
-		.BYTE	0
+;_unref?:
+;		.BYTE	0
 _train_hide_mode:
 		.BYTE	0
 _train_turns_counter:

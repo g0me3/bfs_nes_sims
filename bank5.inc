@@ -54,6 +54,8 @@ loc_8803C:
 		LDA		_airplane_crash_req				; special check for airplane crash
 		BEQ		loc_8801C
 ;		JSR		_airplane_crash_start
+		LDA		_game_msg_idx					; FIX, prevent airplane disaster to
+		BNE		loc_8801C						; steal other disasters
 		LDA		#$00
 		STA		_airplane_crash_req
 		BEQ		_airplane_crash_start			; OPTIMIZED

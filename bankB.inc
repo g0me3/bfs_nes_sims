@@ -1985,11 +1985,7 @@ _heavy_traffic_report_test:
 		CMP		#$0A
 		BCC		loc_11F93E
 		LDA		#$18							; force scroller msg
-		STA		_scroll_msg_idx
-		LDY		#$00
-		STY		_scroll_msg_start_pos
-		DEY
-		STY		_scroll_msg_active_flag
+		JSR		_scroll_message_restart			; OPTIMIZED, replaced with routine
 		APUA_SE	_SE_IDX_TRAFFIC
 loc_11F93E:
 		POPB	_mmc5_mul0_shadow
@@ -4010,11 +4006,7 @@ loc_11FE3A:
 		APUA_SE	_SE_IDX_DESTROY					; when done, set alert position and enable button
 ; NEW, let's have fun with more messages re-enabled
 		LDA		#$16
-		STA		_scroll_msg_idx
-		LDY		#$00
-		STY		_scroll_msg_start_pos
-		DEY
-		STY		_scroll_msg_active_flag
+		JSR		_scroll_message_restart
 ; -
 		JSR		_goto_alert_start				; also play sound for destroying building
 		LDA		_tmp6CD							; destroy the last base tile
