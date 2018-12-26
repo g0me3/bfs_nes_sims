@@ -21,7 +21,7 @@ _MAIN_LOOP:
 		RTS
 loc_13600B:
 		JSR		_wait_for_nmi					; once per frame
-		JSR		_states_select				; selector of current GUI state
+		JSR		_states_select					; selector of current GUI state
 		LDA		_obj_active_flags				; according to requests of engine
 		AND		#$01
 		BEQ		loc_13601B
@@ -915,7 +915,7 @@ loc_136625:
 		LDA		#$04
 		JMP		_set_game_state_idx
 loc_13662E:
-		LDA		_hud_redraw_req			; keep state of hud redraw till the end
+		LDA		_hud_redraw_req					; keep state of hud redraw till the end
 		BEQ		loc_136637
 		LDA		#$00
 		JMP		_set_game_state_idx
@@ -932,7 +932,7 @@ loc_136640:
 		LSR
 		BCS		loc_136654						; bit0 clear if static hud need to be redrawn
 		LDA		#$FF
-		STA		_hud_redraw_req			; set the static hud redraw flag
+		STA		_hud_redraw_req					; set the static hud redraw flag
 		LDA		#$00
 		JMP		_set_game_state_idx				; also set the state for redraw already
 loc_136654:
@@ -1343,7 +1343,7 @@ _hud_static_draw:
 		JSR		_hud_static_nt_draw				; cases which draws the same area of the screen
 		JSR		_hud_static_extnt_draw
 		LDA		#$00
-		STA		_hud_redraw_req			; clear request flag
+		STA		_hud_redraw_req					; clear request flag
 		CLC
 		RTS
 locret_136774:
@@ -1602,11 +1602,11 @@ _hud_build_name_draw:
 		LDA		#$F2
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		LDA		_ppu_queue_pos_head				; backup queue buffers heads
-		STA		_ptr0
-		LDA		_extnt_queue_pos_head
-		STA		_ptr0+1
-		JSR		_hud_build_name_pos_calc	; calc relative nt pos
+;		LDA		_ppu_queue_pos_head				; REDUNDANT, why? store tmp queue buffers heads
+;		STA		_ptr0
+;		LDA		_extnt_queue_pos_head
+;		STA		_ptr0+1
+		JSR		_hud_build_name_pos_calc		; calc relative nt pos
 		LDA		_constr_palette_selected_idx	; check for additional
 		CMP		#$0B							; buildings
 		BNE		loc_136C1D
@@ -1623,30 +1623,43 @@ loc_136C1D:
 		CLC
 		ADC		#$03
 loc_136C28:
-;		CMP		#$0D							; REDUNDANT
-;		BNE		loc_136C3A						;
-;		LDX		_cur_present_select_idx			; presents have the same
-;		LDY		_city._presents_list,X			; name 0D, empty slot should
-;		DEY										; display "NoPresent", but
-;		BPL		loc_136C37						; it is not possible to select it
-;		LDY		#$0F							; so it goes unused as well as
-;loc_136C37:									; the whole this code is redundant
-;		LDA		_present_names_length_list,Y
+; NOTE, here is the code for displaying an individual presents name
+; we have them in the CHR data but haven't in the nametable arrays.
+; this branch is an evidence that names should be suported at some
+; point of the development, but either not inmplemented or removed
+;
+		CMP		#$0D
+		BNE		loc_136C3A
+		LDX		_cur_present_select_idx
+		LDY		_city._presents_list,X			; when we build all presents
+;		DEY										; but have selected this option
+;		BPL		loc_136C37						; "NoPresents" will be displayed
+;		LDY		#$0F							; REDUNDANT now after rearrangement
+;loc_136C37:
+		LDA		_present_names_idx_list,Y
 loc_136C3A:
 		LDX		#$0C
 		MULXA
-		STA		_hud_build_name_src_ofs
-		JSR		_hud_build_name_nt_queue
+;		STA		_hud_build_name_src_ofs			; REDUNDANT
+; ADDED
+		STA		_ptr0							; allows more than 16 names in list
+		TXA
+		STA		_ptr0+1
+;
+		JSR		_hud_build_name_nt_queue		; ADDED, also modified the queue routines
 		JSR		_hud_build_name_extnt_queue
-		LDA		_ptr0							; resore ppu queue buffers
-		STA		_ppu_queue_pos_head
-		LDA		_ptr0+1
-		STA		_extnt_queue_pos_head
+;		LDA		_ptr0							; REDUNDANT why? update queueus pos
+;		STA		_ppu_queue_pos_head
+;		LDA		_ptr0+1
+;		STA		_extnt_queue_pos_head
 		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		RTS
-; REDUNDANT
-;_present_names_length_list:
+
+_present_names_idx_list:
+; ADDED, partially reused existing buildings names
+		.BYTE	$10,$11,$12,$13,$14,$0D,$15,$16,$17,$17,$17,$17,$0D,$18,$19,$1A
+; REDUNDANT, all presents have the same name 0D
 ;		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$10
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1694,18 +1707,30 @@ loc_136CAF:
 
 ; =============== S U B	R O U T	I N E =======================================
 _hud_build_name_nt_queue:
-		LDX		_ptr0							; backup X here
+;		LDX		_tmp0							; REDUNDANT, read tmp queue pos
+		PPUQSTART								; FIX
 		LDA		byte_7E
 		STA		_tmp2
 		LDA		byte_7F
 		STA		_tmp3
-		LDY		_hud_build_name_src_ofs
+; ADDED
+		LDA		_ptr0
+		CLC
+		ADC		#<[_tlm_nt_building_names_lib]
+		STA		_ptr4
+		LDA		_ptr0+1
+		ADC		#>[_tlm_nt_building_names_lib]
+		STA		_ptr4+1
+; -
+;		LDY		_hud_build_name_src_ofs			; REDUNDANT
+		LDY		#$00							; ADDED
 		PPUQMOVB	byte_7A,OP_NOP,0
 loc_136CD5:
 		PPUQMOVB	byte_7B,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_136CD6:
-		LDA		_tlm_nt_building_names_lib,Y
+;		LDA		_tlm_nt_building_names_lib,Y	; REDUNDANT
+		LDA		(_ptr4),Y						; ADDED
 		PPUQMOVA
 		INY
 		DEC		_tmp2
@@ -1714,19 +1739,32 @@ loc_136CD6:
 		PPUQMOVB	byte_7A,OP_AND,#$E0
 		JMP		loc_136CD5
 loc_136D03:
-		STX		_ptr0
+;		STX		_tmp0							; REDUNDANT, save tmp queue pos
+		PPUQEND									; FIX
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _hud_build_name_extnt_queue:
-		LDX		_ptr0+1
-		LDY		_hud_build_name_src_ofs
+;		LDX		_tmp1							; REDUNDANT
+		EXTQSTART								; FIX
+;		LDY		_hud_build_name_src_ofs			; REDUNDANT
+; ADDED
+		LDA		_ptr0
+		CLC
+		ADC		#<[_tlm_extnt_building_names_lib]
+		STA		_ptr4
+		LDA		_ptr0+1
+		ADC		#>[_tlm_extnt_building_names_lib]
+		STA		_ptr4+1
+; -
+		LDY		#$00
 		EXTQMOVB	byte_7A,OP_NOP,0
 loc_136D1E:
 		EXTQMOVB	byte_7B,OP_ADD,#$3C
 		EXTQMOVB	byte_7E,OP_NOP,0
 loc_136D1F:
-		LDA		_tlm_extnt_building_names_lib,Y
+;		LDA		_tlm_extnt_building_names_lib,Y	; REDUNDANT
+		LDA		(_ptr4),Y						; ADDED
 		EXTQMOVA
 		INY
 		DEC		byte_7E
@@ -1735,7 +1773,8 @@ loc_136D1F:
 		EXTQMOVB	byte_7A,OP_AND,#$E0
 		JMP		loc_136D1E
 loc_136D4F:
-		STX		_ptr0+1
+;		STX		_tmp1							; REDUNDANT
+		EXTQEND									; END
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

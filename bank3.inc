@@ -1438,7 +1438,7 @@ loc_589FA:
 ; =============== S U B	R O U T	I N E =======================================
 ;       0
 ; event	1 x
-; event	2 item F
+; event	2 item F	White House
 ; event	3 x
 ; event	4 x
 ; event	5 x
@@ -1447,22 +1447,22 @@ loc_589FA:
 ; event	8 x
 ; event	9 x
 ; event	A x
-; event	B item 1
+; event	B item 1	Bank
 ; event	C x
-; event	D item 2
-; event	E item 3
-; event	F item 4
-; event	10 item	5
-; event	11 item	6
-; event	12 item	7
-; event	13 item	8
-; event	14 item	9
+; event	D item 2	Amusement Park
+; event	E item 3	Zoo
+; event	F item 4	Casino
+; event	10 item	5	Water Reclaim
+; event	11 item	6	Police Station
+; event	12 item	7	Fire Station
+; event	13 item	8	10th Monument
+; event	14 item	9	100th Monument
 ; event	15 x
-; event	16 item	A
-; event	17 item	B
-; event	18 item	C
-; event	19 item	D
-; event	1A item	E
+; event	16 item	A	Expo
+; event	17 item	B	Monument
+; event	18 item	C	Library
+; event	19 item	D	Park
+; event	1A item	E	Station
 ;
 ; REDUNDANT: too complex, replace with table.
 ;

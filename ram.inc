@@ -367,8 +367,8 @@ byte_D5:
 		.BYTE	0
 _hud_build_name_draw_req:
 		.BYTE	0
-_hud_build_name_src_ofs:
-		.BYTE	0
+;_hud_build_name_src_ofs:						; REDUNDANT, not used anymore
+;		.BYTE	0
 _game_msg_idx:
 		.BYTE	0
 ;_prev_game_msg_idx:							; REDUNDANT, unused anymore

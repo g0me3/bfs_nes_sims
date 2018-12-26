@@ -560,12 +560,12 @@ _road_tile_collect:
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_transport_deterogate_test:
+_transport_deteriorate_test:
 		LDA		_map_tiles_flags_tbl,Y			; NOTE, for some reason we skip roads
 		BMI		locret_11E456					; if intersected with electrics
-		LDA		_fund_rate_trans				; here we test for roads deterogating
+		LDA		_fund_rate_trans				; here we test for roads deteriorating
 		CMP		#$1E							; funding above 94% is fine
-		BCS		locret_11E456					; else 1/256 chance to deterogate
+		BCS		locret_11E456					; else 1/256 chance to deteriorate
 		JSR		_rand
 		BNE		locret_11E456
 		JSR		_rand							; the lower funding, more frequently
@@ -643,7 +643,7 @@ loc_11E4BA:
 		ORA		#$08
 		STA		_obj_active_flags
 .no_trains_start:
-		JMP		_transport_deterogate_test		; common transport deterogation test
+		JMP		_transport_deteriorate_test		; common transport deterioration test
 
 ; =============== S U B	R O U T	I N E =======================================
 _general_areas_collect:

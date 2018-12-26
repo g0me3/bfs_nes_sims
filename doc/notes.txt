@@ -33,7 +33,7 @@ MISC#17.FIXED(BFS) The PPU data transfer for regular and extendex name tables ar
 	WHAT'S UNFINISHED IN THE GAME
 
 UNFINISHED#1. There are 6 regular scenarios available at the beginning. When you beat 6 regular scenarios, two additional scenarios will be available: "Las Vegas UFO" and "Freedom".
-	UNFINISHED#1.2.TODO "Traffic in Bern" scenario seems totally non functional. The initial high traffic quickly calms down when city stabilizes and stopping its growth. So average traffic value here always lower than need to fail this scenario. You will always win even if roads are deterogating (no roads, no traffic!). Also, as against other game parameters re-calculated in real-time mode only the traffic average calculated once per year with overall city problems recalculations.
+	UNFINISHED#1.2.TODO "Traffic in Bern" scenario seems totally non functional. The initial high traffic quickly calms down when city stabilizes and stopping its growth. So average traffic value here always lower than need to fail this scenario. You will always win even if roads are deteriorating (no roads, no traffic!). Also, as against other game parameters re-calculated in real-time mode only the traffic average calculated once per year with overall city problems recalculations.
 	UNFINISHED#1.2.TODO Both additional scenarios have no briefing texts and window headers, only blank windows.
 	UNFINISHED#1.3.TODO Also both have no completing conditions, both are infinite and cannot be completed.
 	UNFINISHED#1.4.TODO Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR ROM contains two set of tiles for two frames of the large UFO animation with a tractor beam. However, there aren't any other mentions in the game messages nor the game code for such type of disasters/objects. There is no sprites data associated with it as well. It is just not implemented at all.
@@ -75,8 +75,8 @@ UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably int
 	- BANK04 F0 15x1- Unused small text for either evaluation or overview screens: "Current funds", "Tax rate", "Loans".
 	- BANK05 70 10x2- Three small texts for budget screen: "Amount owed", "Amount peid", "Interest rate".
 	- BANK05 F9 7x1 - One more unused overview or budget screens text: "Credit rating".
-	- BANK06 A3 1x1 - Unused "No" part of the "No Present" small text for the HUD on the black background.
-	- BANK06 E3 5x1 - Scenario screen unused text: "Hamburg 1944", a leftover of early version, same scenario present original Micropolis.
+	- BANK06 E3 5x1 - Scenario screen unused text: "Hamburg 1944", a leftover of early version, same scenario were in original Micropolis.
+	- BANK06 95 2x1 - "Built", part of building names for HUD on the black BG. The game never used past time in it's messages.
 	- BANK07 69 4x1,
 			 5C 3x1,
 			 7C 2x1,
@@ -102,7 +102,7 @@ UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably int
 	- BANK12 60 3x3 - White House 3 present.
 	- BANK12 63 3x3 - White House 4 present.
 	- BANK12 89 7x1,
-			 90 1x1 - "Botanical Garden", a description text of unused present for menus.
+			 90 1x1 - "Botanical Garden", a description text of unused present for menu.
 	- BANK12 9C 4x1 - "Station", a part of present building names for HUD on the black background. Only single "Present" used for all presents.
 	- BANK15 00 9x1 - Set of tiles to draw rounded frame on the white background with "W:" letter, usage is unknown.
 	- BANK15 49 1x1 - Part of "Water Way Ar[ea]" text: "ea" not fit into the string and left unused.
@@ -351,6 +351,7 @@ So this is restored and fixed the original bug at the same time.
 - Restored sound effect (UNFINISHED#3) can be heard when var $00F1 write value $80. Still have no idea where it should be used.
 - Restored ship object (UNFINISHED#5) uses the existing movement logic with some corrections to be more like in the SNES version, and a totally new deploy code made by guess.
 - Restored water road drive ability (UNFINISHED#22) using additional unused tiles (UNFINISHED#10) also rewritten fetch routine to allow more tiles to be accessible.
+- Restored part of Present building descriptions for HUD display (UNFINISHED#10). Missing entries uses either common "BUild Monument" or "BuildPresent" strings.
 - Money can't drop down to zero now even with loan. If money are negative after the budget calcs, the "CITY GOME BROKE" message is displayed once after the end of the year or every time you exit the budget screen. Total city amount stay at 0 even if budget currently show negative balance.
 
 	BFS TODO
@@ -365,6 +366,7 @@ So this is restored and fixed the original bug at the same time.
 - There are some other special variables left unsaved for BUGS#27 when scenario is triggered. No object or internal counters of current disaster aren't stored. Sometimes with this you may "skip" disaster.
 - Probably better way to signal about city gone broke, maybe constantly. In this case reimplement gone broke flag clear.
 - Three parts of the game uses three different versions of the same routines to read/write, test and combine nearest tiles. Some of them are optimized, some very unoptimal, some uses it's own data arrays duplicated the ones common used in other places.
+- Adjust amount of taxes collected, seems balance here is broken now.
 
 	BFS BUGS
 

@@ -483,24 +483,56 @@ loc_3E6BD:
 ; ---------------B-U-I-L-D-I-N-G--N-A-M-E-S--D-R-A-W--D-A-T-A----------------
 ; ---------------------------------------------------------------------------
 
+; event	B item 1
+; event	D item 2
+; event	E item 3
+; event	F item 4
+; event	10 item	5
+; event	11 item	6
+; event	12 item	7
+; event	13 item	8
+; event	14 item	9
+; event	16 item	A
+; event	17 item	B
+; event	18 item	C
+; event	19 item	D
+; event	1A item	E
+; event	2 item F
+
 _tlm_nt_building_names_lib:
-		.BYTE	$DF,$DF,$DF,$90,$91,$92,$93,$94,$95,$DF,$30,$26	; "BullDozeArea     $1"
-		.BYTE	$DF,$DF,$DF,$90,$96,$97,$98,$99,$DF,$DF,$30,$56	; "BuildRoads       $10"
-		.BYTE	$DF,$DF,$90,$96,$3C,$9B,$9C,$A0,$A1,$DF,$30,$27	; "BuildPowerLine   $5"
-		.BYTE	$DF,$90,$96,$A2,$A3,$A4,$A5,$A6,$A7,$DF,$30,$57 ; "BuildMassTransit $20"
-		.BYTE	$DF,$DF,$DF,$90,$96,$9A,$A8,$A9,$DF,$DF,$30,$56 ; "BuildPark        $10"
-		.BYTE	$DF,$AA,$A1,$97,$AB,$AC,$AD,$30,$DF,$30,$26,$5A ; "ZoneResidential  $100"
-		.BYTE	$DF,$AA,$A1,$31,$32,$33,$34,$35,$36,$30,$26,$5A ; "ZoneCommercial   $100"
-		.BYTE	$DF,$AA,$A1,$37,$38,$39,$3A,$3B,$DF,$30,$26,$5A ; "ZoneIndustrial   $100"
-		.BYTE	$DF,$90,$96,$3C,$3D,$3E,$40,$41,$DF,$30,$27,$5A ; "BuildPoliceDept  $500"
-		.BYTE	$DF,$90,$96,$42,$43,$44,$45,$46,$DF,$30,$27,$5A ; "BuildFireDept    $500"
-		.BYTE	$DF,$90,$96,$47,$48,$49,$4A,$DF,$DF,$30,$58,$5A ; "BuildStadium     $3000"
-		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$58,$5A ; "BuildPowerPlant  $3000"
-		.BYTE	$DF,$90,$96,$4E,$4F,$50,$51,$DF,$DF,$30,$59,$5A ; "BuildSeaPort     $5000"
-		.BYTE	$DF,$90,$96,$97,$98,$99,$9A,$DF,$DF,$30,$26,$5A ; "BuildPresent     $100"
-		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$59,$5A ; "BuildPowerPlant  $5000"
-		.BYTE	$DF,$90,$96,$52,$53,$54,$55,$DF,$30,$26,$5A,$5A ; "BuildAirPort     $10000"
-;		.BYTE	$DF,$A3,$A4,$A5,$A6,$A7,$A8,$DF,$DF,$DF,$DF,$DF ; "NoPresents"      *unused* REDUNDANT
+		.BYTE	$DF,$DF,$DF,$90,$91,$92,$93,$94,$95,$DF,$30,$26	; 00 "BullDozeArea     $1"
+		.BYTE	$DF,$DF,$DF,$90,$96,$97,$98,$99,$DF,$DF,$30,$56	; 01 "BuildRoads       $10"
+		.BYTE	$DF,$DF,$90,$96,$3C,$9B,$9C,$A0,$A1,$DF,$30,$27	; 02 "BuildPowerLine   $5"
+		.BYTE	$DF,$90,$96,$A2,$A3,$A4,$A5,$A6,$A7,$DF,$30,$57 ; 03 "BuildMassTransit $20"
+		.BYTE	$DF,$DF,$DF,$90,$96,$9A,$A8,$A9,$DF,$DF,$30,$56 ; 04 "BuildPark        $10"
+		.BYTE	$DF,$AA,$A1,$97,$AB,$AC,$AD,$30,$DF,$30,$26,$5A ; 05 "ZoneResidential  $100"
+		.BYTE	$DF,$AA,$A1,$31,$32,$33,$34,$35,$36,$30,$26,$5A ; 06 "ZoneCommercial   $100"
+		.BYTE	$DF,$AA,$A1,$37,$38,$39,$3A,$3B,$DF,$30,$26,$5A ; 07 "ZoneIndustrial   $100"
+		.BYTE	$DF,$90,$96,$3C,$3D,$3E,$40,$41,$DF,$30,$27,$5A ; 08 "BuildPoliceDept  $500"
+		.BYTE	$DF,$90,$96,$42,$43,$44,$45,$46,$DF,$30,$27,$5A ; 09 "BuildFireDept    $500"
+		.BYTE	$DF,$90,$96,$47,$48,$49,$4A,$DF,$DF,$30,$58,$5A ; 0A "BuildStadium     $3000"
+		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$58,$5A ; 0B "BuildPowerPlant  $3000"
+		.BYTE	$DF,$90,$96,$4E,$4F,$50,$51,$DF,$DF,$30,$59,$5A ; 0C "BuildSeaPort     $5000"
+		.BYTE	$DF,$90,$96,$97,$98,$99,$9A,$DF,$DF,$30,$26,$5A ; 0D "BuildPresent     $100"
+		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$59,$5A ; 0E "BuildPowerPlant  $5000"
+		.BYTE	$DF,$90,$96,$52,$53,$54,$55,$DF,$30,$26,$5A,$5A ; 0F "BuildAirPort     $10000"
+		.BYTE	$DF,$A3,$A4,$A5,$A6,$A7,$A8,$DF,$DF,$DF,$DF,$DF ; 10 "NoPresents"
+; ADDED, reuse the present names
+		.BYTE	$DF,$90,$96,$DF,$05,$06,$07,$DF,$DF,$30,$26,$5A ; 11 "Build Bank       $100"
+		.BYTE	$DF,$16,$17,$18,$19,$1A,$1B,$1C,$1D,$30,$26,$5A ; 12 "Amusement Park   $100"
+		.BYTE	$DF,$90,$96,$DF,$23,$24,$DF,$DF,$DF,$30,$26,$5A ; 13 "Build Zoo        $100"
+		.BYTE	$DF,$90,$96,$DF,$1E,$1F,$20,$DF,$DF,$30,$26,$5A ; 14 "Build Casino     $100"
+																; 0D "Water Reclaim"	0D used
+		.BYTE	$DF,$3C,$3D,$3E,$9C,$9D,$9E,$9F,$DF,$30,$26,$5A ; 15 "PoliceStation    $100"
+		.BYTE	$DF,$42,$43,$DF,$9C,$9D,$9E,$9F,$DF,$30,$26,$5A ; 16 "Fire Station     $100"
+																; 0D "10th Monument"	17 used
+																; 0D "100th Monument"	17 used
+																; 0D "Expo"				17 used
+		.BYTE	$DF,$90,$96,$DF,$00,$01,$02,$03,$04,$30,$26,$5A ; 17 "Build Monument   $100"
+																; 0D "Library"			0D used
+		.BYTE	$DF,$90,$96,$DF,$25,$26,$27,$DF,$DF,$30,$26,$5A ; 18 "Build Park       $100"
+		.BYTE	$DF,$90,$96,$DF,$9C,$9D,$9E,$9F,$DF,$30,$26,$5A ; 19 "Build Station    $100"
+		.BYTE	$DF,$08,$09,$0A,$0B,$0C,$0D,$DF,$DF,$30,$26,$5A ; 1A "White House      $100"
 _tlm_extnt_building_names_lib:
 		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
 		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
@@ -518,7 +550,18 @@ _tlm_extnt_building_names_lib:
 		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$02,$06,$06
 		.BYTE	$02,$02,$02,$06,$02,$02,$06,$06,$06,$02,$06,$06
 		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$06,$06,$06
-;		.BYTE	$02,$06,$06,$06,$06,$06,$06,$02,$02,$02,$02,$02	; REDUNDANT
+		.BYTE	$02,$06,$06,$06,$06,$06,$06,$02,$02,$02,$02,$02
+; ADDED
+		.BYTE	$02,$02,$02,$02,$16,$16,$16,$02,$02,$02,$06,$06
+		.BYTE	$02,$16,$16,$16,$16,$16,$16,$16,$16,$02,$06,$06
+		.BYTE	$02,$02,$02,$02,$16,$16,$02,$02,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$02,$16,$16,$16,$02,$02,$02,$06,$06
+		.BYTE	$02,$06,$06,$06,$12,$12,$12,$12,$02,$02,$06,$06
+		.BYTE	$02,$06,$06,$02,$12,$12,$12,$12,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$02,$16,$16,$16,$16,$16,$02,$06,$06
+		.BYTE	$02,$02,$02,$02,$16,$16,$16,$02,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$02,$12,$12,$12,$12,$02,$02,$06,$06
+		.BYTE	$02,$16,$16,$16,$16,$16,$16,$02,$02,$02,$06,$06
 
 		SECTION_ENDS	C0B, "PRGC EXT BUILDING NAMES DATA"
 
