@@ -38,7 +38,19 @@ loc_A0024:
 		STA		_game_wnd_spr_mode_flag
 		STA		_game_core_state
 		STA		_scr_res_control_flags
-		JMP		_screen_pal_spr_init
+;		JMP		_screen_pal_spr_init			; REDUNDANT
+;
+; =============== S U B	R O U T	I N E =======================================
+;_screen_pal_spr_init:
+		LDA		_scr_res_idx
+		LSR
+		TAX
+		LDA		_screen_pal_spr_list,X
+		STA		_screen_pal_cur_spr_idx
+		RTS
+
+_screen_pal_spr_list:
+		.BYTE	$03,$08,$02,$02,$03,$03,$06,$04,$00
 _screen_chr_banks_lib:
 		.BYTE	$34,$00,$36,$00
 		.BYTE	$34,$00,$39,$00
@@ -48,6 +60,22 @@ _screen_chr_banks_lib:
 		.BYTE	$34,$00,$00,$00
 		.BYTE	$34,$00,$00,$37
 		.BYTE	$34,$00,$1A,$37
+
+; =============== S U B	R O U T	I N E =======================================
+;_screen_pal_bg_init_unref:
+;		LDA		_scr_res_idx
+;		AND		#$FE
+;		BNE		loc_A00A7
+;		LDY		_maps_info_mode_idx
+;		LDA		_screen_pal_extra_list,Y
+;		JMP		loc_A00AC
+;loc_A00A7:
+;		LSR
+;		TAY
+;		LDA		_screen_pal_list,Y
+;loc_A00AC:
+;		STA		_screen_pal_cur_bg_idx
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_pal_bg_load:
@@ -67,33 +95,10 @@ loc_A0085:
 		STA		_screen_pal_cur_bg_idx
 		JMP		_pal_load_lib
 
-; =============== S U B	R O U T	I N E =======================================
-_screen_pal_spr_init:
-		LDA		_scr_res_idx
-		LSR
-		TAX
-		LDA		_screen_pal_spr_list,X
-		STA		_screen_pal_cur_spr_idx
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-;_screen_pal_bg_init_unref:
-;		LDA		_scr_res_idx
-;		AND		#$FE
-;		BNE		loc_A00A7
-;		LDY		_maps_info_mode_idx
-;		LDA		_screen_pal_extra_list,Y
-;		JMP		loc_A00AC
-;loc_A00A7:
-;		LSR
-;		TAY
-;		LDA		_screen_pal_list,Y
-;loc_A00AC:
-;		STA		_screen_pal_cur_bg_idx
-;		RTS
-
-_screen_pal_spr_list:
-		.BYTE	$03,$08,$02,$02,$03,$03,$06,$04,$00
+_screen_pal_list:
+		.BYTE	$00,$04,$03,$02,$0B,$12,$06,$0A
+_screen_pal_extra_list:
+		.BYTE	$05,$05,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
@@ -221,8 +226,9 @@ loc_A0199:
 		BEQ		sub_A01BC
 		LDA		byte_A0435,Y
 
-; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
 sub_A01A3:
 		PHA
 		ASL
@@ -238,8 +244,9 @@ sub_A01A3:
 		PLA
 		JSR		sub_A01E9
 
-; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
 sub_A01BC:
 		EXTQEND
 		RTS
@@ -325,8 +332,9 @@ sub_A021E:
 		LDA		byte_A0465,Y
 		LDY		#$04
 
-; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
 sub_A0234:
 		STA		_tmp2
 		EXTQSTART
@@ -516,10 +524,6 @@ _hex_to_dec_9999_simple_tbl:
 		.WORD	10
 		.WORD	100
 		.WORD	1000
-_screen_pal_list:
-		.BYTE	$00,$04,$03,$02,$0B,$12,$06,$0A
-_screen_pal_extra_list:
-		.BYTE	$05,$05,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 byte_A03A5:
 		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43
 		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43

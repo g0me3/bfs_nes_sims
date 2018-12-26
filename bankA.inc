@@ -469,15 +469,15 @@ loc_104428:
 ; BUG: there is no data for 8th scenario "FREEDOM" at all.
 ;
 		LDY		_scenario_idx
-		LDA		_scenario_start_year_lo,Y			; different starting years
+		LDA		_scenario_start_year_hi,Y			; different starting years
 		STA		_city._cur_year+1
 loc_10443E:
-		LDA		_scenario_start_year_hi,Y			; init special disasters parameters
+		LDA		_scenario_start_year_lo,Y			; init special disasters parameters
 		STA		_city._cur_year						; starting year for first disaster,
 		CLC											; and disasters treshold after that
-		ADC		_scenario_disaster_years_delay_list,Y
-		STA		_scenario_disaster_year_pending
-		LDA		_scenario_disaster_delays_list,Y
+		ADC		_scenario_disaster_end_years_list,Y
+		STA		_scenario_disaster_end_year			; low nibble of the last year of scenario
+		LDA		_scenario_disasters_count_list,Y
 		STA		_scenario_disaster_delay
 		LDA		_bg_music_for_scenario_start_list,Y
 		STA		_city._city_type
@@ -568,25 +568,25 @@ _difficult_money_list_hi:
 		.BYTE	>[20000]
 		.BYTE	>[10000]
 		.BYTE	>[5000]
-_scenario_start_year_hi:
-		.BYTE	<[1906]
-		.BYTE	<[1965]
-		.BYTE	<[1972]
-		.BYTE	<[1961]
-		.BYTE	<[2010]
-		.BYTE	<[2047]
-		.BYTE	<[2100]
 _scenario_start_year_lo:
-		.BYTE	>[1906]
-		.BYTE	>[1965]
-		.BYTE	>[1972]
-		.BYTE	>[1961]
-		.BYTE	>[2010]
-		.BYTE	>[2047]
-		.BYTE	>[2100]
-_scenario_disaster_delays_list:
+		.BYTE	<[1906]	; $72
+		.BYTE	<[1965]	; $AD
+		.BYTE	<[1972]	; $B4
+		.BYTE	<[1961]	; $A9
+		.BYTE	<[2010] ; $DA
+		.BYTE	<[2047] ; $FF
+		.BYTE	<[2100] ; $34
+_scenario_start_year_hi:
+		.BYTE	>[1906]	; $07
+		.BYTE	>[1965]	; $07
+		.BYTE	>[1972]	; $07
+		.BYTE	>[1961]	; $07
+		.BYTE	>[2010]	; $07
+		.BYTE	>[2047]	; $07
+		.BYTE	>[2100]	; $08
+_scenario_disasters_count_list:
 		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
-_scenario_disaster_years_delay_list:
+_scenario_disaster_end_years_list:
 		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
 _scenario_presents_flags_lib:
 		.BYTE	$0E,$1F,$FF,$FF
@@ -1678,7 +1678,7 @@ loc_104E9D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _events_manager:
-		JSR		_scenario_mode_events_handler
+		JSR		_scenario_result_test
 		JSR		_practice_mode_events_handler
 		JSR		_scroll_msg_manager
 		LDA		_game_msg_awaits_flag
@@ -2095,70 +2095,70 @@ _popul_vals_lib2:
 		.BYTE	$00,$00,$00,$01,$07,$02,$01,$03,$03,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-_scenario_mode_events_handler:
+_scenario_result_test:
 		LDA		_cur_game_mode
 		CMP		#$02
-		BNE		locret_105197
-		LDA		_scenario_disaster_year_pending
+		BNE		locret_105197					; only for scenario mode
+		LDA		_scenario_disaster_end_year
 		CMP		_city._cur_year
-		BNE		locret_105197
+		BNE		locret_105197					; test for scenario end year
 		LDX		_scenario_idx
 		BNE		loc_105142
-		LDA		_city._city_type
-		CMP		#$04
-		BCC		loc_10519C
+		LDA		_city._city_type				; SCENARIO 0 "CISCO"
+		CMP		#$04							; test if city degraded slightly
+		BCC		.scenario_failed				; less than "CAPITAL"
 		BCS		loc_105198
 loc_105142:
 		DEX
 		BNE		loc_105153
-		LDA		_traffic_level_value+1
-		BNE		loc_10519C
+		LDA		_traffic_level_value+1			; SCENARIO 1 "BERN"
+		BNE		.scenario_failed
 		LDA		_traffic_level_value
 		CMP		#$50
-		BCS		loc_10519C
+		BCS		.scenario_failed
 		BCC		loc_105198
 loc_105153:
 		DEX
 		BNE		loc_105164
-		LDA		_city._crime_level+1
-		BNE		loc_10519C
+		LDA		_city._crime_level+1			; SCENARIO 2 "DETROIT"
+		BNE		.scenario_failed
 		LDA		_city._crime_level
 		CMP		#$3C
-		BCS		loc_10519C
+		BCS		.scenario_failed
 		BCC		loc_105198
 loc_105164:
 		DEX
 		BNE		loc_105175
-		LDA		_city._score
+		LDA		_city._score					; SCENARIO 3 "TOKYO"
 		CMP		#$F4
 		LDA		_city._score+1
 		SBC		#$01
-		BCC		loc_10519C
+		BCC		.scenario_failed
 		BCS		loc_105198
 loc_105175:
 		DEX
 		BNE		loc_105186
-		LDA		_city._score
+		LDA		_city._score					; SCENARIO 4 "BOSTON"
 		CMP		#$F4
 		LDA		_city._score+1
 		SBC		#$01
-		BCC		loc_10519C
+		BCC		.scenario_failed
 		BCS		loc_105198
 loc_105186:
 		DEX
 		BNE		locret_105197
-		LDA		_city._score
+		LDA		_city._score					; SCENARIO 5 "RIO"
 		CMP		#$F4
 		LDA		_city._score+1
 		SBC		#$01
-		BCC		loc_10519C
+		BCC		.scenario_failed
 		BCS		loc_105198
 locret_105197:
-		RTS
+		RTS										; no more options, extra scenarios cannot be completed
 loc_105198:
 		LDA		#$01
 		BNE		loc_10519E
-loc_10519C:
+.scenario_failed:
 		LDA		#$02
 loc_10519E:
 		STA		_scenario_result_idx
@@ -2325,16 +2325,16 @@ _scroll_msg03_test:
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
-nullsub_10:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _scroll_msg04_test:
 		CMPWI	_total_RCI_counts,50
 		BCC		nullsub_10
 		CMPW	_rails_count,_total_RCI_counts
 		BCS		nullsub_10
 		JMP		_scroll_msg_start
+
+; =============== S U B	R O U T	I N E =======================================
+nullsub_10:
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg05_test:
@@ -2344,8 +2344,19 @@ _scroll_msg05_test:
 		CMP		#$0A
 		BCC		nullsub_10
 loc_1052EA:
-		LDA		_tmp6CC						; BUG! here is the total power stations value
-		BNE		nullsub_10					; may be wrong at some point of the game
+; BUG! here is the total power stations value
+; may be wrong at some point of the game
+; -
+;		LDA		_tmp6CC
+; -
+; FIX, since we don't know exactly var used here, it's safe to just recalc
+; the value here directly, as in the overall info screen
+;
+		LDA		_coal_power_station_count
+		CLC
+		ADC		_nuke_power_station_count
+; -
+		BNE		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================

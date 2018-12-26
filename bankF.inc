@@ -430,7 +430,7 @@ loc_18A35B:
 		LDA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 loc_18A382:
-		LDA		byte_674
+		LDA		_earthquake_shake_req
 		ORA		_input_forbid_delay
 		BNE		loc_18A3A6
 		LDA		_scroll_msg_active_flag
@@ -505,13 +505,13 @@ loc_18A41F:
 		ASL
 		LDX		_game_msg_wnd_active_flag
 		BNE		loc_18A44B
-		LDX		byte_674
+		LDX		_earthquake_shake_req
 		BEQ		loc_18A44B
 		STA		_tmp15
 		LDA		_frames_counter
 		AND		#$03
 		BNE		loc_18A438
-		DEC		byte_674
+		DEC		_earthquake_shake_req
 loc_18A438:
 		LDA		_frames_counter
 		AND		#$0F
@@ -691,7 +691,7 @@ _get_input:
 		BMI		loc_18A54E
 		LDA		_game_msg_wnd_active_flag
 		BNE		loc_18A54E
-		LDA		byte_674
+		LDA		_earthquake_shake_req
 		BNE		loc_18A557
 loc_18A54E:
 		LDX		_input_forbid_delay
@@ -793,7 +793,7 @@ _ppu_dequeue:
 		BMI		loc_18A6C1
 		LDA		_game_msg_wnd_active_flag
 		BNE		loc_18A6C1
-		LDA		byte_674
+		LDA		_earthquake_shake_req
 		BEQ		loc_18A6C1
 		RTS
 loc_18A6C1:
@@ -840,7 +840,7 @@ _extnt_dequeue:
 		BMI		loc_18A714
 		LDA		_game_msg_wnd_active_flag
 		BNE		loc_18A714
-		LDA		byte_674
+		LDA		_earthquake_shake_req
 		BEQ		loc_18A714
 		RTS
 loc_18A714:

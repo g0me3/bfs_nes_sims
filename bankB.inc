@@ -287,10 +287,14 @@ loc_11E23D:
 ;		STA		_total_RCI_counts+1
 ; -
 		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I
-		LDA		_nuke_power_station_count
-		CLC
-		ADC		_coal_power_station_count
-		STA		_tmp6CC
+; BUG! will change after end of the fiscal year, but used in some further calcs
+; in event manager. not used anywhere near here after all, can be freely removed
+; -
+;		LDA		_nuke_power_station_count
+;		CLC
+;		ADC		_coal_power_station_count
+;		STA		_tmp6CC
+; -
 		LSADDW	_tmpE6,_city._level._C,_city._level._I,3
 		MADDW	_tmpE6,_tmpE6,_city._level._R	; CAUTION! optimized code
 		PHA										; PHA here pushes INT part of E6
@@ -3588,33 +3592,37 @@ locret_11FB47:
 ;		BNE		_fire_disaster_start_common
 
 ; =============== S U B	R O U T	I N E =======================================
+; The Fire disaster is the only disaster that occurs only by manual selecting
+; from the DISASTERS menu.
+; There are two types of Fire disaster were planned, but the weaker one isn't used
+;
 _fire_disaster_start:
-		LDY		#$28
+		LDY		#$28							; how much tiles we will damage
 
 ; =============== S U B	R O U T	I N E =======================================
 _fire_disaster_start_common:
 		TYA
 		PHA
 		LDA		#$4C
-		JSR		_rand_clamp
-		STA		_tmp_map_pos._X
-		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp						; select random tile to burn
+		STA		_tmp_map_pos._X					; through the whole map
+		LDA		#$4C							; so fire can start at many points
+		JSR		_rand_clamp						; at the same time
 		STA		_tmp_map_pos._Y
-		JSR		_map_tile_read
+		JSR		_map_tile_read					; read cur tile under the selection
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#$48
 		CMP		#$48
-		BNE		loc_11FB73
-		JSR		_fire_cur_map_tile
-		JSR		_goto_alert_start
+		BNE		loc_11FB73						; check for non-destructable tiles
+		JSR		_fire_cur_map_tile				; destroy the rest
+		JSR		_goto_alert_start				; points to very last burnt tile only
 loc_11FB73:
 		PLA
 		TAY
 		DEY
 		BNE		_fire_disaster_start_common
-		LDA		_disasters_flags
+		LDA		_disasters_flags				; the rest as usual
 		AND		#$FE
 		STA		_disasters_flags
 		LDY		#$06
@@ -3623,7 +3631,7 @@ loc_11FB73:
 		STA		_game_msg_idx
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JMP		_wait_for_hud_redraw
+		JMP		_wait_for_hud_redraw			; if goto icon is used
 
 ; =============== S U B	R O U T	I N E =======================================
 _flood_disaster_start:
@@ -3709,7 +3717,7 @@ _earthquake_disaster_start:
 		LDA		#$FF
 loc_11FC38:
 		STA		_tmp6CE
-		STA		byte_674
+		STA		_earthquake_shake_req
 loc_11FC3E:
 		LDA		#$4C
 		JSR		_rand_clamp
@@ -3736,7 +3744,7 @@ loc_11FC69:
 		BNE		loc_11FC3E
 loc_11FC6E:
 		JSR		_wait_for_hud_redraw
-		LDA		byte_674
+		LDA		_earthquake_shake_req
 		BNE		loc_11FC6E
 		LDY		#$0A
 		FJSR	_city_history_write,SRAM,PRGA
@@ -3752,25 +3760,25 @@ loc_11FC6E:
 ; =============== S U B	R O U T	I N E =======================================
 _airplane_disaster_active_set:
 		LDA		#$01
-		STA		_airplane_crash_req
-		LDA		_disasters_flags
-		AND		#$FB
-		STA		_disasters_flags
+		STA		_airplane_crash_req				; for some reason, airplane crash
+		LDA		_disasters_flags				; handler in another place in system
+		AND		#$FB							; handlers manager loop of THREAD0
+		STA		_disasters_flags				; don't know why
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tornado_disaster_start:
-		LDA		_obj_active_flags
+		LDA		_obj_active_flags				; tornado and monster can't go together
 		AND		#$30
 		BNE		locret_11FCFC
-		LDA		_obj_active_flags
+		LDA		_obj_active_flags				; active flag
 		ORA		#$20
 		STA		_obj_active_flags
 		LDA		#$4C
-		STA		_MMC5_CHR_BANKSA+1
 		STA		_mmc5_chr_banks_shadow+1
+		STA		_MMC5_CHR_BANKSA+1				; CHR bank init
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp						; select random map starting pos
 		STA		_obj_pos._tornado._X
 		STA		_tmp_map_pos._X
 		LDA		#$4C
@@ -3778,18 +3786,18 @@ _tornado_disaster_start:
 		STA		_obj_pos._tornado._Y
 		STA		_tmp_map_pos._Y
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp						; and absolutely random dst pos on map
 		STA		_obj_dst_pos._tornado._X
 		LDA		#$4C
 		JSR		_rand_clamp
 		STA		_obj_dst_pos._tornado._Y
-		LDA		_disasters_flags
+		LDA		_disasters_flags				; clear disaster flag as well
 		AND		#$F7
 		STA		_disasters_flags
 		LDY		#$09
-		FJSR	_city_history_write,SRAM,PRGA
+		FJSR	_city_history_write,SRAM,PRGA	; in memories
 		LDA		#$23
-		STA		_game_msg_idx
+		STA		_game_msg_idx					; draw message
 		LDA		#$01
 		STA		_game_msg_awaits_flag
 		JSR		_wait_for_hud_redraw
@@ -3800,56 +3808,68 @@ locret_11FCFC:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; one of two different routines to select starting map position to monster
+; this routine select two random map positions, then set the dst coordinates
+; to the opposite side of the map which is farthest from the current point.
+; +--|+---+ so we always will take the longer path both directions, this
+; |y V|<-x| results in the monster may travel only to the corners of the map
+; +---+---+ 0:0, 0:4B, 4B:0, 4B:4B. final portion of the routine will change
+; |x->|^ y| randomly one of the dest coordinates to something other than
+; +---+|--+ corner positions. so the monster will walk to one of the sides
+; of the map, but with random exit coordinate.
+;
 _monster_disaster_start:
-		LDA		_obj_active_flags
-		AND		#$30
-		BNE		locret_11FD73
+		LDA		_obj_active_flags				; monster and tornado cannot walk
+		AND		#$30							; together, they used the same CHR
+		BNE		locret_11FD73					; bank
 		LDY		#$00
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp						; appear at random map position
 		STA		_obj_pos._monster._X
 		STA		_tmp_map_pos._X
 		CMP		#$26
-		BCS		loc_11FD17
-		LDY		#$4B
+		BCS		loc_11FD17						; walk to farther side of the map
+		LDY		#$4B							; from one half of to another by X
 loc_11FD17:
 		STY		_obj_dst_pos._monster._X
 		LDY		#$00
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp						; the same for Y
 		STA		_obj_pos._monster._Y
 		STA		_tmp_map_pos._Y
 		CMP		#$26
 		BCS		loc_11FD2D
 		LDY		#$4B
 loc_11FD2D:
-		STY		_obj_dst_pos._monster._X
+;		STY		_obj_dst_pos._monster._X		; BUG, seems another copypaste here
+		STY		_obj_dst_pos._monster._Y		; FIX
 		LDA		#$97
-		JSR		_rand_clamp
-		LSR
-		BCS		loc_11FD3D
-		STA		_obj_dst_pos._monster._X
-		BCC		_force_monster_disaster
-loc_11FD3D:
+		JSR		_rand_clamp						; if this code change X position,
+		LSR										; the Y will be uninitialized actually
+		BCS		loc_11FD3D						; due to BUG above, but seems it's not
+		STA		_obj_dst_pos._monster._X		; much important, since we have it initialized to
+		BCC		_monster_disaster_start_ex		; 0 at the beginning and then have value
+loc_11FD3D:										; from previous moster appearance.
 		STA		_obj_dst_pos._monster._Y
 
 ; =============== S U B	R O U T	I N E =======================================
-_force_monster_disaster:
-		LDA		_obj_active_flags
+_monster_disaster_start_ex:
+		LDA		_obj_active_flags				; monster activity flag set
 		ORA		#$10
 		STA		_obj_active_flags
-		LDA		#$35
-		STA		_MMC5_CHR_BANKSA+1
+		LDA		#$35							; WRONG: don't know why, this is not initial
+		LDA		#$44							; FIX
 		STA		_mmc5_chr_banks_shadow+1
-		LDA		_disasters_flags
+		STA		_MMC5_CHR_BANKSA+1				; monster CHR bank
+		LDA		_disasters_flags				; removes disaster request flag
 		AND		#$DF
 		STA		_disasters_flags
 		LDA		#$01
-		STA		byte_6CA
+		STA		_monster_in_water_flag
 		LDY		#$0B
 		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$09
-		STA		_game_msg_idx
+		STA		_game_msg_idx					; game message display
 		LDA		#$01
 		STA		_game_msg_awaits_flag
 		JSR		_wait_for_hud_redraw
@@ -3881,7 +3901,7 @@ loc_11FDA3:
 		BCC		loc_11FDAC
 		INY
 loc_11FDAC:
-		STY		byte_6CA
+		STY		_monster_in_water_flag
 		POPB	_tmp6CC+1
 		POPB	_mmc5_mul0_shadow
 		POPB	_mmc5_mul1_shadow
@@ -4074,63 +4094,63 @@ _goto_alert_start:
 
 ; =============== S U B	R O U T	I N E =======================================
 _disasters_trigger_for_scenario_mode:
-		LDA		_cur_game_mode
+		LDA		_cur_game_mode					; only for scenario mode
 		CMP		#$02
 		BNE		locret_11FF87
-		LDA		_scenario_disaster_delay
+		LDA		_scenario_disaster_delay		; all disasters are stopped, exit now
 		BEQ		locret_11FF87
-		DEC		_scenario_disaster_delay
-		LDX		_scenario_idx
+		DEC		_scenario_disaster_delay		; decrease
+		LDX		_scenario_idx					; X = _scenario_idx
 		CPX		#$05
 		BNE		loc_11FF34
-		LDA		_scenario_disaster_delay
-		AND		#$0F
+		LDA		_scenario_disaster_delay		; scenario 5 - "RIO", flood occurs 15 times
+		AND		#$0F							; until it stop
 		BNE		locret_11FF87
 		JMP		_flood_disaster_start
 loc_11FF34:
-		LDA		_scenario_disaster_delay
-		BNE		locret_11FF87
+		LDA		_scenario_disaster_delay		; one another scenarios we need here extra test
+		BNE		locret_11FF87					; if delay still not 0, skip
 		CPX		#$00
-		BNE		loc_11FF40
-		JMP		_earthquake_disaster_start
+		BNE		loc_11FF40						; finally test for disaster start by scenario idx
+		JMP		_earthquake_disaster_start		; scenario 0 - "CISCO"
 loc_11FF40:
 		DEX
 		DEX
 		DEX
 		BNE		loc_11FF81
 loc_11FF45:
-		LDA		_obj_active_flags
-		AND		#$30
-		BNE		loc_11FF45
+		LDA		_obj_active_flags				; scenario 3 - "TOKYO", start monster
+		AND		#$30							; wait for tornado disappear if any.
+		BNE		loc_11FF45						; as a side effect, town freezed by this time
 		LDA		#$1A
-		JSR		_rand_clamp
-		ADC		#$2D
-		STA		_obj_pos._monster._X
+		JSR		_rand_clamp						; as against manually selected monster disaster
+		ADC		#$2D							; scenario starting point is area near the center
+		STA		_obj_pos._monster._X			; of the map within square in 26 tiles
 		STA		_tmp_map_pos._X
 		LDA		#$1A
 		JSR		_rand_clamp
 		STA		_obj_pos._monster._Y
 		STA		_tmp_map_pos._Y
 		LDA		#$00
-		STA		_obj_dst_pos._monster._X
+		STA		_obj_dst_pos._monster._X		; by default it will travel always to bottom-left corner
 		LDA		#$4B
 		STA		_obj_dst_pos._monster._Y
 		LDA		#$97
-		JSR		_rand_clamp
-		LSR
-		BCS		loc_11FF7B
+		JSR		_rand_clamp						; but rnd will change one of the coordinates, so
+		LSR										; it will travel either to the leftmost of the bottom side
+		BCS		loc_11FF7B						; in the direction of the sea
 		STA		_obj_dst_pos._monster._X
 		BCC		loc_11FF7E
 loc_11FF7B:
 		STA		_obj_dst_pos._monster._Y
 loc_11FF7E:
-		JMP		_force_monster_disaster
+		JMP		_monster_disaster_start_ex
 loc_11FF81:
 		DEX
 		BNE		locret_11FF87
-		JMP		_nuclear_meltdown_disaster_start
+		JMP		_nuclear_meltdown_disaster_start; scenario 4 - "BOSTON"
 locret_11FF87:
-		RTS
+		RTS										; the rest of scenarios does not need a special disasters
 
 ; =============== S U B	R O U T	I N E =======================================
 _traffic_jam_recalc:

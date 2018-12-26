@@ -808,7 +808,7 @@ _scenario_result_idx:
 		.BYTE	0
 _scenario_disaster_delay:
 		.BYTE	0
-_scenario_disaster_year_pending:
+_scenario_disaster_end_year:
 		.BYTE	0
 _cur_game_mode:
 		.BYTE	0
@@ -905,7 +905,7 @@ _worst_problem_percents:
 
 		_tfix8_8	_cur_RCI_levels_sum
 
-byte_674:
+_earthquake_shake_req:
 		.BYTE	0
 _total_RCI_counts:
 		.BYTE	0,0
@@ -1003,7 +1003,7 @@ _RCI_max_range_100_years:
 		.BYTE	0
 _disaster_tiles_to_flood_count:
 		.BYTE	0
-byte_6CA:
+_monster_in_water_flag:
 		.BYTE	0
 byte_6CB:
 		.BYTE	0

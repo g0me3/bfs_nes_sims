@@ -1002,7 +1002,7 @@ loc_885E9:
 		AND		#$0F
 loc_885EE:
 		TAX
-		LDA		byte_6CA
+		LDA		_monster_in_water_flag
 		BNE		loc_885FB
 		LDA		_obj_monster_anim_phase0
 		CMP		#$20
@@ -1125,11 +1125,11 @@ loc_88754:
 		LDA		_obj_dst_pos._monster._X		; choose direction delta
 		CMP		_obj_pos._monster._X
 		BCS		loc_8876A
-		LDA		_obj_monster_chr_idx
-		ORA		#$01
-		STA		_obj_monster_chr_idx
+		LDA		_obj_monster_chr_idx			; adjust direction to the dst
+		ORA		#$01							; the same time change CHR mode
+		STA		_obj_monster_chr_idx			; and bank
 loc_8876A:
-		LDA		_obj_dst_pos._monster._Y
+		LDA		_obj_dst_pos._monster._Y		; the same for Y
 		CMP		_obj_pos._monster._Y
 		BCS		locret_8877A
 		LDA		_obj_monster_chr_idx
@@ -1159,13 +1159,14 @@ loc_88645:
 		AND		#$0F
 		ASL
 loc_8864B:
-		STA		_tmp17
-		LDY		byte_6CA
+;		STA		_tmp17							; REDUNDANT
+		LDY		_monster_in_water_flag
 		BEQ		loc_88657
 		CLC
 		ADC		#$08
-		STA		_tmp17
+;		STA		_tmp17							; REDUNDANT
 loc_88657:
+		STA		_tmp17							; OPTIMIZED
 		TAX
 		LDA		_obj_monster_anim_lib0,X
 		STA		_tmp15
@@ -1190,7 +1191,7 @@ loc_88665:
 		LDA		_obj_monster_anim_phase1
 		EOR		#$01
 		STA		_obj_monster_anim_phase1
-		LDA		byte_6CA
+		LDA		_monster_in_water_flag
 		BNE		loc_88633
 		JSR		_monster_chr_select1
 		CLC
@@ -1220,7 +1221,7 @@ locret_886C5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl20_tornado:
-		LDA		#$4C
+		LDA		#$4C							; restore CHR bank if needed
 		STA		_MMC5_CHR_BANKSA+1
 		LDA		#$05
 		STA		_cur_obj_idx
@@ -1322,6 +1323,10 @@ loc_88834:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; common draw routine for all objects with it's own sprite idx calculations
+; all this can be actually put inside individual handlers and and the whole
+; routine is redundant then.
+;
 _obj_draw:
 		LDX		_game_wnd_spr_mode_flag
 		BEQ		loc_88110
@@ -1330,14 +1335,18 @@ _obj_draw:
 loc_88110:
 		LDY		_cur_obj_idx
 		BEQ		.obj_heli_draw
+		CPY		#$01
+		BEQ		.obj_common_draw				; plane default draw
 		CPY		#$02
 		BEQ		.obj_ship_draw
+		CPY		#$03
+		BEQ		.obj_train_draw
 		CPY		#$04
 		BEQ		.obj_monster_draw
 		CPY		#$05
 		BEQ		.obj_tornado_draw
 .obj_common_draw:
-		LDA		_obj_cur_spr_idx,Y
+		LDA		_obj_cur_spr_idx,Y				; default draw
 .obj_common_draw_ex:
 		STA		_spr_insert_args._idx
 		JSR		_obj_spr_draw
@@ -1345,29 +1354,7 @@ loc_88110:
 .obj_heli_draw:
 		LDA		_obj_cur_spr_idx._heli
 		LDX		_frames_div4_counter
-		JSR		_obj_spr_heli_draw
-		JMP		_obj_flush
-.obj_monster_draw:
-		LDA		_obj_monster_spr_idx
-		STA		_spr_insert_args._idx
-		JSR		_obj_spr_draw
-		LDX		_cur_obj_pos._X
-		LDY		_cur_obj_pos._Y
-		JMP		_far_fire_or_destroy_map_tile_ex
-.obj_ship_draw:
-		CMPWI	_city._cur_year,1950			; for years 1900-1949 used _spr_shipB set
-		BCS		.obj_common_draw				; the rest sprites uses _spr_shipA set
-		LDA		_obj_cur_spr_idx,Y
-		CLC
-		ADC		#$08
-		BNE		.obj_common_draw_ex
-.obj_tornado_draw:
-		LDX		_obj_tornado_counter
-		LDA		byte_89D36,X
-		JMP		.obj_common_draw_ex
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_heli_draw:
+;		JSR		_obj_spr_heli_draw
 		ASL										; fetch every 4th sprite idx
 		ASL
 		STA		_spr_insert_args._idx			; set +1 idx every 1/8 frames
@@ -1377,72 +1364,120 @@ _obj_spr_heli_draw:
 		AND		#$03							; FIX: use all 4
 		CLC
 		ADC		_spr_insert_args._idx
+		JMP		.obj_common_draw_ex
+.obj_ship_draw:
+		CMPWI	_city._cur_year,1950			; for years 1900-1949 used _spr_shipB set
+		BCS		.obj_common_draw				; the rest sprites uses _spr_shipA set
+		LDA		_obj_cur_spr_idx,Y
+		CLC
+		ADC		#$08
+		BNE		.obj_common_draw_ex				; always non-zero
+.obj_train_draw:
+		LDA		_train_hide_mode
+		BEQ		.obj_common_draw				; hide if inside train station
+		RTS
+.obj_monster_draw:
+		LDA		_obj_monster_spr_idx
 		STA		_spr_insert_args._idx
+		JSR		_obj_spr_draw
+		LDX		_cur_obj_pos._X
+		LDY		_cur_obj_pos._Y
+		JMP		_far_fire_or_destroy_map_tile_ex
+.obj_tornado_draw:
+		LDX		_obj_tornado_counter
+		LDA		_tornado_spr_anim_list,X
+		JMP		.obj_common_draw_ex
+
+; =============== S U B	R O U T	I N E =======================================
+;_obj_spr_heli_draw:
+;		ASL										; fetch every 4th sprite idx
+;		ASL
+;		STA		_spr_insert_args._idx			; set +1 idx every 1/8 frames
+;		TXA
+;		LSR
+;;		AND		#$01							; BUG? two frames are unused with that
+;		AND		#$03							; FIX: use all 4
+;		CLC
+;		ADC		_spr_insert_args._idx
+;		STA		_spr_insert_args._idx
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_spr_draw:
-		LDA		_cur_obj_pos._X
-		SEC
-		SBC		_cur_map_wnd_pos._X
-		BCS		loc_889F7
-		CMP		#$FD
-		BCS		loc_889FB
-		BCC		locret_88A45
-loc_889F7:
-		CMP		#$1B
-		BCS		locret_88A45
-loc_889FB:
-		LDA		_cur_obj_pos._Y
-		SEC
-		SBC		_cur_map_wnd_pos._Y
-		BCS		loc_88A09
-		CMP		#$FD
-		BCS		loc_88A0D
-		BCC		locret_88A45
-loc_88A09:
-		CMP		#$18
-		BCS		locret_88A45
+		LDY		#$00							; OPTIMIZED size
+		JSR		_out_of_screen_test
+;		LDA		_cur_obj_pos._X					; out-of-screen test for X
+;		SEC
+;		SBC		_cur_map_wnd_pos._X
+;		BCS		loc_889F7
+;		CMP		#$FD
+;		BCS		loc_889FB
+;		BCC		locret_88A45
+;loc_889F7:
+;		CMP		#$1B
+;		BCS		locret_88A45
+;loc_889FB:
+		LDY		#$01
+		JSR		_out_of_screen_test
+;		LDA		_cur_obj_pos._Y					; the same for Y
+;		SEC
+;		SBC		_cur_map_wnd_pos._Y
+;		BCS		loc_88A09
+;		CMP		#$FD
+;		BCS		loc_88A0D
+;		BCC		locret_88A45
+;loc_88A09:
+;		CMP		#$18
+;		BCS		locret_88A45
 loc_88A0D:
-		LDA		_cur_obj_idx
+		LDA		_cur_obj_idx					; map to screen pos convert
 		ASL
 		TAX
-		LDA		_cur_obj_pos._X
-		SEC
-		SBC		_cur_map_wnd_pos._X
-		CLC
-		ADC		#$07
-		ASL
-		ASL
-		ASL
-		CLC
-		ADC		_obj_shift,X
-		STA		_spr_insert_args._pos._X
-		LDA		_cur_obj_pos._Y
-		SEC
-		SBC		_cur_map_wnd_pos._Y
-		CLC
-		ADC		#$07
-		ASL
-		ASL
-		ASL
-		CLC
-		ADC		_obj_shift._Y,X
-		STA		_spr_insert_args._pos._Y
-		LDA		_cur_obj_idx
-		CMP		#$03
-		BNE		loc_88A42
-		LDA		_train_hide_mode
-		BNE		locret_88A45
-loc_88A42:
-		JSR		_obj_spr_clip_draw
-locret_88A45:
-		RTS
+		LDY		#$00
+		JSR		_map_to_screen_conv				; OPTIMIZED size
+;		LDA		_cur_obj_pos._X
+;		SEC
+;		SBC		_cur_map_wnd_pos._X
+;		CLC
+;		ADC		#$07
+;		ASL
+;		ASL
+;		ASL
+;		CLC
+;		ADC		_obj_shift._X,X
+;		STA		_spr_insert_args._pos._X
+		LDY		#$01
+		INX
+		JSR		_map_to_screen_conv
+;		LDA		_cur_obj_pos._Y
+;		SEC
+;		SBC		_cur_map_wnd_pos._Y
+;		CLC
+;		ADC		#$07
+;		ASL
+;		ASL
+;		ASL
+;		CLC
+;		ADC		_obj_shift._Y,X
+;		STA		_spr_insert_args._pos._Y
+; -
+;		LDA		_cur_obj_idx					; REDUNDANT, check for special train hide
+;		CMP		#$03							; mode, can be done only for train
+;		BNE		loc_88A42
+;		LDA		_train_hide_mode
+;		BNE		locret_88A45
+;loc_88A42:
+;		JMP		_obj_spr_clip_draw				; REDUNDANT
+;locret_88A45:
+;		RTS
 
 ; NOTE: clip value never used in sprite drawing routines,
 ; several sprite drawing routines has its own hardwritten
 ; clipping code and no one uses the common one.
 ; the _spr_insert_args._clip only zeroed at some point
 ; never change it's value
+;
+; for some unknown reason, they used _tornado_spr_anim_list
+; as a list of sprite sizes lol
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_obj_clip_select_unused:
@@ -1451,7 +1486,7 @@ locret_88A45:
 ;		STA		_spr_insert_args._clip
 ;		LDA		_spr_insert_args._pos._X
 ;		CLC
-;		ADC		byte_89D36,X
+;		ADC		_tornado_spr_anim_list,X
 ;		CMP		#$38
 ;		BCS		loc_88A5B
 ;		LDA		_spr_insert_args._clip
@@ -1460,7 +1495,7 @@ locret_88A45:
 ;loc_88A5B:
 ;		LDA		_spr_insert_args._pos._Y
 ;		CLC
-;		ADC		byte_89D36,X
+;		ADC		_tornado_spr_anim_list,X
 ;		CMP		#$38
 ;		BCS		loc_88A6D
 ;		LDA		_spr_insert_args._clip
@@ -1470,7 +1505,7 @@ locret_88A45:
 ;loc_88A6D:
 ;		LDA		_spr_insert_args._pos._Y
 ;		CLC
-;		ADC		byte_89D36,X
+;		ADC		_tornado_spr_anim_list,X
 ;		CMP		#$D9
 ;		BCC		locret_88A7D
 ;		LDA		_spr_insert_args._clip
@@ -1479,11 +1514,13 @@ locret_88A45:
 ;locret_88A7D:
 ;		RTS
 
+; !FALLTHROUGH!
+
 ; NOTE: clipping embedded in this routine, no need in additional
 ; clipping function or variable.
 ;
 ; =============== S U B	R O U T	I N E =======================================
-_obj_spr_clip_draw:
+;_obj_spr_clip_draw:
 ;		LDA		#$00
 ;		STA		_spr_insert_args._clip
 		LDA		_cur_obj_idx
@@ -1569,6 +1606,39 @@ loc_88B02:
 		JMP		loc_88AAC
 loc_88B09:
 		STX		_spr_buf_pos
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_out_of_screen_test:
+		LDA		_cur_obj_pos,Y
+		SEC
+		SBC		_cur_map_wnd_pos,Y
+		BCS		loc_889F7
+		CMP		#$FD
+		BCC		loc_889F8
+		RTS
+loc_889F7:
+		CMP		#$1B
+		BCC		loc_889FB
+loc_889F8:
+		PLA
+		PLA
+loc_889FB:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_map_to_screen_conv:
+		LDA		_cur_obj_pos,Y
+		SEC
+		SBC		_cur_map_wnd_pos,Y
+		CLC
+		ADC		#$07
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_obj_shift,X
+		STA		_spr_insert_args._pos,Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2032,14 +2102,14 @@ _obj0_spr_lib:
 		.WORD	_spr_heliC7
 		.WORD	_spr_heliD7
 _obj3_spr_lib:
-		.WORD	byte_898D7
-		.WORD	byte_898E0
-		.WORD	byte_898F1
-		.WORD	byte_898FA
-		.WORD	byte_898D7
-		.WORD	byte_898E0
-		.WORD	byte_898F1
-		.WORD	byte_898FA
+		.WORD	_spr_train0
+		.WORD	_spr_train1
+		.WORD	_spr_train2
+		.WORD	_spr_train3
+		.WORD	_spr_train0
+		.WORD	_spr_train1
+		.WORD	_spr_train2
+		.WORD	_spr_train3
 _obj2_spr_lib:
 		.WORD	_spr_shipA0
 		.WORD	_spr_shipA1
@@ -2058,78 +2128,78 @@ _obj2_spr_lib:
 		.WORD	_spr_shipB6
 		.WORD	_spr_shipB7
 _obj1_spr_lib:
-		.WORD	byte_89AA3
-		.WORD	byte_89AC4
-		.WORD	byte_89AE9
-		.WORD	byte_89B0A
-		.WORD	byte_89B2F
-		.WORD	byte_89B50
-		.WORD	byte_89B75
-		.WORD	byte_89B96
-		.WORD	byte_89B75
-		.WORD	byte_89BBB
-		.WORD	byte_89BD8
-		.WORD	byte_89BE9
-		.WORD	byte_89AE9
-		.WORD	byte_89BF6
-		.WORD	byte_89C13
-		.WORD	byte_89C24
+		.WORD	_spr_planeA0	; flight scprites
+		.WORD	_spr_planeA1
+		.WORD	_spr_planeA2
+		.WORD	_spr_planeA3
+		.WORD	_spr_planeA4
+		.WORD	_spr_planeA5
+		.WORD	_spr_planeA6
+		.WORD	_spr_planeA7
+		.WORD	_spr_planeA6	; right-to-left landing/take off
+		.WORD	_spr_planeB2
+		.WORD	_spr_planeB3
+		.WORD	_spr_planeB4
+		.WORD	_spr_planeA2	; right-t-left- landing/take off
+		.WORD	_spr_planeC2
+		.WORD	_spr_planeC3
+		.WORD	_spr_planeC4
 _obj5_spr_lib:
-		.WORD	byte_89C31
-		.WORD	byte_89C4E
-		.WORD	byte_89C6B
-		.WORD	byte_89C88
-		.WORD	byte_89CA5
-		.WORD	byte_89CC2
-		.WORD	byte_89CDF
-		.WORD	byte_89CFC
-		.WORD	byte_89D19
+		.WORD	_spr_tornado0
+		.WORD	_spr_tornado1
+		.WORD	_spr_tornado2
+		.WORD	_spr_tornado3
+		.WORD	_spr_tornado4
+		.WORD	_spr_tornado5
+		.WORD	_spr_tornado6
+		.WORD	_spr_tornado7
+		.WORD	_spr_tornado8
 _obj4_spr_lib:
-		.WORD	byte_88FC3
-		.WORD	byte_89010
-		.WORD	byte_89059
-		.WORD	byte_890A2
-		.WORD	byte_89359
-		.WORD	byte_893A2
-		.WORD	byte_893E7
-		.WORD	byte_89430
-		.WORD	byte_89259
-		.WORD	byte_89296
-		.WORD	byte_892D7
-		.WORD	byte_89318
-		.WORD	byte_890EB
-		.WORD	byte_89128
-		.WORD	byte_89165
-		.WORD	byte_891A6
-		.WORD	byte_8962E
-		.WORD	byte_891E7
-		.WORD	byte_895FD
-		.WORD	byte_89218
-		.WORD	byte_894A2
-		.WORD	byte_89479
-		.WORD	byte_88E70
-		.WORD	byte_88E3B
-		.WORD	byte_89514
-		.WORD	byte_88EE2
-		.WORD	byte_894D7
-		.WORD	byte_88EA5
-		.WORD	byte_88F5D
-		.WORD	byte_88F92
-		.WORD	byte_88F5D
-		.WORD	byte_88F92
-		.WORD	byte_89549
-		.WORD	byte_8957E
-		.WORD	byte_89549
-		.WORD	byte_8957E
-		.WORD	byte_895A7
-		.WORD	byte_895D4
-		.WORD	byte_895A7
-		.WORD	byte_895D4
-		.WORD	byte_88F0B
-		.WORD	byte_88F38
-		.WORD	byte_88F0B
-		.WORD	byte_88F38
-byte_88E3B:
+		.WORD	_spr_monster00
+		.WORD	_spr_monster01
+		.WORD	_spr_monster02
+		.WORD	_spr_monster03
+		.WORD	_spr_monster04
+		.WORD	_spr_monster05
+		.WORD	_spr_monster06
+		.WORD	_spr_monster07
+		.WORD	_spr_monster08
+		.WORD	_spr_monster09
+		.WORD	_spr_monster0A
+		.WORD	_spr_monster0B
+		.WORD	_spr_monster0C
+		.WORD	_spr_monster0D
+		.WORD	_spr_monster0E
+		.WORD	_spr_monster0F
+		.WORD	_spr_monster10
+		.WORD	_spr_monster11
+		.WORD	_spr_monster12
+		.WORD	_spr_monster13
+		.WORD	_spr_monster14
+		.WORD	_spr_monster15
+		.WORD	_spr_monster16
+		.WORD	_spr_monster17
+		.WORD	_spr_monster18
+		.WORD	_spr_monster19
+		.WORD	_spr_monster1A
+		.WORD	_spr_monster1B
+		.WORD	_spr_monster1C
+		.WORD	_spr_monster1D
+		.WORD	_spr_monster1C					; unused indexes, spritest the same
+		.WORD	_spr_monster1D					; unused indexes, spritest the same
+		.WORD	_spr_monster20
+		.WORD	_spr_monster21
+		.WORD	_spr_monster20					; unused indexes, spritest the same
+		.WORD	_spr_monster21					; unused indexes, spritest the same
+		.WORD	_spr_monster24
+		.WORD	_spr_monster25
+		.WORD	_spr_monster24					; unused indexes, spritest the same
+		.WORD	_spr_monster25					; unused indexes, spritest the same
+		.WORD	_spr_monster28
+		.WORD	_spr_monster29
+		.WORD	_spr_monster28					; unused indexes, spritest the same
+		.WORD	_spr_monster29					; unused indexes, spritest the same
+_spr_monster17:
 		.BYTE	$FA,$79,$01,$F8
 		.BYTE	$F2,$78,$01,$F8
 		.BYTE	$01,$7A,$01,$01
@@ -2144,7 +2214,7 @@ byte_88E3B:
 		.BYTE	$F0,$46,$02,$00
 		.BYTE	$F0,$45,$02,$F8
 		.BYTE	$80
-byte_88E70:
+_spr_monster16:
 		.BYTE	$FF,$5A,$01,$FF
 		.BYTE	$F7,$4A,$01,$01
 		.BYTE	$FF,$79,$41,$0A
@@ -2159,7 +2229,7 @@ byte_88E70:
 		.BYTE	$FA,$48,$02,$00
 		.BYTE	$FA,$47,$02,$F8
 		.BYTE	$80
-byte_88EA5:
+_spr_monster1B:
 		.BYTE	$FE,$73,$01,$03
 		.BYTE	$F6,$72,$01,$03
 		.BYTE	$E6,$62,$01,$04
@@ -2176,7 +2246,7 @@ byte_88EA5:
 		.BYTE	$F0,$41,$02,$02
 		.BYTE	$F0,$40,$02,$FA
 		.BYTE	$80
-byte_88EE2:
+_spr_monster19:
 		.BYTE	$00,$75,$01,$07
 		.BYTE	$00,$74,$01,$FF
 		.BYTE	$F0,$76,$01,$02
@@ -2188,7 +2258,7 @@ byte_88EE2:
 		.BYTE	$F8,$54,$02,$03
 		.BYTE	$F8,$53,$02,$FB
 		.BYTE	$80
-byte_88F0B:
+_spr_monster28:
 		.BYTE	$EF,$76,$01,$00
 		.BYTE	$F0,$5B,$02,$00
 		.BYTE	$ED,$7E,$01,$0B
@@ -2201,7 +2271,7 @@ byte_88F0B:
 		.BYTE	$EF,$75,$01,$F8
 		.BYTE	$F0,$44,$02,$F8
 		.BYTE	$80
-byte_88F38:
+_spr_monster29:
 		.BYTE	$EB,$7E,$01,$04
 		.BYTE	$F9,$7F,$01,$09
 		.BYTE	$F0,$4F,$01,$08
@@ -2212,7 +2282,7 @@ byte_88F38:
 		.BYTE	$F1,$45,$02,$00
 		.BYTE	$F1,$44,$02,$F8
 		.BYTE	$80
-byte_88F5D:
+_spr_monster1C:
 		.BYTE	$F5,$4E,$81,$05
 		.BYTE	$02,$4E,$41,$F9
 		.BYTE	$00,$7D,$01,$00
@@ -2227,7 +2297,7 @@ byte_88F5D:
 		.BYTE	$F0,$44,$02,$F8
 		.BYTE	$F8,$40,$02,$F0
 		.BYTE	$80
-byte_88F92:
+_spr_monster1D:
 		.BYTE	$FE,$4E,$41,$EF
 		.BYTE	$F0,$5C,$01,$F7
 		.BYTE	$F8,$4F,$C1,$05
@@ -2241,7 +2311,7 @@ byte_88F92:
 		.BYTE	$F0,$4A,$02,$F7
 		.BYTE	$F0,$45,$02,$FF
 		.BYTE	$80
-byte_88FC3:
+_spr_monster00:
 		.BYTE	$11,$43,$42,$06
 		.BYTE	$FE,$7B,$01,$08
 		.BYTE	$FE,$7A,$01,$00
@@ -2262,7 +2332,7 @@ byte_88FC3:
 		.BYTE	$EF,$42,$02,$08
 		.BYTE	$EF,$41,$02,$00
 		.BYTE	$80
-byte_89010:
+_spr_monster01:
 		.BYTE	$12,$43,$42,$FE
 		.BYTE	$00,$7D,$01,$08
 		.BYTE	$00,$7C,$01,$00
@@ -2282,7 +2352,7 @@ byte_89010:
 		.BYTE	$F0,$45,$02,$08
 		.BYTE	$F0,$44,$02,$00
 		.BYTE	$80
-byte_89059:
+_spr_monster02:
 		.BYTE	$11,$43,$02,$F2
 		.BYTE	$FE,$7F,$01,$08
 		.BYTE	$FE,$7E,$01,$00
@@ -2302,7 +2372,7 @@ byte_89059:
 		.BYTE	$EF,$49,$02,$08
 		.BYTE	$EF,$48,$02,$00
 		.BYTE	$80
-byte_890A2:
+_spr_monster03:
 		.BYTE	$11,$43,$02,$F8
 		.BYTE	$00,$7D,$01,$08
 		.BYTE	$00,$7C,$01,$00
@@ -2322,7 +2392,7 @@ byte_890A2:
 		.BYTE	$F0,$45,$02,$08
 		.BYTE	$F0,$44,$02,$00
 		.BYTE	$80
-byte_890EB:
+_spr_monster0C:
 		.BYTE	$F7,$74,$01,$FF
 		.BYTE	$F7,$73,$01,$F7
 		.BYTE	$EF,$72,$01,$07
@@ -2339,7 +2409,7 @@ byte_890EB:
 		.BYTE	$F0,$41,$02,$00
 		.BYTE	$F0,$40,$02,$F8
 		.BYTE	$80
-byte_89128:
+_spr_monster0D:
 		.BYTE	$F7,$7A,$01,$07
 		.BYTE	$F7,$79,$01,$00
 		.BYTE	$F7,$78,$01,$F8
@@ -2356,7 +2426,7 @@ byte_89128:
 		.BYTE	$F0,$45,$02,$00
 		.BYTE	$F0,$44,$02,$F8
 		.BYTE	$80
-byte_89165:
+_spr_monster0E:
 		.BYTE	$F7,$7D,$01,$07
 		.BYTE	$F7,$7C,$01,$FF
 		.BYTE	$F7,$7B,$01,$F7
@@ -2374,7 +2444,7 @@ byte_89165:
 		.BYTE	$F0,$48,$02,$00
 		.BYTE	$F0,$47,$02,$F8
 		.BYTE	$80
-byte_891A6:
+_spr_monster0F:
 		.BYTE	$FA,$46,$02,$18
 		.BYTE	$F7,$7A,$01,$07
 		.BYTE	$F7,$79,$01,$00
@@ -2392,7 +2462,7 @@ byte_891A6:
 		.BYTE	$F0,$45,$02,$00
 		.BYTE	$F0,$44,$02,$F8
 		.BYTE	$80
-byte_891E7:
+_spr_monster11:
 		.BYTE	$EB,$5D,$01,$FE
 		.BYTE	$F4,$4F,$01,$06
 		.BYTE	$F3,$4E,$01,$FE
@@ -2406,7 +2476,7 @@ byte_891E7:
 		.BYTE	$00,$61,$02,$02
 		.BYTE	$00,$60,$02,$FA
 		.BYTE	$80
-byte_89218:
+_spr_monster13:
 		.BYTE	$05,$7C,$01,$00
 		.BYTE	$FD,$6C,$01,$03
 		.BYTE	$00,$7F,$02,$08
@@ -2424,7 +2494,7 @@ byte_89218:
 		.BYTE	$10,$68,$02,$F9
 		.BYTE	$08,$67,$02,$FB
 		.BYTE	$80
-byte_89259:
+_spr_monster08:
 		.BYTE	$03,$59,$01,$00
 		.BYTE	$FB,$49,$01,$00
 		.BYTE	$03,$7B,$01,$08
@@ -2441,7 +2511,7 @@ byte_89259:
 		.BYTE	$02,$70,$02,$F6
 		.BYTE	$FA,$60,$02,$F6
 		.BYTE	$80
-byte_89296:
+_spr_monster09:
 		.BYTE	$F1,$5C,$01,$01
 		.BYTE	$00,$7D,$01,$09
 		.BYTE	$00,$7C,$01,$01
@@ -2459,7 +2529,7 @@ byte_89296:
 		.BYTE	$F8,$64,$02,$00
 		.BYTE	$F8,$63,$02,$F8
 		.BYTE	$80
-byte_892D7:
+_spr_monster0A:
 		.BYTE	$03,$7F,$01,$09
 		.BYTE	$03,$7E,$01,$01
 		.BYTE	$FB,$6F,$01,$09
@@ -2477,7 +2547,7 @@ byte_892D7:
 		.BYTE	$F9,$67,$02,$00
 		.BYTE	$F9,$66,$02,$F8
 		.BYTE	$80
-byte_89318:
+_spr_monster0B:
 		.BYTE	$F1,$5C,$01,$01
 		.BYTE	$00,$7D,$01,$09
 		.BYTE	$00,$7C,$01,$01
@@ -2495,7 +2565,7 @@ byte_89318:
 		.BYTE	$F8,$64,$02,$00
 		.BYTE	$F8,$63,$02,$F8
 		.BYTE	$80
-byte_89359:
+_spr_monster04:
 		.BYTE	$F8,$75,$01,$09
 		.BYTE	$F8,$74,$01,$01
 		.BYTE	$F8,$73,$01,$F8
@@ -2515,7 +2585,7 @@ byte_89359:
 		.BYTE	$F0,$42,$02,$00
 		.BYTE	$F0,$41,$02,$F8
 		.BYTE	$80
-byte_893A2:
+_spr_monster05:
 		.BYTE	$F8,$7B,$01,$08
 		.BYTE	$F8,$7A,$01,$00
 		.BYTE	$F8,$79,$01,$F8
@@ -2534,7 +2604,7 @@ byte_893A2:
 		.BYTE	$F0,$47,$02,$00
 		.BYTE	$F0,$46,$02,$F8
 		.BYTE	$80
-byte_893E7:
+_spr_monster06:
 		.BYTE	$F8,$6F,$01,$09
 		.BYTE	$F8,$6E,$01,$01
 		.BYTE	$F8,$6D,$01,$F9
@@ -2554,7 +2624,7 @@ byte_893E7:
 		.BYTE	$F0,$4C,$02,$00
 		.BYTE	$F0,$4B,$02,$F8
 		.BYTE	$80
-byte_89430:
+_spr_monster07:
 		.BYTE	$F8,$7B,$01,$08
 		.BYTE	$F8,$7A,$01,$00
 		.BYTE	$F8,$79,$01,$F8
@@ -2574,7 +2644,7 @@ byte_89430:
 		.BYTE	$F0,$47,$02,$00
 		.BYTE	$F0,$46,$02,$F8
 		.BYTE	$80
-byte_89479:
+_spr_monster15:
 		.BYTE	$F9,$4A,$01,$09
 		.BYTE	$F9,$49,$01,$01
 		.BYTE	$FD,$6A,$41,$F9
@@ -2586,7 +2656,7 @@ byte_89479:
 		.BYTE	$F7,$45,$02,$01
 		.BYTE	$F7,$44,$02,$F9
 		.BYTE	$80
-byte_894A2:
+_spr_monster14:
 		.BYTE	$F6,$6C,$01,$02
 		.BYTE	$F6,$6B,$01,$FA
 		.BYTE	$FD,$6A,$01,$0A
@@ -2601,7 +2671,7 @@ byte_894A2:
 		.BYTE	$F7,$57,$02,$00
 		.BYTE	$F7,$56,$02,$F8
 		.BYTE	$80
-byte_894D7:
+_spr_monster1A:
 		.BYTE	$F5,$79,$01,$00
 		.BYTE	$F7,$78,$01,$F8
 		.BYTE	$E5,$77,$01,$00
@@ -2618,7 +2688,7 @@ byte_894D7:
 		.BYTE	$F8,$52,$02,$FE
 		.BYTE	$F8,$51,$02,$F6
 		.BYTE	$80
-byte_89514:
+_spr_monster18:
 		.BYTE	$00,$74,$01,$06
 		.BYTE	$00,$73,$01,$FE
 		.BYTE	$F8,$72,$01,$FE
@@ -2633,7 +2703,7 @@ byte_89514:
 		.BYTE	$F8,$54,$02,$00
 		.BYTE	$F8,$53,$02,$F8
 		.BYTE	$80
-byte_89549:
+_spr_monster20:
 		.BYTE	$EB,$7F,$01,$FA
 		.BYTE	$FF,$7F,$81,$F9
 		.BYTE	$F0,$76,$01,$F8
@@ -2648,7 +2718,7 @@ byte_89549:
 		.BYTE	$F0,$48,$02,$08
 		.BYTE	$F0,$47,$02,$00
 		.BYTE	$80
-byte_8957E:
+_spr_monster21:
 		.BYTE	$EC,$4F,$81,$F9
 		.BYTE	$FF,$4F,$01,$F9
 		.BYTE	$F1,$76,$01,$F8
@@ -2660,7 +2730,7 @@ byte_8957E:
 		.BYTE	$F1,$78,$01,$08
 		.BYTE	$F1,$48,$02,$08
 		.BYTE	$80
-byte_895A7:
+_spr_monster24:
 		.BYTE	$F3,$4F,$01,$0F
 		.BYTE	$F2,$4F,$41,$FD
 		.BYTE	$00,$7D,$01,$09
@@ -2673,7 +2743,7 @@ byte_895A7:
 		.BYTE	$F8,$43,$02,$08
 		.BYTE	$00,$75,$02,$08
 		.BYTE	$80
-byte_895D4:
+_spr_monster25:
 		.BYTE	$F1,$4E,$41,$0E
 		.BYTE	$F1,$4E,$01,$FD
 		.BYTE	$F0,$47,$01,$08
@@ -2685,7 +2755,7 @@ byte_895D4:
 		.BYTE	$00,$75,$02,$07
 		.BYTE	$F8,$65,$02,$07
 		.BYTE	$80
-byte_895FD:
+_spr_monster12:
 		.BYTE	$F9,$4E,$01,$0C
 		.BYTE	$F9,$5F,$01,$04
 		.BYTE	$F1,$4F,$01,$03
@@ -2699,7 +2769,7 @@ byte_895FD:
 		.BYTE	$FE,$66,$02,$F8
 		.BYTE	$F6,$56,$02,$F8
 		.BYTE	$80
-byte_8962E:
+_spr_monster10:
 		.BYTE	$EE,$4D,$01,$03
 		.BYTE	$F8,$4B,$01,$F2
 		.BYTE	$F5,$4C,$01,$F9
@@ -2923,21 +2993,21 @@ _spr_heliD7:
 		.BYTE	$02,$26,$01,$FA
 		.BYTE	$02,$27,$01,$02
 		.BYTE	$80
-byte_898D7:
+_spr_train0:
 		.BYTE	$F7,$82,$01,$02
 		.BYTE	$FF,$83,$01,$02
 		.BYTE	$80
-byte_898E0:
+_spr_train1:
 		.BYTE	$F8,$85,$41,$FB
 		.BYTE	$F8,$84,$41,$03
 		.BYTE	$00,$87,$41,$FB
 		.BYTE	$00,$86,$41,$03
 		.BYTE	$80
-byte_898F1:
+_spr_train2:
 		.BYTE	$FD,$80,$01,$FA
 		.BYTE	$FD,$81,$01,$02
 		.BYTE	$80
-byte_898FA:
+_spr_train3:
 		.BYTE	$F8,$84,$01,$F8
 		.BYTE	$F8,$85,$01,$00
 		.BYTE	$00,$86,$01,$F8
@@ -3076,7 +3146,7 @@ _spr_shipB7:
 		.BYTE	$01,$C8,$01,$F8
 		.BYTE	$01,$C9,$01,$00
 		.BYTE	$80
-byte_89AA3:
+_spr_planeA0:
 		.BYTE	$F4,$A6,$03,$FC
 		.BYTE	$FC,$A7,$03,$F4
 		.BYTE	$FC,$A8,$03,$FC
@@ -3086,7 +3156,7 @@ byte_89AA3:
 		.BYTE	$04,$AC,$03,$04
 		.BYTE	$0C,$AD,$00,$FC
 		.BYTE	$80
-byte_89AC4:
+_spr_planeA1:
 		.BYTE	$F8,$9D,$03,$F8
 		.BYTE	$F8,$9E,$03,$00
 		.BYTE	$F8,$9F,$03,$08
@@ -3097,7 +3167,7 @@ byte_89AC4:
 		.BYTE	$08,$A4,$03,$00
 		.BYTE	$08,$A5,$03,$08
 		.BYTE	$80
-byte_89AE9:
+_spr_planeA2:
 		.BYTE	$F4,$96,$43,$F4
 		.BYTE	$F4,$95,$43,$FC
 		.BYTE	$FC,$9A,$43,$EC
@@ -3107,7 +3177,7 @@ byte_89AE9:
 		.BYTE	$04,$9C,$43,$F4
 		.BYTE	$04,$9B,$43,$FC
 		.BYTE	$80
-byte_89B0A:
+_spr_planeA3:
 		.BYTE	$F0,$A3,$83,$F0
 		.BYTE	$F0,$A4,$83,$F8
 		.BYTE	$F0,$A5,$83,$00
@@ -3118,7 +3188,7 @@ byte_89B0A:
 		.BYTE	$00,$9E,$83,$F8
 		.BYTE	$00,$9F,$83,$00
 		.BYTE	$80
-byte_89B2F:
+_spr_planeA4:
 		.BYTE	$EC,$AD,$83,$FC
 		.BYTE	$F4,$AA,$83,$F4
 		.BYTE	$F4,$AB,$83,$FC
@@ -3128,7 +3198,7 @@ byte_89B2F:
 		.BYTE	$FC,$A9,$83,$04
 		.BYTE	$04,$A6,$83,$FC
 		.BYTE	$80
-byte_89B50:
+_spr_planeA5:
 		.BYTE	$F0,$A5,$C3,$F8
 		.BYTE	$F0,$A4,$C3,$00
 		.BYTE	$F0,$A3,$C3,$08
@@ -3139,7 +3209,7 @@ byte_89B50:
 		.BYTE	$00,$9E,$C3,$00
 		.BYTE	$00,$9D,$C3,$08
 		.BYTE	$80
-byte_89B75:
+_spr_planeA6:
 		.BYTE	$F4,$95,$03,$FC
 		.BYTE	$F4,$96,$03,$04
 		.BYTE	$FC,$97,$03,$F4
@@ -3149,7 +3219,7 @@ byte_89B75:
 		.BYTE	$04,$9B,$03,$FC
 		.BYTE	$04,$9C,$03,$04
 		.BYTE	$80
-byte_89B96:
+_spr_planeA7:
 		.BYTE	$F8,$9F,$43,$F8
 		.BYTE	$F8,$9E,$43,$00
 		.BYTE	$F8,$9D,$43,$08
@@ -3160,7 +3230,7 @@ byte_89B96:
 		.BYTE	$08,$A4,$43,$00
 		.BYTE	$08,$A3,$43,$08
 		.BYTE	$80
-byte_89BBB:
+_spr_planeB2:
 		.BYTE	$F4,$8E,$03,$FC
 		.BYTE	$F4,$8F,$03,$04
 		.BYTE	$FC,$90,$03,$F4
@@ -3169,18 +3239,18 @@ byte_89BBB:
 		.BYTE	$04,$93,$03,$FC
 		.BYTE	$04,$94,$03,$04
 		.BYTE	$80
-byte_89BD8:
+_spr_planeB3:
 		.BYTE	$F8,$8A,$03,$F8
 		.BYTE	$F8,$8B,$03,$00
 		.BYTE	$00,$8C,$03,$F8
 		.BYTE	$00,$8D,$03,$00
 		.BYTE	$80
-byte_89BE9:
+_spr_planeB4:
 		.BYTE	$F8,$88,$03,$FC
 		.BYTE	$FF,$88,$83,$FC
 		.BYTE	$FC,$89,$03,$04
 		.BYTE	$80
-byte_89BF6:
+_spr_planeC2:
 		.BYTE	$F4,$8E,$43,$FC
 		.BYTE	$F4,$8F,$43,$F4
 		.BYTE	$FC,$90,$43,$04
@@ -3189,18 +3259,18 @@ byte_89BF6:
 		.BYTE	$04,$93,$43,$FC
 		.BYTE	$04,$94,$43,$F4
 		.BYTE	$80
-byte_89C13:
+_spr_planeC3:
 		.BYTE	$F8,$8A,$43,$00
 		.BYTE	$F8,$8B,$43,$F8
 		.BYTE	$00,$8C,$43,$00
 		.BYTE	$00,$8D,$43,$F8
 		.BYTE	$80
-byte_89C24:
+_spr_planeC4:
 		.BYTE	$F8,$88,$43,$FC
 		.BYTE	$FF,$88,$C3,$FC
 		.BYTE	$FC,$89,$43,$F4
 		.BYTE	$80
-byte_89C31:
+_spr_tornado0:
 		.BYTE	$E8,$4B,$01,$F5
 		.BYTE	$E8,$4C,$01,$FD
 		.BYTE	$E8,$4D,$01,$05
@@ -3209,7 +3279,7 @@ byte_89C31:
 		.BYTE	$F0,$50,$01,$05
 		.BYTE	$F8,$51,$01,$FD
 		.BYTE	$80
-byte_89C4E:
+_spr_tornado1:
 		.BYTE	$E8,$52,$01,$F5
 		.BYTE	$E8,$53,$01,$FD
 		.BYTE	$E8,$54,$01,$05
@@ -3218,7 +3288,7 @@ byte_89C4E:
 		.BYTE	$F0,$57,$01,$05
 		.BYTE	$F8,$58,$01,$FD
 		.BYTE	$80
-byte_89C6B:
+_spr_tornado2:
 		.BYTE	$E8,$59,$01,$F5
 		.BYTE	$E8,$5A,$01,$FD
 		.BYTE	$E8,$5B,$01,$05
@@ -3227,7 +3297,7 @@ byte_89C6B:
 		.BYTE	$F0,$5E,$01,$05
 		.BYTE	$F8,$5F,$01,$FD
 		.BYTE	$80
-byte_89C88:
+_spr_tornado3:
 		.BYTE	$E8,$4B,$01,$F5
 		.BYTE	$E8,$4C,$01,$FD
 		.BYTE	$E8,$4D,$01,$05
@@ -3236,7 +3306,7 @@ byte_89C88:
 		.BYTE	$F0,$62,$01,$05
 		.BYTE	$F8,$63,$01,$FD
 		.BYTE	$80
-byte_89CA5:
+_spr_tornado4:
 		.BYTE	$E8,$52,$01,$F5
 		.BYTE	$E8,$53,$01,$FD
 		.BYTE	$E8,$54,$01,$05
@@ -3245,7 +3315,7 @@ byte_89CA5:
 		.BYTE	$F0,$66,$01,$05
 		.BYTE	$F8,$67,$01,$FD
 		.BYTE	$80
-byte_89CC2:
+_spr_tornado5:
 		.BYTE	$E8,$59,$01,$F5
 		.BYTE	$E8,$5A,$01,$FD
 		.BYTE	$E8,$5B,$01,$05
@@ -3254,7 +3324,7 @@ byte_89CC2:
 		.BYTE	$F0,$6A,$01,$05
 		.BYTE	$F8,$6B,$01,$FD
 		.BYTE	$80
-byte_89CDF:
+_spr_tornado6:
 		.BYTE	$E8,$4B,$01,$F5
 		.BYTE	$E8,$4C,$01,$FD
 		.BYTE	$E8,$4D,$01,$05
@@ -3263,7 +3333,7 @@ byte_89CDF:
 		.BYTE	$F0,$6E,$01,$05
 		.BYTE	$F8,$6F,$01,$FD
 		.BYTE	$80
-byte_89CFC:
+_spr_tornado7:
 		.BYTE	$E8,$52,$01,$F5
 		.BYTE	$E8,$53,$01,$FD
 		.BYTE	$E8,$54,$01,$05
@@ -3272,7 +3342,7 @@ byte_89CFC:
 		.BYTE	$F0,$72,$01,$05
 		.BYTE	$F8,$73,$01,$FD
 		.BYTE	$80
-byte_89D19:
+_spr_tornado8:
 		.BYTE	$E8,$59,$01,$F5
 		.BYTE	$E8,$5A,$01,$FD
 		.BYTE	$E8,$5B,$01,$05
@@ -3281,7 +3351,7 @@ byte_89D19:
 		.BYTE	$F0,$76,$01,$05
 		.BYTE	$F8,$77,$01,$FD
 		.BYTE	$80
-byte_89D36:
+_tornado_spr_anim_list:
 		.BYTE	$00,$01,$02
 		.BYTE	$00,$01,$02
 		.BYTE	$00,$01,$02
@@ -3379,10 +3449,7 @@ _spr_game_interface_cursor_draw:
 loc_88CD1:
 		LDA		#$00
 		STA		_spr_insert_raw_args._idx
-		LDA		_cur_game_cursor_scr_pos._X
-		STA		_spr_insert_raw_args._pos._X
-		LDA		_cur_game_cursor_scr_pos._Y
-		STA		_spr_insert_raw_args._pos._Y
+		MOVW	_spr_insert_raw_args._pos,_cur_game_cursor_scr_pos
 		JMP		_spr_lib_raw_insert
 loc_88CE0:
 		LDX		_prev_constr_palette_press_idx
