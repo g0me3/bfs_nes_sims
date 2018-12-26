@@ -993,7 +993,19 @@ _Z		EQU		$23
 __		EQU		$DF
 
 
-;----------------M-A-P--T-I-L-E-S---------------
+;-------------T-I-L-E--F-L-A-G-S----------------
+
+_FL_CONDUCTOR		EQU	$80
+_FL_DESTRUCTIBLE	EQU	$40
+_FL_ROAD			EQU	$20
+_FL_RAIL			EQU	$10
+_FL_TRANSPORT		EQU	_FL_ROAD|_FL_RAIL
+_FL_BUILDING		EQU $08
+_FL_PROTECTED		EQU $04
+_FL_FLOODABLE		EQU	$02
+_FL_WATER			EQU	$01
+
+;--------------M-A-P--T-I-L-E-S-----------------
 
 _MAP_R_AREA_DEF			EQU		$00
 _MAP_R_AREA01			EQU		$01

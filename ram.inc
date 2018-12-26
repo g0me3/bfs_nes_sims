@@ -919,13 +919,13 @@ _electrics_count:
 ; parameters and accessed indirectly! so don't change its
 ; order!
 ;
-_parks_counter:
+_parks_count:
 		.BYTE	0,0
-_map_unbuldozered_tiles_count:
+_woods_count:
 		.BYTE	0,0
-_map_buldozered_tiles_count:
+_ground_count:
 		.BYTE	0,0
-_map_shore_tiles_count:
+_water_count:
 		.BYTE	0,0
 ; end if statistic parameters
 ; -
@@ -954,7 +954,7 @@ _tmp6AC:
 
 		_treq _required
 
-_cur_R_area_develop_state:
+_cur_area_develop_state:
 		.BYTE	0
 
 		_tfix8_8	_prev_RCI_levels_sum
@@ -972,7 +972,7 @@ _tmp_map_pos_backup_buf_X:
 
 		_tpos	_tmp_area_pos
 
-byte_6C3:
+_life_ratio_idx:
 		.BYTE	0
 _tmp6C4:
 		.BYTE	0
@@ -992,12 +992,16 @@ byte_6CB:
 ; END OF REINIT AREA
 
 _tmp6CC:
-		.BYTE	0,0
+		.BYTE	0
+_tmp6CD:
+		.BYTE	0
 
 _problem_data	SET	.
 
 _tmp6CE:
-		.BYTE	0,0
+		.BYTE	0
+_tmp6CF:
+		.BYTE	0
 _tmp6D0:
 		.BYTE	0
 _tmp6D1:
@@ -1251,7 +1255,7 @@ _MMC5_MUL1:
 		ORG	$8000
 
 		; 4-bits array, 19 rows, 19 columns (76/4)
-		_tarray	_land_val_avr_map,((19*19)/2)+1
+		_tarray	_land_val_map,((19*19)/2)+1
 
 		; 4-bits array, 19 rows, 19 columns
 		_tarray	_crime_map,((19*19)/2)+1

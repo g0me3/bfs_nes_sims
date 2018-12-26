@@ -3176,9 +3176,9 @@ _city_param_overview_draw:
 		SBC		#$13
 		AND		#$FE
 		TAX
-		LDA		_parks_counter,X				; read 2-bytes at once
+		LDA		_parks_count,X				; read 2-bytes at once
 		STA		_ptr0
-		LDA		_parks_counter+1,X
+		LDA		_parks_count+1,X
 		STA		_ptr0+1
 		LDA		_tmp118+4						; then check if odd or even counters here
 		LSR
@@ -3437,7 +3437,7 @@ off_EB5A0:
 		.WORD	_traffic_map
 		.WORD	_pollution_map
 		.WORD	_crime_map
-		.WORD	_land_val_avr_map
+		.WORD	_land_val_map
 		.WORD	_fire_map
 		.WORD	_police_map
 

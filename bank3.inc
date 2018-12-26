@@ -1704,9 +1704,9 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		JMP		_sram_write_disable
 loc_59C0E:
-		LDA		#>[_land_val_avr_map]			; CAUTION: low nibble is zero
+		LDA		#>[_land_val_map]			; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
-		LDA		#<[_land_val_avr_map]
+		LDA		#<[_land_val_map]
 		STA		_ptr0
 		STA		_has_saved_city_data_flag		; zero goes here as well
 		TAY

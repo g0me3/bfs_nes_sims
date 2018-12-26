@@ -1876,7 +1876,7 @@ loc_1044A3:
 		LDX		#>[_traffic_map_end-_power_map]
 		LDY		#<[_traffic_map_end-_power_map]
 		JSR		_clear_buf
-		MOVWO	_tmpE6,_land_val_avr_map			; clear the rest of the statistic maps
+		MOVWO	_tmpE6,_land_val_map			; clear the rest of the statistic maps
 ; -
 ; REDUNDANT
 ;		LDX		#$03
@@ -1896,8 +1896,8 @@ loc_1044A3:
 ;		BNE		loc_1044F8
 ; -
 ; OPTIMIZED
-		LDX		#>[_fire_map_end-_land_val_avr_map]	; size is correct this time
-		LDY		#<[_fire_map_end-_land_val_avr_map]
+		LDX		#>[_fire_map_end-_land_val_map]	; size is correct this time
+		LDY		#<[_fire_map_end-_land_val_map]
 		JSR		_clear_buf
 ; -
 		JSR		_sram_write_disable

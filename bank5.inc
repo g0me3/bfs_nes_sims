@@ -80,7 +80,7 @@ _airplane_crash_start:
 		LDA		#$01
 		STA		_goto_alert_req
 		STA		_game_msg_awaits_flag
-		JSR		_far_fire_or_destroy_map_tile_ex; X,Y aregs goes here
+		JSR		_far_disaster_destroy_tile; X,Y aregs goes here
 		LDA		_obj_active_flags				; destroy plane
 		AND		#$FD
 		STA		_obj_active_flags
@@ -1259,7 +1259,7 @@ loc_887A3:
 		BEQ		locret_887B9
 		LDX		_cur_obj_pos._COL
 		LDY		_cur_obj_pos._ROW
-		JSR		_far_fire_or_destroy_map_tile_ex
+		JSR		_far_disaster_destroy_tile
 loc_887B6:
 		JMP		_obj_draw
 locret_887B9:
@@ -1399,7 +1399,7 @@ loc_88110:
 		JSR		_obj_spr_draw
 		LDX		_cur_obj_pos._COL
 		LDY		_cur_obj_pos._ROW
-		JMP		_far_fire_or_destroy_map_tile_ex
+		JMP		_far_disaster_destroy_tile
 .obj_tornado_draw:
 		LDX		_obj_tornado_counter
 		LDA		_tornado_spr_anim_list,X
@@ -1783,14 +1783,14 @@ _map_scr_obj_spr_deltaX:
 		.BYTE	$04,$04,$04,$04,$04,$FC
 
 ; =============== S U B	R O U T	I N E =======================================
-_far_fire_or_destroy_map_tile_ex:
+_far_disaster_destroy_tile:
 		PUSHB	_ptr0
 		PUSHB	_ptr0+1
 		PUSHB	_tmp2
 		PUSHB	_tmp3
 		PUSHB	_tmp4
 		PUSHB	_tmp5
-		FJSRA	_fire_or_destroy_map_tile_ex,SRAM,PRGB
+		FJSRA	_disaster_destroy_tile,SRAM,PRGB
 		POPB	_tmp5
 		POPB	_tmp4
 		POPB	_tmp3

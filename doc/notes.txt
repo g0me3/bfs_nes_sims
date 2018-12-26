@@ -1,7 +1,7 @@
 
 	MISC GAME INFO
 
-MISC#1. There is an automatically spawned helicopter for observing the road traffic. It fly randomly and every iteration its coordinates tested against the traffic map. If helicopter hovering over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement. However, method of calling this message is the same as in Micropolis sources, from sprite engine separately from common scroll message system.
+MISC#1. There is an automatically spawned helicopter for observing the road traffic if you build an Air Port. It fly randomly and every iteration its coordinates tested against the traffic map. If helicopter hovering over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement. However, method of calling this message is the same as in Micropolis sources, from sprite engine separately from common scroll message system.
 MISC#2. The game engine consists of two main separate parts. First is an interface and display control part, game engine. It handles all inputs, menus, drawing graphics, screen objects/sprites manager, disasters manipulation. The second is a city control and statistics collector part, simulation engine. It does all city specific calcs on population, industry, energy, pollution and traffic, does stats and charts for info displays, etc... Both parts constantly do its own work in loop, never stop. The most interesting part, the threads manager in NMI handler switches between two process through stack manipulation, so both work some kind like a paraller threads. The game engine has a priority on simulation engine. If you press any button, it will take control instantly, and city calcs are be halted. However, simulation engine can enter some kind of critical sections, which may protect the simulation calculations from accessing from the game engine. I have not seen such engine in any game before. Usually, threading methods used in a scripted engines. This is the first game I've seen that do it on the native code. Basicly, this method can be used for multi-threading operation systems for NES, the problem is just in a very small stack.
 MISC#3. For some reason until you get the City Status and build a Bank, you have only 3 free Special events slots. The rest of the game you'll have 4 slots. However, if all your slots are full, any pending event will wait until any empty slot appears.
 MISC#4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test. Most probably this is the name of the developer which made the SNES version also.
@@ -23,6 +23,8 @@ MISC#11. There are some special secret button codes in the NES version.
 		MISC#11.3.1 All constructions cost no money. However, the budget income/outcome still work.
 		MISC#11.3.2 Be able to place any number of buildings at any position without collision check (causes a lot of glitches if heavily obused).
 	MISC#11.4 You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, disasterS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
+MISC#12. Destruction/corruption logic for map objects avoid corruptions of the raw bulldozered grounds. Only flood as a special case can corrupt it. Why at least nuclear pollution can't do the same?
+MISC#13. Note, that Monster appearance logic (see BUGS#15) doesn't use high pollution zones as a destination point, as stated in the Scenario message and as actually work in the original Micropolis code. For random disaster the starting and destination point is random. For scenario disaster selected to start near the center and walk toward the sea. The area it crosses there corresponds to the industrial zone with high pollution. So literally he DOES attracted to high pollution areas.
 
 	WHAT'S UNFINISHED IN THE GAME
 
@@ -246,18 +248,18 @@ BUGS#28.FIXED(BFS) The Fires control routine tries to fire up all surrounding ti
 7F		-							-		-
 80-8E	internal building's tiles	C0		11000000
 8F		-							-		-
-90		buldozered ground			02		00000011
-91-9B	road						62		01100011
-9C-A6	rail						52		01010011
-A7-B1	electic						C2		11000011
+90		buldozered ground			02		00000010
+91-9B	road						62		01100010
+9C-A6	rail						52		01010010
+A7-B1	electic						C2		11000010
 B2		park grass					46		01000110
 B3		park tree					06		00000110
 B4		corrupt ground				02		00000010
 B5		flooded ground				00		00000000
 B6		polluted ground				00		00000000
-B7-B8	road+rail					52		01010011
-B9-BA	electric+road				E2		11100011
-BB-BC	electric+rail				D2		11010011
+B7-B8	road+rail					52		01010010
+B9-BA	electric+road				E2		11100010
+BB-BC	electric+rail				D2		11010010
 BD		water						05		00000101
 BE-CD	ground/water shores			06		00000110
 CE-DF	unbuldozered ground			46		01000110
@@ -267,7 +269,7 @@ E4-E5	water+electric				85		10000101
 E6		fire ground					00		00000000
 E7-EA	disaster ground anim		00		00000000
 EB-EC	sailable water+road			05		00000101
-ED-FC	open bridge road			05		00000101	*unused
+ED-FC	open bridge road			05		00000101	*unused*
 FD		-							-		-
 FE		sailable water tile			05		00000101
 FF		-							-		-
@@ -275,13 +277,13 @@ FF		-							-		-
 	APPEND D. FLAG BITS DESCRIPTION
 
 	7bit (80) - conduct power tile
-	6bit (40) - cile can be burned/destroyed
+	6bit (40) - tile can be burned/destroyed
 	5bit (20) - road tile
 	4bit (10) -	rail tile
-	3bit (08) -	consume power tile
+	3bit (08) -	building large tile
 	2bit (04) - non-destructable tiles
-	1bit (02) - tile can be flooded
-	0bit (01) -
+	1bit (02) - floodable
+	0bit (01) - water tile
 
 	BFS CHANGES LIST
 

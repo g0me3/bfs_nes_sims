@@ -2146,7 +2146,7 @@ _event18_library:
 _event19_park:
 		JSR		_check_for_free_present_slot	; 200 park tiles to build an larger park
 		BNE		nullsub_2
-		LDA		_parks_counter
+		LDA		_parks_count
 		CMP		#200
 		BCC		nullsub_2
 		BCS		_register_new_event
