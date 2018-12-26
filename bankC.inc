@@ -96,11 +96,11 @@ _game_state_common:
 _game_state00_hud_static_redraw:
 		JSR		_hud_static_redraw				; redraw static part of the HUD (buttons, extnts)
 		BCS		loc_1360DD
-		LDA		_gui_active_controls_flags		; set HUD draw complete flag
+		LDA		_gui_active_controls_flags		; set one of flags for top side of HUD redraw complete
 		ORA		#$01
 		STA		_gui_active_controls_flags
 		LDA		#$FF
-		STA		_hud_date_redraw_req			; set static portions of the HUD redraw requests
+		STA		_hud_date_redraw_req			; set dinamic parts of the HUD redraw requests
 		STA		_hud_money_redraw_req
 		STA		_hud_popul_redraw_req
 		STA		_hud_city_name_redraw_req
@@ -111,12 +111,12 @@ loc_1360DD:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _game_state01_constr_palette_redraw:
-		JSR		_constr_palette_redraw
-		BCS		loc_150019
+		JSR		_constr_palette_redraw			; redraw leftmost part of HUD/GUI, a
+		BCS		loc_150019						; cinstruction palette
 		LDA		#$3A
-		STA		_MMC5_CHR_BANKSA+2
+		STA		_MMC5_CHR_BANKSA+2				; restore cursor sprites CHR bank
 		LDA		#$FF
-		STA		_hud_present_name_draw_req
+		STA		_hud_present_name_draw_req		; request to draw current
 		LDA		_gui_active_controls_flags
 		ORA		#$02
 		STA		_gui_active_controls_flags

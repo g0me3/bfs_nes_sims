@@ -64,18 +64,18 @@ UNFINISHED#7.TODO Every year, the current state of city parameters are stored in
 UNFINISHED#8.TODO Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
 UNFINISHED#9.ADDED(GG LEVAUPPA) Helicopter sprite contains a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason.
 UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably intended to be changed according to current date or scenario type.
-	- BANK10, TILES 20 2x2 (Unused info maps button)
-	- BANK1D, TILES 29, 2A, 2B, 1C 3x3, BANK1F 29, 2A, 2B (a set of tiles for open bridges)
-	- BANK1E, TILES 0C 4x4 (Airport Terminal 2), an airport terminal does not change in the SNES version
-	- BANK23, ALL TILES, (unused set of road traffic tiles also set offrame of traffic for sea bridges)
-	- BANK27, TILES 00 2x2 (Unused config icon)
-	- BANK2E, TILES 00 2x2 (Part of stadium from BANK56)
-	- BANK1F, TILES 0C 4x4 (Airport Terminal 3)
-	- BANK48, TILES 14 2x2 (Extra Park 2)
-	- BANK48, TILES 1D 2x2 (White House 2), the White House is different for every City type in SNES version.
-	- BANK49, TILES 00 2x2 (White House 3)
-	- BANK49, TILES 03 2x2 (White House 4)
-	- BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Race Track and two Baseball staduims building along with animations)
+	UNFINISHED#10.1 BANK10, TILES 20 2x2 (Unused info maps button)
+	UNFINISHED#10.2 BANK1D, TILES 29, 2A, 2B, 1C 3x3, BANK1F 29, 2A, 2B (a set of tiles for open bridges)
+	UNFINISHED#10.3 BANK1E, TILES 0C 4x4 (Airport Terminal 2), an airport terminal does not change in the SNES version
+	UNFINISHED#10.4.ADDED BANK23, TILES 00 9x4 (two more frames for high traffic anim), TILES 0A 6x4 (traffic for water roads and bridges)
+	UNFINISHED#10.5 BANK27, TILES 00 2x2 (Unused config icon)
+	UNFINISHED#10.6 BANK2E, TILES 00 2x2 (Part of stadium from BANK56)
+	UNFINISHED#10.7 BANK1F, TILES 0C 4x4 (Airport Terminal 3)
+	UNFINISHED#10.8 BANK48, TILES 14 2x2 (Extra Park 2)
+	UNFINISHED#10.9 BANK48, TILES 1D 2x2 (White House 2), the White House is different for every City type in SNES version.
+	UNFINISHED#10.10 BANK49, TILES 00 2x2 (White House 3)
+	UNFINISHED#10.11 BANK49, TILES 03 2x2 (White House 4)
+	UNFINISHED#10.12 BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Race Track and two Baseball staduims building along with animations)
 UNFINISHED#11. Also there are a little bit of ingame-icons:
 	UNFINISHED#11.1 BANK20, TILES 20 8x2 ("CLEAR" tablet)
 	UNFINISHED#11.2 BANK2B, TILES 16 2x2 ("BANK" icon with frame)
@@ -94,7 +94,7 @@ UNFINISHED#19.FIXED RAM addresses $5F6/$5F7 in the main city data array never us
 UNFINISHED#20.TODO Unless the SNES version, Casino present in this game does not add a special income to the cash flow.
 UNFINISHED#21. The unused tiles with indexes $ED-$FC represents the drawbridge tiles in opened state. The same drawbridges inmplemented in the SNES version, they may be opened or closed depending on time. There is no code for this in the NES version at all.
 UNFINISHED#22.TODO Roads included in pollution calculation as an entities of value on the map, but has no impact in overall pollution value because in the NES version there is no possible to fetch animation tile with traffic which used in original Micropolis source. So traffic does not counts at all now.
-UNFINISHED#23.TODO The road tiles for water bridges E0-E1 and EB-EC does not have a road flag set in _map_tiles_flags_tbl. So as a result they can't be used as a transport routes when traffic is calculated and you can't get any growth near them. However, this done by purpose. These roads planned to be drivable because there are corresponding tiles in the CHR data. But in the current road animation code does it wrong with a wrong tiles so all bridges will be garbles at some point. Also probably this lead to non-functionality of "Boston" scenario (see UNFINISHED#1.2). When roads flags set for bridges traffic jump up between two city areas on the both river sides.
+UNFINISHED#23.ADDED The road tiles for water bridges E0-E1 and EB-EC does not have a road flag set in _map_tiles_flags_tbl. So as a result they can't be used as a transport routes when traffic is calculated and you can't get any growth near them. However, this done by purpose. When drivable, these roads will collect a traffic as well and must be animated. But due to method of data fetching, there are possible only 16 different tiles to be animated. 15 already taken by regular roads. One more left, but we need TWO more. So we may animate only one of the bridge roads. To animate more we need to additional fetch routine or change method of calculating the current one.
 
 	ORIGINAL GAME BUGS
 
@@ -308,9 +308,9 @@ FF		-							-		-
 - "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting SLOW.
 So this is restored and fixed the original bug at the same time.
 - Attributes of the pressed buttons on the Name entry screens are now not inverted while pressed. However, they may invert it on purpose but this looks odd actually. The evidence it may be done on purpose that non-sprite push button ("CL") animation uses attr switch the same way as sprites does.
-- The restored UNFINISHED#3 sound effect can be heard when var $00F1 write value $80. Still have no idea where it should be used.
-- The restored UNFINISHED#5 ship object uses the existing movement logic with some corrections to be more like in the SNES version, and a totally new deploy code made by guess.
-- The restored UNFINISHED#9 4-frame animation for Helicopter has a higher blinking frequence. Have no idea wether it was removed on purpose (epilepcy?) or by accident.
+- Restored sound effect (UNFINISHED#3) can be heard when var $00F1 write value $80. Still have no idea where it should be used.
+- Restored ship object (UNFINISHED#5) uses the existing movement logic with some corrections to be more like in the SNES version, and a totally new deploy code made by guess.
+- Restored water road trive ability (UNFINISHED#23) using additional unused tiles (UNFINISHED#10.4) also rewritten fetch routine to allow more tiles to be accessible.
 
 	BFS TODO
 
