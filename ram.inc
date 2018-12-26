@@ -506,7 +506,7 @@ byte_13A:
 		.BYTE	0
 _budget_screen_return_to_info_maps_flag:
 		.BYTE	0
-byte_13C:
+_info_maps_button_pending:
 		.BYTE	0
 _tmp13D:
 		.BYTE	0

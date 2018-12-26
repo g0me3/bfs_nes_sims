@@ -5,7 +5,6 @@
 	NEW BUGS
 
 - Ship object can stuck in a pond or at the map side forever sometimes. Also may be invisible because of that.
-- Presents messages animation does not clear present area properly, leave garbage.
 
 	WHAT DONE
 
@@ -68,6 +67,8 @@
 	2.3 Third name used as bank name inside the message resourses, but never initialized with any value, always blank, the same as with blank sister town name.
 	2.4 Two more are unused completely.
 3. One of the SE effects unreferenced and there is not known where it should be used. DEMO GG: AKOXTGAA+YSXZPKAP (replaces one of the used sounds with it, write $08 to $00F1 address in RAM to hear a new one).
+	3.1 Unused sound can be heard by setting var $F2 to value $10. Some kind of low alert buzzer. Maybe for unclear meltdown alert which has no any special indication otherwise
+	3.2 To another unused sound, set $F2 to value $80. Another kind of click or cancel sound line unreferenced one.
 4. There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine.
 	4.1 Used from 0 to F except B ("Blackouts"), also 18 ("Heavy traffic report") in a custom handler. The rest of messages aren't used at all.
 	4.2 Most of them are about disasters and crashes and duplicates the ingame alert messages.
@@ -137,7 +138,7 @@
 
 	MISC
 
-1. There is an automatically spawned helicopter for observing the road traffic. It floats randomly and every iteration its coordinates tested against the traffic map. If helicopter flying over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement with a quick and lazy method, avoiding the regular message system and called from the top of the system loop.
+1. There is an automatically spawned helicopter for observing the road traffic. It fly randomly and every iteration its coordinates tested against the traffic map. If helicopter hovering over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement with a quick and lazy method, avoiding the regular message system and called from the top of the system loop.
 2. The game engine consists of two main separate mostly independent parts. First is an interface and display control part. It handles all inputs, menus, drawing graphics, screen objects/sprites manager, disasters manipulation. The second is a city control and statistics collector part. It does all city specific calcs on population, industry, energy, pollution and traffic. Does statis and charts for info displays, etc... Both parts constantly does its own work in loop, never stop. The most interesting part, they work like some kind of threads in parallel. The threads manager in NMI handler switches between two process through stack manipulation, so both work some kind in parallel. The interface thread has a priority on a man activity. If you press any button, it will take control instantly, and city calcs will be halted. In other way, the city calc part can raise a flags to forbit some portions of the interface code to read the data it calculating now. I have not seen such engine in any game before. Usually, threading methods used in a scripted engines. This is the first game I've seen that do it on the native code. Basicly, this method can be used for multi-threading operation systems for NES, the problem is just in a very small stack.
 3. For some reason until you get the City Status and build a Bank, you have only 3 free Special events slots. The rest of the game you'll have 4 slots. However, if all your slots are full, any pending event will wait until any empty slot appears.
 4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test.

@@ -18,6 +18,46 @@ PRGC	EQU		$FC
 PRGD	EQU		$FD
 SRAM	EQU		$00
 
+;--------------------A-P-U----------------------
+
+_SE_IDX_CLICK		EQU	$0001	; regular click
+_SE_IDX_ERROR		EQU	$0002	; error buzzer
+_SE_IDX_SBUILD		EQU	$0004	; smal build sound
+_SE_IDX_LBUILD		EQU	$0008	; large build sound
+_SE_IDX_ALERT		EQU	$0010	; alert buzzer
+_SE_IDX_ROLLOUT		EQU	$0020	; menu open
+_SE_IDX_ROLLIN		EQU	$0040	; menu close
+_SE_IDX_0080		EQU	$0080	; *unused* click
+_SE_IDX_MONSTER		EQU	$0100	; monster dpcm
+_SE_IDX_TRAFFIC		EQU	$0200	; traffic report dpcm
+_SE_IDX_DESTROY		EQU	$0400	; explode/destroy
+_SE_IDX_BULLDOZE	EQU	$0800	; bulldoze sound
+_SE_IDX_1000		EQU	$1000	; *unused* alert
+_SE_IDX_BCLICK		EQU	$2000	; button press
+_SE_IDX_TORNADO		EQU	$3000	; tornado sound
+_SE_IDX_SELECT		EQU	$4000	; selection menus sound
+_SE_IDX_8000		EQU	$8000	; *unused* cancel
+
+	MAC	APUA_SE
+	#if {1}<$100
+		LDA		#{1}
+		STA		_apu_se_flags
+	#else
+		LDA		#[{1}>>8]
+		STA		_apu_se_flags+1
+	#endif
+	ENDM
+
+	MAC	APUX_SE
+	#if {1}<$100
+		LDX		#{1}
+		STX		_apu_se_flags
+	#else
+		LDX		#[{1}>>8]
+		STX		_apu_se_flags+1
+	#endif
+	ENDM
+
 ;------------S-T-R-U-C-T-U-R-E-S----------------
 
 	MAC	_tfix16_16

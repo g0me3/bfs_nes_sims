@@ -1172,9 +1172,10 @@ _farcall_argsAXY_safe:
 		INC		_mmc5_operation_in_progress_flag	; busy off, exit
 		RTS
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-_jmp_ptr0:
-		JMP		(_ptr0)
+;_jmp_ptr0:
+;		JMP		(_ptr0)
 
 ; =============== S U B	R O U T	I N E =======================================
 ; little bit simpler routine, no interferences with tmp0-tmp5, isolated
@@ -3902,6 +3903,11 @@ _switch:
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
 		POPB	_ptr0
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_jmp_ptr0:
 		JMP		(_ptr0)
 
 _bitmasks:

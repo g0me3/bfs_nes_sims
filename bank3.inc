@@ -162,8 +162,7 @@ _game_msg_apu_select:
 		STA		_apu_mus_idx_req
 		BNE		locret_5824B
 loc_58243:
-		LDA		#$10
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_ALERT
 		LDA		#$21
 		STA		_apu_mus_idx_req
 locret_5824B:
@@ -1541,8 +1540,8 @@ locret_58A9E:
 _game_msg_wnd_draw:
 ;		JSR		_buffers_test_flush			; REDUNDANT, merged
 ;		BCS		_game_msg_wnd_draw
-		JSR		_buffers_test_flush		; OPTIMIZED, the same function
-		BNE		_game_msg_wnd_draw				; just test Z instead of C
+		JSR		_buffers_test_flush			; OPTIMIZED, the same function
+		BNE		_game_msg_wnd_draw			; just test Z instead of C
 		LDA		#$00
 		STA		_tmp0
 loc_58AA8:
@@ -2013,8 +2012,7 @@ _game_menu_exec:
 		TAX
 		CPX		#$00
 		BNE		loc_58F72
-;		LDA		#$01							; move into function
-;		STA		_apu_se_flags
+;		APUA_SE	_SE_IDX_CLICK								; move into function
 ;		FJSRA	_game_save_menu,SRAM,PRG3		; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_save_menu
 		JMP		_game_menu_break
@@ -2027,14 +2025,12 @@ loc_58F72:
 loc_58F7F:
 		DEX
 		BNE		loc_58F90
-;		LDA		#$01							; move into function
-;		STA		_apu_se_flags
+;		APUA_SE	_SE_IDX_CLICK								; move into function
 ;		FJSRA	_game_title_return,SRAM,PRG3	; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_title_return
 		JMP		_game_menu_break
 loc_58F90:
-;		LDA		#$01							; move into function
-;		STA		_apu_se_flags
+;		APUA_SE	_SE_IDX_CLICK								; move into function
 ;		FJSRA	_game_quit,SRAM,PRG3			; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_quit
 _game_menu_break:
@@ -2044,8 +2040,7 @@ _game_menu_break:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_save_menu:
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		JSR		_save_menu_exec
 		BCS		loc_58FBA
 		JSR		_sram_data_save
@@ -2146,8 +2141,7 @@ loc_59047:
 		LDA		_pad0_autorep_press
 		AND		#$0F
 		BEQ		loc_59047
-		LDA		#$40
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_SELECT
 		LDA		_common_yes_no_menu_cursor_pos
 		BEQ		loc_59076
 		DEC		_common_yes_no_menu_cursor_pos
@@ -2160,8 +2154,7 @@ loc_5907B:
 		BNE		loc_59097
 		JSR		_spr_clear
 		JSR		_common_yes_no_menu_yes_push_draw
-		LDA		#$20
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_BCLICK
 		LDA		#$18
 		STA		_ptr0
 loc_5908E:
@@ -2178,8 +2171,7 @@ loc_5909C:
 loc_5909F:
 		JSR		_spr_clear
 		JSR		_common_yes_no_menu_no_push_draw
-		LDA		#$20
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_BCLICK
 		JSR		_spr_clear
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
@@ -2234,14 +2226,12 @@ _common_yes_no_menu_button_push_draw:
 _game_load_menu:
 		LDA		_has_saved_city_data_flag
 		BNE		loc_59103
-		LDA		#$02
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_ERROR
 		BNE		loc_5912E
 loc_59103:
 		LDA		#$00
 		STA		_cur_game_mode
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 ;		JSR		_load_menu_exec						; REDUNDANT
 		LDA		#$10								; OPTIMIZED: load menu
 		JSR		_common_yes_no_question_menu
@@ -2303,8 +2293,7 @@ loc_59185:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_quit:
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		JSR		_save_menu_exec
 		BCC		loc_591A1
 		CMP		#$FF
@@ -2323,8 +2312,7 @@ loc_591B7:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_title_return:
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		JSR		_save_menu_exec
 		BCC		loc_591C5
 		CMP		#$FF

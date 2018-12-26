@@ -109,13 +109,13 @@ _scr_res_wnd_close:
 		LDX		#$FF
 		STX		_constr_area_update_req			; map area redraw request
 		INX
-		STX		_gui_active_controls_flags		; clear gui flags, request to draw as well
+		STX		_gui_active_controls_flags		; clear gui flags, request to redraw
 ;		STX		_update_rect_left				; REDUNDANT, redraw top-leftmost area of map
 ;		STX		_update_rect_top				; which is not correct here
 		STX		_scr_res_control_flags
 		STX		_game_core_stop_flag
 		STX		_scr_res_idx					; FIX BUGS#19
-;		INX										; one more leftover
+;		INX										; REDUNDANT, one more leftover
 ;		LDA		#$18							; REDUNDANT, continue, these paremerers
 ;		STA		_update_rect_right				; are set in another routine
 ;		LDA		#$14							; and calculated from cur screen pos
@@ -135,7 +135,6 @@ _scr_res_wnd_close:
 		STA		_game_wnd_spr_mode_flag
 		STA		_scr_res_window_opened_flag
 		RTS
-;-
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_common:
@@ -149,7 +148,7 @@ _scr_res_common:
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
 		JSR		_wait_for_nmi
-		FJSRA	_scr_common_draw,PRG6,PRG9
+		FJSRA	_scr_common_draw,PRG6,PRG9		; static tlm draw
 ; NOTE
 ; for some reason attempting to use a regular handler system with no extra checks
 ; lead to screen garbling... all functions although uses ppu queue buffers,
@@ -167,10 +166,10 @@ _scr_res_common:
 ;		JSR		_far_scr_res_hndl6_A_bank_draw			; REDUNDANT
 		FJSRA	_scr_res_hndl6_A_bank_draw,PRG7,PRG9	; OPTIMIZED
 ;-
-		LDA		_scr_res_idx							; currently _scr_res_idx = _scr_res_idx*2
+		LDA		_scr_res_idx					; currently _scr_res_idx = _scr_res_idx*2
 		LSR
 		TAY
-		LDA		_scr_res_ctlr_flag_list,Y
+		LDA		_scr_res_ctlr_flag_list,Y		; preload control flags
 		STA		_scr_res_control_flags
 		JSR		_ppu_reset
 		JSR		_wait_for_nmi
@@ -178,19 +177,18 @@ _scr_res_common:
 		INC		_mmc5_operation_in_progress_flag
 		LDA		#$01
 		STA		_scr_res_window_opened_flag
-		JSR		_pal_fade_in							; show the actual screen
+		JSR		_pal_fade_in					; show the actual screen
 .scr_res_loop:
 		JSR		_wait_for_nmi
 ;		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9	; REDUNDANT
-		JSR		_wnd_common_cursor_spr_clear			; OPTIMIZED, now local
+		JSR		_wnd_common_cursor_spr_clear	; OPTIMIZED, now local
 		JSR		_spr_finish
-		FJSRA	_scr_res_cursor_move,PRG6,PRG9			; common cursor handlers
-		FJSRA	_scr_res_cursor_draw,PRG6,PRG9			; common cursor draw
-		JSR		_scr_res_hndl_common_exec				; execure screen handler
+		FJSRA	_scr_res_cursor_move,PRG6,PRG9	; common cursor handlers
+		FJSRA	_scr_res_cursor_draw,PRG6,PRG9	; common cursor draw
+		JSR		_scr_res_hndl_common_exec		; execure screen handler
 		BIT		_scr_res_control_flags
 		BVC		.scr_res_quick_warp_test		; cancel command test
-		LDA		#$01							; exit from screen
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK					; exit from screen
 ;		FJSRA	_scr_res_wnd_close,PRG6,PRG9	; REDUNDANT
 ;		RTS
 		JMP		_scr_res_wnd_close				; OPTIMIZED, now local
@@ -216,13 +214,12 @@ loc_B97FC:
 ; =============== S U B	R O U T	I N E =======================================
 ; there are two handlers for every event. one is for init/draw, the second is
 ; for input and interact. some init/draw routines doesn't call from this array
-; they call from the main code instead, because they draw only when render is
+; they call from the main code instead, because they can draw only when render is
 ; off and flushes its buffers directly to PPU.
 ; this probably were done in order to draw the screen at once without waiting
-; but some other screens don't do that for some unknown reasons too, like
-; overall info screen. unless other screens where all the numbers should be
-; drawn before the screen shows, this one draw numbers one by one after the
-; screen shown...
+; but some other screens don't do that, like overall info screen. unless other
+; screens where all the numbers should be drawn before the screen shows, this
+; one draw numbers one by one after the screen shown...
 ;
 _scr_res_hndl_common_exec:
 		LDA		_scr_res_idx
@@ -239,8 +236,8 @@ _scr_res_hndl_common_exec:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl7_A_new_city_gen_init:
 		LDA		#$00
-		STA		_mini_map_cur_col
-		STA		_mini_map_cur_row
+		STA		_mini_map_cur_col				; this special screen called from
+		STA		_mini_map_cur_row				; _game_setup functions, not from game itself
 		STA		_new_city_screen_cur_row_idx
 		STA		_new_city_screen_cur_col_idx
 		STA		_cur_info_maps_button_idx
@@ -256,14 +253,14 @@ _scr_res_hndl7_A_new_city_gen_init:
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_map_generate:
 		JSR		_new_city_screen_spr_draw		; put regular sprites
-		JSR		_mini_map_clear_draw			; clear map
+		JSR		_mini_map_clear_draw			; clear map line by line
 ;		FJSRA	_new_city_please_wait_spr_draw,PRG7,PRG9	; REDUNDANT
 		JSR		_new_city_please_wait_spr_draw	; OPTIMIZED, local now
 		JSR		_wait_for_nmi
 		JSR		_sram_on
-		FJSRA	_generate_new_map,SRAM,PRG3		; do actual generation
+		FJSRA	_generate_new_map,SRAM,PRG3		; do actual generation, lock other activity
 		LDA		#$80
-		STA		_scr_res_control_flags
+		STA		_scr_res_control_flags			; done, go to the input part
 		LDA		#$00
 		STA		_new_city_map_regen_req
 ;		JMP		_new_city_screen_spr_draw		; REDUNDANT, already drawn above
@@ -333,7 +330,7 @@ _new_city_screen_cursor_draw:					; draws a cursor at a fixed
 .get_spr_pos:
 		ASL
 		TAY
-		LDA		_new_city_cur_pos_list,Y
+		LDA		_new_city_cur_pos_list,Y		; fixed cursor positions from the list
 		STA		_tmp6CE
 		LDA		_new_city_cur_pos_list+1,Y
 		STA		_tmp6CC
@@ -355,8 +352,7 @@ _new_city_screen_cursor_move:
 		LDA		_pad0_autorep_press
 		AND		#$0F
 		BEQ		.no_cursor_moved				; if any dpad pressed
-		LDX		#$40
-		STX		_apu_se_flags+1					; play sound
+		APUX_SE	_SE_IDX_SELECT					; play sound
 		AND		#$03
 		BNE		.hor_movements
 		LDA		_pad0_autorep_release			; vert movements here
@@ -399,16 +395,15 @@ _wrap_3_table:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_start_new_game_push:
-		LDA		#$40
-		STA		_apu_se_flags+1					; play se
+		APUA_SE	_SE_IDX_SELECT					; play se
 		LDA		_new_city_map_regen_req			; wait for map fully redrawn
 		BNE		locret_EA1F3					; actually dows not need here
-;		MOVWO	_ptr0,_tlm_nt_new_game_push
+;		MOVWO	_ptr0,_tlm_nt_new_game_push		; REDUNDANT, merged in lib routine
 ;		MOVWO	_tmp2,_tlm_extnt_new_game_push
 ;		LDA		#$FF
 ;		JSR		_tlm_queue						; queue push button tilemaps
-		LDX		#$14
-		JSR		_tlm_lib_queue
+		LDX		#$14							; OPTIMIZED
+		JSR		_tlm_lib_queue					; -
 		JSR		_new_city_screen_spr_draw
 		LDX		#$08							; delay for 8 frames
 loc_EA1E8:
@@ -422,8 +417,7 @@ locret_EA1F3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_map_num_change_push:
-		LDA		#$04							; play se
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_SBUILD					; the same sound as for small buildings
 		LDX		#$00
 		LDA		_new_city_screen_cur_row_idx
 		CMP		#$02
@@ -484,7 +478,7 @@ loc_EA24E:
 		JSR		_hex_to_dec9999					; now CONVERT TO DECIMAL ONE MORE TIME LOL
 		JSR		_new_city_map_num_spr_insert	; because we need to draw decimal but we erase it already
 		LDA		#$F2							; BUG, see, this is tiles for pressed
-		BIT		_new_city_button_to_change_flags			; number selection arrows, but
+		BIT		_new_city_button_to_change_flags; number selection arrows, but
 		BPL		loc_EA289						; ...
 		LDA		#$F7							; here is NO button update code!
 loc_EA289:
@@ -520,8 +514,8 @@ _num_decals:
 ;
 _new_city_map_num_button_update:
 		PHA
-		LDY		#$FF							; valid indexes 04 02 01
-		BIT		_new_city_button_to_change_flags;               84 82 81
+		LDY		#$FF							; valid flags 04 02 01
+		BIT		_new_city_button_to_change_flags;             84 82 81
 		BPL		loc_B96AB
 		LDY		#$02
 loc_B96AB:
@@ -542,8 +536,7 @@ _new_city_ctrl_spr_pos_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_next_map_push:
-		LDA		#$40
-		STA		_apu_se_flags+1					; play se
+		APUA_SE	_SE_IDX_SELECT					; play se
 		LDA		_new_city_map_regen_req			; if we already pending a new map
 		BNE		.next_skip						; skip this part
 ;		MOVWO	_ptr0,_tlm_nt_next_map_push
@@ -558,7 +551,7 @@ _new_city_next_map_push:
 ; FIX, if we remove this frame, then the buffers will flush on the
 ; number roll animations below without blinking the sprites itself
 ;
-;		JSR		_wait_for_nmi
+;		JSR		_wait_for_nmi					; FIX, removed
 		LDA		_new_map_number					; now increment map number,
 		CLC										; store it to tmp0
 		ADC		#$01
@@ -591,12 +584,12 @@ loc_EA342:
 		JSR		_new_city_map_num_spr_insert
 		JSR		_new_city_map_num_roll_anim		; animate change
 		JSR		_new_city_map_generate
-;		MOVWO	_ptr0,_tlm_nt_netx_map_release
+;		MOVWO	_ptr0,_tlm_nt_netx_map_release	; REDUNDANT, merged
 ;		MOVWO	_tmp2,_tlm_extnt_netx_map_release
 ;		LDA		#$FF
-;		JMP		_tlm_queue						; draw release button again
-		LDX		#$1C
-		JMP		_tlm_lib_queue
+;		JMP		_tlm_queue
+		LDX		#$1C							; OPTIMIZED
+		JMP		_tlm_lib_queue					; draw release button again
 .next_skip:
 		JMP		_new_city_screen_spr_draw
 
@@ -669,8 +662,8 @@ _tlm_extnt_new_game_push:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_screen_spr_draw:
-		JSR		_new_city_map_num_spr_insert		; insert regular num frame
-		MOVW	_ptr0,_new_map_number				; insert actual map number
+		JSR		_new_city_map_num_spr_insert		; insert default num frame
+		MOVW	_ptr0,_new_map_number				; insert actual number
 		JSR		_hex_to_dec9999
 		LDX		#$50
 		LDY		#$02
@@ -694,70 +687,85 @@ loc_EA426:
 		STX		_spr_buf_pos
 		RTS
 
+; NOTE, sprites drawn here in reverse order, from latest to earliest
+; here we may use the regular _spr_raw_insert if move it to the
+; system bank
+;
 _spr_new_city_map_def:
-		.BYTE	$D0,$02,$EA,$AE,$D8,$02,$EB,$AE,$E0,$02,$EC,$AE,$D0,$01,$ED,$B6
-		.BYTE	$D8,$01,$ED,$B6,$E0,$01,$EE,$B6,$D0,$01,$EF,$C6,$D8,$01,$EF,$C6
-		.BYTE	$E0,$01,$F0,$C6,$D0,$03,$F1,$CE,$D8,$03,$F1,$CE,$E0,$03,$F1,$CE
-		.BYTE	$D0,$03,$F6,$D6,$D8,$03,$F6,$D6,$E0,$03,$F6,$D6
+		.BYTE	$D0,$02,$EA,$AE
+		.BYTE	$D8,$02,$EB,$AE
+		.BYTE	$E0,$02,$EC,$AE
+		.BYTE	$D0,$01,$ED,$B6
+		.BYTE	$D8,$01,$ED,$B6
+		.BYTE	$E0,$01,$EE,$B6
+		.BYTE	$D0,$01,$EF,$C6
+		.BYTE	$D8,$01,$EF,$C6
+		.BYTE	$E0,$01,$F0,$C6
+		.BYTE	$D0,$03,$F1,$CE
+		.BYTE	$D8,$03,$F1,$CE
+		.BYTE	$E0,$03,$F1,$CE
+		.BYTE	$D0,$03,$F6,$D6
+		.BYTE	$D8,$03,$F6,$D6
+		.BYTE	$E0,$03,$F6,$D6
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_map_num_roll_anim:
 		LDA		#$BE
-		STA		_new_city_digit_spr_y_pos
+		STA		_new_city_digit_spr_y_pos		; default Y pos for map num digit sprites
 		LDY		#$02
 		LDX		#$50
-loc_EA43C:
+.num_draw_loop:
 		LDA		_new_city_button_to_change_flags; check if button need to be drawn
 		AND		_new_city_map_num_bitmasks,Y	; by masking its bit
-		BNE		loc_EA44F
-		LDA		_new_city_digit_spr_y_pos
-		JSR		_new_city_map_num_digit_spr_draw
-		LDA		_new_city_digit_spr_y_pos
-		BNE		loc_EA46D
-loc_EA44F:
-		LDA		_ptr0,Y
-		PHA
-		JSR		sub_EA4EA
+		BNE		.num_to_animate
+		LDA		_new_city_digit_spr_y_pos		; if masked, just draw at the same position
+		JSR		_new_city_map_num_digit_spr_draw; draw dummy sprite for not moved digits
+		LDA		_new_city_digit_spr_y_pos		; to have two sprites for every digit all the time
+		BNE		.num_draw_next
+.num_to_animate:
+		LDA		_ptr0,Y							; read digit
+		PHA										; save current value
+		JSR		_new_city_map_old_digit_draw	; calc previous value and draw it as starting digit
 		PLA
-		STA		_ptr0,Y
+		STA		_ptr0,Y							; restore new digit value, calc position of new sprite
 		BIT		_new_city_button_to_change_flags; roll direction
 		BPL		loc_EA467
 		LDA		_new_city_digit_spr_y_pos
 		SEC
 		SBC		#$0C
-		BNE		loc_EA46D
+		BNE		.num_draw_next
 loc_EA467:
 		LDA		_new_city_digit_spr_y_pos
 		CLC
 		ADC		#$0C
-loc_EA46D:
-		JSR		_new_city_map_num_digit_spr_draw
+.num_draw_next:
+		JSR		_new_city_map_num_digit_spr_draw; draw new sprite below or above the centered one
 		DEY
-		BPL		loc_EA43C
-		STX		_spr_buf_pos
+		BPL		.num_draw_loop
+		STX		_spr_buf_pos					; store _spr_buf_pos
 		BIT		_new_city_button_to_change_flags
-		BPL		loc_EA489
-loc_EA47A:
+		BPL		.do_scroll_up
+.do_scroll_down:
 		JSR		_wait_for_nmi
-		INC		_new_city_digit_spr_y_pos
+		INC		_new_city_digit_spr_y_pos		; animate position for sprites
 		LDA		_new_city_digit_spr_y_pos
 		CMP		#$CB
-		BEQ		loc_EA4C3
-		BNE		loc_EA496
-loc_EA489:
+		BEQ		.stop_scroll
+		BNE		.do_scrolls
+.do_scroll_up:
 		JSR		_wait_for_nmi
 		DEC		_new_city_digit_spr_y_pos
 		LDA		_new_city_digit_spr_y_pos
 		CMP		#$B1
-		BEQ		loc_EA4C3
-loc_EA496:
-		LDA		_new_city_button_to_change_flags
+		BEQ		.stop_scroll
+.do_scrolls:
+		LDA		_new_city_button_to_change_flags; extract sprite idx to scroll
 		LDY		#$02
 		LDX		#$10
-loc_EA49D:
+.roll_digits:
 		LSR
 		BCC		loc_EA4B3
-		BIT		_new_city_button_to_change_flags
+		BIT		_new_city_button_to_change_flags; dec/inc direct sprite data
 		BMI		loc_EA4AD
 		DEC		_spr_buf+$50,X
 		DEC		_spr_buf+$54,X
@@ -767,20 +775,20 @@ loc_EA4AD:
 		INC		_spr_buf+$54,X
 loc_EA4B3:
 		PHA
-		LDA		byte_EA4C8,Y
+		LDA		_num_spr_pos_adjust_list,Y		; switch digit to scroll
 		TAX
 		PLA
 		DEY
-		BPL		loc_EA49D
+		BPL		.roll_digits
 		BIT		_new_city_button_to_change_flags
-		BPL		loc_EA489
-		BMI		loc_EA47A
-loc_EA4C3:
+		BPL		.do_scroll_up
+		BMI		.do_scroll_down
+.stop_scroll:
 		LDX		#$68
-		STA		_spr_buf_pos
+		STA		_spr_buf_pos					; fixed _spr_buf_pos here
 		RTS
 
-byte_EA4C8:
+_num_spr_pos_adjust_list:
 		.BYTE	$00,$00,$08
 _new_city_map_num_bitmasks:
 		.BYTE	$01,$02,$04
@@ -797,34 +805,34 @@ _new_city_map_num_digit_spr_draw:
 		LDA		#$00
 		STA		_spr_buf,X
 		INX
-		LDA		_new_city_map_num_digit_pos_list,Y
+		LDA		_new_city_map_num_digit_row_list,Y
 		STA		_spr_buf,X
 		INX
 		RTS
 
-_new_city_map_num_digit_pos_list:
+_new_city_map_num_digit_row_list:
 		.BYTE	$E0,$D8,$D0
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA4EA:
-		BIT		_new_city_button_to_change_flags
-		BPL		loc_EA4FD
-		LDA		_ptr0,Y
+_new_city_map_old_digit_draw:
+		BIT		_new_city_button_to_change_flags; check the direction of change
+		BPL		.decrement_digit				; push up
+		LDA		_ptr0,Y							; push down
 		CMP		#$09
-		BNE		loc_EA4F8
+		BNE		loc_EA4F8						; increment or wrap to 0
 		LDA		#$FF
 loc_EA4F8:
 		CLC
 		ADC		#$01
 		BPL		loc_EA507
-loc_EA4FD:
+.decrement_digit:
 		LDA		_ptr0,Y
 		SEC
 		SBC		#$01
-		BPL		loc_EA507
+		BPL		loc_EA507						; decrement or wrap to 9
 		LDA		#$09
 loc_EA507:
-		STA		_ptr0,Y
+		STA		_ptr0,Y							; store new digit
 		LDA		_new_city_digit_spr_y_pos
 		JMP		_new_city_map_num_digit_spr_draw
 
@@ -840,11 +848,11 @@ _scr_res_hndl0_A_info_maps_draw:
 		CLC
 		ADC		#$45
 		STA		_info_maps_rect_pos._COL
-		JSR		_info_maps_city_name_hud_draw
-		JSR		_info_maps_date_hud_draw_ex
+		JSR		_info_maps_city_name_hud_draw	; draw hud names, same as in-game, but
+		JSR		_info_maps_date_hud_draw_ex		; without need to recalc ppu offsets
 		JSR		_info_maps_popul_hud_draw
 		LDA		#$00
-		STA		byte_13C
+		STA		_info_maps_button_pending
 		INC		_scr_res_idx
 		LDA		#$80
 		STA		_scr_res_control_flags
@@ -855,78 +863,80 @@ _scr_res_hndl0_A_info_maps_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_B_info_maps_input:
-		JSR		_info_maps_date_hud_draw
+		JSR		_info_maps_date_hud_draw		; date/popul update
 		JSR		_info_maps_popul_hud_draw
 ;		JSR		sub_EADC9						; REDUNDANT
 ; OPTIMIZED
 		LDX		#$10
-		STX		_spr_buf_pos
+		STX		_spr_buf_pos					; draw mini-map frame
 		FJSRA	_info_maps_spr_rect_draw,PRG7,PRG9
 ; -
-		JSR		_info_maps_spr_arrows_hide
-		BIT		_scr_res_control_flags
-		BPL		loc_EA554
-		JMP		_info_maps_push_A_button_test
-loc_EA554:
-		BIT		byte_13C
-		BPL		loc_EA580
-		BVC		loc_EA563
-		LDA		#$40
-		STA		_scr_res_control_flags
-		JMP		_info_maps_exit
-loc_EA563:
-		LDA		byte_13C
+		JSR		_info_maps_spr_arrows_hide		; hide mini-map arrows
+		BIT		_scr_res_control_flags			; button A pressed and mini-map redraw in progress
+		BPL		.no_mini_map_redraw				; skip if masked
+		JMP		_info_maps_mini_map_update		; pending buttons press test here
+.no_mini_map_redraw:
+		BIT		_info_maps_button_pending
+		BPL		.no_buttons_pending
+;		BVC		loc_EA563						; REDUNDANT, there is no B button exit here
+;		LDA		#$40							; nor skip exit from _info_maps_mini_map_update
+;		STA		_scr_res_control_flags			; function, so never executed.
+;		JMP		_info_maps_exit
+;loc_EA563:
+		LDA		_info_maps_button_pending		; if previously pending, read new button idx
 		AND		#$0F
 		TAX
-		LDA		byte_EB743,X
-		STA		_scr_res_control_flags
+		LDA		_scr_res_ctrl_flag_list,X		; read busy flag for particular screen
+		STA		_scr_res_control_flags			; because some buttons arent allowed to be "pended"
 		LDA		#$00
-		STA		byte_13C
-		LDA		_cur_info_maps_button_idx
+		STA		_info_maps_button_pending		; clear request,
+		LDA		_cur_info_maps_button_idx		; store new/prev button idxes
 		STA		_prev_info_maps_button_idx
-		STX		_cur_info_maps_button_idx
+		STX		_cur_info_maps_button_idx		; redraw without buttons, they're already drawn
 		JMP		_scr_res_hndl0_AB_info_maps_redraw_ex
-loc_EA580:
-		LDA		_fiscal_year_results_draw_req
-		BEQ		loc_EA588
+.no_buttons_pending:
+		LDA		_fiscal_year_results_draw_req	; city engine still active, so fiscal year over
+		BEQ		loc_EA588						; may occurs at info screen, do special jump to it
 		JMP		_budget_screen_force
 loc_EA588:
-		LDA		_mini_map_need_redraw_flag
+		LDA		_mini_map_need_redraw_flag		; flag from THREAD1 when values are recalculated
 		BNE		loc_EA5BA
-		BIT		_pad0_held
-		BVC		loc_EA594
-		JMP		_info_maps_arrows_move
-loc_EA594:
-		LDA		#$00
+		BIT		_pad0_held						; test for B held
+		BVC		.idle_test
+		JMP		_info_maps_arrows_move			; in this case draw arrows and move them
+.idle_test:
+		LDA		#$00							; idle state for info maps screen
 		STA		_scr_res_control_flags
 		STA		_game_core_state
-		BIT		_pad0_autorep_press
-		BPL		_wait_for_key
-		LDA		#$20
-		STA		_apu_se_flags+1
+		BIT		_pad0_autorep_press				; regular button press test performed here
+		BPL		_info_maps_idle
+		APUA_SE	_SE_IDX_BCLICK
 		LDA		#$80
 		STA		_game_core_state
-		JSR		_info_maps_get_hover_button_idx
+		JSR		_info_maps_get_hover_button_idx	; check hovered button
 		BCC		_info_maps_exit
-		LDA		_cur_info_maps_button_idx
+		LDA		_cur_info_maps_button_idx		; button detected
 		STA		_prev_info_maps_button_idx
 		STX		_cur_info_maps_button_idx
 		JMP		_scr_res_hndl0_AB_info_maps_redraw
 loc_EA5BA:
 		LDA		#$A0
-		STA		_scr_res_control_flags
+		STA		_scr_res_control_flags			; set recalc mode flags
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-; !FALLTHROUGH!
 _scr_res_hndl0_AB_info_maps_redraw:
 		FJSRA	_info_maps_button_redraw,PRG6,PRG9
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw_ex:
 		JSR		_thread_lock_flag_set
 		JSR		sub_EABC3
 		LDA		_scr_res_control_flags
-		BEQ		_wait_for_key
+		BEQ		_info_maps_idle
 		JSR		_mini_map_clear_draw_request
 		JSR		_wait_for_nmi
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
@@ -935,10 +945,10 @@ _scr_res_hndl0_AB_info_maps_redraw_ex:
 		JMP		_mini_map_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_wait_for_key:
-		LDA		_pad0_held
-		BEQ		locret_EA5F1
-		LDA		#$80
+_info_maps_idle:
+		LDA		_pad0_held						; idle routine to take priority
+		BEQ		locret_EA5F1					; to the THREAD0 every time button
+		LDA		#$80							; is pressed
 		STA		_game_core_state
 locret_EA5F1:
 		RTS
@@ -968,113 +978,79 @@ _budget_screen_force:
 		JMP		_pal_fade_out
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_push_A_button_test:
-		BIT		_pad0_autorep_press
-		BPL		.no_buttons_redraw
-		LDA		byte_13C
-		BNE		.no_buttons_redraw
-		LDA		#$20
-		STA		_apu_se_flags+1
+_info_maps_mini_map_update:
+		BIT		_pad0_autorep_press				; when map is already drawn, you
+		BPL		.no_buttons_redraw				; still able to press other buttons
+		LDA		_info_maps_button_pending		; they set pending request and immediately
+		BNE		.no_buttons_redraw				; applied after redraw proccess is over
+		APUA_SE	_SE_IDX_BCLICK
 		PUSHB	_scr_res_control_flags
-		JSR		_info_maps_get_hover_button_idx
+		JSR		_info_maps_get_hover_button_idx	; calc button hovered currently
 		PLA
-		BCC		.no_buttons_redraw
-		STA		_scr_res_control_flags
+		BCC		.no_buttons_redraw				; skip if no button pressed
+		STA		_scr_res_control_flags			; change cur button
 		STX		_ptr0
 		BCS		loc_EA637
-		LDX		#$C0
+;		LDX		#$C0							; REDUNDANT, never gets here, C=1 always
+												; seems intended to interrupt map draw or
+												; for quick exit, but does not work at all
 loc_EA637:
 		TXA
 		ORA		#$80
-		STA		byte_13C
-		PUSHB	_cur_info_maps_button_idx
+		STA		_info_maps_button_pending		; so, if pending buttons pressed, store its idx
+		PUSHB	_cur_info_maps_button_idx		; backup current buttons for now
 		PUSHB	_prev_info_maps_button_idx
-		LDA		_cur_info_maps_button_idx
-		STA		_prev_info_maps_button_idx
+		LDA		_cur_info_maps_button_idx		; redraw pressed/released buttons
+		STA		_prev_info_maps_button_idx		; while current map still drawn
 		LDA		_ptr0
 		STA		_cur_info_maps_button_idx
 		FJSRA	_info_maps_button_redraw,PRG6,PRG9
-		POPB	_prev_info_maps_button_idx
+		POPB	_prev_info_maps_button_idx		; restore previous parameters
 		POPB	_cur_info_maps_button_idx
 .no_buttons_redraw:
-		JMP		_mini_map_draw
+		JMP		_mini_map_draw					; redraw mini-map
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_get_hover_button_idx:
-		LDY		_cur_game_cursor_scr_pos._ROW
-		CPY		#$40
-		BCC		loc_EA6A2
-		CPY		#$C0
-		BCS		loc_EA6A2
-		LDX		_cur_game_cursor_scr_pos._COL
-		CPX		#$30
-		BCS		loc_EA6A2
-		CPX		#$10
-		BCC		loc_EA6A2
-		TYA
+		LDY		_cur_game_cursor_scr_pos._ROW	; +---+---+ 40
+		CPY		#$40							; |   |0  |
+		BCC		.no_button_hover				; |EXT|10-+
+		CPY		#$C0							; | B |1  |
+		BCS		.no_button_hover				; +---+20-+
+		LDX		_cur_game_cursor_scr_pos._COL	; |   |2/3|
+		CPX		#$30							; |   +30-+
+		BCS		.no_button_hover				; |   |4  |
+		CPX		#$10							; |   +40-+
+		BCC		.no_button_hover				; |   |5  |
+		TYA										; | NO+50-+
+		SEC										; |   |6  |
+		SBC		#$40							; |   +60-+
+		CPX		#$20							; |   |7  |
+		LDX		#$FF							; |   +70-+
+		BCS		.buttons_area					; |   |9/A|
+		CMP		#$20							; +---+80-+ C0
+		BCS		.no_button_hover				;10  20  30
+		LDX		#$07							; X=08 - exit button pressed
 		SEC
-		SBC		#$40
-		CPX		#$20
-		LDX		#$FF
-		BCS		loc_EA687
-		CMP		#$20
-		BCS		loc_EA6A2
-		LDX		#$07
-		SEC
-loc_EA687:
+.buttons_area:
 		INX
 		SBC		#$10
-		BCS		loc_EA687
+		BCS		.buttons_area					; calc button idx (row-$40)/$10
 		CPX		#$03
-		BCC		loc_EA696
-		INX
+		BCC		loc_EA696						; skip for special case, for multiple
+		INX										; menu buttons
 		CPX		#$09
-		BCC		loc_EA696
+		BCC		loc_EA696						; increment above 9
 		INX
 loc_EA696:
-		LDA		byte_EB743,X
+		LDA		_scr_res_ctrl_flag_list,X		; test for press allow flags
 		STA		_scr_res_control_flags
 		CMP		#$40
-		BEQ		loc_EA6A2
-		SEC
+		BEQ		.no_button_hover
+		SEC										; C=1 button hovered
 		RTS
-loc_EA6A2:
+.no_button_hover:
 		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_EA6A4:
-		INC		_mini_map_cur_row
-		LDA		_mini_map_cur_row
-		CMP		#$13
-		BNE		locret_EA6EE
-		LDA		#$00
-		STA		_scr_res_control_flags
-		STA		_mini_map_cur_row
-		STA		_mini_map_cur_col
-		LDX		_scr_res_idx
-		CPX		#$0A
-		BCS		loc_EA6C3
-		STA		_game_core_state
-loc_EA6C3:
-		LDA		_thread_priority_req
-		AND		#$FF
-		STA		_thread_priority_req
-		LDA		_mini_map_need_redraw_flag
-		BNE		locret_EA6EE
-		LDA		byte_13C
-		BEQ		locret_EA6EE
-		LDA		#$00
-		STA		_scr_res_control_flags
-		LDA		#$80
-		STA		_game_core_state
-		BNE		locret_EA6EE
-		LDA		#$00
-		STA		_mini_map_need_redraw_flag
-		LDA		#$80
-		STA		_scr_res_control_flags
-		STA		_game_core_state
-locret_EA6EE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1776,6 +1752,41 @@ loc_EABB8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+sub_EA6A4:
+		INC		_mini_map_cur_row
+		LDA		_mini_map_cur_row
+		CMP		#$13
+		BNE		locret_EA6EE
+		LDA		#$00
+		STA		_scr_res_control_flags
+		STA		_mini_map_cur_row
+		STA		_mini_map_cur_col
+		LDX		_scr_res_idx
+		CPX		#$0A
+		BCS		loc_EA6C3
+		STA		_game_core_state
+loc_EA6C3:
+		LDA		_thread_priority_req
+		AND		#$FF
+		STA		_thread_priority_req
+		LDA		_mini_map_need_redraw_flag
+		BNE		locret_EA6EE
+		LDA		_info_maps_button_pending
+		BEQ		locret_EA6EE
+		LDA		#$00
+		STA		_scr_res_control_flags
+		LDA		#$80
+		STA		_game_core_state
+		BNE		locret_EA6EE
+		LDA		#$00
+		STA		_mini_map_need_redraw_flag
+		LDA		#$80
+		STA		_scr_res_control_flags
+		STA		_game_core_state
+locret_EA6EE:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 sub_EABC3:
 		LDA		_scr_res_control_flags
 		BEQ		loc_EABC9
@@ -1792,8 +1803,7 @@ loc_EABCF:
 		AND		#$0F
 		BEQ		loc_EABCF
 		TAX
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		LDY		_cur_info_maps_button_idx
 		LDA		byte_EB6A9,Y
 		TAY
@@ -1837,8 +1847,7 @@ loc_EAC51:
 		LDA		#$80
 		STA		_scr_res_control_flags
 loc_EAC56:
-		LDA		#$20
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_ROLLOUT
 		FJSRA	_wnd_erase,PRGC,PRG9
 		LDA		_cur_info_maps_button_idx
 		AND		#$FE
@@ -1855,8 +1864,7 @@ byte_EAC79:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EAC82:
-		LDA		#$40
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_ROLLIN
 		STA		_game_msg_wnd_active_flag
 		LDA		#$10
 		STA		_spr_buf_pos
@@ -3223,7 +3231,7 @@ byte_EB6B2:
 
 byte_EB733:
 		.BYTE	$00,$01,$01,$02,$01,$02,$02,$03,$01,$02,$02,$03,$02,$03,$03,$04
-byte_EB743:
+_scr_res_ctrl_flag_list:
 		.BYTE	$00,$80,$00,$00,$80,$80,$80,$80,$00,$00,$40,$40
 byte_EB753:
 		.BYTE	$04,$04,$04,$04,$03

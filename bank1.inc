@@ -10,90 +10,112 @@
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup:
 		LDA		#$80
-		STA		_apu_mus_idx_req
+		STA		_apu_mus_idx_req				; stop music
 		JSR		_wait_for_nmi
 		LDA		#$04
-		STA		_apu_mus_idx_req
+		STA		_apu_mus_idx_req				; load degault setup music idx
 		LDA		#$00
 		STA		_tmp6D5
 		STA		_tmp6D2
 		STA		_tmp6D3
-		LDA		_scenario_result_idx
-		BNE		loc_2402A
-		LDY		_cur_game_mode
+		LDA		_scenario_result_idx			; when return from scenario mode
+		BNE		loc_2402A						; do no load_cur_game_mode, jump directly
+		LDY		_cur_game_mode					; to new scenario select
 		BNE		loc_24024
 		LDA		#$80
 		STA		_apu_mus_idx_req
 loc_24024:
-		LDA		_game_setup_subs_list,Y
+		LDA		_game_setup_subs_list,Y			; load actual game mode setup sub
 		STA		_game_setup_sub_idx
 loc_2402A:
-		JSR		_wait_for_nmi
+		JSR		_wait_for_nmi					; do loop until you complete corresponding settings
 		JSR		_game_setup_sub_exec
 		LDA		_main_sub_idx
 		CMP		#$01
 		BEQ		loc_2402A
 		RTS
+
 _game_setup_subs_list:
 		.BYTE	$03,$00,$05,$09
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup_sub_exec:
-		LDY		_game_setup_sub_idx
-		LDA		_game_setup_lib_lo,Y
-		STA		_ptr0
-		LDA		_game_setup_lib_hi,Y
-		STA		_ptr0+1
-		JMP		(_ptr0)
-_game_setup_lib_lo:
-		.BYTE	<[_game_setup00_new_city_gen]
-		.BYTE	<[_game_setup01_name_input_init]
-		.BYTE	<[_game_setup02_name_input_input]
-		.BYTE	<[_game_setup03_dummy]
-		.BYTE	<[_game_setup04_break]
-		.BYTE	<[_game_setup05_scenario_init]
-		.BYTE	<[_game_setup06_scenario_select_input]
-		.BYTE	<[_game_setup07_scenario_intro_init]
-		.BYTE	<[_game_setup08_scenario_intro_draw]
-		.BYTE	<[_game_setup09_practice_msg_init]
-		.BYTE	<[_game_setup0A_practice_msg_draw]
-		.BYTE	<[_game_setup0B_scenario_over_init]
-		.BYTE	<[_game_setup0C_scenario_over_input]
-		.BYTE	<[_game_setup0D_difficult_init]
-		.BYTE	<[_game_setup0E_difficult_input]
-		.BYTE	<[_game_setup0F_all_complete_init]
-		.BYTE	<[_game_setup10_all_complete_input]
-_game_setup_lib_hi:
-		.BYTE	>[_game_setup00_new_city_gen]
-		.BYTE	>[_game_setup01_name_input_init]
-		.BYTE	>[_game_setup02_name_input_input]
-		.BYTE	>[_game_setup03_dummy]
-		.BYTE	>[_game_setup04_break]
-		.BYTE	>[_game_setup05_scenario_init]
-		.BYTE	>[_game_setup06_scenario_select_input]
-		.BYTE	>[_game_setup07_scenario_intro_init]
-		.BYTE	>[_game_setup08_scenario_intro_draw]
-		.BYTE	>[_game_setup09_practice_msg_init]
-		.BYTE	>[_game_setup0A_practice_msg_draw]
-		.BYTE	>[_game_setup0B_scenario_over_init]
-		.BYTE	>[_game_setup0C_scenario_over_input]
-		.BYTE	>[_game_setup0D_difficult_init]
-		.BYTE	>[_game_setup0E_difficult_input]
-		.BYTE	>[_game_setup0F_all_complete_init]
-		.BYTE	>[_game_setup10_all_complete_input]
+		LDA		_game_setup_sub_idx
+		JSR		_switch
+		.WORD	_game_setup00_new_city_gen
+		.WORD	_game_setup01_name_input_init
+		.WORD	_game_setup02_name_input_input
+		.WORD	_game_setup03_dummy
+		.WORD	_game_setup04_break
+		.WORD	_game_setup05_scenario_init
+		.WORD	_game_setup06_scenario_select_input
+		.WORD	_game_setup07_scenario_intro_init
+		.WORD	_game_setup08_scenario_intro_draw
+		.WORD	_game_setup09_practice_msg_init
+		.WORD	_game_setup0A_practice_msg_draw
+		.WORD	_game_setup0B_scenario_over_init
+		.WORD	_game_setup0C_scenario_over_input
+		.WORD	_game_setup0D_difficult_init
+		.WORD	_game_setup0E_difficult_input
+		.WORD	_game_setup0F_all_complete_init
+		.WORD	_game_setup10_all_complete_input
+
+; REDUNDANT
+;		LDY		_game_setup_sub_idx
+;		LDA		_game_setup_lib_lo,Y
+;		STA		_ptr0
+;		LDA		_game_setup_lib_hi,Y
+;		STA		_ptr0+1
+;		JMP		(_ptr0)
+;_game_setup_lib_lo:
+;		.BYTE	<[_game_setup00_new_city_gen]
+;		.BYTE	<[_game_setup01_name_input_init]
+;		.BYTE	<[_game_setup02_name_input_input]
+;		.BYTE	<[_game_setup03_dummy]
+;		.BYTE	<[_game_setup04_break]
+;		.BYTE	<[_game_setup05_scenario_init]
+;		.BYTE	<[_game_setup06_scenario_select_input]
+;		.BYTE	<[_game_setup07_scenario_intro_init]
+;		.BYTE	<[_game_setup08_scenario_intro_draw]
+;		.BYTE	<[_game_setup09_practice_msg_init]
+;		.BYTE	<[_game_setup0A_practice_msg_draw]
+;		.BYTE	<[_game_setup0B_scenario_over_init]
+;		.BYTE	<[_game_setup0C_scenario_over_input]
+;		.BYTE	<[_game_setup0D_difficult_init]
+;		.BYTE	<[_game_setup0E_difficult_input]
+;		.BYTE	<[_game_setup0F_all_complete_init]
+;		.BYTE	<[_game_setup10_all_complete_input]
+;_game_setup_lib_hi:
+;		.BYTE	>[_game_setup00_new_city_gen]
+;		.BYTE	>[_game_setup01_name_input_init]
+;		.BYTE	>[_game_setup02_name_input_input]
+;		.BYTE	>[_game_setup03_dummy]
+;		.BYTE	>[_game_setup04_break]
+;		.BYTE	>[_game_setup05_scenario_init]
+;		.BYTE	>[_game_setup06_scenario_select_input]
+;		.BYTE	>[_game_setup07_scenario_intro_init]
+;		.BYTE	>[_game_setup08_scenario_intro_draw]
+;		.BYTE	>[_game_setup09_practice_msg_init]
+;		.BYTE	>[_game_setup0A_practice_msg_draw]
+;		.BYTE	>[_game_setup0B_scenario_over_init]
+;		.BYTE	>[_game_setup0C_scenario_over_input]
+;		.BYTE	>[_game_setup0D_difficult_init]
+;		.BYTE	>[_game_setup0E_difficult_input]
+;		.BYTE	>[_game_setup0F_all_complete_init]
+;		.BYTE	>[_game_setup10_all_complete_input]
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup05_scenario_init:
 		LDA		#$01
-		STA		_game_core_state
-		JSR		_ppu_queues_reset
+		STA		_game_core_state				; scenario select screen setup
+		JSR		_ppu_queues_reset				; shut down the screen
 		JSR		_pal_fade_out
 		JSR		_render_off
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
 		LDY		#$01
-		STY		_scr_mode_idx
+		STY		_scr_mode_idx					; set screen modes
 		INY
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
@@ -101,26 +123,26 @@ _game_setup05_scenario_init:
 		STA		_mmc5_nt_mode_shadow
 		STA		_MMC5_NT_MODE
 		LDA		_city._all_scenarios_are_clear_ram_flag
-		BNE		loc_240A5
+		BNE		.extra_scenarios				;  all scenarios are beaten, unlock full screen
 		JSRXY	_tlm_res_unpack,_tlm_res_scenario_normal
-		LDY		#$03
+		LDY		#$03							; or load the regular one with 6 scenarios
 		BNE		loc_240B2
-loc_240A5:
-		LDXY	_tlm_res_scenario_complete
+.extra_scenarios:
+		LDXY	_tlm_res_scenario_complete		; tlm for this scenario is in extra bank
 		FJSRA	_tlm_res_unpack,SRAM,PRGA
 		LDY		#$04
 loc_240B2:
-		STY		_tmp6D4
+		STY		_tmp6D4							; tmp var for number or icons per row
 		JSR		_ppu_queues_reset
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		JSR		_scenario_closed_screen_update
+		JSR		_scenario_closed_screen_update	; draw "CLOSED" icons on beaten scenarios
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		LDA		#$00
 		STA		_tmp6D0+1
 		STA		_tmp6D0
-		JSR		_render_on
+		JSR		_render_on						; ppu work done, restart renders and fade in
 		INC		_mmc5_operation_in_progress_flag
 		LDA		#$02
 		STA		_screen_pal_cur_spr_idx
@@ -194,14 +216,16 @@ locret_2411B:
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_closed_icon_draw:
 		PPUQSTART
-		LDA		_scenario_closed_ppu_ofs_hi,Y
-		STA		_ptr0+1
+		LDA		_scenario_closed_ppu_ofs_hi,Y	; get the "CLOSED" ppu ofs for
+		STA		_ptr0+1							; particular icon
+		PHA
 		LDA		_scenario_closed_ppu_ofs_lo,Y
 		STA		_ptr0
+		PHA
 		LDY		#$00
 loc_24130:
-		PPUQMOVB	_ptr0,OP_NOP,0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_ptr0,OP_NOP,0				; queue ofs, and 6 bytes (one line)
+		PPUQMOVB	_ptr0+1,OP_NOP,0			; at once
 		PPUQMOVB	#$06,OP_NOP,0
 		STA		_tmp3
 loc_24144:
@@ -209,22 +233,32 @@ loc_24144:
 		INY
 		PPUQMOVA
 		DEC		_tmp3
-		BNE		loc_24144
+		BNE		loc_24144						; go to the next line, draw up to 6x6 bytes
 		ADDWB	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24130
 		PPUQEND
 		LDY		_tmp2
 		EXTQSTART
-		LDA		_scenario_closed_ppu_ofs_hi,Y
+; REDUNDANT
+;		LDA		_scenario_closed_ppu_ofs_hi,Y
+;		CLC
+;		ADC		#$3C
+;		STA		_ptr0+1
+;		LDA		_scenario_closed_ppu_ofs_lo,Y
+;		STA		_ptr0
+; OPTIMIZED
+; -
+		PLA
+		STA		_ptr0
+		PLA
 		CLC
 		ADC		#$3C
 		STA		_ptr0+1
-		LDA		_scenario_closed_ppu_ofs_lo,Y
-		STA		_ptr0
+; -
 		LDY		#$00
 loc_24174:
-		EXTQMOVB	_ptr0,OP_NOP,0
+		EXTQMOVB	_ptr0,OP_NOP,0				; exactly the same for extnt data
 		EXTQMOVB	_ptr0+1,OP_NOP,0
 		EXTQMOVB	#$06,OP_NOP,0
 		STA		_tmp3
@@ -262,89 +296,87 @@ _tlm_scenario_closed_extnt:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup06_scenario_select_input:
 		JSR		_scenario_select_input
-		BIT		_pad0_autorep_press
+		BIT		_pad0_autorep_press				; test B button
 		BVC		loc_2420C
 		LDA		#$02
-		STA		_title_sub_idx
+		STA		_title_sub_idx					; if pressed, return back to the title menu
 		DEC		_main_sub_idx
 		JMP		_pal_fade_out
 loc_2420C:
-		JMP		_common_select_cursor_draw
+		JMP		_common_select_cursor_draw		; or else draw regular cursor
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_select_input:
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep_release			; test if any d-pad pressed
 		AND		#$0F
-		BEQ		loc_24219
-		LDA		#$40
-		STA		_apu_se_flags+1
-loc_24219:
-		LDX		_tmp6D2
+		BEQ		.no_dpad_pressed
+		APUA_SE	_SE_IDX_SELECT					; then do sound
+.no_dpad_pressed:
+		LDX		_tmp6D2							; column idx selector
 		LDA		_pad0_autorep_release
 		LSR
 		BCC		loc_24229
-		INX
-		CPX		_tmp6D4
+		INX										; dpad RIGHT pressed
+		CPX		_tmp6D4							; increment idx, compare with number of icons per row
 		BNE		loc_24229
-		LDX		#$00
+		LDX		#$00							; wrap to 0 if more than needed
 loc_24229:
 		LSR
 		BCC		loc_24233
-		DEX
+		DEX										; the same for LEFT button
 		BPL		loc_24233
-		LDX		_tmp6D4
+		LDX		_tmp6D4							; wrap to max instead
 		DEX
 loc_24233:
 		AND		#$03
-		BEQ		loc_2423F
-		LDA		_tmp6D3
-		EOR		#$01
+		BEQ		.no_up_down_pressed
+		LDA		_tmp6D3							; up-down very simple, just toggle low bit
+		EOR		#$01							; of column selector idx
 		STA		_tmp6D3
-loc_2423F:
-		STX		_tmp6D2
+.no_up_down_pressed:
+		STX		_tmp6D2							; get cursor position of current row/col idxes
 		LDY		_tmp6D3
-		LDA		byte_2427B,Y
+		LDA		_scenario_cursor_col_list,Y		; two columns always
 		STA		_tmp6CE
-		LDA		byte_24274,X
+		LDA		_scenario_cursor_row_list3,X	; may be either 3 rows...
 		LDY		_city._all_scenarios_are_clear_ram_flag
 		BEQ		loc_24256
-		LDA		byte_24277,X
+		LDA		_scenario_cursor_row_list4,X	; ...or 4 if all scenarios cleared
 loc_24256:
 		STA		_tmp6CC
-		LDA		_pad0_autorep_press
-		BPL		locret_24273
-		LDA		_tmp6D3
+		LDA		_pad0_autorep_press				; store cursor pos tmp
+		BPL		locret_24273					; test for A button now
+		LDA		_tmp6D3							; calc scenarios list ofs
 		ASL
 		ASL
 		ADC		_tmp6D2
 		TAY
-		LDA		byte_2427D,Y
+		LDA		_scenatios_list,Y				; get an actual scenario idx
 		STA		_scenario_idx
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		INC		_game_setup_sub_idx
 locret_24273:
 		RTS
 
-byte_24274:
+_scenario_cursor_row_list3:
 		.BYTE	$4D,$8D,$CD
-byte_24277:
+_scenario_cursor_row_list4:
 		.BYTE	$45,$75,$A5,$DD
-byte_2427B:
+_scenario_cursor_col_list:
 		.BYTE	$5D,$A5
-byte_2427D:
+_scenatios_list:
 		.BYTE	$00,$01,$02,$06
 		.BYTE	$03,$04,$05,$07
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup07_scenario_intro_init:
-		JSR		_ppu_queues_reset
+		JSR		_ppu_queues_reset				; prepare scenario intro screen
 		JSR		_pal_fade_out
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
-		JSR		_spr_clear
+		JSR		_spr_clear						; empty wnd draw
 		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
-		LDY		_scenario_idx
+		LDY		_scenario_idx					; scenario name header draw
 		LDA		_scenario_intro_header_lib_lo,Y
 		STA		_ptr0
 		LDA		_scenario_intro_header_lib_hi,Y
@@ -355,147 +387,194 @@ _game_setup07_scenario_intro_init:
 		LDA		#$11
 		STA		_screen_pal_cur_bg_idx
 		JSR		_pal_fade_in
-		LDY		_scenario_idx
-		LDA		_scenario_msg_lib_lo,Y
-		STA		_tmp6D6
-		LDA		_scenario_msg_lib_hi,Y
-		STA		_tmp6D6+1
-		LDY		#$00
-		STY		_tmp6DA
-		STY		_tmp6D9
-		DEY
-		STY		_tmp6D8
-		INC		_game_setup_sub_idx
+; OPTIMIZED, common lib, indexes 0-7 for scenarios
+		LDA		_scenario_idx					; now load scenario message data
+		JSR		_msg_lib_load					; for printout routine
+;		LDA		_scenario_msg_lib_lo,Y
+;		STA		_tmp6D6
+;		LDA		_scenario_msg_lib_hi,Y
+;		STA		_tmp6D6+1
+;		LDY		#$00
+;		STY		_tmp6DA
+;		STY		_tmp6D9
+;		DEY
+;		STY		_tmp6D8
+		INC		_game_setup_sub_idx				; skip to the next sub
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup08_scenario_intro_draw:
-		JSR		_msg_print_out_handler
-		BIT		_pad0_autorep_press
+		JSR		_msg_print_out_handler			; do pritnout letter by letter
+		BIT		_pad0_autorep_press				; all this tile wait for A button
 		BPL		loc_242EC
-		LDA		#$01
-		STA		_apu_se_flags
-		JSR		_scenario_map_load
-		INC		_main_sub_idx
+		APUA_SE	_SE_IDX_CLICK					; skip scenario intro if pressed
+		JSR		_scenario_map_load				; load scenario map from PPU ROM
+		INC		_main_sub_idx					; go to the game
 		LDA		#$80
 		STA		_apu_mus_idx_req
 		RTS
 loc_242EC:
-		BVC		locret_242F7
-		DEC		_game_setup_sub_idx
-		DEC		_game_setup_sub_idx
+		BVC		locret_242F7					; test if B pressed
+		DEC		_game_setup_sub_idx				; then cancel to _game_setup05_scenario_init
+		DEC		_game_setup_sub_idx				; to select scenario again
 		DEC		_game_setup_sub_idx
 locret_242F7:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _msg_print_out_handler:
-		JSR		_msg_print_out
+		JSR		_msg_print_out					; print two chars at a time
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _msg_print_out:
-		LDY		_tmp6D8
-		CPY		#$FF
-		BEQ		loc_2430D
-		INC		_tmp6D8
-		LDA		_msg_dictionary,Y
-		BPL		loc_24347
-		STA		_tmp6D8
-loc_2430D:
-		LDA		_tmp6D6+1
-		CMP		#$FF
-		BEQ		locret_2436F
-		STA		_ptr0+1
+		LDY		_tmp6D8							; _tmp6D8 initialized with FF at the beginning
+		CPY		#$FF							; so this means we not in dict mode
+		BEQ		.skip_dictionary
+		INC		_tmp6D8							; or else this is a dictionary char pos
+		LDA		_msg_dictionary,Y				; load it, pos already incremented
+		BPL		.put_msg_char					; if not FF, print char as is, if FF
+		STA		_tmp6D8							; store it, this means end of dict word
+.skip_dictionary:
+		LDA		_tmp6D6+1						; cur message char ptr, if high nibble is FF
+		CMP		#$FF							; the end of message occured
+		BEQ		locret_2436F					; so just skip
+		STA		_ptr0+1							; if not, store to the tmp ptr
 		LDA		_tmp6D6
 		STA		_ptr0
-		INCW	_tmp6D6
+		INCW	_tmp6D6							; increment ptr
 		LDY		#$00
-		LDA		(_ptr0),Y
-		BPL		loc_24330
-		AND		#$7F
-		STA		_tmp6D8
-		BPL		_msg_print_out
+		LDA		(_ptr0),Y						; then load cur char
+		BPL		loc_24330						; hi-bit is clear, then regular chars
+		AND		#$7F							; if set, this is a dictionary char offset
+		STA		_tmp6D8							; mask it, dic max size if 127 bytes including
+		BPL		_msg_print_out					; eofs, jump recursively to char fetch
 loc_24330:
-		CMP		#$0A
+		CMP		#$0A							; regular special symbol CR/LF
 		BNE		loc_2433D
-		LDA		#$00
-		STA		_tmp6D9
+		LDA		#$00							; reset row pos, increment column pos
+		STA		_tmp6D9							; nothing to draw there
 		INC		_tmp6DA
 		RTS
 loc_2433D:
 		CMP		#$5B
-		BNE		loc_24347
+		BNE		.put_msg_char					; end of msg special code
 		LDA		#$FF
-		STA		_tmp6D6+1
+		STA		_tmp6D6+1						; set end msg flag
 		RTS
-loc_24347:
-		PHA
+.put_msg_char:
+		PHA										; backup actual print symbol
 		PPUQSTART
-		LDY		_tmp6DA
-		LDA		_msg_print_out_ppu_pos_list_lo,Y
+		LDY		_tmp6DA							; line ppu ofs already calculated for this screen
+		LDA		_msg_print_out_ppu_pos_list_lo,Y; just load them and queue current char
 		CLC
 		ADC		_tmp6D9
 		PPUQMOVA
 		LDA		_msg_print_out_ppu_pos_list_hi,Y
 		PPUQMOVA
-		PPUQMOVB	#$01,OP_NOP,0
-		PLA
+		PPUQMOVB	#$01,OP_NOP,0				; one char queue
+		PLA										; restore symbol to print
 		PPUQMOVA
 		PPUQEND
-		INC		_tmp6D9
+		INC		_tmp6D9							; next row.
 locret_2436F:
 		RTS
+
 _msg_print_out_ppu_pos_list_lo:
 		.BYTE	$04,$24,$44,$64,$84,$A4,$C4,$E4,$04,$24,$44,$64,$84,$A4,$C4,$E4,$04
 _msg_print_out_ppu_pos_list_hi:
 		.BYTE	$21,$21,$21,$21,$21,$21,$21,$21,$22,$22,$22,$22,$22,$22,$22,$22,$23
 
 ; =============== S U B	R O U T	I N E =======================================
+_msg_lib_load:
+		TAY
+		LDA		_msg_lib_lo,Y					; unificated mag data load  routine
+		STA		_tmp6D6
+		LDA		_msg_lib_hi,Y
+		STA		_tmp6D6+1
+		LDY		#$00
+		STY		_tmp6DA							; as well as init the msg variables
+		STY		_tmp6D9
+		DEY
+		STY		_tmp6D8
+		RTS
+
+_msg_lib_lo:
+		.BYTE	<[_scenario_msg0]	; 00		; all messages in one lib now
+		.BYTE	<[_scenario_msg1]	; 01
+		.BYTE	<[_scenario_msg2]	; 02
+		.BYTE	<[_scenario_msg3]	; 03
+		.BYTE	<[_scenario_msg4]	; 04
+		.BYTE	<[_scenario_msg5]	; 05
+		.BYTE	<[_scenario_dummy]	; 06 *dummy*
+		.BYTE	<[_scenario_dummy]	; 07 *dummy*
+		.BYTE	<[_game_won_msg]	; 08
+		.BYTE	<[_game_lose_msg]	; 09
+		.BYTE	<[_practice_msg0]	; 0A
+		.BYTE	<[_practice_msg1]	; 0B
+		.BYTE	<[_all_scenarios_clear_msg]	; 0C
+_msg_lib_hi:
+		.BYTE	>[_scenario_msg0]
+		.BYTE	>[_scenario_msg1]
+		.BYTE	>[_scenario_msg2]
+		.BYTE	>[_scenario_msg3]
+		.BYTE	>[_scenario_msg4]
+		.BYTE	>[_scenario_msg5]
+		.BYTE	>[_scenario_dummy]
+		.BYTE	>[_scenario_dummy]
+		.BYTE	>[_game_won_msg]
+		.BYTE	>[_game_lose_msg]
+		.BYTE	>[_practice_msg0]
+		.BYTE	>[_practice_msg1]
+		.BYTE	>[_all_scenarios_clear_msg]
+
+; =============== S U B	R O U T	I N E =======================================
 _scenario_map_load:
-		JSR		_pal_fade_out
-		JSR		_render_off
+		JSR		_pal_fade_out					; to load a map, we need access to PPU ROM
+		JSR		_render_off						; shut down the screen then
 		DEC		_mmc5_operation_in_progress_flag
-		JSR		_map_buf_init
+		JSR		_map_buf_init					; init map buf with BULLDOZERED_GROUND
 		LDA		#$01
-		STA		_MMC5_CHR_SIZE
-		JSR		_apu_music_off
+		STA		_MMC5_CHR_SIZE					; set CHR bank size 4K
+		JSR		_apu_music_off					; this may take a while, disable music
 		LDY		_scenario_idx
-		LDX		_scenario_data_chr_bank,Y
+		LDX		_scenario_data_chr_bank,Y		; load PPU ROM banks containing a map data
 		STX		_MMC5_CHR_BANKSA+3
 		INX
 		STX		_MMC5_CHR_BANKSA+7
 		LDA		_PPU_STATUS
-		LDA		_scenario_data_ppu_hi,Y
+		LDA		_scenario_data_ppu_hi,Y			; also we have list of offsets there
 		AND		#$0F
 		STA		_PPU_ADDR
 		LDA		_scenario_data_ppu_lo,Y
-		STA		_PPU_ADDR
-		LDA		_PPU_DATA
-		LDA		_scenario_map_dicts_lib_lo,Y
-		STA		_tmp2
+		STA		_PPU_ADDR						; setup address
+		LDA		_PPU_DATA						; dummy read, now ready
+		LDA		_scenario_map_dicts_lib_lo,Y	; load ptr to current map dictionary
+		STA		_tmp2							; of two-tile sctructures used as packing
 		LDA		_scenario_map_dicts_lib_hi,Y
 		STA		_tmp3
-		MOVWO	_tmp4,_wram_map_buf
-		JSR		_sram_on
-		JSR		_scenario_map_unpack
-		JSR		_sram_off
+		MOVWO	_tmp4,_wram_map_buf				; load wram map buf ptr as dst ptr
+		JSR		_sram_on						; enable wram bank
+		JSR		_scenario_map_unpack			; do unpack
+		JSR		_sram_off						; disable back
 		LDA		#$03
-		STA		_MMC5_CHR_SIZE
+		STA		_MMC5_CHR_SIZE					; restore CHR bank size 1K
 		JSR		_apu_music_on
 		LDY		_scenario_idx
-		LDX		_scenario_titles_ofs_lib,Y
+		LDX		_scenario_titles_ofs_lib,Y		; load predefined town name for scenario
 		LDY		#$01
 loc_243F1:
-		LDA		_scenario_town_names_list,X
+		LDA		_scenario_town_names_list,X		; copy data
 		BMI		loc_243FD
 		STA		_city._name,Y
 		INX
 		INY
 		BNE		loc_243F1
 loc_243FD:
-		STY		_city._name
-		INC		_mmc5_operation_in_progress_flag
-		LDA		_mmc5_chr_banks_shadow+3
+		STY		_city._name						; store name buf len
+		INC		_mmc5_operation_in_progress_flag; restart ppu
+		LDA		_mmc5_chr_banks_shadow+3		; restore CHR3 BANK
 		STA		_MMC5_CHR_BANKSA+3
 		JMP		_render_on
 
@@ -506,18 +585,18 @@ _scenario_map_unpack:
 		STA		_tmp6
 		AND		#$F0
 		CMP		#$80
-		BNE		loc_24449
+		BNE		.raw_tiles					; object code as is
 		LDA		_tmp6
 		CMP		#$8F
-		BNE		loc_2442D						; 8F, RLE code next two bytes are
-		LDX		_PPU_DATA						; counter
-		LDA		_PPU_DATA						; building or tile to insert
+		BNE		.dict_tiles						; 8F, RLE code next two bytes are
+		LDX		_PPU_DATA						; counter + object idx to insert
+		LDA		_PPU_DATA
 loc_24424:
-		JSR		_scenario_map_put_block
+		JSR		_scenario_map_put_block			; do rle unpack of next two bytes
 		DEX
 		BNE		loc_24424
 		JMP		_scenario_map_unpack
-loc_2442D:
+.dict_tiles:
 		LDA		_tmp6							; 80-8E, DICT codes (as inused special tiles)
 		SEC										; every scenario has a DICT of 2x1 tiles, 15 each
 		SBC		#$80							; extract DICT entry idx
@@ -537,27 +616,31 @@ loc_2442D:
 		LDA		(_tmp2),Y
 		JSR		_scenario_map_put_block
 		JMP		_scenario_map_unpack
-loc_24449:
+.raw_tiles:
 		LDA		_tmp6							; raw tiles 00-7F, 90-FF
 		JSR		_scenario_map_put_block
 		JMP		_scenario_map_unpack
 
 ; =============== S U B	R O U T	I N E =======================================
+; NOTE, thatalready buldozzereg ground already in buffer need to be overwritten with
+; bulldozered ground in any case, because there is no code for just skip positions
+; maybe we would save some space if repack it with such code...
+;
 _scenario_map_put_block:
 		STA		_tmp6+1
-loc_24453:
+.map_tile_fetch:
 		LDY		#$00
 		LDA		(_tmp4),Y						; put only on buldozered ground
-		CMP		#_MAP_GROUND0
-		BEQ		loc_2446F
-		INCW	_tmp4
-		LDA		_tmp4
+		CMP		#_MAP_GROUND0					; when we build 2x2 or more, the next
+		BEQ		loc_2446F						; tile would be non _MAP_GROUND0, so skip it
+		INCW	_tmp4							; this way we don't need to store actual pos
+		LDA		_tmp4							; of the buildings in row.
 		CMP		#<[_power_grid_map_buf]
-		BNE		loc_24453
+		BNE		.map_tile_fetch
 		LDA		_tmp5
 		CMP		#>[_power_grid_map_buf]
-		BNE		loc_24453						; try again
-		BEQ		loc_244EC						; end of map, break unpack
+		BNE		.map_tile_fetch					; try again
+		BEQ		.break_unpack					; end of map, break unpack
 loc_2446F:
 		TXA										; OPTIMIZED: we need X here now
 		PHA
@@ -641,17 +724,19 @@ loc_244D9:
 		INCW	_tmp4
 		LDA		_tmp4
 		CMP		#<[_power_grid_map_buf]
-		BNE		loc_244EE
+		BNE		.exit_map_tile_store
 		LDA		_tmp5
 		CMP		#>[_power_grid_map_buf]
-		BNE		loc_244EE
-loc_244EC:
+		BNE		.exit_map_tile_store
+.break_unpack:
 		PLA
 		PLA
-loc_244EE:
+.exit_map_tile_store:
 		LDA		_tmp6+1
 		RTS
 
+; building special tiles scheme to copy to map.
+;
 _special_tiles_list:
 		.BYTE	_MAP_INTERNAL_BUILD0,_MAP_INTERNAL_BUILD1,_MAP_INTERNAL_BUILD2
 		.BYTE	_MAP_INTERNAL_BUILD3,_MAP_INTERNAL_BUILD4,_MAP_INTERNAL_BUILD5,_MAP_INTERNAL_BUILD6,_MAP_INTERNAL_BUILD7
@@ -667,7 +752,7 @@ _special_tiles_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup01_name_input_init:
-		JSR		_ppu_queues_reset
+		JSR		_ppu_queues_reset				; shut down the screen again
 		JSR		_pal_fade_out
 		JSR		_render_off
 		LDA		#$08
@@ -683,31 +768,31 @@ _game_setup01_name_input_init:
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		LDXY	_tlm_res_name_init
+		LDXY	_tlm_res_name_init				; draw external tilemap for namy input screen
 		FJSRA	_tlm_res_unpack,SRAM,PRGA
 		LDA		#$00
 		STA		byte_6DC+2
 		LDA		#$02
-		STA		_MMC5_CHR_MODE
+		STA		_MMC5_CHR_MODE					; unpack upper part of the input screen
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
-		JSR		_name_input_char_nt_queue
+		JSR		_name_input_char_nt_queue		; draw name buffer (now empty)
 		JSR		_name_input_char_extnt_queue
 ;loc_24549:
 ;		JSR		_ppu_dequeue					; REDUNDANT, merged
 ;		JSR		_extnt_dequeue
 ;		JSR		_buffers_test_flush
 ;		BNE		loc_24549
-		JSR		_buffers_force_flush			; OPTIMIZED
+		JSR		_buffers_force_flush			; OPTIMIZED, force flush common
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		LDA		#$2C
-		STA		_MMC5_CHR_BANKSA+2
+		STA		_MMC5_CHR_BANKSA+2				; set CHR banks for sprites here
 		LDA		#$2D
 		STA		_MMC5_CHR_BANKSA+3
 		INC		_mmc5_operation_in_progress_flag
 		JSR		_render_on
-		LDA		#$CD
+		LDA		#$CD							; init starting cursor position
 		STA		_tmp6CC
 		LDA		#$A6
 		STA		_tmp6CE
@@ -716,16 +801,16 @@ _game_setup01_name_input_init:
 		STA		_tmp6D0
 		INC		_game_setup_sub_idx
 		LDA		#$09
-		STA		_screen_pal_cur_bg_idx
+		STA		_screen_pal_cur_bg_idx			; init palettes
 		LDA		#$07
 		STA		_screen_pal_cur_spr_idx
-		JMP		_pal_fade_in
+		JMP		_pal_fade_in					; show screen
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup02_name_input_input:
-		JSR		_name_input_cursor_move_control
-		JSR		_common_select_cursor_draw
-		JSR		_name_input_button_push_control
+		JSR		_name_input_cursor_move_control	; main name input handler
+		JSR		_common_select_cursor_draw		; calling all stuff for input handling
+		JSR		_name_input_button_push_control	; printing and storing input data
 		JSR		_name_input_button_push_draw
 		JSR		_name_input_char_store
 		JSR		_name_input_char_nt_queue
@@ -733,32 +818,32 @@ _game_setup02_name_input_input:
 		JSR		_spr_finish
 		BIT		_pad0_autorep_press
 		BVC		locret_245A9
-		JMP		_name_input_previous_scr
+		JMP		_name_input_previous_scr		; test for back button B
 locret_245A9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_next_scr:
-		LDA		byte_6DC+2
-		BNE		loc_245C9
+		LDA		byte_6DC+2						; current input screen type
+		BNE		loc_245C9						; if 0, then name input, jump next
 		INC		byte_6DC+2
 		JSR		_ppu_queues_reset
-		JSR		_name_input_clear_header_area
+		JSR		_name_input_clear_header_area	; redraw only upper portion of the screen
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_word
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_word
 		JMP		_buffers_wait_flush
 loc_245C9:
 		LDA		#$0D
-		STA		_game_setup_sub_idx
-		RTS
+		STA		_game_setup_sub_idx				; if 1, then we at fav word input,
+		RTS										; then go to difficult setup
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_previous_scr:
-		LDA		byte_6DC+2
-		BEQ		loc_245EE
+		LDA		byte_6DC+2						; if we at name input screen
+		BEQ		loc_245EE						; then jump to the title menu
 		DEC		byte_6DC+2
-		JSR		_ppu_queues_reset
-		JSR		_name_input_clear_header_area
+		JSR		_ppu_queues_reset				; or return from fav word screen back
+		JSR		_name_input_clear_header_area	; redraw upper part with name input again
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
 		JMP		_buffers_wait_flush
@@ -768,6 +853,8 @@ loc_245EE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; clear upper part of the name input screen for new header.
+;
 _name_input_clear_header_area:
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_clear_area
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
@@ -880,8 +967,7 @@ _name_input_cursor_move_control:
 		LDA		_pad0_autorep_release
 		AND		#$0F
 		BEQ		loc_246E6
-		LDA		#$40
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_SELECT
 loc_246E6:
 		LDX		_tmp6D2
 		LDY		_tmp6D3
@@ -986,7 +1072,7 @@ _name_input_button_push_control:
 		STY		byte_6DC+1
 		INY
 		STY		byte_6DC+6
-		STY		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		LDA		#$08
 		STA		byte_6DC+3
 		JSRXY	_rle_nt_res_queue,_tlm_nt_end_press
@@ -1004,8 +1090,7 @@ loc_247A1:
 		STA		byte_6DC+5
 		LDA		#$10
 		STA		byte_6DC+3
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		RTS
 loc_247BD:
 		LDA		#$00
@@ -1022,7 +1107,7 @@ _name_input_char_store:
 		LDA		byte_6DC+1
 		BEQ		locret_24842
 		LDX		byte_6DC+2
-		LDA		off_248BD,X
+		LDA		_name_store_buf_lo,X
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
@@ -1068,16 +1153,18 @@ locret_24842:
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_char_nt_queue:
 		LDX		byte_6DC+2
-		LDA		off_248BD,X
+		LDA		_name_store_buf_lo,X
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
 		PPUQSTART
-		LDY		byte_6DC+2
-		LDA		byte_248BF,Y
-		PPUQMOVA
-		LDA		byte_248C1,Y
-		PPUQMOVA
+;		LDY		byte_6DC+2
+;		LDA		byte_248BF,Y					; REDUNDANT
+;		PPUQMOVA
+		PPUQMOVB	#$0B,OP_NOP,0				; OPTIMIZED
+;		LDA		byte_248C1,Y					; REDUNDANT
+;		PPUQMOVA
+		PPUQMOVB	#$21,OP_NOP,0				; OPTIMIZED
 		PPUQMOVB	#$0A,OP_NOP,0
 		LDY		#$01
 loc_2486A:
@@ -1092,18 +1179,20 @@ loc_2486A:
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_char_extnt_queue:
 		LDX		byte_6DC+2
-		LDA		off_248BD,X
+		LDA		_name_store_buf_lo,X
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
 		EXTQSTART
-		LDY		byte_6DC+2
-		LDA		byte_248BF,Y
-		EXTQMOVA
-		LDA		byte_248C1,Y
-		CLC
-		ADC		#$3C
-		EXTQMOVA
+;		LDY		byte_6DC+2						; REDUNDANT
+;		LDA		byte_248BF,Y
+;		EXTQMOVA
+		EXTQMOVB	#$0B,OP_NOP,0				; OPTIMIZEd
+;		LDA		byte_248C1,Y					; REDUNDANT
+;		CLC
+;		ADC		#$3C
+;		EXTQMOVA
+		EXTQMOVB	#$5D,OP_NOP,0				; OPTIMIZED
 		EXTQMOVB	#$0A,OP_NOP,0
 		LDY		#$01
 loc_248A2:
@@ -1122,13 +1211,15 @@ loc_248AE:
 		BNE		loc_248A2
 		EXTQEND
 		RTS
-off_248BD:
+
+_name_store_buf_lo:
 		.BYTE	<[_city]
 		.BYTE	<[_city._sister_name]
-byte_248BF:
-		.BYTE	$0B,$0B
-byte_248C1:
-		.BYTE	$21,$21
+; REDUNDANT, always the same
+;byte_248BF:
+;		.BYTE	$0B,$0B
+;byte_248C1:
+;		.BYTE	$21,$21
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0D_difficult_init:
@@ -1151,9 +1242,8 @@ _game_setup0E_difficult_input:
 		JSR		_difficult_scr_cursor_move		; cursor movement input test
 		JSR		_common_select_cursor_draw		; cursor draw
 		BIT		_pad0_autorep_press
-		BPL		loc_2493D
-		LDA		#$01							; press A button
-		STA		_apu_se_flags
+		BPL		loc_2493D						; press A button
+		APUA_SE	_SE_IDX_CLICK
 		LDA		_city._name
 		CMP		#$01
 		BNE		loc_24916						; test city name if empty
@@ -1214,8 +1304,7 @@ _difficult_scr_cursor_move:
 		BEQ		locret_2496C					; for up test min value 0
 		DEY										; if not, decrease
 .diff_store:
-		LDA		#$01							; play se
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK								; play se
 		STY		_city._difficult				; common store
 		JMP		_difficult_scr_cursor_draw		; highlit difficult option
 locret_2496C:
@@ -1386,20 +1475,25 @@ _game_setup09_practice_msg_init:
 		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
 		MOVWO	_ptr0,_tlm_practice_wnd_header
 		JSR		_tlm_transfer
-		LDY		#<[_practice_msg0]				; TODO: rearrange me to use common macros!
-		LDX		#>[_practice_msg0]
+; OPTIMIZED, library idx 0A, 0B now
 		LDA		_tmp6D5
-		BEQ		loc_24AB0
-		LDY		#<[_practice_msg1]
-		LDX		#>[_practice_msg1]
-loc_24AB0:
-		STY		_tmp6D6
-		STX		_tmp6D6+1
-		LDY		#$00
-		STY		_tmp6DA
-		STY		_tmp6D9
-		DEY
-		STY		_tmp6D8
+		CLC
+		ADC		#$0A
+		JSR		_msg_lib_load
+; -
+; REDUNDANT
+;		LDXY	_practice_msg0
+;		LDA		_tmp6D5
+;		BEQ		loc_24AB0
+;		LDXY	_practice_msg1
+;loc_24AB0:
+;		STX		_tmp6D6
+;		STY		_tmp6D6+1
+;		LDY		#$00
+;		STY		_tmp6DA
+;		STY		_tmp6D9
+;		DEY
+;		STY		_tmp6D8
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
 		LDA		#$08
@@ -1418,8 +1512,7 @@ _game_setup0A_practice_msg_draw:
 		JMP		_pal_fade_out
 loc_24AE4:
 		BPL		locret_24B0D
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 		LDA		_tmp6D5
 		BNE		loc_24AF6
 		INC		_tmp6D5
@@ -1473,17 +1566,22 @@ loc_24B49:
 		FJSRA	_sram_sum_reinit,SRAM,PRG3
 		JSR		_sram_off
 loc_24B6C:
-		LDY		_scenario_result_idx
-		DEY
-		LDA		_final_msg_lib_lo,Y
-		STA		_tmp6D6
-		LDA		_final_msg_lib_hi,Y
-		STA		_tmp6D6+1
-		LDY		#$00
-		STY		_tmp6DA
-		STY		_tmp6D9
-		DEY
-		STY		_tmp6D8
+; OPTIMIZED, lib indexes are 8, 9, but _scenario_result_idx should be -1
+; so +7
+		LDA		_scenario_result_idx
+		CLC
+		ADC		#$07
+		JSR		_msg_lib_load
+; REDUNDANT
+;		LDA		_final_msg_lib_lo,Y
+;		STA		_tmp6D6
+;		LDA		_final_msg_lib_hi,Y
+;		STA		_tmp6D6+1
+;		LDY		#$00
+;		STY		_tmp6DA
+;		STY		_tmp6D9
+;		DEY
+;		STY		_tmp6D8
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
 		LDA		#$10
@@ -1530,12 +1628,16 @@ _game_setup0F_all_complete_init:
 		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
 		MOVWO	_ptr0,_tlm_all_complete
 		JSR		_tlm_transfer
-		MOVWO	_tmp6D6,_all_scenarios_clear_msg
-		LDY		#$00
-		STY		_tmp6DA
-		STY		_tmp6D9
-		DEY
-		STY		_tmp6D8
+; OPTIMIZED, msg idx 0C
+		LDA		#$0C
+		JSR		_msg_lib_load
+; REDUNDANT
+;		MOVWO	_tmp6D6,_all_scenarios_clear_msg
+;		LDY		#$00
+;		STY		_tmp6DA
+;		STY		_tmp6D9
+;		DEY
+;		STY		_tmp6D8
 		JSR		_sram_on
 		LDA		#$01
 		STA		_city._all_scenarios_are_clear_ram_flag
@@ -1670,30 +1772,7 @@ _scenario_intro_header_lib_hi:
 		.BYTE	>[_tlm_scenario_header5]
 		.BYTE	>[_tlm_scenario_header6]
 		.BYTE	>[_tlm_scenario_header7]
-_scenario_msg_lib_lo:
-		.BYTE	<[_scenario_msg0]
-		.BYTE	<[_scenario_msg1]
-		.BYTE	<[_scenario_msg2]
-		.BYTE	<[_scenario_msg3]
-		.BYTE	<[_scenario_msg4]
-		.BYTE	<[_scenario_msg5]
-		.BYTE	<[_scenario_msg6]
-		.BYTE	<[_scenario_msg7]
-_scenario_msg_lib_hi:
-		.BYTE	>[_scenario_msg0]
-		.BYTE	>[_scenario_msg1]
-		.BYTE	>[_scenario_msg2]
-		.BYTE	>[_scenario_msg3]
-		.BYTE	>[_scenario_msg4]
-		.BYTE	>[_scenario_msg5]
-		.BYTE	>[_scenario_msg6]
-		.BYTE	>[_scenario_msg7]
-_final_msg_lib_lo:
-		.BYTE	<[_game_won_msg]
-		.BYTE	<[_game_lose_msg]
-_final_msg_lib_hi:
-		.BYTE	>[_game_won_msg]
-		.BYTE	>[_game_lose_msg]
+
 _tlm_scenario_header6:
 		.WORD	$8520
 		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -1937,10 +2016,11 @@ _msg_dictionary:
 		MSG_DIC	_you,	"you"
 		MSG_DIC	_con,	"con"
 
-_scenario_msg6:
-		.BYTE	_eof
-_scenario_msg7:
-		.BYTE	_eof
+; REDUNDANT
+;_scenario_dummy:
+;		.BYTE	_eof
+;_scenario_dummy:
+;		.BYTE	_eof
 
 _scenario_msg0:
 		.BYTE	" Damage from ",_the," earth-",$A
@@ -1953,6 +2033,7 @@ _scenario_msg0:
 		.BYTE	_con,"cern.Then clear ",_the,$A
 		.BYTE	"rubble ",_and," start rebuild-",$A
 		.BYTE	_in,"g.",_You," ",_have," 5 ",_years,".",$A
+_scenario_dummy:
 		.BYTE	_eof
 _scenario_msg1:
 		.BYTE	"The roads here are becom-",$A

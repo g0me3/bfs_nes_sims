@@ -353,7 +353,8 @@ loc_13626D:
 		STA		_cur_const_palette_selected_idx
 		STA		_const_palette_selected_idx
 		TAX
-		JSR		_apu_se_consrt_palette_click
+;		JSR		_apu_se_consrt_palette_click
+		APUA_SE	_SE_IDX_BCLICK
 		LDA		_cur_game_cursor_scr_pos._COL
 		STA		_constr_palette_area_cursor_pos._COL
 		LDA		_cur_game_cursor_scr_pos._ROW
@@ -380,7 +381,8 @@ loc_1362A9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _j_apu_se_error:
-		JSR		_apu_se_error
+;		JSR		_apu_se_error
+		APUA_SE	_SE_IDX_ERROR
 
 ; =============== S U B	R O U T	I N E =======================================
 _j_game_state_common:
@@ -476,7 +478,8 @@ loc_136358:
 		LDA		_constr_cursor_tile._COL
 		STA		_prev_constr_cursor_tile._COL
 		LDA		_constr_cursor_tile._ROW
-		JSR		_apu_se_small_build
+;		JSR		_apu_se_small_build
+		APUA_SE	_SE_IDX_SBUILD
 .no_changes:
 		JSR		_save_constr_cursor_pos
 		JMP		_game_state_common
@@ -502,7 +505,8 @@ loc_136389:
 		JSR		_calc_constr_area_update_params
 		LDA		#$FF
 		STA		_hud_money_redraw_req
-		JSR		_apu_se_small_build
+;		JSR		_apu_se_small_build
+		APUA_SE	_SE_IDX_SBUILD
 		JSR		_save_constr_cursor_pos
 		JMP		_game_state_common
 
@@ -526,7 +530,8 @@ loc_1363BE:
 		JSR		_calc_constr_area_update_params
 		LDA		#$FF
 		STA		_hud_money_redraw_req
-		JSR		_apu_se_large_build
+;		JSR		_apu_se_large_build
+		APUA_SE	_SE_IDX_LBUILD
 		JSR		_bank_build_year_init
 		JSR		_present_remove_from_list
 		LDA		_const_palette_selected_idx
@@ -537,7 +542,8 @@ loc_1363BE:
 		BNE		loc_1363F5
 .cant_build_anything_beep:
 		JSR		_save_constr_cursor_pos
-		JSR		_apu_se_error
+;		JSR		_apu_se_error
+		APUA_SE	_SE_IDX_ERROR
 loc_1363F5:
 		JMP		_game_state_common
 
@@ -557,15 +563,18 @@ _bulldoze_area:
 		DEX
 		BEQ		.ok
 		INC		_corruption_anim_flag
-		JSR		_apu_se_destroy
+;		JSR		_apu_se_destroy
+		APUA_SE	_SE_IDX_DESTROY
 		JMP		_game_state_common
 .ok:
-		JSR		_apu_se_bulldozer
+;		JSR		_apu_se_bulldozer
+		APUA_SE	_SE_IDX_BULLDOZE
 		JMP		_game_state_common
 .fail:
 		LDA		byte_CD
 		BNE		.skip							; with error sound or without
-		JSR		_apu_se_error
+;		JSR		_apu_se_error
+		APUA_SE	_SE_IDX_ERROR
 .skip:
 		JMP		_game_state_common
 
@@ -1773,7 +1782,8 @@ loc_136D5F:
 		BEQ		loc_136D5F
 		BNE		loc_136DAF
 loc_136D8E:
-		JSR		_apu_se_item_select
+;		JSR		_apu_se_item_select
+		APUA_SE	_SE_IDX_SELECT
 		LDA		_cur_port_type_select_idx
 		BEQ		loc_136DA3
 		LDA		#$03
@@ -1839,7 +1849,8 @@ loc_136DD6:
 		BEQ		loc_136DD6
 		BNE		loc_136E1E
 loc_136E05:
-		JSR		_apu_se_item_select
+;		JSR		_apu_se_item_select
+		APUA_SE	_SE_IDX_SELECT
 		LDA		_cur_power_type_select_idx
 		BEQ		loc_136E16
 		LDA		#$00
@@ -2544,7 +2555,8 @@ loc_1372B8:
 		CPX		#$04
 		BEQ		loc_137331
 		PHA
-		JSR		_apu_se_click
+;		JSR		_apu_se_click
+		APUA_SE	_SE_IDX_CLICK
 		PLA
 		CPX		#$00
 		BEQ		loc_1372FD
@@ -2741,8 +2753,7 @@ byte_137439:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_draw:
-		LDA		#$40
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_ROLLIN
 		JSR		_mmc5_prgA000_bank2_set
 loc_137446:
 		JSR		_wnd_draw_line
@@ -2810,8 +2821,7 @@ loc_1374AB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_erase:
-		LDA		#$20
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_ROLLOUT
 		JSR		_mmc5_prgA000_bank2_set
 loc_1374B3:
 		JSR		_wnd_erase_line
@@ -4340,58 +4350,66 @@ loc_15006C:
 loc_150084:
 		JMP		_game_state_common
 
+; REDUNDANT, macrocified
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se_error:
-		LDA		#$02
-
+;_apu_se_click:
+;		LDA		#$01
+;		BNE		_apu_se0_load
+;
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se0_load:
-		STA		_apu_se_flags
-		RTS
-
+;_apu_se_error:
+;		LDA		#$02
+;		BNE		_apu_se0_load
+;		APUA_SE	_SE_IDX_ERROR
+;		RTS
+;
+; =============== S U B	R O U T	I N E =======================================
+;_apu_se_small_build:
+;		LDA		#$04
+;		BNE		_apu_se0_load
+;		APUA_SE	_SE_IDX_SBUILD
+;		RTS
+;
+; =============== S U B	R O U T	I N E =======================================
+;_apu_se_large_build:
+;		LDA		#$08
+;
+; !FALLTHROUGH!
+;
+; =============== S U B	R O U T	I N E =======================================
+;_apu_se0_load:
+;		STA		_apu_se_flags
+;		RTS
+;
 ; =============== S U B	R O U T	I N E =======================================
 ;_unref_20:
 ;		STA		_apu_mus_idx_req
 ;		RTS
-
+;
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se1_load:
-		STA		_apu_se_flags+1
-		RTS
-
+;_apu_se_destroy:
+;		LDA		#$04
+;		BNE		_apu_se1_load
+;
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se_bulldozer:
-		LDA		#$08
-		BNE		_apu_se1_load
-
+;_apu_se_bulldozer:
+;		LDA		#$08
+;		BNE		_apu_se1_load
+;
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se_destroy:
-		LDA		#$04
-		BNE		_apu_se1_load
-
+;_apu_se_consrt_palette_click:
+;		LDA		#$20
+;		BNE		_apu_se1_load
+;
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se_click:
-		LDA		#$01
-		BNE		_apu_se0_load
-
+;_apu_se_item_select:
+;		LDA		#$40
+;
+; !FALLTHROUGH!
+;
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se_small_build:
-		LDA		#$04
-		BNE		_apu_se0_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_large_build:
-		LDA		#$08
-		BNE		_apu_se0_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_consrt_palette_click:
-		LDA		#$20
-		BNE		_apu_se1_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_item_select:
-		LDA		#$40
-		BNE		_apu_se1_load
+;_apu_se1_load:
+;		STA		_apu_se_flags+1
+;		RTS
 
 		BANK_END FC,$A000

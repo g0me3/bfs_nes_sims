@@ -3449,8 +3449,7 @@ _heavy_traffic_report_test:
 		STY		_scroll_msg_start_pos
 		DEY
 		STY		_scroll_msg_active_flag
-		LDA		#$02
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_TRAFFIC
 loc_11F93E:
 		POPB	_mmc5_mul0_shadow
 		POPB	_mmc5_mul1_shadow
@@ -3797,8 +3796,7 @@ _tornado_disaster_start:
 		LDA		#$01
 		STA		_game_msg_awaits_flag
 		JSR		_wait_for_hud_redraw
-		LDA		#$30
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_TORNADO
 		JMP		_goto_alert_start
 locret_11FCFC:
 		RTS
@@ -3998,8 +3996,7 @@ loc_11FE3C:
 		TAX
 		DEX
 		BPL		loc_11FE3C
-		LDA		#$04
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_DESTROY
 		JSR		_goto_alert_start
 		LDA		_tmp6CC+1
 		JSR		_map_tile_write

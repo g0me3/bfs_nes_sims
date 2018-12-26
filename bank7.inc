@@ -871,8 +871,7 @@ _title_sub3_menu_input:
 		LDA		_pad0_autorep_press
 		AND		#$0C
 		BEQ		.title_menu_default				; test UP/DOWN buttons
-		LDA		#$01
-		STA		_apu_se_flags					; menu change sound
+		APUA_SE	_SE_IDX_CLICK								; menu change sound
 		LDX		_cur_game_mode
 		LDA		_title_menu_item_decode,X
 		TAX
@@ -904,8 +903,7 @@ loc_B8608:
 		STA		_cur_game_mode
 		BPL		.title_menu_default
 .title_menu_select_apply:
-		LDA		#$01
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK
 ;		JSR		_title_cursor_draw				; REDUNDANT
 		LDA		#$80
 		STA		_title_sub_idx					; exit flag
@@ -1521,15 +1519,13 @@ _scr_res_hndl1_B_graphs_input:
 		BIT		_pad0_autorep_press
 		BVS		loc_B8E36
 		BPL		locret_B8E3F
-		LDA		#$20
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_BCLICK
 		JMP		_graphs_get_hover_button_idx	; icons press switch
 loc_B8E30:
 		JSR		_buffers_test_wait_flush
 		JMP		_graphs_data_draw_column
 loc_B8E36:
-		LDA		#$20
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_BCLICK
 		LDA		#$40
 		STA		_scr_res_control_flags
 locret_B8E3F:
@@ -2011,8 +2007,7 @@ _scr_res_hndl2_B_budget_input:
 .budget_buttons_test:
 		BIT		_pad0_autorep_release
 		BPL		.budget_screen_animate
-		LDA		#$01							; A button pressed
-		STA		_apu_se_flags
+		APUA_SE	_SE_IDX_CLICK								; A button pressed
 		LDA		_budget_tax_cur_pos				; check cursor position
 		CMP		#$0A							; all above or equal $A are exits
 		BCS		.budget_screen_exit_test		; the rest are budget adjustments
@@ -2165,8 +2160,7 @@ _budget_screen_dpad_test:
 		CLC
 		ADC		_budget_tax_cur_pos
 		STA		_budget_tax_cur_pos
-		LDX		#$40
-		STX		_apu_se_flags+1
+		APUX_SE	_SE_IDX_SELECT
 locret_B9365:
 		RTS
 

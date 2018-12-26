@@ -82,8 +82,7 @@ _airplane_crash_start:
 		LDA		_obj_active_flags				; destroy plane
 		AND		#$FD
 		STA		_obj_active_flags
-		LDA		#$04
-		STA		_apu_se_flags+1					; crash sound
+		APUA_SE	_SE_IDX_DESTROY							; crash sound
 		PUSHB	_ptr0
 		PUSHB	_ptr0+1
 		PUSHB	_tmp2
@@ -1231,8 +1230,7 @@ loc_886A2:
 		BCC		locret_886C5
 		CMP		#$14
 		BCS		locret_886C5
-		LDA		#$01
-		STA		_apu_se_flags+1
+		APUA_SE	_SE_IDX_MONSTER
 locret_886C5:
 		RTS
 

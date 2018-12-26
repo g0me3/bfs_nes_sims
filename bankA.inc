@@ -2329,7 +2329,8 @@ _scroll_msg05_test:
 		BCC		nullsub_10
 loc_1052EA:
 ; BUG! here is the total power stations value
-; may be wrong at some point of the game
+; may be wrong at some point of the game, this var is frequently
+; used in many places as temp var
 ; -
 ;		LDA		_tmp6CC
 ; -
