@@ -58,6 +58,24 @@ _SE_IDX_8000		EQU		$0900	; $8000	; *unused* cancel
 	#endif
 	ENDM
 
+_MUS_NOTHING		EQU		$00
+_MUS_IDX_TITLE0		EQU		$01
+_MUS_IDX_TITLE1		EQU		$02
+_MUS_IDX_SETUP		EQU		$04
+_MUS_IDX_VILLAGE0	EQU		$08
+_MUS_IDX_VILLAGE1	EQU		$10
+_MUS_IDX_TOWN		EQU		$20
+_MUS_IDX_CITY		EQU		$41
+_MUS_IDX_CAPITAL	EQU		$42
+_MUS_IDX_METROPOLIS	EQU		$44
+_MUS_IDX_MEGAPOLIS0	EQU		$48
+_MUS_IDX_MEGAPOLIS1 EQU		$50
+_MUS_IDX_NOTICE0	EQU		$60
+_MUS_IDX_NOTICE1	EQU		$40
+_MUS_IDX_ALERT0		EQU		$21
+_MUS_IDX_ALERT1		EQU		$22
+_MUS_STOP			EQU		$80
+
 ;------------S-T-R-U-C-T-U-R-E-S----------------
 
 	MAC	_tfix16_16
@@ -104,16 +122,6 @@ I_AREA_WIDX	EQU 4
 		_tfix8_8	{1}._R
 		_tfix8_8	{1}._C
 		_tfix8_8	{1}._I
-	ENDM
-
-	MAC	_tapu
-{1}		SET	.
-{1}._chnls:	.BYTE	{2}
-{1}._ptr:	.WORD	{3}
-{1}._var0:	.BYTE	{4}
-{1}._var1:	.BYTE	{5}
-{1}._var2:	.BYTE	{6}
-{1}._var3:	.BYTE	{7}
 	ENDM
 
 	MAC	_tcity

@@ -846,7 +846,7 @@ loc_B859E:
 		LDA		#$00
 		STA		_mmc5_nt_mode_shadow
 		STA		_MMC5_NT_MODE
-		LDA		_apu_mus_pulse2_shadow+2
+		LDA		_apu_mus_cur_idx
 		CMP		#$01
 		BEQ		loc_B85CB
 		CMP		#$02

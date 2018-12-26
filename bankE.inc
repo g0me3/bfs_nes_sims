@@ -120,7 +120,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se100_start:
 ;		STY		_apu_se_loop_idx+1
-		JSR		_apu_tri_chnl_no_dpcm
+		JSR		_apu_dmc_reset_tri_mute
 		LDA		#_DPCM_IDX1
 		STA		_APU_DMC_ADDR
 		LDA		#$DF
@@ -129,7 +129,7 @@ _apu_se100_start:
 		STA		_APU_DMC_FREQ
 		LDA		_APU_STATUS
 		AND		#$09
-		LDX		_apu_idx
+		LDX		_apu_dpcm_disable_flag
 		BMI		loc_1959AE
 		ORA		#$19
 loc_1959AE:
@@ -142,7 +142,7 @@ _apu_se100_loop:
 		BNE		locret_1959C4
 		ORA		#$0F
 		STA		_APU_STATUS
-		JSR		_apu_tri_chnl_no_dpcm
+		JSR		_apu_dmc_reset_tri_mute
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
 locret_1959C4:
@@ -151,7 +151,7 @@ locret_1959C4:
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se200_start:
 ;		STY		_apu_se_loop_idx+1
-		JSR		_apu_tri_chnl_no_dpcm
+		JSR		_apu_dmc_reset_tri_mute
 		LDA		#_DPCM_IDX0
 		STA		_APU_DMC_ADDR
 		LDA		#$FF
@@ -160,7 +160,7 @@ _apu_se200_start:
 		STA		_APU_DMC_FREQ
 		LDA		_APU_STATUS
 		AND		#$09
-		LDX		_apu_idx
+		LDX		_apu_dpcm_disable_flag
 		BMI		loc_195978
 		ORA		#$10
 loc_195978:
@@ -173,7 +173,7 @@ _apu_se200_loop:
 		BNE		locret_19598E
 		ORA		#$0F
 		STA		_APU_STATUS
-		JSR		_apu_tri_chnl_no_dpcm
+		JSR		_apu_dmc_reset_tri_mute
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
 locret_19598E:
@@ -184,7 +184,7 @@ _apu_se400_start:
 ;		STY		_apu_se_loop_idx+1
 		LDA		#$7A
 		STA		_apu_se_loop_counters+1
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se400_loop:
@@ -203,7 +203,7 @@ _apu_se400_loop:
 		STA		_APU_NOISE_LEN
 		DEC		_apu_se_loop_counters+1
 		BNE		locret_1959F9
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
 		LDA		#$10
@@ -220,7 +220,7 @@ _apu_se800_start:
 ;		STY		_apu_se_loop_idx+1
 		LDA		#$0A
 		STA		_apu_se_loop_counters+1
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se800_loop:
@@ -233,7 +233,7 @@ _apu_se800_loop:
 		STA		_APU_NOISE_LEN
 		DEC		_apu_se_loop_counters+1
 		BNE		locret_195A72
-		JSR		_apu_status_reset
+		JSR		_apu_p2_reset
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
 locret_195A72:
@@ -245,7 +245,7 @@ byte_195A7D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se1000_start:
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 ;		STY		_apu_se_loop_idx+1
 		LDA		#$40
 		STA		_apu_se_loop_counters+1
@@ -262,15 +262,15 @@ _apu_se1000_loop:
 		LDA		byte_195AFD-1,Y
 		STA		_APU_PULSE2_ENV
 		LDA		#$28
-		JSR		_apu_tri_note_load
+		JSR		_apu_tritime_load
 		LDA		#$38
-		JSR		_apu_pulse1_note_load
+		JSR		_apu_p2_time_load
 loc_195AB1:
 		DEC		_apu_se_loop_counters+1
 		BNE		locret_195ABC
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
-		JMP		_apu_status_reset
+		JMP		_apu_p2_reset
 locret_195ABC:
 		RTS
 byte_195ABD:
@@ -289,7 +289,7 @@ _apu_se2000_start:
 ;		STY		_apu_se_loop_idx+1
 		LDA		#$14
 		STA		_apu_se_loop_counters+1
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 		LDA		#$83
 		STA		_APU_PULSE2_ENV
 		LDA		#$9D
@@ -309,7 +309,7 @@ _apu_se2000_loop:
 		BNE		locret_195B70
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
-		JMP		_apu_status_reset
+		JMP		_apu_p2_reset
 locret_195B70:
 		RTS
 
@@ -347,7 +347,7 @@ _apu_se4000_start:
 ;		STY		_apu_se_loop_idx+1
 		LDA		#$0A
 		STA		_apu_se_loop_counters+1
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 		LDA		#$83
 		STA		_APU_PULSE2_ENV
 		LDA		#$9D
@@ -367,7 +367,7 @@ _apu_se4000_loop:
 		BNE		locret_195BA4
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
-		JMP		_apu_status_reset
+		JMP		_apu_p2_reset
 locret_195BA4:
 		RTS
 
@@ -376,7 +376,7 @@ _apu_se8000_start:
 ;		STY		_apu_se_loop_idx+1
 		LDA		#$15
 		STA		_apu_se_loop_counters+1
-		JSR		_apu_tri_chnl_with_dpcm
+		JSR		_apu_p2_reset_tri_mute
 		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$83
@@ -384,15 +384,15 @@ _apu_se8000_start:
 		LDA		#$A1
 		STA		_APU_PULSE2_SWEEP
 		LDA		#$64
-		JSR		_apu_tri_note_load
+		JSR		_apu_tritime_load
 		LDA		#$64
-		JSR		_apu_pulse1_note_load
+		JSR		_apu_p2_time_load
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se8000_loop:
 		DEC		_apu_se_loop_counters+1
 		BNE		locret_195BD2
-		JSR		_apu_status_reset
+		JSR		_apu_p2_reset
 		LDA		#$00
 		STA		_apu_se_loop_idx+1
 locret_195BD2:

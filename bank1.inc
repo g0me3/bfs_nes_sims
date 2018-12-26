@@ -537,7 +537,7 @@ _scenario_map_load:
 		JSR		_map_buf_init					; init map buf with BULLDOZERED_GROUND
 		LDA		#$01
 		STA		_MMC5_CHR_SIZE					; set CHR bank size 4K
-		JSR		_apu_music_off					; this may take a while, disable music
+		JSR		_apu_dpcm_forbid				; somehow dpcm may interfer with process, disable it
 		LDY		_scenario_idx
 		LDX		_scenario_data_chr_bank,Y		; load PPU ROM banks containing a map data
 		STX		_MMC5_CHR_BANKSA+3
@@ -560,7 +560,7 @@ _scenario_map_load:
 		JSR		_sram_off						; disable back
 		LDA		#$03
 		STA		_MMC5_CHR_SIZE					; restore CHR bank size 1K
-		JSR		_apu_music_on
+		JSR		_apu_dpcm_allow					; allow dpcm back
 		LDY		_scenario_idx
 		LDX		_scenario_titles_ofs_lib,Y		; load predefined town name for scenario
 		LDY		#$01

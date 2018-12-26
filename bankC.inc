@@ -2594,7 +2594,7 @@ loc_137317:
 		LDY		_city._city_type
 		LDA		_bg_music_list,Y
 loc_13731D:
-		CMP		_apu_mus_pulse2_shadow+2
+		CMP		_apu_mus_cur_idx
 		BEQ		loc_137324
 		STA		_apu_mus_idx_req
 loc_137324:

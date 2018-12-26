@@ -1765,27 +1765,27 @@ _thread1_init:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_music_off:
+_apu_dpcm_forbid:
 		LDA		_APU_STATUS
 		CMP		_APU_STATUS
-		BNE		_apu_music_off
+		BNE		_apu_dpcm_forbid
 		AND		#$0F
 		STA		_APU_STATUS
-		LDA		_apu_idx
+		LDA		_apu_dpcm_disable_flag
 		ORA		#$80
-		STA		_apu_idx
+		STA		_apu_dpcm_disable_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_music_on:
-		LDA		_apu_idx
+_apu_dpcm_allow:
+		LDA		_apu_dpcm_disable_flag
 		AND		#$7F
-		STA		_apu_idx
+		STA		_apu_dpcm_disable_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_res_unpack:
-		JSR		_apu_music_off
+		JSR		_apu_dpcm_forbid
 		LDA		_PPU_STATUS
 		STX		_ptr0
 		STY		_ptr0+1
@@ -1812,7 +1812,7 @@ loc_18AC59:
 		TAY
 		DEC		_tmp5AE
 		BNE		loc_18AC59
-		JMP		_apu_music_on
+		JMP		_apu_dpcm_allow
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_unpack:

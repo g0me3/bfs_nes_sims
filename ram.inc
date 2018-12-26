@@ -405,23 +405,24 @@ word_EC:
 		.BYTE	0,0
 word_EE:
 		.BYTE	0,0
+
 _apu_mus_idx_req:
 		.BYTE	0
 _apu_se_idx_req:
 		.BYTE	0,0
-byte_F3:
+_apu_mus_seq_ofs:
 		.BYTE	0
 _apu_se_loop_idx:
 		.BYTE	0,0
-byte_F6:
+_apu_tmpF6:
 		.BYTE	0
-byte_F7:
+_apu_tmpF7:
 		.BYTE	0
 _apu_se_loop_counters:
 		.BYTE	0,0
-_apu_ptr:
+_apu_trk_data_ptr:
 		.BYTE	0,0
-_apu_idx:
+_apu_dpcm_disable_flag:
 		.BYTE	0
 _apu_se80_loop_counter:
 		.BYTE	0
@@ -1069,42 +1070,67 @@ _pal_bg_buf:
 		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 _pal_spr_buf:
 		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-_apu_mus_v00:
+
+_apu_mus_p1_delay:
 		.BYTE	0
-_apu_mus_v01:
+_apu_mus_p2_delay:
 		.BYTE	0
-_apu_mus_v02:
+_apu_mus_tri_delay:
 		.BYTE	0
-_apu_mus_v03:
+
+_apu_mus_p1_timer:
 		.BYTE	0
-_apu_mus_v04:
+_apu_mus_p2_timer:
 		.BYTE	0
-_apu_mus_v05:
+_apu_mus_tri_timer:
 		.BYTE	0
-_apu_mus_v06:
+
+_apu_mus_p1_data_pos:
 		.BYTE	0
-_apu_mus_v07:
+_apu_mus_p2_data_pos:
 		.BYTE	0
-_apu_mus_v08:
+_apu_mus_tri_data_pos:
 		.BYTE	0
-_unref_8:
+
+_apu_mus_v09:
 		.BYTE	0
-_apu_mus_chnl_flags:
+_apu_mus_wave:
 		.BYTE	0
-_unref_9:
-		.BYTE	0,0
-_apu_mus_var3:
+_apu_mus_v0B:
 		.BYTE	0
-_apu_mus_var7:
+_apu_mus_v0C:
 		.BYTE	0
-_apu_mus_var8:
+_apu_mus_dmc_data_pos:
 		.BYTE	0
-_apu_mus_pulse1_shadow:
-		.BYTE	0,0,0,0
-_apu_mus_pulse2_shadow:
-		.BYTE	0,0,0,0
-_apu_mus_tri_shadow:
-		.BYTE	0,0,0,0
+_apu_mus_dmc_timer:
+		.BYTE	0
+_apu_mus_p1_env_delta:
+		.BYTE	0
+
+_apu_mus_p1_time_lo:
+		.BYTE	0
+_apu_mus_p2_env_delta:
+		.BYTE	0
+_apu_mus_p1_env_cnt:
+		.BYTE	0
+_apu_mus_p2_env_cnt:
+		.BYTE	0
+_apu_mus_p2_time_lo:
+		.BYTE	0
+_apu_mus_envelope:
+		.BYTE	0
+_apu_mus_cur_idx:
+		.BYTE	0
+_apu_mus_dmc_delay:
+		.BYTE	0
+_apu_mus_tri_time_lo:
+		.BYTE	0
+_apu_mus_p1_time_recalc_mode:
+		.BYTE	0
+_apu_mus_p2_time_recalc_mode:
+		.BYTE	0
+_mus_fade_out_timer:
+		.BYTE	0
 
 ;--------------------P-P-U----------------------
 
