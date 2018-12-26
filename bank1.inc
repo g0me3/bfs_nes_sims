@@ -134,7 +134,7 @@ _scenario_closed_screen_update:
 		LDY		#$00
 		LDX		#$06
 		LDA		_city._all_scenarios_are_clear_ram_flag
-		BEQ		locret_2411B					; FIX: lets just exit here
+		BNE		locret_2411B					; FIX: lets just exit here
 ;		BEQ		loc_240FA
 ; BUG: by this logic, when you complete all scenarios, the extra scenario
 ; screen reset all cleared pictures and planned to draw a new ones only for
@@ -886,7 +886,7 @@ loc_246C9:
 		SBC		#$30
 		CMP		#$0A
 ;		BCS		locret_246DB					; WHY? why toggle attrs? why not keep them?
-		BCC		locret_246DB					; FIX: same attrs (only CL swapped, because it not sprite)
+		BCC		locret_246DB					; FIX: same attrs (only CL swapped, because not sprite)
 		LDA		#$02
 		STA		_spr_buf+$1A
 locret_246DB:

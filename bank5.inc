@@ -463,11 +463,17 @@ _obj_ship_retarget:
 		TAX
 		LDA		_obj_spr_rotate_delta_table,X	; select rotate delta
 		STA		_obj_spr_delta,Y				; setup rotation
-		LDA		_ptr18
-		CLC
-		ADC		_obj_spr_delta,Y
-		AND		#$07
-		STA		_obj_cur_spr_idx._ship			; do first roration
+; WRONG: this code does the same work as _obj_rotate,
+; when angles less than 2, _obj_rotate will do full
+; round, because will start from desired value already...
+; so let the right code do the right work instead.
+; -
+;		LDA		_ptr18
+;		CLC
+;		ADC		_obj_spr_delta,Y
+;		AND		#$07
+;		STA		_obj_cur_spr_idx._ship
+; -
 		PLA										; restore new direction
 .ship_course_same:
 		ASL										; set new target 1 tile ahead
@@ -491,9 +497,9 @@ _obj_ship_look_for_new_dir:
 ; NEW: let's make ship more interesting
 ; WARNING: this will change rand_seed as well!
 ; -
-		JSR		_rand							; decide to change direct course
-		CMP		#$D0							; probability of course change
-		BCS		.nope
+		LDA		_rand_seed
+		CMP		#$F0							; probability of course change	1/16
+		BCC		.loop
 		AND		#$02
 		BNE		.rleft
 		INX										; rotate right
@@ -504,8 +510,8 @@ _obj_ship_look_for_new_dir:
 		TXA
 		AND		#$07
 		TAX
-.nope:
 ; -
+.loop:
 		LDA		_obj_map_tile_dir_buf_ofs_list,X; map tile ofs for spr directions
 		TAY
 		BPL		loc_882FB
@@ -530,7 +536,7 @@ loc_8830B:
 		AND		#$07
 		TAX
 		CMP		_obj_cur_spr_idx._ship			; make full circle clockwise
-		BNE		_obj_ship_look_for_new_dir
+		BNE		.loop
 		LDX		_ptr18							; default value - opposite one
 		RTS
 _obj_map_tile_dir_buf_ofs_list:
@@ -550,10 +556,10 @@ _obj_ship_max_range_test:
 		SEC
 		RTS
 .ship_cant_go:
-;		INX										; here we skip to the next direction one more time
-;		TXA										; don't know why, actually. looks loke dupe code here
-;		AND		#$07
-;		TAX
+		INX										; this code somehow (not ideal) does
+		TXA										; some kind of bouncing of the map borders
+		AND		#$07							; or else the ship will float along sides of the map forever
+		TAX
 		CLC
 		RTS
 .ship_leftmost_pos:
@@ -2961,7 +2967,7 @@ _spr_shipA3:
 		.BYTE	$F6,$C1,$41,$EF
 		.BYTE	$F6,$C0,$41,$F7
 ;		.BYTE	$F6,$CF,$41,$FF		; BUG
-		.BYTE	$F6,$BF,$41,$FF		; BUG
+		.BYTE	$F6,$BF,$41,$FF		; FIX
 		.BYTE	$FE,$C4,$41,$EF
 		.BYTE	$FE,$C3,$41,$F7
 		.BYTE	$FE,$C2,$41,$FF

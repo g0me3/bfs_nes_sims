@@ -81,7 +81,7 @@ loc_18A053:
 		LDA		#$C0
 		STA		_PAD1_REG
 		LDA		#$00
-		STA		byte_4084+$F8C
+		STA		byte_4084+$F8C					; unknown register, probably debug leftover
 		FJSRA	_apu_init,SRAM,PRG0
 		LDA		#$80
 		STA		_apu_mus_idx_req

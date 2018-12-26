@@ -43,8 +43,8 @@ loc_58144:
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-;		FJSRA	_game_msg_chr_setup,PRG2,PRG2		; OPTIMIZED
-		JSR		_game_msg_chr_setup					; FIX: local sub now
+;		FJSRA	_game_msg_chr_setup,PRG2,PRG2		; REDUNDANT
+		JSR		_game_msg_chr_setup					; OPTIMIZED: local sub now
 		LDA		#$00
 		STA		_ptr0
 		JSR		_game_msg_txt_draw
@@ -192,8 +192,8 @@ _game_msg_apu_types_list:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_txt_draw:
 		PUSHB	_ptr0
-;		JSR		_far_wnd_header_txt_draw				; FIX: direct call here
-;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0			; FIX: moved to local bank
+;		JSR		_far_wnd_header_txt_draw				; REDUNDANT: direct call here
+;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0			; REDUNDANT: moved to local bank
 		JSR		_wnd_header_txt_draw					; -
 		POPB	_ptr0
 		LDA		#$00
@@ -236,7 +236,7 @@ loc_5829C:
 ;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0
 ;		RTS
 
-; FIX: moved from external bank to the place it belongs
+; OPTIMIZED: moved from external bank to the place it belongs
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_txt_draw:
@@ -245,7 +245,7 @@ _wnd_header_txt_draw:
 loc_BB84:
 		LDX		_game_msg_idx
 		LDA		_wnd_header_txt_len,X
-		STA		_tmp3							; FIX: replace table with auto calc
+		STA		_tmp3							; OPTIMIZED: replace table with auto calc
 		LDA		#23
 		SEC
 		SBC		_tmp3
@@ -1377,7 +1377,7 @@ loc_589CC:
 		LDA		#$00
 		STA		_tmp_popul_decimal_buf,Y
 loc_589D1:
-;		SEC
+;		SEC										; REDUNDANT
 ;		LDA		_tmp_popul_hex
 ;		SBC		_dec_digit_tbl0,Y
 ;		STA		_tmp_popul_hex
@@ -1387,15 +1387,15 @@ loc_589D1:
 ;		LDA		_tmp_popul_hex+2
 ;		SBC		_dec_digit_tbl2,Y
 ;		STA		_tmp_popul_hex+2
-		LDA		_tmp_popul_hex				; OPTIMIZED
-		CMP		_dec_digit_tbl0,Y			; -
-		LDA		_tmp_popul_hex+1			; -
-		SBC		_dec_digit_tbl1,Y			; -
-		LDA		_tmp_popul_hex+2			; -
-		SBC		_dec_digit_tbl2,Y			; -
+		LDA		_tmp_popul_hex					; OPTIMIZED
+		CMP		_dec_digit_tbl0,Y				; -
+		LDA		_tmp_popul_hex+1				; -
+		SBC		_dec_digit_tbl1,Y				; -
+		LDA		_tmp_popul_hex+2				; -
+		SBC		_dec_digit_tbl2,Y				; -
 		BCC		loc_589FA
-		LDA		_tmp_popul_hex				; FIX, we has to sub here
-		SBC		_dec_digit_tbl0,Y			; also C already set as well
+		LDA		_tmp_popul_hex					; OPTIMIZED, we has to sub here
+		SBC		_dec_digit_tbl0,Y				; also C already set as well
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
 		SBC		_dec_digit_tbl1,Y
@@ -1409,7 +1409,7 @@ loc_589D1:
 		STA		_tmp_popul_decimal_buf,Y
 		BNE		loc_589D1
 loc_589FA:
-;		CLC									; REDUNDANT
+;		CLC										; REDUNDANT
 ;		LDA		_tmp_popul_hex
 ;		ADC		_dec_digit_tbl0,Y
 ;		STA		_tmp_popul_hex
@@ -2025,13 +2025,13 @@ _game_menu_exec:
 		BNE		loc_58F72
 ;		LDA		#$01							; move into function
 ;		STA		_apu_se_flags
-;		FJSRA	_game_save_menu,SRAM,PRG3		; FIX: already enabled sram in FJSR for _game_menu_exec
+;		FJSRA	_game_save_menu,SRAM,PRG3		; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_save_menu
 		JMP		_game_menu_break
 loc_58F72:
 		DEX
 		BNE		loc_58F7F
-;		FJSRA	_game_load_menu,SRAM,PRG3		; FIX: already enabled sram in FJSR for _game_menu_exec
+;		FJSRA	_game_load_menu,SRAM,PRG3		; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_load_menu					; the only sub that can use two different se
 		JMP		_game_menu_break
 loc_58F7F:
@@ -2039,13 +2039,13 @@ loc_58F7F:
 		BNE		loc_58F90
 ;		LDA		#$01							; move into function
 ;		STA		_apu_se_flags
-;		FJSRA	_game_title_return,SRAM,PRG3	; FIX: already enabled sram in FJSR for _game_menu_exec
+;		FJSRA	_game_title_return,SRAM,PRG3	; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_title_return
 		JMP		_game_menu_break
 loc_58F90:
 ;		LDA		#$01							; move into function
 ;		STA		_apu_se_flags
-;		FJSRA	_game_quit,SRAM,PRG3			; FIX: already enabled sram in FJSR for _game_menu_exec
+;		FJSRA	_game_quit,SRAM,PRG3			; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_quit
 _game_menu_break:
 		LDA		#$00
@@ -2253,7 +2253,7 @@ loc_59103:
 		LDA		#$01
 		STA		_apu_se_flags
 ;		JSR		_load_menu_exec						; REDUNDANT
-		LDA		#$10								; FIX: load menu
+		LDA		#$10								; OPTIMIZED: load menu
 		JSR		_common_yes_no_question_menu
 		BCS		loc_5912E
 		JSR		_sram_data_load
@@ -2658,7 +2658,7 @@ _isle_map_tile_write:
 		STA		(_ptr0),Y
 		RTS
 
-; FIX: optimized function used more than once here
+; OPTIMIZED: optimized function used more than once here
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read577_0:
@@ -2667,7 +2667,7 @@ _isle_map_tile_read577_0:
 		LDA		(_ptr0),Y
 		RTS
 
-; FIX: optimized function used more than once here
+; OPTIMIZED: optimized function used more than once here
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read572_2:
@@ -2676,7 +2676,7 @@ _isle_map_tile_read572_2:
 		LDA		(_tmp2),Y
 		RTS
 
-; FIX: optimized function used more than once here
+; OPTIMIZED: optimized function used more than once here
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read575:
@@ -2834,7 +2834,7 @@ loc_5957F:
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_new_map_sub2
 		BCS		locret_595BA
-		JSR		_isle_map_tile_read577_0				; FIX: optimize size
+		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
 		BNE		loc_595B5
 		LDA		#$05
 		STA		(_ptr0),Y
@@ -3029,7 +3029,7 @@ _generate_new_map_sub1:
 		PHA
 		JSR		_generate_new_map_sub2
 		BCS		loc_597C7
-		JSR		_isle_map_tile_read577_0				; FIX: optimize size
+		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
 		BEQ		loc_597C9
 		CMP		#$04
 		BEQ		loc_597C7
@@ -3094,7 +3094,7 @@ _generate_new_map_sub5:
 		STA		byte_575
 		STA		byte_576
 loc_5980A:
-		JSR		_isle_map_tile_read575				; FIX, optimized by size
+		JSR		_isle_map_tile_read575				; OPTIMIZED size
 		BMI		loc_5988D
 		BEQ		loc_5988D
 		LDA		#$00
@@ -3114,7 +3114,7 @@ loc_59835:
 		STA		byte_578
 		JSR		_generate_new_map_sub2
 		BCS		loc_5987B
-		JSR		_isle_map_tile_read572_2			; FIX, optimized by size
+		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
 		BMI		loc_5987B
 		BEQ		loc_5987B
 		SEC
@@ -3159,7 +3159,7 @@ _generate_new_mapD:
 		STA		byte_575
 		STA		byte_576
 loc_598C5:
-		JSR		_isle_map_tile_read575				; FIX, optimized by size
+		JSR		_isle_map_tile_read575				; OPTIMIZED size
 		CMP		#$03
 		BEQ		loc_598EC
 		JMP		loc_59991
@@ -3212,7 +3212,7 @@ loc_598FC:
 		SEC
 		BCS		loc_5997D
 loc_59957:
-		JSR		_isle_map_tile_read572_2			; FIX, optimized by size
+		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
 		BEQ		loc_5997C
 		SEC
 		BCS		loc_5997D
