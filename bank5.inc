@@ -60,21 +60,21 @@ loc_8801C:
 		AND		#$03
 		CMP		#$03
 		BNE		locret_88076					; special test if heli and plane are in the same
-		LDA		_obj_pos._heli._X				; position currently, they CRAAASHHHHH!!
-		CMP		_obj_pos._plane._X				; so we can crash airplane without request
+		LDA		_obj_pos._heli._COL				; position currently, they CRAAASHHHHH!!
+		CMP		_obj_pos._plane._COL				; so we can crash airplane without request
 		BNE		locret_88076					; NOTE, with this crash we destroy only plane, not heli!
-		LDA		_obj_pos._heli._Y
-		CMP		_obj_pos._plane._Y
+		LDA		_obj_pos._heli._ROW
+		CMP		_obj_pos._plane._ROW
 		BNE		locret_88076
 ;		JMP		_airplane_crash_start			; OPTIMIZED
 _airplane_crash_start:
 		LDA		#$22
 		STA		_game_msg_idx
-		LDX		_obj_pos._plane._X				; cur plane obj pos set to goto pos
-		STX		_goto_dst_tile._X				; the same time X,Y loaded with the same pos
-		LDY		_obj_pos._plane._Y
-;		STX		_goto_dst_tile._Y				; BUG! Y loaded, X stored instead!
-		STY		_goto_dst_tile._Y				; FIX: correct opcode
+		LDX		_obj_pos._plane._COL				; cur plane obj pos set to goto pos
+		STX		_goto_dst_tile._COL				; the same time X,Y loaded with the same pos
+		LDY		_obj_pos._plane._ROW
+;		STX		_goto_dst_tile._ROW				; BUG! Y loaded, X stored instead!
+		STY		_goto_dst_tile._ROW				; FIX: correct opcode
 		LDA		#$01
 		STA		_goto_alert_req
 		STA		_game_msg_awaits_flag
@@ -241,11 +241,11 @@ _obj_plane_landing_test:
 		BEQ		locret_88202
 		CMP		#$04
 		BCS		locret_88202
-		LDA		_obj_pos._plane._X
-		CMP		_last_airport_pos._X
+		LDA		_obj_pos._plane._COL
+		CMP		_last_airport_pos._COL
 		BNE		locret_88202
-		LDA		_obj_pos._plane._Y
-		CMP		_last_airport_pos._Y
+		LDA		_obj_pos._plane._ROW
+		CMP		_last_airport_pos._ROW
 		BNE		locret_88202
 		LDA		#$88
 		STA		_obj_plane_anim_idx
@@ -262,9 +262,9 @@ _obj_flying_retarget:
 		ASL
 		TAY
 		JSR		_obj_flying_get_rand_pos		; choose two random map coords
-		STA		_obj_dst_pos._X,Y
+		STA		_obj_dst_pos._COL,Y
 		JSR		_obj_flying_get_rand_pos
-		STA		_obj_dst_pos._Y,Y
+		STA		_obj_dst_pos._ROW,Y
 		JSR		_obj_fetch
 		JSR		_obj_flying_dst_test_adjust		; check if we already there
 		CMP		#$FF							; repeat if yes
@@ -309,12 +309,12 @@ locret_88BFE:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_flying_dst_test_adjust:
-		LDA		_cur_obj_pos._X					; we have dst pos and
-		CMP		_cur_dst_pos._X					; relative vector to it
+		LDA		_cur_obj_pos._COL					; we have dst pos and
+		CMP		_cur_dst_pos._COL					; relative vector to it
 		BEQ		.test_vert						; so we decide the direction
 		BCS		.fly_left_test_hor
-		LDA		_cur_obj_pos._Y					; fly right, test hor
-		CMP		_cur_dst_pos._Y
+		LDA		_cur_obj_pos._ROW					; fly right, test hor
+		CMP		_cur_dst_pos._ROW
 		BEQ		.fly_right
 		BCC		.fly_right_down
 		LDA		#$01							; fly right-up
@@ -326,8 +326,8 @@ _obj_flying_dst_test_adjust:
 		LDA		#$03
 		RTS
 .test_vert:
-		LDA		_cur_obj_pos._Y
-		CMP		_cur_dst_pos._Y
+		LDA		_cur_obj_pos._ROW
+		CMP		_cur_dst_pos._ROW
 		BEQ		.stop
 		BCC		.fly_down
 		LDA		#$00							; fly up
@@ -336,8 +336,8 @@ _obj_flying_dst_test_adjust:
 		LDA		#$04
 		RTS
 .fly_left_test_hor:
-		LDA		_cur_obj_pos._Y
-		CMP		_cur_dst_pos._Y
+		LDA		_cur_obj_pos._ROW
+		CMP		_cur_dst_pos._ROW
 		BEQ		.fly_left
 		BCS		.fly_left_up
 		LDA		#$05							; fly left-down
@@ -355,12 +355,12 @@ _obj_flying_dst_test_adjust:
 ;		LDA		_obj_cur_spr_idx._train			; also for train retarget, but not now
 ;		AND		#$02							; Y do not used here as an argument with
 ;		BEQ		loc_88BCE						; _cur_obj_idx. the only place it get's
-;		LDA		_obj_shift._train._X			; similar value, in _obj_flying_retarget
+;		LDA		_obj_shift._train._COL			; similar value, in _obj_flying_retarget
 ;		CMP		#$04							; but Y there is _cur_obj_idx*2, so we
 ;		BEQ		loc_88BD9						; can't have 3 here ever.
 ;		BEQ		loc_88BD5						; <- luke, i'm a second BEQ in row to a different location lol
 ;loc_88BCE:
-;		LDA		_obj_shift._train._Y			; this code is just a trash, never get executed
+;		LDA		_obj_shift._train._ROW			; this code is just a trash, never get executed
 ;		CMP		#$04
 ;		BEQ		loc_88BD9
 ;loc_88BD5:
@@ -402,10 +402,10 @@ _obj_ship_dst_test:
 ; so if ship moving vertically or horizontally,
 ; we never arrive to the dest
 ; -
-;		LDA		_obj_shift._ship._X
+;		LDA		_obj_shift._ship._COL
 ;		CMP		#$04
 ;		BNE		loc_8828E
-;		LDA		_obj_shift._ship._Y
+;		LDA		_obj_shift._ship._ROW
 ;		CMP		#$04
 ;		BNE		loc_8828E
 ; -
@@ -413,24 +413,24 @@ _obj_ship_dst_test:
 ; test here for virtually possible not moving at all state
 ; but actually it handled with rotate routine
 ; -
-		LDX		_obj_shift._ship._X
+		LDX		_obj_shift._ship._COL
 		BEQ		._ship_no_x_move
-		LDA		_obj_shift._ship._X
+		LDA		_obj_shift._ship._COL
 		CMP		#$04
 		BNE		loc_8828E
 ._ship_no_x_move:
-		LDX		_obj_shift._ship._Y
+		LDX		_obj_shift._ship._ROW
 		BEQ		._ship_no_y_move
-		LDA		_obj_shift._ship._Y
+		LDA		_obj_shift._ship._ROW
 		CMP		#$04
 		BNE		loc_8828E
 ._ship_no_y_move:
 ; -
-		LDA		_cur_obj_pos._X
-		CMP		_obj_dst_pos._ship._X
+		LDA		_cur_obj_pos._COL
+		CMP		_obj_dst_pos._ship._COL
 		BNE		loc_8828E
-		LDA		_cur_obj_pos._Y
-		CMP		_obj_dst_pos._ship._Y
+		LDA		_cur_obj_pos._ROW
+		CMP		_obj_dst_pos._ship._ROW
 		BNE		loc_8828E
 		LDA		#$FF
 		RTS
@@ -483,14 +483,14 @@ _obj_ship_retarget:
 		LDA		_cur_obj_idx
 		ASL
 		TAY
-		LDA		_obj_dst_pos._X,Y
+		LDA		_obj_dst_pos._COL,Y
 		CLC
 		ADC		_obj_dir_delta_list,X
-		STA		_obj_dst_pos._X,Y
-		LDA		_obj_dst_pos._Y,Y
+		STA		_obj_dst_pos._COL,Y
+		LDA		_obj_dst_pos._ROW,Y
 		CLC
 		ADC		_obj_dir_delta_list+1,X
-		STA		_obj_dst_pos._Y,Y
+		STA		_obj_dst_pos._ROW,Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -545,11 +545,11 @@ _obj_map_tile_dir_buf_ofs_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_ship_max_range_test:
-		LDA		_cur_obj_pos._X					; here we should decide if we can
+		LDA		_cur_obj_pos._COL					; here we should decide if we can
 		BEQ		.ship_leftmost_pos				; go in the selected direction
 		CMP		#$4B
 		BEQ		.ship_rightmost_pos
-		LDA		_cur_obj_pos._Y
+		LDA		_cur_obj_pos._ROW
 		BEQ		.ship_top_pos
 		CMP		#$4B
 		BEQ		.ship_bottom_pos
@@ -621,19 +621,19 @@ loc_88347:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_train_dst_test:
-		LDX		_obj_shift._train._X
+		LDX		_obj_shift._train._COL
 		LDA		_obj_cur_spr_idx._train			; select movement direction
 		AND		#$02							; may be only vert or hor
 		BNE		loc_88357
-		LDX		_obj_shift._train._Y
+		LDX		_obj_shift._train._ROW
 loc_88357:
 		CPX		#$04
 		BNE		locret_8836D					; if timers are max
-		LDA		_cur_obj_pos._X					; test if we in dest point
-		CMP		_obj_dst_pos._train._X
+		LDA		_cur_obj_pos._COL					; test if we in dest point
+		CMP		_obj_dst_pos._train._COL
 		BNE		locret_8836D
-		LDA		_cur_obj_pos._Y
-		CMP		_obj_dst_pos._train._Y
+		LDA		_cur_obj_pos._ROW
+		CMP		_obj_dst_pos._train._ROW
 		BNE		locret_8836D
 		LDA		#$FF							; if yes, return FF
 locret_8836D:
@@ -807,22 +807,22 @@ loc_88461:
 		STA		_obj_dst_spr_idx._train
 		LDA		_train_dst_data_table+1,X
 		STA		_obj_spr_delta._train
-		LDX		_obj_shift._train._X
-		LDA		_obj_shift._train._Y
-		STA		_obj_shift._train._X
-		STX		_obj_shift._train._Y
+		LDX		_obj_shift._train._COL
+		LDA		_obj_shift._train._ROW
+		STA		_obj_shift._train._COL
+		STX		_obj_shift._train._ROW
 .train_dest_pos_set:
 		LDA		_obj_dst_spr_idx._train
 		ASL
 		TAX
-		LDA		_obj_dst_pos._train._X
+		LDA		_obj_dst_pos._train._COL
 		CLC
 		ADC		_obj_dir_delta_list,X
-		STA		_obj_dst_pos._train._X
-		LDA		_obj_dst_pos._train._Y
+		STA		_obj_dst_pos._train._COL
+		LDA		_obj_dst_pos._train._ROW
 		CLC
 		ADC		_obj_dir_delta_list+1,X
-		STA		_obj_dst_pos._train._Y
+		STA		_obj_dst_pos._train._ROW
 		RTS
 
 _train_dst_data_table:
@@ -1122,15 +1122,15 @@ loc_88754:
 		TXA
 		ORA		#$80
 		STA		_obj_monster_anim_phase1		; retargeted flag
-		LDA		_obj_dst_pos._monster._X		; choose direction delta
-		CMP		_obj_pos._monster._X
+		LDA		_obj_dst_pos._monster._COL		; choose direction delta
+		CMP		_obj_pos._monster._COL
 		BCS		loc_8876A
 		LDA		_obj_monster_chr_idx			; adjust direction to the dst
 		ORA		#$01							; the same time change CHR mode
 		STA		_obj_monster_chr_idx			; and bank
 loc_8876A:
-		LDA		_obj_dst_pos._monster._Y		; the same for Y
-		CMP		_obj_pos._monster._Y
+		LDA		_obj_dst_pos._monster._ROW		; the same for Y
+		CMP		_obj_pos._monster._ROW
 		BCS		locret_8877A
 		LDA		_obj_monster_chr_idx
 		ORA		#$30
@@ -1240,8 +1240,8 @@ loc_887A3:
 		JSR		_obj_tornado_move
 		CMP		#$FF
 		BEQ		locret_887B9
-		LDX		_cur_obj_pos._X
-		LDY		_cur_obj_pos._Y
+		LDX		_cur_obj_pos._COL
+		LDY		_cur_obj_pos._ROW
 		JSR		_far_fire_or_destroy_map_tile_ex
 loc_887B6:
 		JMP		_obj_draw
@@ -1252,34 +1252,34 @@ locret_887B9:
 _obj_tornado_move:
 		LDX		#$00
 		STX		_tmp15
-		LDA		_cur_obj_pos._X
-		CMP		_cur_dst_pos._X
+		LDA		_cur_obj_pos._COL
+		CMP		_cur_dst_pos._COL
 		BEQ		loc_887D8
 		BCC		loc_887CF
 		LDX		#$FF
-		SBC		_cur_dst_pos._X
+		SBC		_cur_dst_pos._COL
 		BCS		loc_887D8
 loc_887CF:
 		LDX		#$01
-		LDA		_cur_dst_pos._X
+		LDA		_cur_dst_pos._COL
 		SEC
-		SBC		_cur_obj_pos._X
+		SBC		_cur_obj_pos._COL
 loc_887D8:
 		STA		_tmp15
 		LDY		#$00
-		LDA		_cur_obj_pos._Y
-		CMP		_cur_dst_pos._Y
+		LDA		_cur_obj_pos._ROW
+		CMP		_cur_dst_pos._ROW
 		BEQ		loc_88834
 		BCC		loc_887F1
-		SBC		_cur_dst_pos._Y
+		SBC		_cur_dst_pos._ROW
 		CMP		_tmp15
 		BCC		loc_88806
 		LDY		#$FF
 		BMI		loc_887FE
 loc_887F1:
-		LDA		_cur_dst_pos._Y
+		LDA		_cur_dst_pos._ROW
 		SEC
-		SBC		_cur_obj_pos._Y
+		SBC		_cur_obj_pos._ROW
 		CMP		_tmp15
 		BCC		loc_88806
 		LDY		#$01
@@ -1380,8 +1380,8 @@ loc_88110:
 		LDA		_obj_monster_spr_idx
 		STA		_spr_insert_args._idx
 		JSR		_obj_spr_draw
-		LDX		_cur_obj_pos._X
-		LDY		_cur_obj_pos._Y
+		LDX		_cur_obj_pos._COL
+		LDY		_cur_obj_pos._ROW
 		JMP		_far_fire_or_destroy_map_tile_ex
 .obj_tornado_draw:
 		LDX		_obj_tornado_counter
@@ -1405,9 +1405,9 @@ loc_88110:
 _obj_spr_draw:
 		LDY		#$00							; OPTIMIZED size
 		JSR		_out_of_screen_test
-;		LDA		_cur_obj_pos._X					; out-of-screen test for X
+;		LDA		_cur_obj_pos._COL					; out-of-screen test for X
 ;		SEC
-;		SBC		_cur_map_wnd_pos._X
+;		SBC		_cur_map_wnd_pos._COL
 ;		BCS		loc_889F7
 ;		CMP		#$FD
 ;		BCS		loc_889FB
@@ -1418,9 +1418,9 @@ _obj_spr_draw:
 ;loc_889FB:
 		LDY		#$01
 		JSR		_out_of_screen_test
-;		LDA		_cur_obj_pos._Y					; the same for Y
+;		LDA		_cur_obj_pos._ROW					; the same for Y
 ;		SEC
-;		SBC		_cur_map_wnd_pos._Y
+;		SBC		_cur_map_wnd_pos._ROW
 ;		BCS		loc_88A09
 ;		CMP		#$FD
 ;		BCS		loc_88A0D
@@ -1434,31 +1434,31 @@ loc_88A0D:
 		TAX
 		LDY		#$00
 		JSR		_map_to_screen_conv				; OPTIMIZED size
-;		LDA		_cur_obj_pos._X
+;		LDA		_cur_obj_pos._COL
 ;		SEC
-;		SBC		_cur_map_wnd_pos._X
+;		SBC		_cur_map_wnd_pos._COL
 ;		CLC
 ;		ADC		#$07
 ;		ASL
 ;		ASL
 ;		ASL
 ;		CLC
-;		ADC		_obj_shift._X,X
-;		STA		_spr_insert_args._pos._X
+;		ADC		_obj_shift._COL,X
+;		STA		_spr_insert_args._pos._COL
 		LDY		#$01
 		INX
 		JSR		_map_to_screen_conv
-;		LDA		_cur_obj_pos._Y
+;		LDA		_cur_obj_pos._ROW
 ;		SEC
-;		SBC		_cur_map_wnd_pos._Y
+;		SBC		_cur_map_wnd_pos._ROW
 ;		CLC
 ;		ADC		#$07
 ;		ASL
 ;		ASL
 ;		ASL
 ;		CLC
-;		ADC		_obj_shift._Y,X
-;		STA		_spr_insert_args._pos._Y
+;		ADC		_obj_shift._ROW,X
+;		STA		_spr_insert_args._pos._ROW
 ; -
 ;		LDA		_cur_obj_idx					; REDUNDANT, check for special train hide
 ;		CMP		#$03							; mode, can be done only for train
@@ -1484,7 +1484,7 @@ loc_88A0D:
 ;		TAX
 ;		LDA		#$00
 ;		STA		_spr_insert_args._clip
-;		LDA		_spr_insert_args._pos._X
+;		LDA		_spr_insert_args._pos._COL
 ;		CLC
 ;		ADC		_tornado_spr_anim_list,X
 ;		CMP		#$38
@@ -1493,7 +1493,7 @@ loc_88A0D:
 ;		ORA		#$01
 ;		STA		_spr_insert_args._clip
 ;loc_88A5B:
-;		LDA		_spr_insert_args._pos._Y
+;		LDA		_spr_insert_args._pos._ROW
 ;		CLC
 ;		ADC		_tornado_spr_anim_list,X
 ;		CMP		#$38
@@ -1503,7 +1503,7 @@ loc_88A0D:
 ;		STA		_spr_insert_args._clip
 ;		BNE		locret_88A7D
 ;loc_88A6D:
-;		LDA		_spr_insert_args._pos._Y
+;		LDA		_spr_insert_args._pos._ROW
 ;		CLC
 ;		ADC		_tornado_spr_anim_list,X
 ;		CMP		#$D9
@@ -1544,7 +1544,7 @@ loc_88A8C:
 		LDA		(_tmp15),Y
 		STA		_tmp15+1
 		STX		_tmp15
-		DEC		_spr_insert_args._pos._Y
+		DEC		_spr_insert_args._pos._ROW
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_88AAC:
@@ -1554,7 +1554,7 @@ loc_88AAC:
 		BEQ		loc_88B09
 		INY
 		CLC
-		ADC		_spr_insert_args._pos._Y
+		ADC		_spr_insert_args._pos._ROW
 		CMP		#$30
 		BCS		loc_88AC4
 loc_88ABC:
@@ -1593,7 +1593,7 @@ loc_88ADC:
 		LDA		(_tmp15),Y
 		INY
 		CLC
-		ADC		_spr_insert_args._pos._X
+		ADC		_spr_insert_args._pos._COL
 		CMP		#$31
 		BCC		loc_88ABF
 		CMP		#$39
@@ -1668,7 +1668,7 @@ _obj_spr_insert_ex:
 		INX
 		LDA		(_tmp15),Y
 		CLC
-		ADC		_spr_insert_args._pos._X
+		ADC		_spr_insert_args._pos._COL
 		STA		_spr_buf,X
 		INX
 		TYA
@@ -1699,7 +1699,7 @@ _obj_spr_clipC_insert:
 		INX
 		LDA		(_tmp15),Y
 		CLC
-		ADC		_spr_insert_args._pos._Y
+		ADC		_spr_insert_args._pos._ROW
 		STA		_spr_buf,X
 		INX
 		INY
@@ -1713,7 +1713,7 @@ _obj_spr_clipC_insert:
 		INY
 		LDA		(_tmp15),Y
 		CLC
-		ADC		_spr_insert_args._pos._X
+		ADC		_spr_insert_args._pos._COL
 		STA		_spr_buf,X
 		INX
 		INY
@@ -1727,7 +1727,7 @@ _map_scr_obj_spr_insert:
 		ASL
 		TAX
 		LDY		_spr_buf_pos
-		LDA		_obj_pos._Y,X
+		LDA		_obj_pos._ROW,X
 		LDX		_cur_obj_idx
 		ASL
 		CLC
@@ -1856,14 +1856,14 @@ _obj_fetch:
 		LDA		_cur_obj_idx
 		ASL
 		TAX
-		LDA		_obj_pos._X,X
-		STA		_cur_obj_pos._X
-		LDA		_obj_pos._Y,X
-		STA		_cur_obj_pos._Y
-		LDA		_obj_dst_pos._X,X
-		STA		_cur_dst_pos._X
-		LDA		_obj_dst_pos._Y,X
-		STA		_cur_dst_pos._Y
+		LDA		_obj_pos._COL,X
+		STA		_cur_obj_pos._COL
+		LDA		_obj_pos._ROW,X
+		STA		_cur_obj_pos._ROW
+		LDA		_obj_dst_pos._COL,X
+		STA		_cur_dst_pos._COL
+		LDA		_obj_dst_pos._ROW,X
+		STA		_cur_dst_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1871,18 +1871,18 @@ _obj_flush:
 		LDA		_cur_obj_idx
 		ASL
 		TAX
-		LDA		_cur_obj_pos._X
-		STA		_obj_pos._X,X
-		LDA		_cur_obj_pos._Y
-		STA		_obj_pos._Y,X
+		LDA		_cur_obj_pos._COL
+		STA		_obj_pos._COL,X
+		LDA		_cur_obj_pos._ROW
+		STA		_obj_pos._ROW,X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_obj_map_ptr:
-;		LDY		_cur_obj_pos._Y
+;		LDY		_cur_obj_pos._ROW
 ;		LDA		off_888F5,Y
 ;		CLC
-;		ADC		_cur_obj_pos._X
+;		ADC		_cur_obj_pos._COL
 ;		STA		_tmp15
 ;		LDA		off_88941,Y
 ;		ADC		#$00
@@ -1890,7 +1890,7 @@ _get_cur_obj_map_ptr:
 ; FIX: WRANING, make sure wram_map_buf is at the beginning of the page, instead
 ; use full 16-bit addition
 ;
-		BUFPOS	_tmp15,_cur_obj_pos._X,_cur_obj_pos._Y,#$4C,#>[_wram_map_buf]
+		BUFPOS	_tmp15,_cur_obj_pos._COL,_cur_obj_pos._ROW,#$4C,#>[_wram_map_buf]
 		RTS
 
 ; FIX: common dir delta list
@@ -2175,11 +2175,11 @@ _obj4_spr_lib:
 		.WORD	_spr_monster11
 		.WORD	_spr_monster12
 		.WORD	_spr_monster13
-		.WORD	_spr_monster14
+		.WORD	_spr_monster14					; never happened before
 		.WORD	_spr_monster15
 		.WORD	_spr_monster16
 		.WORD	_spr_monster17
-		.WORD	_spr_monster18
+		.WORD	_spr_monster18					; never happened before
 		.WORD	_spr_monster19
 		.WORD	_spr_monster1A
 		.WORD	_spr_monster1B
@@ -3460,12 +3460,12 @@ loc_88CE0:
 		ADC		_cur_port_type_select_idx
 loc_88CEC:
 		STA		_spr_insert_raw_args._idx
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		AND		#$F8
-		STA		_spr_insert_raw_args._pos._X
-		LDA		_cur_game_cursor_scr_pos._Y
+		STA		_spr_insert_raw_args._pos._COL
+		LDA		_cur_game_cursor_scr_pos._ROW
 		AND		#$F8
-		STA		_spr_insert_raw_args._pos._Y
+		STA		_spr_insert_raw_args._pos._ROW
 ;		JMP		_spr_lib_raw_insert				; REDUNDANT
 
 ; !FALLTHROUGH!
@@ -3481,7 +3481,7 @@ _spr_lib_raw_insert:
 		STA		_tmp15
 		LDA		_spr_lib_hi,X
 		STA		_tmp15+1
-		DEC		_spr_insert_raw_args._pos._Y
+		DEC		_spr_insert_raw_args._pos._ROW
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_88C9C:
@@ -3490,7 +3490,7 @@ loc_88C9C:
 		BEQ		loc_88CC5
 		INY
 		CLC
-		ADC		_spr_insert_raw_args._pos._Y
+		ADC		_spr_insert_raw_args._pos._ROW
 		STA		_spr_buf,X
 		INX
 		LDA		(_tmp15),Y
@@ -3504,7 +3504,7 @@ loc_88C9C:
 		LDA		(_tmp15),Y
 		INY
 		CLC
-		ADC		_spr_insert_raw_args._pos._X
+		ADC		_spr_insert_raw_args._pos._COL
 		STA		_spr_buf,X
 		INX
 		JMP		loc_88C9C

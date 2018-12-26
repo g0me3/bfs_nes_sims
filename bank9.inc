@@ -592,12 +592,12 @@ loc_EA507:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_A_info_maps_draw:
-		LDA		_cur_map_wnd_pos._Y
+		LDA		_cur_map_wnd_pos._ROW
 		ASL
 		CLC
 		ADC		#$3C
 		STA		byte_138
-		LDA		_cur_map_wnd_pos._X
+		LDA		_cur_map_wnd_pos._COL
 		ASL
 		CLC
 		ADC		#$45
@@ -704,12 +704,12 @@ sub_EA5F2:
 		SEC
 		SBC		#$3C
 		LSR
-		STA		_cur_map_wnd_pos._Y
+		STA		_cur_map_wnd_pos._ROW
 		LDA		byte_139
 		SEC
 		SBC		#$45
 		LSR
-		STA		_cur_map_wnd_pos._X
+		STA		_cur_map_wnd_pos._COL
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -756,12 +756,12 @@ loc_EA65F:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA662:
-		LDY		_cur_game_cursor_scr_pos._Y
+		LDY		_cur_game_cursor_scr_pos._ROW
 		CPY		#$40
 		BCC		loc_EA6A2
 		CPY		#$C0
 		BCS		loc_EA6A2
-		LDX		_cur_game_cursor_scr_pos._X
+		LDX		_cur_game_cursor_scr_pos._COL
 		CPX		#$30
 		BCS		loc_EA6A2
 		CPX		#$10
@@ -1589,9 +1589,9 @@ loc_EAC56:
 		AND		#$FE
 		TAY
 		LDA		byte_EB69F,Y
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		LDA		byte_EB69F+1,Y
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JMP		_wait_for_nmi
@@ -1888,9 +1888,9 @@ loc_EAEEC:
 		STA		_fiscal_year_results_draw_req
 		STA		_game_core_state
 		LDA		#$AC
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		LDA		#$34
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$00
 		STA		_tmp584
 		STA		_pad0_autorep_press

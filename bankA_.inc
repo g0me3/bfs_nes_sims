@@ -21,7 +21,7 @@ _apu_se20_loop:
 		BNE		locret_195898
 		LDA		#$00
 		STA		_apu_se_loop_flags
-		JSR		_apu_status_reset
+		JMP		_apu_status_reset
 locret_195898:
 		RTS
 byte_195899:
@@ -46,7 +46,7 @@ _apu_se40_loop:
 		BNE		locret_1958CE
 		LDA		#$00
 		STA		_apu_se_loop_flags
-		JSR		_apu_status_reset
+		JMP		_apu_status_reset
 locret_1958CE:
 		RTS
 byte_1958CF:
@@ -85,7 +85,7 @@ loc_195861:
 		BNE		locret_195876
 		LDA		#$00
 		STA		_apu_se_loop_flags
-		JSR		_apu_status_reset
+		JMP		_apu_status_reset
 locret_195876:
 		RTS
 
@@ -378,7 +378,7 @@ loc_195AB1:
 		BNE		locret_195ABC
 		LDA		#$00
 		STA		_apu_se_loop_flags+1
-		JSR		_apu_status_reset
+		JMP		_apu_status_reset
 locret_195ABC:
 		RTS
 byte_195ABD:
@@ -417,7 +417,7 @@ _apu_se2000_loop:
 		BNE		locret_195B70
 		LDA		#$00
 		STA		_apu_se_loop_flags+1
-		JSR		_apu_status_reset
+		JMP		_apu_status_reset
 locret_195B70:
 		RTS
 
@@ -446,7 +446,7 @@ _apu_se4000_loop:
 		BNE		locret_195BA4
 		LDA		#$00
 		STA		_apu_se_loop_flags+1
-		JSR		_apu_status_reset
+		JMP		_apu_status_reset
 locret_195BA4:
 		RTS
 

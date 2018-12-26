@@ -32,7 +32,7 @@ loc_11E047:
 		JSR		_map_corruption_tiles_animate
 		LDA		_frames_counter
 		STA		_rand_seed
-		ADDW8	_city._tax_year_rate,_city._tax_rate
+		ADDWB	_city._tax_year_rate,_city._tax_rate
 		MOVWI	_power_stations_list_pos,$0000
 		LDA		#$07
 		STA		_thread0_flags+1
@@ -168,8 +168,8 @@ loc_11E1A2:
 		PHA
 		TYA
 		PHA
-		STX		_tmp_map_pos._X
-		STY		_tmp_map_pos._Y
+		STX		_tmp_map_pos._COL
+		STY		_tmp_map_pos._ROW
 		JSR		_get_building_map_tile			; all 76x76 map tiles are
 		JSR		_collect_map_tiles_stats		; collected
 		PLA										; now we have stats about
@@ -190,18 +190,18 @@ loc_11E1A2:
 		BCS		loc_11E1F2
 		ORA		#$01							; init deploy of helicopter object
 		STA		_obj_active_flags
-		LDY		_last_airport_pos._X			; starting point is last checked
+		LDY		_last_airport_pos._COL			; starting point is last checked
 		INY										; airport on map (so it will be always
 		INY										; bottom-rightmost airport)
-		STY		_obj_pos._heli._X
+		STY		_obj_pos._heli._COL
 		INY
-		STY		_obj_dst_pos._heli._X
-		LDY		_last_airport_pos._Y
+		STY		_obj_dst_pos._heli._COL
+		LDY		_last_airport_pos._ROW
 		INY
 		INY
-		STY		_obj_pos._heli._Y
+		STY		_obj_pos._heli._ROW
 		INY
-		STY		_obj_dst_pos._heli._Y
+		STY		_obj_dst_pos._heli._ROW
 		LDA		#$03
 		STA		_obj_cur_spr_idx._heli
 		BNE		loc_11E230
@@ -216,16 +216,16 @@ loc_11E1F2:
 		STA		_obj_plane_anim_idx
 		LDA		#$20
 		STA		_obj_plane_anim_timer
-		LDA		_last_airport_pos._X
-		STA		_obj_dst_pos._plane._X
+		LDA		_last_airport_pos._COL
+		STA		_obj_dst_pos._plane._COL
 		CLC
 		ADC		#$03
-		STA		_obj_pos._plane._X
-		LDY		_last_airport_pos._Y
-		STY		_obj_pos._plane._Y
+		STA		_obj_pos._plane._COL
+		LDY		_last_airport_pos._ROW
+		STY		_obj_pos._plane._ROW
 		INY
 		INY
-		STY		_obj_dst_pos._plane._Y
+		STY		_obj_dst_pos._plane._ROW
 		LDA		#$06
 		STA		_obj_cur_spr_idx._plane
 		BNE		loc_11E230
@@ -244,10 +244,10 @@ loc_11E23F:
 		LDA		_obj_active_flags
 		ORA		#$04
 		STA		_obj_active_flags
-		LDA		_obj_pos._ship._X				; set start pos to end pos
-		STA		_obj_dst_pos._ship._X			; usually bottom-rightmost water tile
-		LDY		_obj_pos._ship._Y
-		STY		_obj_dst_pos._ship._Y
+		LDA		_obj_pos._ship._COL				; set start pos to end pos
+		STA		_obj_dst_pos._ship._COL			; usually bottom-rightmost water tile
+		LDY		_obj_pos._ship._ROW
+		STY		_obj_dst_pos._ship._ROW
 		LDA		#$07							; upper left direction
 		STA		_obj_cur_spr_idx._ship			; select right oriented tile
 		BNE		loc_11E230						; test if already deployed
@@ -439,14 +439,14 @@ _do_flood:
 		JSR		_rand
 		AND		#$07
 		BNE		loc_11E3FF
-		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._COL
 		CLC
 		ADC		byte_11FC26,Y
-		STA		_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		STA		_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		CLC
 		ADC		byte_11FC2A,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_tmp_map_pos_test_max
 		BCS		loc_11E3F7
 		JSR		_get_building_map_tile
@@ -456,8 +456,8 @@ _do_flood:
 		BEQ		loc_11E3F7
 		JSR		_flood_cur_map_tile
 loc_11E3F7:
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 loc_11E3FF:
 		PLA
 		TAY
@@ -469,7 +469,7 @@ loc_11E405:
 		AND		#$07
 		BNE		locret_11E411
 		LDA		#$90
-		JSR		_map_tile_write
+		JMP		_map_tile_write
 locret_11E411:
 		RTS
 
@@ -481,7 +481,7 @@ _polluted_tile_collect:
 		CMP		#$10
 		BCS		locret_11E423
 		LDA		#$90
-		JSR		_map_tile_write
+		JMP		_map_tile_write
 locret_11E423:
 		RTS
 
@@ -507,7 +507,7 @@ _road_tile_collect:
 		LDX		#$B4
 loc_11E452:
 		TXA
-		JSR		_map_tile_write
+		JMP		_map_tile_write
 locret_11E456:
 		RTS
 
@@ -526,20 +526,20 @@ _rails_collect:
 		BEQ		_no_train_start
 		CMP		#$BC
 		BEQ		_no_train_start
-		LDA		_tmp_map_pos._X
-		STA		_obj_pos._train._X
-		STA		_obj_dst_pos._train._X
-		LDA		_tmp_map_pos._Y
-		STA		_obj_pos._train._Y
-		STA		_obj_dst_pos._train._Y
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
+		STA		_obj_pos._train._COL
+		STA		_obj_dst_pos._train._COL
+		LDA		_tmp_map_pos._ROW
+		STA		_obj_pos._train._ROW
+		STA		_obj_dst_pos._train._ROW
+		LDA		_tmp_map_pos._COL
 		CMP		#$4B
 		BCS		_no_train_start
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$4B
 		BCS		_no_train_start
 		LDX		#$02
-		INC		_tmp_map_pos._X
+		INC		_tmp_map_pos._COL
 loc_11E49F:
 		JSR		_map_tile_read
 		TAY
@@ -558,15 +558,15 @@ loc_11E4BA:
 		CPX		#$04
 		BEQ		_no_train_start
 		LDX		#$04
-		DEC		_tmp_map_pos._X
-		INC		_tmp_map_pos._Y
+		DEC		_tmp_map_pos._COL
+		INC		_tmp_map_pos._ROW
 		BPL		loc_11E49F
 loc_11E4C8:
 		STX		_obj_cur_spr_idx._train
 		STX		_obj_dst_spr_idx._train
 		LDA		#$00
-		STA		_obj_shift._train._X
-		STA		_obj_shift._train._Y
+		STA		_obj_shift._train._COL
+		STA		_obj_shift._train._ROW
 		LDA		_obj_active_flags
 		ORA		#$08
 		STA		_obj_active_flags
@@ -807,14 +807,14 @@ _C_areas_twin_blocks_delete_test:
 		SEC
 		SBC		#$35
 		TAY
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		_twin_area_ofsX_list,Y
-		STA		_tmp_map_pos._X
-		LDA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		_twin_area_ofsY_list,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		TYA
 		PHA
 		JSR		_map_tile_read
@@ -845,14 +845,14 @@ _R_areas_twin_blocks_delete_test:
 		SEC
 		SBC		#$15
 		TAY
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		_twin_area_ofsX_list,Y
-		STA		_tmp_map_pos._X
-		LDA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		_twin_area_ofsY_list,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		TYA
 		PHA
 		JSR		_map_tile_read
@@ -1032,10 +1032,10 @@ loc_11E854:
 		BMI		loc_11E860
 		INC		_airports_count
 loc_11E860:
-		LDA		_tmp_map_pos._X
-		STA		_last_airport_pos._X
-		LDA		_tmp_map_pos._Y
-		STA		_last_airport_pos._Y
+		LDA		_tmp_map_pos._COL
+		STA		_last_airport_pos._COL
+		LDA		_tmp_map_pos._ROW
+		STA		_last_airport_pos._ROW
 		RTS
 loc_11E86D:
 		CMP		#$62
@@ -1079,10 +1079,10 @@ loc_11E894:
 ; the code here should either search for nearest sea tile around the port
 ; or use other saved data of any sea tile already found.
 ;
-;		LDA		_tmp_map_pos._X
-;		STA		_obj_pos._ship._X
-;		LDA		_tmp_map_pos._Y
-;		STA		_obj_pos._ship._Y
+;		LDA		_tmp_map_pos._COL
+;		STA		_obj_pos._ship._COL
+;		LDA		_tmp_map_pos._ROW
+;		STA		_obj_pos._ship._ROW
 ;-
 		MOVW	_obj_pos._ship,_last_water_tile_pos
 locret_11E8AC:
@@ -1127,12 +1127,12 @@ locret_11E8D8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_power_grid_map_bit:
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._ROW
 		PUSHB	#$4C
 		JSR		_mmc5_mul8to8
 		PLA
 		CLC
-		ADC		_tmp_map_pos._X
+		ADC		_tmp_map_pos._COL
 		STA		_tmpE6
 		TAY
 		PLA
@@ -1290,9 +1290,9 @@ sub_11E9EF:
 		JSR		_sram_on
 		LDY		_tmp6D2
 		INY
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		STA		_fire_radius_map_buf+$31,Y
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		STA		_tmp_recalc_bufs+$1B,Y
 		STY		_tmp6D2
 		JMP		_sram_off
@@ -1301,9 +1301,9 @@ sub_11E9EF:
 sub_11EA08:
 		LDY		_tmp6D2
 		LDA		_fire_radius_map_buf+$31,Y
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		_tmp_recalc_bufs+$1B,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		DEY
 		STY		_tmp6D2
 		RTS
@@ -1370,10 +1370,10 @@ locret_11EA7C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_pos_test_max:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$4C
 		BCS		locret_11EA89
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$4C
 locret_11EA89:
 		RTS
@@ -1385,16 +1385,16 @@ _test_4x4_building_for_surrond_transports:
 		LDY		#$07
 loc_11EA91:
 		STY		_tmpE6
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		_4x4_building_surrond_tiles_ofsX_list,Y
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		CMP		#$4C
 		BCS		loc_11EABA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		_4x4_building_surrond_tiles_ofsY_list,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		CMP		#$4C
 		BCS		loc_11EABA
 		JSR		_map_tile_read
@@ -1426,10 +1426,10 @@ _land_value_pollution_recalc:
 		STA		_tmp6CC+1
 		STA		_tmp6CE
 		STA		_tmp6CE+1
-		STA		_tmp_area_pos._Y
+		STA		_tmp_area_pos._ROW
 loc_11EAEC:
 		LDA		#$00
-		STA		_tmp_area_pos._X
+		STA		_tmp_area_pos._COL
 loc_11EAF1:
 		JSR		_calc_map_area_pollution_level
 		LDA		_tmpE6
@@ -1502,14 +1502,14 @@ loc_11EB64:
 		PLA
 		JSR		_write_land_value_map_nibble
 loc_11EB70:
-		INC		_tmp_area_pos._X
-		LDA		_tmp_area_pos._X
+		INC		_tmp_area_pos._COL
+		LDA		_tmp_area_pos._COL
 		CMP		#$13
 		BEQ		loc_11EB7D
 		JMP		loc_11EAF1
 loc_11EB7D:
-		INC		_tmp_area_pos._Y
-		LDA		_tmp_area_pos._Y
+		INC		_tmp_area_pos._ROW
+		LDA		_tmp_area_pos._ROW
 		CMP		#$13
 		BEQ		loc_11EB8A
 		JMP		loc_11EAEC
@@ -1540,10 +1540,10 @@ loc_11EBB7:
 		JSR		_interpolate_recalc_with_select_poll_popg_popd_crime_land_to_recalc_map
 		LDA		#$00
 loc_11EBDA:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11EBDF:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_read_tmp_recalc_div4_mul13_map_nibble
 		PHA
 		CMP		#$00
@@ -1557,12 +1557,12 @@ loc_11EBDF:
 loc_11EBFE:
 		PLA
 		JSR		_write_pollution_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EBDF
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
 		CMP		#$4C
@@ -1585,15 +1585,15 @@ _calc_map_area_pollution_level:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE7
-		LDA		_tmp_area_pos._Y
+		LDA		_tmp_area_pos._ROW
 		ASL
 		ASL
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11EC58:
-		LDA		_tmp_area_pos._X
+		LDA		_tmp_area_pos._COL
 		ASL
 		ASL
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EC60:
 		JSR		_get_building_map_tile
 		LDY		_last_map_tile_read
@@ -1611,12 +1611,12 @@ loc_11EC71:
 		LDA		#$FF
 loc_11EC7C:
 		STA		_tmpE7
-		INC		_tmp_map_pos._X
-		LDA		_tmp_map_pos._X
+		INC		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._COL
 		AND		#$03
 		BNE		loc_11EC60
-		INC		_tmp_map_pos._Y
-		LDA		_tmp_map_pos._Y
+		INC		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._ROW
 		AND		#$03
 		BNE		loc_11EC58
 		RTS
@@ -1632,10 +1632,10 @@ _population_dencity_recalc:
 		STY		_tmp6D0
 		STY		_tmp6D0+1
 loc_11ECAA:
-		STY		_tmp_map_pos._Y
+		STY		_tmp_map_pos._ROW
 		LDY		#$00
 loc_11ECAF:
-		STY		_tmp_map_pos._X
+		STY		_tmp_map_pos._COL
 		JSR		_map_tile_read
 		STA		_last_map_tile_read
 		TAY
@@ -1648,15 +1648,15 @@ loc_11ECAF:
 		CLC
 		ADC		_tmpE7
 		JSR		_write_tmp_recalc_div4_mul13_map_nibble
-		ADDW8	_tmp6CC,_tmp_map_pos._X
-		ADDW8	_tmp6CE,_tmp_map_pos._Y
+		ADDWB	_tmp6CC,_tmp_map_pos._COL
+		ADDWB	_tmp6CE,_tmp_map_pos._ROW
 		INCW	_tmp6D0
 loc_11ECF4:
-		LDY		_tmp_map_pos._X
+		LDY		_tmp_map_pos._COL
 		INY
 		CPY		#$4C
 		BNE		loc_11ECAF
-		LDY		_tmp_map_pos._Y
+		LDY		_tmp_map_pos._ROW
 		INY
 		CPY		#$4C
 		BNE		loc_11ECAA
@@ -1755,10 +1755,10 @@ _crime_level_recalc:
 		STA		_tmp6D0
 		STA		_tmp6D0+1
 loc_11EDBB:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11EDC0:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_read_land_value_map_nibble
 		BEQ		loc_11EDF1
 		STA		_tmpE7
@@ -1790,12 +1790,12 @@ loc_11EDF1:
 		BCC		loc_11EE02
 		INC		_tmp6CC+1
 loc_11EE02:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EDC0
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
 		CMP		#$4C
@@ -1828,10 +1828,10 @@ loc_11EE3B:
 _interpolate_recalc_to_select_poll_popg_popd_crime_land_maps:
 		LDA		#$00
 loc_11EE4C:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11EE51:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
 		JSR		_calc_tmp_recalc_div4_mul13_surrond_map_nibbles_sum_0
@@ -1845,12 +1845,12 @@ loc_11EE51:
 		LDA		#$0F
 loc_11EE69:
 		JSR		_write_select_poll_popg_popd_crime_land_recalc_maps_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EE51
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
 		CMP		#$4C
@@ -1859,49 +1859,49 @@ loc_11EE69:
 
 ; =============== S U B	R O U T	I N E =======================================
 _calc_tmp_recalc_div4_mul13_surrond_map_nibbles_sum_0:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$04
 		BCC		loc_11EE99
 		SBC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble_0
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EE99:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$48
 		BCS		loc_11EEB1
 		ADC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble_0
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EEB1:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$04
 		BCC		loc_11EEC9
 		SBC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble_0
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11EEC9:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$48
 		BCS		locret_11EEE1
 		ADC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble_0
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 locret_11EEE1:
 		RTS
 
@@ -1917,10 +1917,10 @@ _add_tmp_recalc_div4_mul13_map_nibble_0:
 _interpolate_recalc_with_select_poll_popg_popd_crime_land_to_recalc_map:
 		LDA		#$00
 loc_11EEED:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11EEF2:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
 		JSR		_calc_tmp_recalc_div4_mul13_surrond_map_nibbles_sum
@@ -1934,12 +1934,12 @@ loc_11EEF2:
 		LDA		#$0F
 loc_11EF0A:
 		JSR		_write_tmp_recalc_div4_mul13_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EEF2
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
 		CMP		#$4C
@@ -1948,49 +1948,49 @@ loc_11EF0A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _calc_tmp_recalc_div4_mul13_surrond_map_nibbles_sum:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$04
 		BCC		loc_11EF3A
 		SBC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EF3A:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$48
 		BCS		loc_11EF52
 		ADC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$04
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EF52:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$04
 		BCC		loc_11EF6A
 		SBC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11EF6A:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$48
 		BCS		locret_11EF82
 		ADC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_recalc_div4_mul13_map_nibble
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$04
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 locret_11EF82:
 		RTS
 
@@ -2006,10 +2006,10 @@ _add_tmp_recalc_div4_mul13_map_nibble:
 _interpolate_recalc_to_select_police_fire_map_div4:
 		LDA		#$00
 loc_11EF8E:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11EF93:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
 		JSR		_calc_tmp_recalc_div8_mulA_surrond_map_nibbles_sum
@@ -2023,12 +2023,12 @@ loc_11EF93:
 		LDA		#$0F
 loc_11EFAB:
 		JSR		_write_select_police_fire_recalc_maps_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$08
 		CMP		#$4C
 		BCC		loc_11EF93
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$08
 		CMP		#$4C
@@ -2037,49 +2037,49 @@ loc_11EFAB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _calc_tmp_recalc_div8_mulA_surrond_map_nibbles_sum:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$08
 		BCC		loc_11EFDB
 		SBC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_recalc_div8_mulA_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EFDB:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$44
 		BCS		loc_11EFF3
 		ADC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_recalc_div8_mulA_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11EFF3:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$08
 		BCC		loc_11F00B
 		SBC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_recalc_div8_mulA_map_nibble
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11F00B:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$48
 		BCS		locret_11F023
 		ADC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_recalc_div8_mulA_map_nibble
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 locret_11F023:
 		RTS
 
@@ -2095,10 +2095,10 @@ _add_tmp_recalc_div8_mulA_map_nibble:
 _interpolate_select_police_fire_to_recalc_map_div2:
 		LDA		#$00
 loc_11F02F:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11F034:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
 		JSR		_calc_select_police_fire_recalc_surrond_map_nibbles_sum
@@ -2111,12 +2111,12 @@ loc_11F034:
 		LDA		#$0F
 loc_11F04B:
 		JSR		_write_tmp_recalc_div8_mulA_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$08
 		CMP		#$4C
 		BCC		loc_11F034
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$08
 		CMP		#$4C
@@ -2125,49 +2125,49 @@ loc_11F04B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _calc_select_police_fire_recalc_surrond_map_nibbles_sum:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$08
 		BCC		loc_11F07B
 		SBC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11F07B:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$44
 		BCS		loc_11F093
 		ADC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$08
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11F093:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$08
 		BCC		loc_11F0AB
 		SBC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11F0AB:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$44
 		BCS		locret_11F0C3
 		ADC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$08
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 locret_11F0C3:
 		RTS
 
@@ -2230,7 +2230,7 @@ sub_11F10B:
 		LSR
 		LSR
 		SEC
-		SBC		_tmp_area_pos._X
+		SBC		_tmp_area_pos._COL
 		BCS		loc_11F11B
 		EOR		#$FF
 		CLC
@@ -2241,7 +2241,7 @@ loc_11F11B:
 		LSR
 		LSR
 		SEC
-		SBC		_tmp_area_pos._Y
+		SBC		_tmp_area_pos._ROW
 		BCS		loc_11F12D
 		EOR		#$FF
 		CLC
@@ -2272,14 +2272,14 @@ _get_building_map_tile:
 		LDX		_internal_building_tile_deltaX_list,Y
 		BEQ		loc_11F15E
 loc_11F158:
-		DEC		_tmp_map_pos._X
+		DEC		_tmp_map_pos._COL
 		DEX
 		BNE		loc_11F158
 loc_11F15E:
 		LDX		_internal_building_tile_deltaY_list,Y
 		BEQ		loc_11F169
 loc_11F163:
-		DEC		_tmp_map_pos._Y
+		DEC		_tmp_map_pos._ROW
 		DEX
 		BNE		loc_11F163
 loc_11F169:
@@ -2287,7 +2287,7 @@ loc_11F169:
 		STA		_last_map_tile_read
 		INC		_cur_map_tile_is_inside_a_building_flag
 		LDX		#$00
-		JSR		_tmp_map_pos_restore
+		JMP		_tmp_map_pos_restore
 locret_11F177:
 		RTS
 _internal_building_tile_deltaX_list:
@@ -2297,7 +2297,7 @@ _internal_building_tile_deltaY_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_read:
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._ROW
 		PUSHB	#$4C
 		JSR		_mmc5_mul8to8
 		PLA
@@ -2307,14 +2307,14 @@ _map_tile_read:
 		PLA
 		ADC		#>[_wram_map_buf]
 		STA		word_EC+1
-		LDY		_tmp_map_pos._X
+		LDY		_tmp_map_pos._COL
 		LDA		(word_EC),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_write:
 		PHA
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._ROW
 		PUSHB	#$4C
 		JSR		_mmc5_mul8to8
 		PLA
@@ -2324,7 +2324,7 @@ _map_tile_write:
 		PLA
 		ADC		#>[_wram_map_buf]
 		STA		word_EC+1
-		LDY		_tmp_map_pos._X
+		LDY		_tmp_map_pos._COL
 		JSR		_sram_on
 		PLA
 		STA		(word_EC),Y
@@ -2358,35 +2358,35 @@ _set_tmp_map_pos_to_surrounding_tile:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_dec_pos_Y:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		BEQ		_tmp_map_cant_change_pos
-		DEC		_tmp_map_pos._Y
+		DEC		_tmp_map_pos._ROW
 		CLC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_inc_pos_X:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$4B
 		BEQ		_tmp_map_cant_change_pos
-		INC		_tmp_map_pos._X
+		INC		_tmp_map_pos._COL
 		CLC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_inc_pos_Y:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$4B
 		BEQ		_tmp_map_cant_change_pos
-		INC		_tmp_map_pos._Y
+		INC		_tmp_map_pos._ROW
 		CLC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_dec_pos_X:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		BEQ		_tmp_map_cant_change_pos
-		DEC		_tmp_map_pos._X
+		DEC		_tmp_map_pos._COL
 		CLC
 		RTS
 
@@ -2397,18 +2397,18 @@ _tmp_map_cant_change_pos:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_pos_backup:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		STA		_tmp_map_pos_backup_buf_Y,X
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		STA		_tmp_map_pos_backup_buf_X,X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_pos_restore:
 		LDA		_tmp_map_pos_backup_buf_Y,X
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		_tmp_map_pos_backup_buf_X,X
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2444,10 +2444,10 @@ loc_11F26A:
 _population_growth_map_recalc:
 		LDA		#$00
 loc_11F27A:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11F27F:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_read_pop_growth_map_nibble
 		CMP		#$08
 		BEQ		loc_11F296
@@ -2461,12 +2461,12 @@ loc_11F290:
 loc_11F293:
 		JSR		_write_pop_growth_map_nibble
 loc_11F296:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11F27F
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$04
 		CMP		#$4C
@@ -2477,10 +2477,10 @@ loc_11F296:
 _traffic_dencity_recalc:
 		LDA		#$00
 loc_11F2AD:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11F2B2:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_read_traffic_dencity_map_nibble
 		CMP		#$03
 		BCS		loc_11F2C0
@@ -2497,12 +2497,12 @@ loc_11F2CA:
 		SBC		#$04
 loc_11F2CD:
 		JSR		_write_traffic_dencity_map_nibble
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
 		CMP		#$4C
 		BCC		loc_11F2B2
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
 		CMP		#$4C
@@ -2622,48 +2622,48 @@ loc_11F393:
 		BCS		locret_11F40D
 		CMP		#$14
 		BNE		loc_11F3F5
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read
 		CMP		#$14
 		BNE		loc_11F3BF
 		LDA		#$16
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$15
-		JSR		_map_tile_write
+		JMP		_map_tile_write
 locret_11F3BE:
 		RTS
 loc_11F3BF:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
-		LDA		_tmp_map_pos._X
+		STA		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_map_tile_read
 		CMP		#$14
 		BNE		loc_11F3EB
 		LDA		#$18
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$17
 		JMP		_map_tile_write
 loc_11F3EB:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 loc_11F3F5:
 		LDA		_cur_R_area_develop_state
@@ -2688,48 +2688,48 @@ sub_11F40E:
 		BCS		locret_11F48C
 		CMP		#$34
 		BNE		loc_11F474
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read
 		CMP		#$34
 		BNE		loc_11F43D
 		LDA		#$36
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$35
-		JSR		_map_tile_write
-		RTS
+		JMP		_map_tile_write
+
 loc_11F43D:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
-		LDA		_tmp_map_pos._X
+		STA		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_map_tile_read
 		CMP		#$34
 		BNE		loc_11F46A
 		LDA		#$38
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$37
-		JSR		_map_tile_write
-		RTS
+		JMP		_map_tile_write
+
 loc_11F46A:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 loc_11F474:
 		JSR		_read_land_value_map_nibble
@@ -2741,7 +2741,7 @@ loc_11F474:
 		BCS		locret_11F48C
 		JSR		sub_11F628
 		LDA		#$01
-		JSR		sub_11F647
+		JMP		sub_11F647
 locret_11F48C:
 		RTS
 
@@ -2755,7 +2755,7 @@ sub_11F48D:
 		BCS		locret_11F4A4
 		JSR		sub_11F639
 		LDA		#$01
-		JSR		sub_11F647
+		JMP		sub_11F647
 locret_11F4A4:
 		RTS
 
@@ -2766,64 +2766,64 @@ sub_11F4A5:
 		BNE		loc_11F4C9
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		RTS
 loc_11F4C9:
 		CMP		#$16
 		BNE		loc_11F4EA
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		RTS
 loc_11F4EA:
 		CMP		#$17
 		BNE		loc_11F50B
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 loc_11F50B:
 		CMP		#$18
 		BNE		loc_11F52C
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 loc_11F52C:
 		LDX		byte_6C3
@@ -2856,64 +2856,64 @@ sub_11F551:
 		BNE		loc_11F575
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		RTS
 loc_11F575:
 		CMP		#$36
 		BNE		loc_11F596
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		RTS
 loc_11F596:
 		CMP		#$37
 		BNE		loc_11F5B7
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 loc_11F5B7:
 		CMP		#$38
 		BNE		loc_11F5D8
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$34
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		RTS
 loc_11F5D8:
 		LDA		_cur_R_area_develop_state
@@ -2928,7 +2928,7 @@ loc_11F5E8:
 		CMP		#$01
 		BNE		locret_11F5F4
 		LDA		#$20
-		JSR		_map_tile_write
+		JMP		_map_tile_write
 locret_11F5F4:
 		RTS
 
@@ -2949,7 +2949,7 @@ loc_11F60D:
 		CMP		#$01
 		BNE		locret_11F619
 		LDA		#$40
-		JSR		_map_tile_write
+		JMP		_map_tile_write
 locret_11F619:
 		RTS
 
@@ -3068,11 +3068,11 @@ _read_buf_pos_div4_mul13_4bit_nibble:
 		PHA
 		TXA
 		PHA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		LSR
 		LSR
 		MULAI	#$13
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		LSR
 		LSR
 		JMP		_read_buf_pos_4bit_nibble_ex
@@ -3084,10 +3084,10 @@ _read_traffic_dencity_map_nibble:
 		PHA
 		TXA
 		PHA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		LSR
 		MULAI	#$26
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		LSR
 		JMP		_read_buf_pos_4bit_nibble_ex
 
@@ -3118,12 +3118,12 @@ _read_buf_pos_div8_mulA_4bit_nibble:
 		PHA
 		TXA
 		PHA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		LSR
 		LSR
 		LSR
 		MULAI	#$0A
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		LSR
 		LSR
 		LSR
@@ -3166,44 +3166,44 @@ _surronding_map_are_non_destructable_tile_sum:
 		JSR		_map_area_non_destructable_tiles_count
 		ASL		_tmp6D3
 		ASL		_tmp6D3
-		DEC		_tmp_area_pos._Y
+		DEC		_tmp_area_pos._ROW
 		BMI		loc_11F761
 		JSR		_map_area_non_destructable_tiles_count
 loc_11F761:
-		INC		_tmp_area_pos._Y
-		INC		_tmp_area_pos._Y
-		LDA		_tmp_area_pos._Y
+		INC		_tmp_area_pos._ROW
+		INC		_tmp_area_pos._ROW
+		LDA		_tmp_area_pos._ROW
 		CMP		#$13
 		BCS		loc_11F771
 		JSR		_map_area_non_destructable_tiles_count
 loc_11F771:
-		DEC		_tmp_area_pos._Y
-		DEC		_tmp_area_pos._X
+		DEC		_tmp_area_pos._ROW
+		DEC		_tmp_area_pos._COL
 		BMI		loc_11F77C
 		JSR		_map_area_non_destructable_tiles_count
 loc_11F77C:
-		INC		_tmp_area_pos._X
-		INC		_tmp_area_pos._X
-		LDA		_tmp_area_pos._X
+		INC		_tmp_area_pos._COL
+		INC		_tmp_area_pos._COL
+		LDA		_tmp_area_pos._COL
 		CMP		#$13
 		BCS		loc_11F78C
 		JSR		_map_area_non_destructable_tiles_count
 loc_11F78C:
-		DEC		_tmp_area_pos._X
+		DEC		_tmp_area_pos._COL
 		ASL		_tmp6D3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_area_non_destructable_tiles_count:
-		LDA		_tmp_area_pos._Y
+		LDA		_tmp_area_pos._ROW
 		ASL
 		ASL
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11F79B:
-		LDA		_tmp_area_pos._X
+		LDA		_tmp_area_pos._COL
 		ASL
 		ASL
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 loc_11F7A3:
 		JSR		_map_tile_read
 		TAY
@@ -3212,12 +3212,12 @@ loc_11F7A3:
 		BEQ		loc_11F7B1
 		INC		_tmp6D3
 loc_11F7B1:
-		INC		_tmp_map_pos._X
-		LDA		_tmp_map_pos._X
+		INC		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._COL
 		AND		#$03
 		BNE		loc_11F7A3
-		INC		_tmp_map_pos._Y
-		LDA		_tmp_map_pos._Y
+		INC		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._ROW
 		AND		#$03
 		BNE		loc_11F79B
 		RTS
@@ -3276,7 +3276,7 @@ loc_11F801:
 		PHA
 		TXA
 		PHA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		LSR
 		LSR
 ;		STA		_mmc5_mul1_shadow
@@ -3285,7 +3285,7 @@ loc_11F801:
 ;		STA		_mmc5_mul1_shadow				; BUG: copy-paste, same shadow var, may be critical
 ;		STA		_MMC5_MUL0
 		MULAI	#$13							; FIX: uses correct macro
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		LSR
 		LSR
 		JMP		_write_buf_pos_4bit_nibble_ex
@@ -3302,10 +3302,10 @@ loc_11F82C:
 		PHA
 		TXA
 		PHA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		LSR
 		MULAI	#$26
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		LSR
 		JMP		_write_buf_pos_4bit_nibble_ex
 
@@ -3341,12 +3341,12 @@ loc_11F869:
 		PHA
 		TXA
 		PHA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		LSR
 		LSR
 		LSR
 		MULAI	#$0A
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		LSR
 		LSR
 		LSR
@@ -3392,7 +3392,7 @@ loc_11F8BB:
 ;_unused_11:
 ;		LDA		_cur_population_dencity
 ;		SEC
-;		SBC		_tmp_map_pos._X
+;		SBC		_tmp_map_pos._COL
 ;		BCS		loc_11F8D5
 ;		EOR		#$FF
 ;		CLC
@@ -3404,7 +3404,7 @@ loc_11F8BB:
 ;		STA		_tmpE6
 ;		LDA		_cur_population_dencity+1
 ;		SEC
-;		SBC		_tmp_map_pos._Y
+;		SBC		_tmp_map_pos._ROW
 ;		BCS		loc_11F8E8
 ;		EOR		#$FF
 ;		CLC
@@ -3423,27 +3423,27 @@ loc_11F8BB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_area_pos_to_tmp_map_pos_calc:
-		LDA		_tmp_area_pos._X
+		LDA		_tmp_area_pos._COL
 		ASL
 		ASL
-		STA		_tmp_map_pos._X
-		LDA		_tmp_area_pos._Y
+		STA		_tmp_map_pos._COL
+		LDA		_tmp_area_pos._ROW
 		ASL
 		ASL
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _heavy_traffic_report_test:
-		PUSHB	_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		PUSHB	word_EE
 		PUSHB	word_EE+1
 		PUSHB	_tmpE6
 		PUSHB	_mmc5_mul1_shadow
 		PUSHB	_mmc5_mul0_shadow
-		STX		_tmp_map_pos._X
-		STY		_tmp_map_pos._Y
+		STX		_tmp_map_pos._COL
+		STY		_tmp_map_pos._ROW
 		JSR		_read_traffic_dencity_map_nibble
 		CMP		#$0A
 		BCC		loc_11F93E
@@ -3461,26 +3461,26 @@ loc_11F93E:
 		POPB	_tmpE6
 		POPB	word_EE+1
 		POPB	word_EE
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_select_map_tile_if_powered_up:
-		PUSHB	_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		LDX		_tmp6D0+1
 		JSR		_set_tmp_map_pos_to_surrounding_tile
 		BCS		loc_11F977
 		JSR		_test_map_tile_if_powered_up
 		BCS		loc_11F977
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		CLC
 		RTS
 loc_11F977:
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		SEC
 		RTS
 
@@ -3495,11 +3495,11 @@ _test_map_tile_if_powered_up:
 		BEQ		loc_11F9DA
 		CMP		#$61
 		BEQ		loc_11F9DA
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		MULAI	#$4C
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_tmp_map_pos._X
+		ADC		_tmp_map_pos._COL
 		STA		_tmpE6
 		PHA
 		LDA		_MMC5_MUL1
@@ -3605,10 +3605,10 @@ _fire_disaster_start_common:
 		PHA
 		LDA		#$4C
 		JSR		_rand_clamp						; select random tile to burn
-		STA		_tmp_map_pos._X					; through the whole map
+		STA		_tmp_map_pos._COL					; through the whole map
 		LDA		#$4C							; so fire can start at many points
 		JSR		_rand_clamp						; at the same time
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read					; read cur tile under the selection
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
@@ -3643,10 +3643,10 @@ loc_11FB9A:
 		PHA
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read
 		CMP		#$BE
 		BCC		loc_11FC04
@@ -3656,14 +3656,14 @@ loc_11FB9A:
 loc_11FBB9:
 		TYA
 		PHA
-		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._COL
 		CLC
 		ADC		byte_11FC26,Y
-		STA		_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		STA		_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		CLC
 		ADC		byte_11FC2A,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_tmp_map_pos_test_max
 		BCS		loc_11FBF2
 		JSR		_map_tile_read
@@ -3679,8 +3679,8 @@ loc_11FBB9:
 		LDA		#$1E
 		STA		_disaster_tiles_to_flood_count
 loc_11FBF2:
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		PLA
 		TAY
 		LDA		_tmp6CC
@@ -3721,10 +3721,10 @@ loc_11FC38:
 loc_11FC3E:
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_get_building_map_tile
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
@@ -3779,18 +3779,18 @@ _tornado_disaster_start:
 		STA		_MMC5_CHR_BANKSA+1				; CHR bank init
 		LDA		#$4C
 		JSR		_rand_clamp						; select random map starting pos
-		STA		_obj_pos._tornado._X
-		STA		_tmp_map_pos._X
+		STA		_obj_pos._tornado._COL
+		STA		_tmp_map_pos._COL
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_obj_pos._tornado._Y
-		STA		_tmp_map_pos._Y
+		STA		_obj_pos._tornado._ROW
+		STA		_tmp_map_pos._ROW
 		LDA		#$4C
 		JSR		_rand_clamp						; and absolutely random dst pos on map
-		STA		_obj_dst_pos._tornado._X
+		STA		_obj_dst_pos._tornado._COL
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_obj_dst_pos._tornado._Y
+		STA		_obj_dst_pos._tornado._ROW
 		LDA		_disasters_flags				; clear disaster flag as well
 		AND		#$F7
 		STA		_disasters_flags
@@ -3825,32 +3825,32 @@ _monster_disaster_start:
 		LDY		#$00
 		LDA		#$4C
 		JSR		_rand_clamp						; appear at random map position
-		STA		_obj_pos._monster._X
-		STA		_tmp_map_pos._X
+		STA		_obj_pos._monster._COL
+		STA		_tmp_map_pos._COL
 		CMP		#$26
 		BCS		loc_11FD17						; walk to farther side of the map
 		LDY		#$4B							; from one half of to another by X
 loc_11FD17:
-		STY		_obj_dst_pos._monster._X
+		STY		_obj_dst_pos._monster._COL
 		LDY		#$00
 		LDA		#$4C
 		JSR		_rand_clamp						; the same for Y
-		STA		_obj_pos._monster._Y
-		STA		_tmp_map_pos._Y
+		STA		_obj_pos._monster._ROW
+		STA		_tmp_map_pos._ROW
 		CMP		#$26
 		BCS		loc_11FD2D
 		LDY		#$4B
 loc_11FD2D:
-;		STY		_obj_dst_pos._monster._X		; BUG, seems another copypaste here
-		STY		_obj_dst_pos._monster._Y		; FIX
+;		STY		_obj_dst_pos._monster._COL		; BUG, seems another copypaste here
+		STY		_obj_dst_pos._monster._ROW		; FIX
 		LDA		#$97
 		JSR		_rand_clamp						; if this code change X position,
 		LSR										; the Y will be uninitialized actually
 		BCS		loc_11FD3D						; due to BUG above, but seems it's not
-		STA		_obj_dst_pos._monster._X		; much important, since we have it initialized to
+		STA		_obj_dst_pos._monster._COL		; much important, since we have it initialized to
 		BCC		_monster_disaster_start_ex		; 0 at the beginning and then have value
 loc_11FD3D:										; from previous moster appearance.
-		STA		_obj_dst_pos._monster._Y
+		STA		_obj_dst_pos._monster._ROW
 
 ; =============== S U B	R O U T	I N E =======================================
 _monster_disaster_start_ex:
@@ -3879,16 +3879,16 @@ locret_11FD73:
 
 ; =============== S U B	R O U T	I N E =======================================
 _fire_or_destroy_map_tile_ex:
-		PUSHB	_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		PUSHB	word_EC
 		PUSHB	word_EC+1
 		PUSHB	_backup_var
 		PUSHB	_mmc5_mul1_shadow
 		PUSHB	_mmc5_mul0_shadow
 		PUSHB	_tmp6CC+1
-		STX		_tmp_map_pos._X
-		STY		_tmp_map_pos._Y
+		STX		_tmp_map_pos._COL
+		STY		_tmp_map_pos._ROW
 		LDY		#$E7
 		JSR		_rand
 		CMP		#$40
@@ -3908,8 +3908,8 @@ loc_11FDAC:
 		POPB	_backup_var
 		POPB	word_EC+1
 		POPB	word_EC
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3956,14 +3956,14 @@ loc_11FDFC:
 		TYA
 		AND		#$0F
 		TAY
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		SEC
 		SBC		_internal_building_tile_deltaX_list,Y
-		STA		_tmp_map_pos._X
-		LDA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._ROW
 		SEC
 		SBC		_internal_building_tile_deltaY_list,Y
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 loc_11FE1B:
 		JSR		_map_tile_read
 		TAY
@@ -3986,18 +3986,18 @@ loc_11FE3A:
 loc_11FE3C:
 		TXA
 		PHA
-		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._COL
 		CLC
 		ADC		_internal_building_tile_deltaX_list,X
-		STA		_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		STA		_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		CLC
 		ADC		_internal_building_tile_deltaY_list,X
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		_tmp6CC+1
 		JSR		_map_tile_write
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		PLA
 		TAX
 		DEX
@@ -4025,22 +4025,22 @@ loc_11FE83:
 _nuclear_meltdown_disaster_start:
 		LDA		#$00
 loc_11FE8A:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11FE8F:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_get_building_map_tile
 		LDA		_last_map_tile_read
 		CMP		#$61
 		BNE		loc_11FE9F
 		JMP		loc_11FEB4
 loc_11FE9F:
-		INC		_tmp_map_pos._X
-		LDA		_tmp_map_pos._X
+		INC		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._COL
 		CMP		#$4C
 		BNE		loc_11FE8F
-		INC		_tmp_map_pos._Y
-		LDA		_tmp_map_pos._Y
+		INC		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._ROW
 		CMP		#$4C
 		BNE		loc_11FE8A
 		RTS
@@ -4050,28 +4050,28 @@ loc_11FEB4:
 loc_11FEB9:
 		TXA
 		PHA
-		PUSHB	_tmp_map_pos._X
-		PUSHB	_tmp_map_pos._Y
+		PUSHB	_tmp_map_pos._COL
+		PUSHB	_tmp_map_pos._ROW
 		LDA		#$1F
 		JSR		_rand_clamp
 		CLC
-		ADC		_tmp_map_pos._X
+		ADC		_tmp_map_pos._COL
 		SBC		#$0F
 		CMP		#$4B
 		BCS		loc_11FEEA
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		LDA		#$1F
 		JSR		_rand_clamp
 		CLC
-		ADC		_tmp_map_pos._Y
+		ADC		_tmp_map_pos._ROW
 		SBC		#$0F
 		CMP		#$4B
 		BCS		loc_11FEEA
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		JSR		_pollute_cur_map_tile
 loc_11FEEA:
-		POPB	_tmp_map_pos._Y
-		POPB	_tmp_map_pos._X
+		POPB	_tmp_map_pos._ROW
+		POPB	_tmp_map_pos._COL
 		PLA
 		TAX
 		INX
@@ -4084,10 +4084,10 @@ loc_11FEEA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _goto_alert_start:
-		LDA		_tmp_map_pos._X
-		STA		_goto_dst_tile._X
-		LDA		_tmp_map_pos._Y
-		STA		_goto_dst_tile._Y
+		LDA		_tmp_map_pos._COL
+		STA		_goto_dst_tile._COL
+		LDA		_tmp_map_pos._ROW
+		STA		_goto_dst_tile._ROW
 		LDA		#$01
 		STA		_goto_alert_req
 		RTS
@@ -4125,24 +4125,24 @@ loc_11FF45:
 		LDA		#$1A
 		JSR		_rand_clamp						; as against manually selected monster disaster
 		ADC		#$2D							; scenario starting point is area near the center
-		STA		_obj_pos._monster._X			; of the map within square in 26 tiles
-		STA		_tmp_map_pos._X
+		STA		_obj_pos._monster._COL			; of the map within square in 26 tiles
+		STA		_tmp_map_pos._COL
 		LDA		#$1A
 		JSR		_rand_clamp
-		STA		_obj_pos._monster._Y
-		STA		_tmp_map_pos._Y
+		STA		_obj_pos._monster._ROW
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
-		STA		_obj_dst_pos._monster._X		; by default it will travel always to bottom-left corner
+		STA		_obj_dst_pos._monster._COL		; by default it will travel always to bottom-left corner
 		LDA		#$4B
-		STA		_obj_dst_pos._monster._Y
+		STA		_obj_dst_pos._monster._ROW
 		LDA		#$97
 		JSR		_rand_clamp						; but rnd will change one of the coordinates, so
 		LSR										; it will travel either to the leftmost of the bottom side
 		BCS		loc_11FF7B						; in the direction of the sea
-		STA		_obj_dst_pos._monster._X
+		STA		_obj_dst_pos._monster._COL
 		BCC		loc_11FF7E
 loc_11FF7B:
-		STA		_obj_dst_pos._monster._Y
+		STA		_obj_dst_pos._monster._ROW
 loc_11FF7E:
 		JMP		_monster_disaster_start_ex
 loc_11FF81:
@@ -4162,10 +4162,10 @@ _traffic_jam_recalc:
 		STY		_tmpEB
 		LDA		#$00
 loc_11FF97:
-		STA		_tmp_map_pos._Y
+		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11FF9C:
-		STA		_tmp_map_pos._X
+		STA		_tmp_map_pos._COL
 		JSR		_read_land_value_map_nibble
 		CMP		#$00
 		BEQ		loc_11FFBB
@@ -4180,12 +4180,12 @@ loc_11FFB5:
 		BNE		loc_11FFBB
 		INC		_tmpEB
 loc_11FFBB:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
 		CMP		#$4C
 		BCC		loc_11FF9C
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CLC
 		ADC		#$02
 		CMP		#$4C

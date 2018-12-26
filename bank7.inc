@@ -239,8 +239,8 @@ loc_B823F:
 		LDA		#$BB
 loc_B8245:
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 loc_B824B:
 		DEC		word_C1+1
 		LDY		#$B4
@@ -320,8 +320,8 @@ loc_B82CA:
 		LDA		#$E0
 loc_B82CC:
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 loc_B82D2:
 		PLA
 loc_B82D3:
@@ -334,8 +334,8 @@ loc_B82DD:
 		LDA		#$E1
 loc_B82DF:
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 loc_B82E5:
 		PLA
 loc_B82E6:
@@ -343,15 +343,15 @@ loc_B82E6:
 		PLA
 		LDA		#$E2
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 loc_B82F0:
 		PLA
 loc_B82F1:
 		LDA		#$E3
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 loc_B82F9:
 		PLA
 loc_B82FA:
@@ -359,15 +359,15 @@ loc_B82FA:
 		PLA
 		LDA		#$E4
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 loc_B8304:
 		PLA
 loc_B8305:
 		LDA		#$E5
 		STA		byte_CA
-		JSR		_money_recalc
-		RTS
+		JMP		_money_recalc
+
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B830D:
@@ -642,8 +642,8 @@ _title_screen:
 		JSR		_render_off
 		JSR		_spr_clear
 		LDA		#$08
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		JSRXY	_tlm_res_unpack,_tlm_res_title_main
 		JSR		_wait_for_nmi
 		JSR		_ppu_reset
@@ -664,11 +664,11 @@ _title_screen:
 		LDA		#$83
 		JSR		_pal_load_lib
 		LDA		#$00
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDA		#$03
-		STA		_MMC5_CHR_BANKSA+3
 		STA		_mmc5_chr_banks_shadow+3
+		STA		_MMC5_CHR_BANKSA+3
 		LDA		#$90
 		STA		_ppu_ctrl_shadow
 		LDA		_ppu_mask_shadow
@@ -730,11 +730,11 @@ _title_sub2_menu_draw:
 		JSR		_render_off
 		JSR		_spr_clear
 		LDA		#$08
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDA		#$03
-		STA		_MMC5_CHR_BANKSA+3
 		STA		_mmc5_chr_banks_shadow+3
+		STA		_MMC5_CHR_BANKSA+3
 		LDXY	_tlm_res_title_menu_default
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B858C
@@ -758,8 +758,8 @@ loc_B859E:
 		LDA		#$83
 		JSR		_pal_load_lib
 		LDA		#$00
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDA		_apu_mus_pulse2_shadow+2
 		CMP		#$01
 		BEQ		loc_B85CB
@@ -825,8 +825,8 @@ loc_B8624:
 		STA		_title_sub_idx
 		RTS
 loc_B8631:
-		JSR		_title_cursor_draw
-		RTS
+		JMP		_title_cursor_draw
+
 ;_unused_2:
 ;		.BYTE	$03,$04
 _title_menu_item_select_up:
@@ -1008,9 +1008,9 @@ _bank_scr_sub2_loan_select:
 		BEQ		loc_B8A5F
 		LDA		#$D0
 loc_B8A5F:
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$D9
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert
@@ -1032,8 +1032,10 @@ loc_B8A8A:
 		LDA		_tmp118+4
 		BNE		loc_B8AA2
 		LDA		#$15
-		STA		_city._bank_loan_period
-		MOVWI	_tax_alloc._bank_loan_year,$01F4
+		STA		_city._loan_period					; just only for 21 year
+; REDUNDANT, never used here, the loan amount fixed to 500
+; and calculated manually at _fiscal_year_over_calculations
+;		MOVWI	_tax_alloc._loan_fee,500			; 500 a year
 		INC		_tmp118+2
 		RTS
 loc_B8AA2:
@@ -1198,7 +1200,7 @@ locret_B8C16:
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub7_already_loan_draw:
 		LDX		#$00
-		LDA		_city._bank_loan_period
+		LDA		_city._loan_period
 loc_B8C1C:
 		CMP		#$0A
 		BCC		loc_B8C25
@@ -1440,12 +1442,12 @@ _spr_graphs_period_start_year:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B8E7C:
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$18
 		BCC		nullsub_9
 		CMP		#$28
 		BCS		nullsub_9
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		CMP		#$48
 		BCC		nullsub_9
 		CMP		#$A8
@@ -1896,8 +1898,8 @@ loc_B9238:
 		BNE		loc_B9243
 		BIT		_city._bank_flags
 		BPL		loc_B9243
-		JSR		_bank_screen_init
-		RTS
+		JMP		_bank_screen_init
+
 loc_B9243:
 		LDA		#$00
 		STA		byte_596
@@ -1912,9 +1914,9 @@ loc_B9243:
 		STA		_fiscal_year_results_draw_req
 		STA		byte_13B
 		LDA		#$48
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$28
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		LDA		#$10
 		STA		_scr_res_control_flags
 		RTS
@@ -1935,8 +1937,8 @@ _bank_screen_init:
 		STA		_scr_res_idx
 		LDA		#$10
 		STA		_scr_res_control_flags
-		JSR		_pal_fade_out
-		RTS
+		JMP		_pal_fade_out
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _current_funds_calc:
@@ -2051,9 +2053,9 @@ _budget_wnd_cursor_pos_set:
 		BCC		loc_B937D
 		BNE		loc_B937D
 		LDA		#$B8
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$D4
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		RTS
 loc_B937D:
 		LDX		#$00
@@ -2064,9 +2066,9 @@ loc_B937D:
 loc_B9386:
 		TAY
 		LDA		byte_B9392,Y
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		byte_B9399,X
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		RTS
 byte_B9392:
 		.BYTE	$3C,$6C,$74,$7C,$84,$D4,$00
@@ -2353,9 +2355,9 @@ sub_B962F:
 		ADC		_ptr0
 		TAX
 		LDA		byte_B9659,X
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		byte_B964D,X
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		RTS
 byte_B964D:
 		.BYTE	$60,$90,$60,$90,$60,$98,$60,$98,$60,$90,$60,$90
@@ -2427,8 +2429,8 @@ _wnd_header_year_draw:
 		JSR		sub_B9754
 		PPUQEND
 		MOVWO	_tmp2,byte_B9774
-		JSR		_info_wnd_year_extnt_queue
-		RTS
+		JMP		_info_wnd_year_extnt_queue
+
 loc_B96F9:
 		LDA		#$00
 		STA		_tmp4
@@ -2440,8 +2442,8 @@ loc_B96F9:
 		JSR		_info_wnd_year_nt_queue
 		PPUQEND
 		MOVWO	_tmp2,off_B9745
-		JSR		_info_wnd_year_extnt_queue
-		RTS
+		JMP		_info_wnd_year_extnt_queue
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_wnd_year_nt_queue:

@@ -113,8 +113,8 @@ _game_msg_extra_icon1_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp1,NONE,#$1E
-		CIADDB	_tmp2,_cur_screen_tile._X,_tmp2,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._ROW,_tmp1,NONE,#$1E
+		CIADDB	_tmp2,_cur_screen_tile._COL,_tmp2,NONE,#$20
 		WRAPA	_tmp4,_tmp5,#$04,#$20
 		BUFPOS	_ptr2,_tmp2,_tmp1,#$20,#$00	; DST=(_ptr0+1*#$20+_tmp2)+#$0000
 		RTS
@@ -361,351 +361,365 @@ _tlm_extnt_game_msg_presentss_icons_lib:
 
 		SECTION_START 302
 
-byte_703D9:
+_anim_seq_cmd_list:
 		.BYTE	$FB,$FB,$FC,$FB,$FB,$FB,$FC,$FB
 		.BYTE	$FC,$FB,$FB,$FC,$FB,$FC,$FC,$FC
 		.BYTE	$FC,$FC,$FC,$FC,$FC,$FB,$FC,$FC
 		.BYTE	$FC,$FC,$FC,$FC,$FC,$FC,$FB,$FB
-		.BYTE	$FB,$FB,$FB,$FB,$FB,$FB,$FB,$FB
-byte_70401:
+		.BYTE	$FB,$FB,$FB,$FB
+
+; NOTE: this is an evidence that there should be 40 messages, 4 more than current 36
+; and there are 4 unused animation sequences for those messages still here
+;
+;		.BYTE	$FB,$FB,$FB,$FB					; UNUSED, 36 msgs, here 40 entries
+
+_anim_seq_size_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$02,$01
 		.BYTE	$02,$02,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01
-off_70429:
-		.BYTE	<[byte_70471]
-		.BYTE	<[byte_70471]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_70472]
-		.BYTE	<[byte_70472]
-		.BYTE	<[byte_70472]
-		.BYTE	<[byte_70473]
-		.BYTE	<[byte_70475]
-		.BYTE	<[byte_70476]
-		.BYTE	<[byte_70478]
-		.BYTE	<[byte_7047A]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_70475]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_70471]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047B]
-		.BYTE	<[byte_7047C]
-		.BYTE	<[byte_7047D]
-		.BYTE	<[byte_7047C]
-		.BYTE	<[byte_7047A]
-		.BYTE	<[byte_7047D]
-		.BYTE	<[byte_7047A]
-		.BYTE	<[byte_7047A]
-		.BYTE	<[byte_7047A]
-		.BYTE	<[byte_7047A]
-off_7044D:
-		.BYTE	>[byte_70471]
-		.BYTE	>[byte_70471]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_70472]
-		.BYTE	>[byte_70472]
-		.BYTE	>[byte_70472]
-		.BYTE	>[byte_70473]
-		.BYTE	>[byte_70475]
-		.BYTE	>[byte_70476]
-		.BYTE	>[byte_70478]
-		.BYTE	>[byte_7047A]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_70475]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_70471]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047B]
-		.BYTE	>[byte_7047C]
-		.BYTE	>[byte_7047D]
-		.BYTE	>[byte_7047C]
-		.BYTE	>[byte_7047A]
-		.BYTE	>[byte_7047D]
-		.BYTE	>[byte_7047A]
-		.BYTE	>[byte_7047A]
-		.BYTE	>[byte_7047A]
-		.BYTE	>[byte_7047A]
-byte_70471:
+		.BYTE	$01,$01,$01,$01
+
+;		.BYTE	$01,$01,$01,$01					; UNUSED, 36 msgs, here 40 entries
+
+_anim_seq_lib_lo:
+		.BYTE	<[_anim_seq00]	; Good Job
+		.BYTE	<[_anim_seq00]	; Become Town
+		.BYTE	<[_anim_seq02]	; Become City
+		.BYTE	<[_anim_seq03]	; Become Capital
+		.BYTE	<[_anim_seq03]	; Become Metropolis
+		.BYTE	<[_anim_seq03]	; Become Megapolis
+		.BYTE	<[_anim_seq06]	; Total Jam
+		.BYTE	<[_anim_seq07]	; Traffic Jam
+		.BYTE	<[_anim_seq08]	; Crime Rate
+		.BYTE	<[_anim_seq09]	; Monster Attack
+		.BYTE	<[_anim_seq0A]	; Earthquake
+		.BYTE	<[_anim_seq02]	; Bank establish
+		.BYTE	<[_anim_seq07]	; Relationship
+		.BYTE	<[_anim_seq02]	; Amusement Park
+		.BYTE	<[_anim_seq02]	; Zoo
+		.BYTE	<[_anim_seq02]	; Casino
+		.BYTE	<[_anim_seq02]	; Extra Land
+		.BYTE	<[_anim_seq02]	; New Police
+		.BYTE	<[_anim_seq02]	; New Fire
+		.BYTE	<[_anim_seq02]	; 10th Monument
+		.BYTE	<[_anim_seq02]	; 100th Monument
+		.BYTE	<[_anim_seq00]	; Expo
+		.BYTE	<[_anim_seq02]	; Expo Monument
+		.BYTE	<[_anim_seq02]	; Liberty
+		.BYTE	<[_anim_seq02]	; Library
+		.BYTE	<[_anim_seq02]	; Park
+		.BYTE	<[_anim_seq02]	; Railroad
+		.BYTE	<[_anim_seq1B]	; Practice Intro
+		.BYTE	<[_anim_seq1C]	; Practice Hint
+		.BYTE	<[_anim_seq1B]	; Practice Success
+		.BYTE	<[_anim_seq0A]	; Practice Failed
+		.BYTE	<[_anim_seq1C]	; Bank Hint
+		.BYTE	<[_anim_seq0A]	; Fire Dept Hint
+		.BYTE	<[_anim_seq0A]	; Flood
+		.BYTE	<[_anim_seq0A]	; Airplane crash
+		.BYTE	<[_anim_seq0A]	; Tornado
+_anim_seq_lib_hi:
+		.BYTE	>[_anim_seq00]
+		.BYTE	>[_anim_seq00]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq03]
+		.BYTE	>[_anim_seq03]
+		.BYTE	>[_anim_seq03]
+		.BYTE	>[_anim_seq06]
+		.BYTE	>[_anim_seq07]
+		.BYTE	>[_anim_seq08]
+		.BYTE	>[_anim_seq09]
+		.BYTE	>[_anim_seq0A]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq07]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq00]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq02]
+		.BYTE	>[_anim_seq1B]
+		.BYTE	>[_anim_seq1C]
+		.BYTE	>[_anim_seq1B]
+		.BYTE	>[_anim_seq0A]
+		.BYTE	>[_anim_seq1C]
+		.BYTE	>[_anim_seq0A]
+		.BYTE	>[_anim_seq0A]
+		.BYTE	>[_anim_seq0A]
+		.BYTE	>[_anim_seq0A]
+
+_anim_seq00:
 		.BYTE	$03
-byte_70472:
+_anim_seq03:
 		.BYTE	$04
-byte_70473:
+_anim_seq06:
 		.BYTE	$02,$05
-byte_70475:
+_anim_seq07:
 		.BYTE	$00
-byte_70476:
+_anim_seq08:
 		.BYTE	$0E,$0F
-byte_70478:
+_anim_seq09:
 		.BYTE	$0C,$0D
-byte_7047A:
+_anim_seq0A:
 		.BYTE	$01
-byte_7047B:
+_anim_seq02:
 		.BYTE	$10
-byte_7047C:
+_anim_seq1B:
 		.BYTE	$11
-byte_7047D:
+_anim_seq1C:
 		.BYTE	$12
-byte_7047E:
+_anim_param_lo:
 		.BYTE	$20,$20,$9C,$20,$20,$1F,$C8,$A0,$9C,$9C,$D4,$D4,$20,$20,$20,$20
 		.BYTE	$20,$20,$20
-byte_70491:
+_anim_param_hi:
 		.BYTE	$B8,$B8,$B8,$B8,$B8,$C0,$B8,$B8,$B8,$B8,$B8,$B8,$B8,$B8,$B8,$B8
 		.BYTE	$B8,$B8,$B8
-off_704A4:
-		.BYTE	<[byte_7053C]
-		.BYTE	<[byte_705D3]
-		.BYTE	<[byte_70668]
-		.BYTE	<[byte_70757]
-		.BYTE	<[byte_707DD]
-		.BYTE	<[byte_708B3]
-		.BYTE	<[byte_70913]
-		.BYTE	<[byte_7097C]
-		.BYTE	<[byte_709A0]
-		.BYTE	<[byte_709E7]
-		.BYTE	<[byte_70A70]
-		.BYTE	<[byte_70ACF]
-		.BYTE	<[byte_70B12]
-		.BYTE	<[byte_70B7E]
-		.BYTE	<[byte_70BD3]
-		.BYTE	<[byte_70C20]
-		.BYTE	<[byte_70C8B]
-		.BYTE	<[byte_70CFF]
-		.BYTE	<[byte_70D96]
-off_704B7:
-		.BYTE	>[byte_7053C]
-		.BYTE	>[byte_705D3]
-		.BYTE	>[byte_70668]
-		.BYTE	>[byte_70757]
-		.BYTE	>[byte_707DD]
-		.BYTE	>[byte_708B3]
-		.BYTE	>[byte_70913]
-		.BYTE	>[byte_7097C]
-		.BYTE	>[byte_709A0]
-		.BYTE	>[byte_709E7]
-		.BYTE	>[byte_70A70]
-		.BYTE	>[byte_70ACF]
-		.BYTE	>[byte_70B12]
-		.BYTE	>[byte_70B7E]
-		.BYTE	>[byte_70BD3]
-		.BYTE	>[byte_70C20]
-		.BYTE	>[byte_70C8B]
-		.BYTE	>[byte_70CFF]
-		.BYTE	>[byte_70D96]
-off_704CA:
-		.BYTE	<[byte_7057B]
-		.BYTE	<[byte_70612]
-		.BYTE	<[byte_706B4]
-		.BYTE	<[byte_70790]
-		.BYTE	<[byte_7083B]
-		.BYTE	<[byte_708B7]
-		.BYTE	<[byte_708C5]
-		.BYTE	<[byte_70963]
-		.BYTE	<[byte_70997]
-		.BYTE	<[byte_709AB]
-		.BYTE	<[byte_70A25]
-		.BYTE	<[byte_70ACA]
-		.BYTE	<[byte_70AE0]
-		.BYTE	<[byte_70B55]
-		.BYTE	<[byte_70BB7]
-		.BYTE	<[byte_70BF5]
-		.BYTE	<[byte_70C53]
-		.BYTE	<[byte_70CCE]
-		.BYTE	<[byte_70D3C]
-off_704DD:
-		.BYTE	>[byte_7057B]
-		.BYTE	>[byte_70612]
-		.BYTE	>[byte_706B4]
-		.BYTE	>[byte_70790]
-		.BYTE	>[byte_7083B]
-		.BYTE	>[byte_708B7]
-		.BYTE	>[byte_708C5]
-		.BYTE	>[byte_70963]
-		.BYTE	>[byte_70997]
-		.BYTE	>[byte_709AB]
-		.BYTE	>[byte_70A25]
-		.BYTE	>[byte_70ACA]
-		.BYTE	>[byte_70AE0]
-		.BYTE	>[byte_70B55]
-		.BYTE	>[byte_70BB7]
-		.BYTE	>[byte_70BF5]
-		.BYTE	>[byte_70C53]
-		.BYTE	>[byte_70CCE]
-		.BYTE	>[byte_70D3C]
-off_704F0:
-		.BYTE	<[byte_705BE]
-		.BYTE	<[byte_70655]
-		.BYTE	<[byte_70704]
-		.BYTE	<[byte_707CA]
-		.BYTE	<[byte_7089A]
-		.BYTE	<[byte_708BC]
-		.BYTE	<[byte_7095E]
-		.BYTE	<[byte_70992]
-		.BYTE	<[byte_709A8]
-		.BYTE	<[byte_70A21]
-		.BYTE	<[byte_70AB9]
-		.BYTE	<[byte_70AD1]
-		.BYTE	<[byte_70B40]
-		.BYTE	<[byte_70BA6]
-		.BYTE	<[byte_70BEE]
-		.BYTE	<[byte_70C4A]
-		.BYTE	<[byte_70CC1]
-		.BYTE	<[byte_70D2F]
-		.BYTE	<[byte_70DEF]
-off_70503:
-		.BYTE	>[byte_705BE]
-		.BYTE	>[byte_70655]
-		.BYTE	>[byte_70704]
-		.BYTE	>[byte_707CA]
-		.BYTE	>[byte_7089A]
-		.BYTE	>[byte_708BC]
-off_70509:
-		.BYTE	>[byte_7095E]
-		.BYTE	>[byte_70992]
-		.BYTE	>[byte_709A8]
-		.BYTE	>[byte_70A21]
-		.BYTE	>[byte_70AB9]
-		.BYTE	>[byte_70AD1]
-		.BYTE	>[byte_70B40]
-		.BYTE	>[byte_70BA6]
-		.BYTE	>[byte_70BEE]
-		.BYTE	>[byte_70C4A]
-		.BYTE	>[byte_70CC1]
-		.BYTE	>[byte_70D2F]
-		.BYTE	>[byte_70DEF]
-off_70516:
-		.BYTE	<[byte_705C8]
-		.BYTE	<[byte_7065E]
-		.BYTE	<[byte_7072D]
-		.BYTE	<[byte_707D3]
-		.BYTE	<[byte_708A6]
-		.BYTE	<[byte_708C0]
-		.BYTE	<[byte_7095F]
-		.BYTE	<[byte_70993]
-		.BYTE	<[byte_709A9]
-		.BYTE	<[byte_70A22]
-		.BYTE	<[byte_70AC0]
-		.BYTE	<[byte_70AD7]
-		.BYTE	<[byte_70B4A]
-		.BYTE	<[byte_70BAE]
-		.BYTE	<[byte_70BF1]
-		.BYTE	<[byte_70C4E]
-		.BYTE	<[byte_70CC7]
-		.BYTE	<[byte_70D35]
-		.BYTE	<[byte_70DF5]
-off_70529:
-		.BYTE	>[byte_705C8]
-		.BYTE	>[byte_7065E]
-		.BYTE	>[byte_7072D]
-		.BYTE	>[byte_707D3]
-		.BYTE	>[byte_708A6]
-		.BYTE	>[byte_708C0]
-		.BYTE	>[byte_7095F]
-		.BYTE	>[byte_70993]
-		.BYTE	>[byte_709A9]
-		.BYTE	>[byte_70A22]
-		.BYTE	>[byte_70AC0]
-		.BYTE	>[byte_70AD7]
-		.BYTE	>[byte_70B4A]
-		.BYTE	>[byte_70BAE]
-		.BYTE	>[byte_70BF1]
-		.BYTE	>[byte_70C4E]
-		.BYTE	>[byte_70CC7]
-		.BYTE	>[byte_70D35]
-		.BYTE	>[byte_70DF5]
-byte_7053C:
+_anim_spr_lib_lo:
+		.BYTE	<[_anim_spr00]	; Default animation
+		.BYTE	<[_anim_spr01]	; Alert animations
+		.BYTE	<[_anim_spr02]	; Traffic Jam animation A
+		.BYTE	<[_anim_spr03]	; Generic animation
+		.BYTE	<[_anim_spr04]	; Congratulate animation
+		.BYTE	<[_anim_spr05]	; Traffic Jam animation B
+		.BYTE	<[_anim_spr06]	; Ramming to the door animation A *unused*
+		.BYTE	<[_anim_spr07]	; Ramming to the door animation B *unused*
+		.BYTE	<[_anim_spr08]	; Need Medic animation *unused*
+		.BYTE	<[_anim_spr09]	; Back to the viewer animation *unused*
+		.BYTE	<[_anim_spr0A]	; Pollution animation A *unused*
+		.BYTE	<[_anim_spr0B]	; Pollution animation B *unused*
+		.BYTE	<[_anim_spr0C]	; Monster Attack animation A
+		.BYTE	<[_anim_spr0D]	; Monster Attack animation B
+		.BYTE	<[_anim_spr0E]	; Crime Rate animation A
+		.BYTE	<[_anim_spr0F]	; Crime Rate animation B
+		.BYTE	<[_anim_spr10]	; Present animation
+		.BYTE	<[_anim_spr11]	; Practice Congrats animation
+		.BYTE	<[_anim_spr12]	; Practice Info animation
+_anim_spr_lib_hi:
+		.BYTE	>[_anim_spr00]
+		.BYTE	>[_anim_spr01]
+		.BYTE	>[_anim_spr02]
+		.BYTE	>[_anim_spr03]
+		.BYTE	>[_anim_spr04]
+		.BYTE	>[_anim_spr05]
+		.BYTE	>[_anim_spr06]
+		.BYTE	>[_anim_spr07]
+		.BYTE	>[_anim_spr08]
+		.BYTE	>[_anim_spr09]
+		.BYTE	>[_anim_spr0A]
+		.BYTE	>[_anim_spr0B]
+		.BYTE	>[_anim_spr0C]
+		.BYTE	>[_anim_spr0D]
+		.BYTE	>[_anim_spr0E]
+		.BYTE	>[_anim_spr0F]
+		.BYTE	>[_anim_spr10]
+		.BYTE	>[_anim_spr11]
+		.BYTE	>[_anim_spr12]
+_anim_data_lib_lo:
+		.BYTE	<[_anim_data0_00]
+		.BYTE	<[_anim_data0_01]
+		.BYTE	<[_anim_data0_02]
+		.BYTE	<[_anim_data0_03]
+		.BYTE	<[_anim_data0_04]
+		.BYTE	<[_anim_data0_05]
+		.BYTE	<[_anim_data0_06]
+		.BYTE	<[_anim_data0_07]
+		.BYTE	<[_anim_data0_08]
+		.BYTE	<[_anim_data0_09]
+		.BYTE	<[_anim_data0_0A]
+		.BYTE	<[_anim_data0_0B]
+		.BYTE	<[_anim_data0_0C]
+		.BYTE	<[_anim_data0_0D]
+		.BYTE	<[_anim_data0_0E]
+		.BYTE	<[_anim_data0_0F]
+		.BYTE	<[_anim_data0_10]
+		.BYTE	<[_anim_data0_11]
+		.BYTE	<[_anim_data0_12]
+_anim_data_lib_hi:
+		.BYTE	>[_anim_data0_00]
+		.BYTE	>[_anim_data0_01]
+		.BYTE	>[_anim_data0_02]
+		.BYTE	>[_anim_data0_03]
+		.BYTE	>[_anim_data0_04]
+		.BYTE	>[_anim_data0_05]
+		.BYTE	>[_anim_data0_06]
+		.BYTE	>[_anim_data0_07]
+		.BYTE	>[_anim_data0_08]
+		.BYTE	>[_anim_data0_09]
+		.BYTE	>[_anim_data0_0A]
+		.BYTE	>[_anim_data0_0B]
+		.BYTE	>[_anim_data0_0C]
+		.BYTE	>[_anim_data0_0D]
+		.BYTE	>[_anim_data0_0E]
+		.BYTE	>[_anim_data0_0F]
+		.BYTE	>[_anim_data0_10]
+		.BYTE	>[_anim_data0_11]
+		.BYTE	>[_anim_data0_12]
+_anim_dataA_lib_lo:
+		.BYTE	<[_anim_dataA_00]
+		.BYTE	<[_anim_dataA_01]
+		.BYTE	<[_anim_dataA_02]
+		.BYTE	<[_anim_dataA_03]
+		.BYTE	<[_anim_dataA_04]
+		.BYTE	<[_anim_dataA_05]
+		.BYTE	<[_anim_dataA_06]
+		.BYTE	<[_anim_dataA_07]
+		.BYTE	<[_anim_dataA_08]
+		.BYTE	<[_anim_dataA_09]
+		.BYTE	<[_anim_dataA_0A]
+		.BYTE	<[_anim_dataA_0B]
+		.BYTE	<[_anim_dataA_0C]
+		.BYTE	<[_anim_dataA_0D]
+		.BYTE	<[_anim_dataA_0E]
+		.BYTE	<[_anim_dataA_0F]
+		.BYTE	<[_anim_dataA_10]
+		.BYTE	<[_anim_dataA_11]
+		.BYTE	<[_anim_dataA_12]
+_anim_dataA_lib_hi:
+		.BYTE	>[_anim_dataA_00]
+		.BYTE	>[_anim_dataA_01]
+		.BYTE	>[_anim_dataA_02]
+		.BYTE	>[_anim_dataA_03]
+		.BYTE	>[_anim_dataA_04]
+		.BYTE	>[_anim_dataA_05]
+		.BYTE	>[_anim_dataA_06]
+		.BYTE	>[_anim_dataA_07]
+		.BYTE	>[_anim_dataA_08]
+		.BYTE	>[_anim_dataA_09]
+		.BYTE	>[_anim_dataA_0A]
+		.BYTE	>[_anim_dataA_0B]
+		.BYTE	>[_anim_dataA_0C]
+		.BYTE	>[_anim_dataA_0D]
+		.BYTE	>[_anim_dataA_0E]
+		.BYTE	>[_anim_dataA_0F]
+		.BYTE	>[_anim_dataA_10]
+		.BYTE	>[_anim_dataA_11]
+		.BYTE	>[_anim_dataA_12]
+_anim_dataB_lib_lo:
+		.BYTE	<[_anim_dataB_00]
+		.BYTE	<[_anim_dataB_01]
+		.BYTE	<[_anim_dataB_02]
+		.BYTE	<[_anim_dataB_03]
+		.BYTE	<[_anim_dataB_04]
+		.BYTE	<[_anim_dataB_05]
+		.BYTE	<[_anim_dataB_06]
+		.BYTE	<[_anim_dataB_07]
+		.BYTE	<[_anim_dataB_08]
+		.BYTE	<[_anim_dataB_09]
+		.BYTE	<[_anim_dataB_0A]
+		.BYTE	<[_anim_dataB_0B]
+		.BYTE	<[_anim_dataB_0C]
+		.BYTE	<[_anim_dataB_0D]
+		.BYTE	<[_anim_dataB_0E]
+		.BYTE	<[_anim_dataB_0F]
+		.BYTE	<[_anim_dataB_10]
+		.BYTE	<[_anim_dataB_11]
+		.BYTE	<[_anim_dataB_12]
+_anim_dataB_lib_hi:
+		.BYTE	>[_anim_dataB_00]
+		.BYTE	>[_anim_dataB_01]
+		.BYTE	>[_anim_dataB_02]
+		.BYTE	>[_anim_dataB_03]
+		.BYTE	>[_anim_dataB_04]
+		.BYTE	>[_anim_dataB_05]
+		.BYTE	>[_anim_dataB_06]
+		.BYTE	>[_anim_dataB_07]
+		.BYTE	>[_anim_dataB_08]
+		.BYTE	>[_anim_dataB_09]
+		.BYTE	>[_anim_dataB_0A]
+		.BYTE	>[_anim_dataB_0B]
+		.BYTE	>[_anim_dataB_0C]
+		.BYTE	>[_anim_dataB_0D]
+		.BYTE	>[_anim_dataB_0E]
+		.BYTE	>[_anim_dataB_0F]
+		.BYTE	>[_anim_dataB_10]
+		.BYTE	>[_anim_dataB_11]
+		.BYTE	>[_anim_dataB_12]
+
+_anim_spr00:
 		.BYTE	$26,$10,$11,$29,$11,$10,$00,$00,$00,$2A,$12,$13,$14,$13,$14,$00
 		.BYTE	$00,$00,$15,$13,$14,$13,$14,$13,$14,$13,$14,$12,$16,$13,$14,$13
 		.BYTE	$14,$13,$14,$13,$14,$18,$19,$18,$19,$18,$19,$18,$19,$14,$15,$17
 		.BYTE	$15,$12,$15,$17,$15,$12,$00,$00,$00,$26,$10,$11,$29,$11,$10
-byte_7057B:
+_anim_data0_00:
 		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$10,$10,$08,$08,$0C,$0C,$FF
 		.BYTE	$06,$03,$10,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$40,$80,$08,$08,$0C
 		.BYTE	$0C,$08,$08,$0C,$0C,$10,$10,$10,$10,$10,$10,$10,$10,$20,$04,$0C
 		.BYTE	$04,$08,$04,$0C,$04,$08,$FF,$26,$01,$06,$04,$04,$06,$04,$04,$FF
 		.BYTE	$08,$01,$00
-byte_705BE:
+_anim_dataA_00:
 		.BYTE	$0E,$0F,$00,$00,$00,$00,$00,$00,$00,$0E
-byte_705C8:
+_anim_dataB_00:
 		.BYTE	$38,$10,$B0,$F0,$F0,$68,$FF,$05,$01,$38,$00
-byte_705D3:
+
+_anim_spr01:
 		.BYTE	$26,$10,$11,$29,$11,$10,$00,$00,$00,$2A,$18,$19,$18,$19,$00,$00
 		.BYTE	$00,$1A,$14,$13,$14,$13,$14,$13,$14,$13,$16,$15,$14,$15,$16,$18
 		.BYTE	$19,$18,$19,$18,$19,$18,$19,$16,$15,$17,$16,$15,$17,$16,$18,$19
 		.BYTE	$18,$19,$18,$19,$18,$19,$00,$00,$00,$26,$10,$11,$29,$11,$10
-byte_70612:
+_anim_data0_01:
 		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$10,$08,$08,$0C,$0C,$FF,$06
 		.BYTE	$01,$40,$10,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$10,$10,$10,$10,$08
 		.BYTE	$08,$0C,$0C,$08,$08,$0C,$0C,$08,$04,$10,$08,$04,$10,$40,$08,$08
 		.BYTE	$0C,$0C,$08,$08,$0C,$0C,$FF,$25,$01,$06,$04,$04,$06,$04,$04,$FF
 		.BYTE	$08,$01,$00
-byte_70655:
+_anim_dataA_01:
 		.BYTE	$0E,$0F,$00,$00,$00,$00,$00,$00,$0E
-byte_7065E:
+_anim_dataB_01:
 		.BYTE	$38,$10,$A0,$F0,$B8,$FF,$04,$01,$38,$00
-byte_70668:
+
+_anim_spr02:
 		.BYTE	$1B,$1E,$1B,$1E,$1B,$1E,$1B,$1C,$1F,$20,$1F,$20,$1B,$1E,$1B,$1E
 		.BYTE	$1B,$1E,$1B,$1C,$1B,$1B,$1E,$1B,$1E,$1B,$1E,$1B,$1C,$1F,$20,$1F
 		.BYTE	$20,$00,$00,$00,$1B,$1E,$1B,$1E,$1B,$1E,$1B,$1C,$21,$15,$21,$15
 		.BYTE	$21,$21,$22,$15,$1D,$2E,$23,$2E,$1D,$15,$24,$12,$1C,$1B,$1E,$1B
 		.BYTE	$1E,$00,$00,$00,$12,$00,$26,$27,$28,$29,$28,$27
-byte_706B4:
+_anim_data0_02:
 		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$08,$08,$08,$08,$0C,$0C
 		.BYTE	$08,$08,$0C,$0C,$40,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C
 		.BYTE	$0C,$FF,$06,$01,$08,$08,$08,$08,$08,$08,$08,$08,$40,$0C,$0C,$08
 		.BYTE	$08,$30,$30,$04,$04,$04,$40,$04,$04,$04,$30,$40,$20,$08,$08,$0C
 		.BYTE	$0C,$FF,$06,$03,$40,$FD,$06,$04,$04,$06,$04,$04,$FF,$08,$01,$00
-byte_70704:
+_anim_dataA_02:
 		.BYTE	$00,$00,$00,$F0,$E0,$F0,$E0,$F0,$E0,$F0,$00,$F0,$00,$F0,$00,$F0
 		.BYTE	$00,$F0,$00,$F0,$00,$10,$00,$10,$00,$10,$00,$10,$00,$10,$00,$10
 		.BYTE	$20,$10,$20,$10,$20,$10,$00,$00,$0E
-byte_7072D:
+_anim_dataB_02:
 		.BYTE	$F0,$F0,$D4,$01,$01,$02,$01,$03,$01,$04,$01,$03,$01,$02,$01,$01
 		.BYTE	$01,$01,$01,$01,$0C,$01,$01,$01,$01,$01,$01,$02,$01,$03,$01,$04
 		.BYTE	$01,$03,$01,$02,$01,$01,$F0,$8C,$38,$00
-byte_70757:
+
+_anim_spr03:
 		.BYTE	$26,$27,$28,$29,$28,$27,$00,$00,$00,$2A,$14,$13,$14,$13,$14,$13
 		.BYTE	$14,$13,$15,$2B,$2E,$15,$2B,$2E,$15,$2B,$2E,$15,$2B,$2E,$14,$13
 		.BYTE	$15,$14,$13,$15,$14,$13,$14,$13,$14,$13,$14,$13,$14,$00,$00,$00
 		.BYTE	$26,$27,$28,$29,$28,$27,$00,$00,$00
-byte_70790:
+_anim_data0_03:
 		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$10,$08,$08,$08,$08,$08,$08
 		.BYTE	$08,$08,$08,$04,$14,$08,$04,$14,$08,$04,$14,$08,$04,$14,$18,$08
 		.BYTE	$10,$18,$08,$10,$08,$08,$08,$08,$08,$08,$08,$08,$40,$FF,$25,$02
 		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$00
-byte_707CA:
+_anim_dataA_03:
 		.BYTE	$0E,$0F,$00,$00,$00,$00,$00,$00,$0E
-byte_707D3:
+_anim_dataB_03:
 		.BYTE	$38,$10,$F0,$F0,$F0,$F0,$F0,$30,$38,$00
-byte_707DD:
+
+_anim_spr04:
 		.BYTE	$26,$27,$28,$29,$28,$27,$26,$27,$28,$29,$28,$27,$26,$27,$28,$29
 		.BYTE	$28,$27,$2A,$12,$15,$2B,$2E,$30,$12,$15,$2B,$2E,$30,$48,$49,$4A
 		.BYTE	$4B,$4A,$49,$48,$49,$4A,$64,$12,$15,$2B,$2E,$30,$12,$15,$2B,$2E
 		.BYTE	$30,$12,$14,$13,$14,$13,$14,$13,$14,$13,$15,$2B,$2E,$15,$2B,$2E
 		.BYTE	$15,$2B,$2E,$14,$13,$14,$13,$14,$13,$14,$13,$14,$13,$12,$00,$00
 		.BYTE	$00,$26,$27,$28,$29,$28,$27,$00,$00,$00,$26,$27,$28,$29
-byte_7083B:
+_anim_data0_04:
 		.BYTE	$06,$04,$04,$06,$04,$04,$06,$04,$04,$06,$04,$04,$06,$04,$04,$06
 		.BYTE	$04,$04,$10,$08,$04,$04,$04,$10,$08,$04,$04,$04,$10,$06,$04,$04
 		.BYTE	$06,$04,$04,$06,$04,$04,$10,$08,$04,$04
@@ -714,181 +728,195 @@ byte_7083B:
 		.BYTE	$04,$14,$08,$04,$14,$08,$04,$14,$08,$08,$08,$08,$08,$08,$08,$08
 		.BYTE	$08,$08,$40,$FF,$47,$01,$06,$04,$04,$06,$04,$04,$FF,$08,$01,$06
 		.BYTE	$04,$04,$06,$00
-byte_7089A:
+_anim_dataA_04:
 		.BYTE	$0E,$0E,$0F,$00,$02,$01,$00,$00,$00,$00,$00,$0E
-byte_708A6:
+_anim_dataB_04:
 		.BYTE	$2A,$2A,$10,$48,$2A,$10,$F0,$90,$FF,$09,$01,$4C,$00
-byte_708B3:
+
+_anim_spr05:
 		.BYTE	$25,$25,$25,$25
-byte_708B7:
+_anim_data0_05:
 		.BYTE	$F0,$F0,$D4,$3C,$00
-byte_708BC:
+_anim_dataA_05:
 		.BYTE	$00,$00,$00,$04
-byte_708C0:
+_anim_dataB_05:
 		.BYTE	$F0,$F0,$D4,$3C,$00
-byte_708C5:
-		.BYTE	$20,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$FF,$0A,$01,$08,$30,$10,$10
-		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$FF,$0A,$01,$20,$20,$10,$10,$10
-		.BYTE	$10,$10,$10,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08
-		.BYTE	$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08
-		.BYTE	$08,$0C,$0C,$40,$10,$10,$10,$10,$10,$10,$10,$FE,$32,$00
-byte_70913:
+
+_anim_spr06:
 		.BYTE	$31,$13,$14,$13,$14,$13,$14,$13,$1C,$00,$00,$00,$31,$32,$31,$32
 		.BYTE	$13,$14,$13,$14,$13,$14,$13,$1C,$00,$00,$00,$31,$32,$31,$32,$31
 		.BYTE	$32,$31,$32,$33,$34,$33,$34,$33,$34,$33,$34,$13,$14,$13,$1C,$13
 		.BYTE	$14,$13,$1C,$13,$14,$13,$1C,$13,$14,$13,$1C,$13,$14,$13,$1C,$13
 		.BYTE	$14,$13,$1C,$37,$32,$37,$32,$37,$32,$37,$32
-byte_7095E:
+_anim_data0_06:
+		.BYTE	$20,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$FF,$0A,$01,$08,$30,$10,$10
+		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$FF,$0A,$01,$20,$20,$10,$10,$10
+		.BYTE	$10,$10,$10,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08
+		.BYTE	$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08
+		.BYTE	$08,$0C,$0C,$40,$10,$10,$10,$10,$10,$10,$10,$FE,$32,$00
+_anim_dataA_06:
 		.BYTE	$00
-byte_7095F:
+_anim_dataB_06:
 		.BYTE	$F0,$FE,$03,$00
-byte_70963:
-		.BYTE	$40,$20,$20,$10,$10,$10,$10,$10,$10,$10,$08,$08,$08,$08,$08,$08
-		.BYTE	$08,$08,$08,$08,$08,$08,$FE,$05,$00
-byte_7097C:
+
+_anim_spr07:
 		.BYTE	$38,$38,$39,$38,$39,$38,$3A,$38,$3A,$3B,$38,$3A,$3B,$38,$3A,$3B
 		.BYTE	$38,$3A,$3B,$38,$3A,$3B
-byte_70992:
+_anim_data0_07:
+		.BYTE	$40,$20,$20,$10,$10,$10,$10,$10,$10,$10,$08,$08,$08,$08,$08,$08
+		.BYTE	$08,$08,$08,$08,$08,$08,$FE,$05,$00
+_anim_dataA_07:
 		.BYTE	$00
-byte_70993:
+_anim_dataB_07:
 		.BYTE	$F0,$FE,$03,$00
-byte_70997:
-		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$00
-byte_709A0:
+
+_anim_spr08:
 		.BYTE	$3C,$3D,$3C,$3D,$3C,$3D,$3C,$3D
-byte_709A8:
+_anim_data0_08:
+		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$00
+_anim_dataA_08:
 		.BYTE	$00
-byte_709A9:
+_anim_dataB_08:
 		.BYTE	$80,$00
-byte_709AB:
-		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C
-		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C
-		.BYTE	$40,$30,$0C,$A0,$60,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C
-		.BYTE	$0C,$08,$08,$0C,$0C,$40,$30,$0C,$A0,$60,$FE,$3C
-byte_709E7:
+
+_anim_spr09:
 		.BYTE	$3E,$3F,$3E,$3F,$3E,$3F,$3E,$41,$3E,$3F,$3E,$3F,$3E,$3F,$3E,$41
 		.BYTE	$3E,$3F,$3E,$3F,$3E,$3F,$3E,$3F,$3E,$3F,$3E,$3F,$3E,$3F,$3E,$3F
 		.BYTE	$3E,$40,$3E,$41,$3E,$3E,$3F,$3E,$3F,$3E,$3F,$3E,$41,$3E,$3F,$3E
 		.BYTE	$3F,$3E,$3F,$3E,$41,$3E,$40,$3E,$41,$3E
-byte_70A21:
+_anim_data0_09:
+		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C
+		.BYTE	$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C
+		.BYTE	$40,$30,$0C,$A0,$60,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C
+		.BYTE	$0C,$08,$08,$0C,$0C,$40,$30,$0C,$A0,$60,$FE,$3C
+_anim_dataA_09:
 		.BYTE	$00
-byte_70A22:
+_anim_dataB_09:
 		.BYTE	$F0,$FE,$03
-byte_70A25:
-		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$30,$08,$08,$08,$08,$08,$08,$08
-		.BYTE	$08,$10,$06,$04,$04,$06,$04,$04,$06,$04,$04,$06,$04,$04,$10,$0C
-		.BYTE	$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$10,$10,$10,$10,$10,$10,$10
-		.BYTE	$10,$10,$06,$04,$04,$06,$04,$04,$06,$04,$04,$06,$04,$04,$10,$0C
-		.BYTE	$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$FE,$4B
-byte_70A70:
+
+_anim_spr0A:
 		.BYTE	$46,$47,$4C,$4D,$46,$47,$4C,$4D,$47,$56,$57,$56,$57,$56,$57,$56
 		.BYTE	$57,$58,$42,$43,$44,$45,$44,$43,$42,$43,$44,$45,$44,$43,$4E,$4F
 		.BYTE	$50,$51,$4F,$50,$51,$4F,$50,$4F,$50,$46,$47,$4C,$4D,$46,$47,$4C
 		.BYTE	$4D,$59,$48,$49,$4A,$4B,$4A,$49,$48,$49,$4A,$4B,$4A,$49,$55,$4F
 		.BYTE	$50,$54,$4F,$50,$54,$4F,$50,$4F,$50
-byte_70AB9:
+_anim_data0_0A:
+		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$30,$08,$08,$08,$08,$08,$08,$08
+		.BYTE	$08,$10,$06,$04,$04,$06,$04,$04,$06,$04,$04,$06,$04,$04,$10,$0C
+		.BYTE	$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$10,$10,$10,$10,$10,$10,$10
+		.BYTE	$10,$10,$06,$04,$04,$06,$04,$04,$06,$04,$04,$06,$04,$04,$10,$0C
+		.BYTE	$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$0C,$FE,$4B
+_anim_dataA_0A:
 		.BYTE	$00,$00,$0E,$00,$00,$02,$00
-byte_70AC0:
+_anim_dataB_0A:
 		.BYTE	$80,$80,$38,$80,$98,$38,$88,$FE,$09,$00
-byte_70ACA:
-		.BYTE	$10,$10,$FE,$04,$00
-byte_70ACF:
+
+_anim_spr0B:
 		.BYTE	$52,$53
-byte_70AD1:
+_anim_data0_0B:
+		.BYTE	$10,$10,$FE,$04,$00
+_anim_dataA_0B:
 		.BYTE	$00,$00,$0F,$00,$01,$00
-byte_70AD7:
+_anim_dataB_0B:
 		.BYTE	$80,$88,$70,$E0,$70,$48,$FE,$08,$00
-byte_70AE0:
+
+_anim_spr0C:
+		.BYTE	$5A,$5B,$5C,$5D,$5C,$5B,$00,$00,$00,$5E,$5F,$5E,$5F,$60,$61,$62
+		.BYTE	$63,$64,$65,$66,$67,$66,$67,$66,$67,$66,$67,$00,$00,$00,$6E,$65
+		.BYTE	$6E,$65,$68,$68,$6D,$00,$00,$00,$5A,$5B,$5C,$5D,$5C,$5B
+_anim_data0_0C:
 		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$02,$04,$04,$04,$04,$06,$04,$04
 		.BYTE	$06,$10,$1A,$08,$08,$0A,$0A,$08,$08,$0A,$5A,$FF,$0A,$03,$0A,$0A
 		.BYTE	$06,$06,$3A,$04,$04,$FF,$04,$07,$06,$04,$04,$06,$04,$04,$FF,$08
 		.BYTE	$02,$00
-byte_70B12:
-		.BYTE	$5A,$5B,$5C,$5D,$5C,$5B,$00,$00,$00,$5E,$5F,$5E,$5F,$60,$61,$62
-		.BYTE	$63,$64,$65,$66,$67,$66,$67,$66,$67,$66,$67,$00,$00,$00,$6E,$65
-		.BYTE	$6E,$65,$68,$68,$6D,$00,$00,$00,$5A,$5B,$5C,$5D,$5C,$5B
-byte_70B40:
+_anim_dataA_0C:
 		.BYTE	$0E,$0F,$02,$01,$00,$00,$00,$00,$0E,$00
-byte_70B4A:
+_anim_dataB_0C:
 		.BYTE	$54,$10,$14,$2A,$F0,$F0,$30,$EA,$49,$0B,$00
-byte_70B55:
-		.BYTE	$E0,$E4,$F0,$F0,$30,$02,$02,$FF,$04,$0A,$02,$02,$FF,$04,$05,$02
-		.BYTE	$02,$FF,$04,$05,$02,$02,$FF,$04,$04,$02,$02,$FF,$04,$04,$02,$02
-		.BYTE	$FF,$04,$04,$02,$02,$FF,$04,$15,$00
-byte_70B7E:
+
+_anim_spr0D:
 		.BYTE	$69,$69,$69,$69,$69,$69,$6A,$00,$00,$00,$6B,$6C,$00,$00,$00,$71
 		.BYTE	$72,$00,$00,$00,$75,$76,$00,$00,$00,$6F,$70,$00,$00,$00,$73,$74
 		.BYTE	$00,$00,$00,$6B,$6C,$00,$00,$00
-byte_70BA6:
+_anim_data0_0D:
+		.BYTE	$E0,$E4,$F0,$F0,$30,$02,$02,$FF,$04,$0A,$02,$02,$FF,$04,$05,$02
+		.BYTE	$02,$FF,$04,$05,$02,$02,$FF,$04,$04,$02,$02,$FF,$04,$04,$02,$02
+		.BYTE	$FF,$04,$04,$02,$02,$FF,$04,$15,$00
+_anim_dataA_0D:
 		.BYTE	$00,$00,$00,$00,$00,$0E,$02,$0E
-byte_70BAE:
+_anim_dataB_0D:
 		.BYTE	$E0,$E4,$F0,$F0,$30,$5C,$3C,$54,$00
-byte_70BB7:
-		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$03,$06,$04,$04,$06,$3C,$06,$04
-		.BYTE	$04,$06,$04,$04,$FF,$08,$03,$06,$04,$04,$06,$00
-byte_70BD3:
+
+_anim_spr0E:
 		.BYTE	$77,$78,$79,$7A,$79,$78,$00,$00,$00,$77,$78,$79,$7A,$7D,$7D,$7E
 		.BYTE	$7F,$80,$7F,$7E,$00,$00,$00,$7D,$7E,$7F,$80
-byte_70BEE:
+_anim_data0_0E:
+		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$03,$06,$04,$04,$06,$3C,$06,$04
+		.BYTE	$04,$06,$04,$04,$FF,$08,$03,$06,$04,$04,$06,$00
+_anim_dataA_0E:
 		.BYTE	$0E,$00,$02
-byte_70BF1:
+_anim_dataB_0E:
 		.BYTE	$84,$3C,$84,$00
-byte_70BF5:
-		.BYTE	$3C,$06,$04,$04,$06,$04,$04,$06,$04,$04,$FD,$06,$04,$04,$06,$04
-		.BYTE	$04,$FF,$08,$02,$06,$3C,$06,$04,$04,$06,$04,$04,$FC,$06,$04,$04
-		.BYTE	$06,$04,$04,$FF,$08,$02,$06,$04,$04,$06,$00
-byte_70C20:
+
+_anim_spr0F:
 		.BYTE	$81,$81,$82,$83,$84,$83,$82,$81,$82,$83,$00,$84,$83,$82,$81,$82
 		.BYTE	$83,$00,$00,$00,$84,$85,$85,$86,$87,$88,$87,$86,$00,$85,$86,$87
 		.BYTE	$88,$87,$86,$00,$00,$00,$85,$86,$87,$88
-byte_70C4A:
+_anim_data0_0F:
+		.BYTE	$3C,$06,$04,$04,$06,$04,$04,$06,$04,$04,$FD,$06,$04,$04,$06,$04
+		.BYTE	$04,$FF,$08,$02,$06,$3C,$06,$04,$04,$06,$04,$04,$FC,$06,$04,$04
+		.BYTE	$06,$04,$04,$FF,$08,$02,$06,$04,$04,$06,$00
+_anim_dataA_0F:
 		.BYTE	$00,$0E,$00,$02
-byte_70C4E:
+_anim_dataB_0F:
 		.BYTE	$3C,$84,$3C,$84,$00
-byte_70C53:
-		.BYTE	$06,$04,$04,$06,$04,$04,$06,$04,$04,$10,$20,$40,$08,$30,$08,$08
-		.BYTE	$0C,$0C,$08,$10,$08,$08,$08,$08,$0C,$0C,$40,$08,$08,$08,$0C,$0C
-		.BYTE	$FF,$06,$02,$06,$08,$08,$0C,$0C,$FF,$06,$01,$10,$30,$06,$04,$04
-		.BYTE	$06,$04,$04,$FF,$06,$01,$00,$00
-byte_70C8B:
+
+_anim_spr10:
 		.BYTE	$26,$27,$28,$29,$28,$27,$26,$27,$28,$2A,$14,$2E,$2F,$14,$13,$14
 		.BYTE	$13,$14,$15,$2F,$15,$14,$13,$14,$13,$14,$12,$13,$1F,$20,$1F,$20
 		.BYTE	$00,$00,$00,$15,$13,$14,$13,$14,$00,$00,$00,$14,$12,$48,$49,$4A
 		.BYTE	$4B,$4A,$49,$FF,$06,$01
-byte_70CC1:
+_anim_data0_10:
+		.BYTE	$06,$04,$04,$06,$04,$04,$06,$04,$04,$10,$20,$40,$08,$30,$08,$08
+		.BYTE	$0C,$0C,$08,$10,$08,$08,$08,$08,$0C,$0C,$40,$08,$08,$08,$0C,$0C
+		.BYTE	$FF,$06,$02,$06,$08,$08,$0C,$0C,$FF,$06,$01,$10,$30,$06,$04,$04
+		.BYTE	$06,$04,$04,$FF,$06,$01,$00,$00
+_anim_dataA_10:
 		.BYTE	$0E,$0F,$00,$00,$00,$02
-byte_70CC7:
+_anim_dataB_10:
 		.BYTE	$2A,$10,$E0,$E0,$A6,$38,$00
-byte_70CCE:
+
+_anim_spr11:
+		.BYTE	$26,$27,$28,$29,$28,$27,$00,$00,$00,$26,$27,$28,$2A,$14,$2E,$2F
+		.BYTE	$14,$13,$14,$13,$14,$00,$00,$00,$15,$2F,$15,$14,$13,$14,$13,$14
+		.BYTE	$00,$00,$00,$12,$48,$49,$4A,$4B,$4A,$49,$00,$00,$00,$48,$49,$4A
+_anim_data0_11:
 		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$06,$04,$04,$10,$20,$40,$08
 		.BYTE	$30,$08,$08,$0C,$0C,$FF,$06,$03,$08,$10,$08,$08,$08,$08,$0C,$0C
 		.BYTE	$FF,$06,$02,$40,$06,$04,$04,$06,$04,$04,$FF,$08,$01,$06,$04,$04
 		.BYTE	$00
-byte_70CFF:
-		.BYTE	$26,$27,$28,$29,$28,$27,$00,$00,$00,$26,$27,$28,$2A,$14,$2E,$2F
-		.BYTE	$14,$13,$14,$13,$14,$00,$00,$00,$15,$2F,$15,$14,$13,$14,$13,$14
-		.BYTE	$00,$00,$00,$12,$48,$49,$4A,$4B,$4A,$49,$00,$00,$00,$48,$49,$4A
-byte_70D2F:
+_anim_dataA_11:
 		.BYTE	$0E,$0F,$00,$00,$00,$02
-byte_70D35:
+_anim_dataB_11:
 		.BYTE	$46,$10,$F0,$F0,$38,$46,$00
-byte_70D3C:
-		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$06,$04,$04,$10,$50,$08,$08
-		.BYTE	$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$10
-		.BYTE	$08,$08,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08
-		.BYTE	$0C,$0C,$08,$10,$08,$08,$08,$10,$08,$08,$08,$08,$0C,$0C,$08,$08
-		.BYTE	$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$40,$FE,$40,$06,$04,$04
-		.BYTE	$06,$04,$04,$FF,$08,$01,$06,$04,$04,$00
-byte_70D96:
+
+_anim_spr12:
 		.BYTE	$26,$27,$28,$29,$28,$27,$00,$00,$00,$26,$27,$28,$2A,$14,$13,$14
 		.BYTE	$13,$14,$13,$14,$13,$14,$13,$14,$13,$14,$13,$14,$13,$14,$15,$2F
 		.BYTE	$15,$14,$13,$14,$13,$14,$13,$14,$13,$14,$13,$14,$13,$14,$13,$14
 		.BYTE	$13,$14,$15,$2F,$15,$14,$15,$2F,$15,$14,$13,$14,$13,$14,$13,$14
 		.BYTE	$13,$14,$13,$14,$13,$14,$13,$14,$13,$14,$12,$00,$00,$48,$49,$4A
 		.BYTE	$4B,$4A,$49,$00,$00,$00,$48,$49,$4A
-byte_70DEF:
+_anim_data0_12:
+		.BYTE	$06,$04,$04,$06,$04,$04,$FF,$08,$01,$06,$04,$04,$10,$50,$08,$08
+		.BYTE	$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$10
+		.BYTE	$08,$08,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$08,$08
+		.BYTE	$0C,$0C,$08,$10,$08,$08,$08,$10,$08,$08,$08,$08,$0C,$0C,$08,$08
+		.BYTE	$0C,$0C,$08,$08,$0C,$0C,$08,$08,$0C,$0C,$40,$FE,$40,$06,$04,$04
+		.BYTE	$06,$04,$04,$FF,$08,$01,$06,$04,$04,$00
+_anim_dataA_12:
 		.BYTE	$0E,$0F,$00,$00,$00,$00
-byte_70DF5:
+_anim_dataB_12:
 		.BYTE	$46,$10,$E0,$E0,$E0,$48,$FE,$06,$00
 
 _game_msg_screens_count_list:

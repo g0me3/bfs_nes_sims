@@ -226,8 +226,8 @@ loc_5829C:
 ; -
 		BCC		loc_5829C
 		JSR		_game_msg_hints_extra_icons_draw
-		JSR		_game_msg_presents_icon_draw
-		RTS
+		JMP		_game_msg_presents_icon_draw
+
 
 ; =============== S U B	R O U T	I N E =======================================
 ; REDUNDANT now
@@ -288,8 +288,8 @@ loc_BB84:
 ;		_tmp7 - wrap len
 ;
 _wnd_header_txt_pos_calc:
-		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
-		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
+		CIADDB	_tmp4,_cur_screen_tile._ROW,  #1,_tmp1,#30
+		CIADDB	_tmp5,_cur_screen_tile._COL,NONE,_tmp2,#32
 		WRAPB	_tmp6,_tmp7,_tmp5,_tmp3,#32
 		BUFPOS	_ptr4,_tmp5,_tmp4,#$20,#$00	; DST=(_tmp4*#$20+_tmp5)+#$0000
 		RTS
@@ -641,8 +641,8 @@ _wnd_header_tlm_hi:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_line_pos_calc:
-		CIADDB	_tmp2,_cur_screen_tile._Y,#$04,_tmp1,#$1E
-		CIADDB	_tmp3,_cur_screen_tile._X,#$08, NONE,#$20
+		CIADDB	_tmp2,_cur_screen_tile._ROW,#$04,_tmp1,#$1E
+		CIADDB	_tmp3,_cur_screen_tile._COL,#$08, NONE,#$20
 		WRAPB	_tmp4,_tmp5,_tmp3,#$17,#$20
 		BUFPOS	_ptr2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
@@ -742,7 +742,7 @@ _game_msg_wnd_animA:
 		LDA		byte_523
 		BNE		loc_58419
 		LDX		_game_msg_idx
-		LDA		byte_703D9,X
+		LDA		_anim_seq_cmd_list,X
 		STA		byte_523
 loc_58419:
 		CMP		#$FA
@@ -810,8 +810,8 @@ loc_5847A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_pos_calc:
-		CIADDB	_tmp2,_cur_screen_tile._Y,#$0C,_tmp1,#$1E
-		CIADDB	_tmp3,_cur_screen_tile._X,#$11, NONE,#$20
+		CIADDB	_tmp2,_cur_screen_tile._ROW,#$0C,_tmp1,#$1E
+		CIADDB	_tmp3,_cur_screen_tile._COL,#$11, NONE,#$20
 		WRAPB	_tmp4,_tmp5,_tmp3,#$03,#$20
 		BUFPOS	_ptr2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
@@ -920,12 +920,12 @@ loc_585F2:
 		CLC
 		ADC		byte_529
 		STA		byte_529
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		byte_58676,Y
 		CLC
 		ADC		byte_52A
 		STA		byte_52A
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		DEX
 		STX		byte_52D
 		STY		byte_52E
@@ -948,10 +948,10 @@ loc_58622:
 		STX		byte_52F
 		STY		byte_530
 		LDA		#$28
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$A8
-		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_attr_insert
+		STA		_spr_insert_args._pos._ROW
+		JMP		_spr_lib_attr_insert
 locret_58641:
 		RTS
 loc_58642:
@@ -984,13 +984,13 @@ byte_586B2:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_animC:
 		LDX		_game_msg_idx
-		LDA		byte_70401,X
+		LDA		_anim_seq_size_list,X
 		STA		byte_522
 loc_586DE:
 		LDX		_game_msg_idx
-		LDA		off_70429,X
+		LDA		_anim_seq_lib_lo,X
 		STA		_ptr0
-		LDA		off_7044D,X
+		LDA		_anim_seq_lib_hi,X
 		STA		_ptr0+1
 		LDY		byte_522
 		DEY
@@ -1001,32 +1001,32 @@ loc_586DE:
 		BPL		loc_58707
 		JMP		loc_5886E
 loc_586FB:
-		LDA		byte_7047E,X
+		LDA		_anim_param_lo,X
 		STA		byte_72,Y
-		LDA		byte_70491,X
+		LDA		_anim_param_hi,X
 		STA		byte_74,Y
 loc_58707:
 		LDA		byte_72,Y
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		byte_74,Y
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$01
 		STA		byte_70,Y
-		LDA		off_704A4,X
+		LDA		_anim_spr_lib_lo,X
 		STA		_ptr0
-		LDA		off_704B7,X
+		LDA		_anim_spr_lib_hi,X
 		STA		_ptr0+1
-		LDA		off_704CA,X
+		LDA		_anim_data_lib_lo,X
 		STA		_tmp2
-		LDA		off_704DD,X
+		LDA		_anim_data_lib_hi,X
 		STA		_tmp3
-		LDA		off_704F0,X
+		LDA		_anim_dataA_lib_lo,X
 		STA		_tmp4
-		LDA		off_70503,X
+		LDA		_anim_dataA_lib_hi,X
 		STA		_tmp5
-		LDA		off_70516,X
+		LDA		_anim_dataB_lib_lo,X
 		STA		_tmp6
-		LDA		off_70529,X
+		LDA		_anim_dataB_lib_hi,X
 		STA		_tmp6+1
 		LDX		byte_76,Y
 		LDA		byte_78,Y
@@ -1515,14 +1515,14 @@ _init_special_year_date:
 loc_58A79:
 		LDA		#$0A
 		JSR		_adc_cur_year
-		STA		_city._year_to_liberty
-		STX		_city._year_to_liberty+1
+		STA		_city._Year_to_liberty
+		STX		_city._Year_to_liberty+1
 		RTS
 loc_58A85:
 		LDA		#$01
 		JSR		_adc_cur_year
-		STA		_city._year_to_expo
-		STX		_city._year_to_expo+1
+		STA		_city._Year_to_expo
+		STX		_city._Year_to_expo+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1556,8 +1556,8 @@ loc_58AA8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,NONE,_tmp0,#$1E
-		CIADDB	_tmp2,_cur_screen_tile._X, #$07,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._ROW,NONE,_tmp0,#$1E
+		CIADDB	_tmp2,_cur_screen_tile._COL, #$07,NONE,#$20
 		WRAPB	_tmp3,_tmp4,_tmp2,#$19,#$20
 		BUFPOS	_tmp1,_tmp2,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp2)+#$0000
 		RTS
@@ -1836,7 +1836,7 @@ loc_58D30:
 		LDA		_scroll_msg_lib_hi,X
 		STA		_tmp15+1
 loc_58D3D:
-		LDA		_cur_screen_tile._Y
+		LDA		_cur_screen_tile._ROW
 		LSR
 		CLC
 		ADC		#$1B
@@ -2209,9 +2209,9 @@ _common_yes_no_menu_cursor_draw:
 loc_590C9:
 		CLC
 		ADC		#$78
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$90
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		LDA		#$00
@@ -2233,9 +2233,9 @@ _common_yes_no_menu_no_push_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_yes_no_menu_button_push_draw:
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$88
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$00
 		STA		_spr_insert_args._attr
 		JMP		_spr_lib_attr_insert
@@ -2468,9 +2468,9 @@ aTurnOffPowerSwitch:
 ; =============== S U B	R O U T	I N E =======================================
 _turn_off_power_animate:
 		LDA		#$78
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$40
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$A2
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert
@@ -2488,9 +2488,9 @@ loc_592ED:
 		BEQ		loc_59301
 		STA		_spr_insert_args._idx
 		LDA		#$78
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$48
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert
 loc_59301:
 		LDX		byte_582
@@ -2646,8 +2646,8 @@ loc_593F1:
 		JSR		_generate_new_mapD
 		JSR		_generate_new_mapE
 		JSR		_generate_new_mapF
-		JSR		_generate_new_mapG
-		RTS
+		JMP		_generate_new_mapG
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_write:
@@ -2740,8 +2740,8 @@ _generate_new_mapB:
 		LDX		#$04
 		JSR		_mul_rand
 		STA		byte_57F
-		JSR		_generate_new_mapB_1
-		RTS
+		JMP		_generate_new_mapB_1
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapB_0:
@@ -2813,8 +2813,8 @@ loc_59549:
 		DEC		byte_57C
 		BNE		loc_59549
 		JSR		_generate_new_map_sub5
-		JSR		_generate_new_map_sub5
-		RTS
+		JMP		_generate_new_map_sub5
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapF_0:

@@ -98,8 +98,8 @@ _game_setup05_scenario_init:
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
 		LDA		#$08
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		loc_240A5
 		JSRXY	_tlm_res_unpack,_tlm_res_scenario_normal
@@ -209,7 +209,7 @@ loc_24144:
 		PPUQMOVA
 		DEC		_tmp3
 		BNE		loc_24144
-		ADDW8	_ptr0,#$20
+		ADDWB	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24130
 		PPUQEND
@@ -233,7 +233,7 @@ loc_24188:
 		EXTQMOVA
 		DEC		_tmp3
 		BNE		loc_24188
-		ADDW8	_ptr0,#$20
+		ADDWB	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24174
 		EXTQEND
@@ -682,8 +682,8 @@ _game_setup01_name_input_init:
 		JSR		_pal_fade_out
 		JSR		_render_off
 		LDA		#$08
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
@@ -743,7 +743,7 @@ _game_setup02_name_input_input:
 		JSR		_spr_finish
 		BIT		_pad0_autorep_press
 		BVC		locret_245A9
-		JSR		_name_input_previous_scr
+		JMP		_name_input_previous_scr
 locret_245A9:
 		RTS
 
@@ -820,9 +820,9 @@ loc_24632:
 		LDA		_tmp6D0+1
 		BEQ		loc_2464A
 		LDA		_tmp6CC
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		_tmp6CE
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		JMP		_spr_lib_attr_insert
 loc_2464A:
 		JMP		_spr_finish
@@ -869,9 +869,9 @@ loc_246AC:
 		LDA		#$A0							; this is a sprite effect
 		STA		_spr_insert_args._idx
 		LDA		byte_6DC+4
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		byte_6DC+5
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert			; draw common button frame sprite
 		LDX		#$FD							; then manually hack its
 		LDA		byte_6DC+6						; middle tile to display a corresponding
@@ -1236,7 +1236,7 @@ loc_2495D:
 		DEY
 loc_24966:
 		STY		_city._difficult
-		JSR		_difficult_scr_cursor_draw
+		JMP		_difficult_scr_cursor_draw
 locret_2496C:
 		RTS
 
@@ -1269,8 +1269,8 @@ loc_24991:
 		STA		_tmp6CE
 		LDA		#$50
 		STA		_tmp6CC
-		JSR		_common_select_cursor_draw
-		RTS
+		JMP		_common_select_cursor_draw
+
 off_249B0:
 		.BYTE	<[_MMC5_EXRAM+$1A6]
 		.BYTE	<[_MMC5_EXRAM+$1E6]
@@ -1301,8 +1301,8 @@ _game_setup00_new_city_gen:
 		JSR		_ppu_queues_reset
 		JSR		_pal_fade_out
 		LDA		#$24
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDA		#$07
 		STA		_scr_res_idx
 		LDA		#$00
@@ -1463,7 +1463,7 @@ loc_24AF6:
 		INC		_main_sub_idx
 		LDA		#$80
 		STA		_apu_mus_idx_req
-		JSR		_pal_fade_out
+		JMP		_pal_fade_out
 locret_24B0D:
 		RTS
 

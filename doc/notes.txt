@@ -1,14 +1,15 @@
 	NEW BUGS
 
 - sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner. can't reproduce it every time. because of that I'm not completely shure it is new bug, but not the something old.
+- new ship object can stuck in a pond forever sometimes, need to float under the bridges sometimes!
 
 	WHAT DONE
 
-- Removal of garbage data and commented all unreferenced data and code for further possible usage, if any.
+- Removal of the garbage data and commented out all unreferenced data and code for further possible usage, if any.
 - Cleanup some portions of the code, minor optimizations on size.
 - Macrofication of the code for much more readable listing.
-- Commented as much as possible code and data which i clearly understand what they do or sometimes some thoughts about how they write this code.
-- Optimized redundant or duplicated code chunks, similar routines merged and used as system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RND as a result of that).
+- Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
+- Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RND as a result of this).
 - Re-enabled unsed sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Re-enabled 4-frame animation for Helicopter. Have no idea wether it was removed on purpose or by accident. 4-frame looks much more blinking, maybe epilepcy issues?
 - Fixed Scenario Screen potential crash, when all scenarios unlocked. Also fixed redundant CPU cycles due to RAM address mistake there.
@@ -28,17 +29,17 @@
 
 	UNFINISHED
 
-- There are 6 regular scenarios available from the beginning. When you beat 6 regular scenarios, two additional scenarios will be available: "Las Vegas UFO" and "Freedom".
+- There are 6 regular scenarios available at the beginning. When you beat 6 regular scenarios, two additional scenarios will be available: "Las Vegas UFO" and "Freedom".
 	- Both have no briefing texts and window headers, only blank windows.
 	- Both have no completing conditions, both are infinite and cannot be completed.
-	- Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR data contains two frames of the large UFO with a tractor beam. However, there no any other mentions in game messages nor game code for such type of disasters. It is just not implemented at all.
-	- Scenario "Freedom" have proper map data but have no any proper scenario parameters to load. So all flags, money amount, game settings are be semi-random at start. CANT BE PATCHED.
+	- Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR ROM contains two set of tiles for two frames of the large UFO animation with a tractor beam. However, there aren't any other mentions in game messages nor game code for such type of disasters/objects. There is no sprites data associated with it as well. It is just not implemented at all.
+	- Scenario "Freedom" have proper map data but have no any proper scenario parameters to load. So all flags, money amount, game settings are be semi-random at start. CAN'T BE PATCHED.
 - There are 5 name buffers inside
 	- First is your town name, default name "SIMCITY".
 	- Second is what you enter as a favorite word, used as a sister town name during the game in New Town mode, if not entered, used the default name. In practice and scenario modes is blank, so message about sistership of towns will lack the name of the City at all.
 	- Third name used as bank name inside the message resourses, but never initialized with any value, always blank, the same as with blank sister town name.
 	- Two more are unused completely.
-- One of the SE effects unreferenced and there is not known where it should be used. Use GG AKOXTGAA+YSXZPKAP then write $08 to $00F1 address in RAM to hear it.
+- One of the SE effects unreferenced and there is not known where it should be used. DEMO GG: AKOXTGAA+YSXZPKAP (replaces one of the used sounds with it, write $08 to $00F1 address in RAM to hear a new one).
 - There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine.
 	- Used from 0 to F except B ("Blackouts"), also 18 ("Heavy traffic report") in a custom handler. The rest of messages aren't used at all.
 	- Most of them are about disasters and crashes and duplicates the ingame alert messages.
@@ -47,13 +48,13 @@
 - There is a unfinished leftover code from an old attempt to calculate the starting position for unused Ship vehicle. It executes every time when the game engine counts sea ports and trying to search for a specific tile in the map buffer ($FE). After all it just set the current sea port position as a starting position of the ship, which never used because there is no Ship deploy code in the ROM at all.
 	- Tile $FE never used and seems just a copy of open water tile ($BD), so this code does not find anything.
 	- The search loop stop conditions uses the buffer size instead of end of buffer offset, so this loop should've search through all CPU space, wrap to RAM and ends something in RAM MIRROR area, but can stop earlier, because there are some $FE bytes in the PRG code.
-	- Both takes a lot of CPU cycles, but does nothing after all. Fix it with GG to skip uneeded work SUEXUEVN+TNOXUATP.
+	- Both takes a lot of CPU cycles, but does nothing after all. FIX GG: SUEXUEVN+TNOXUATP (disables unused check at all).
 	- It may be speculated, that they planned to do some kind of "Sea routes" for ship, to make him sail on fixed areas. However, this likely just an old redefined tile for open sea on map, and so this Ship code leftovers may be dropped at the very early developement stage. Probably they just wanted to know if there any water on the map exists.
-- The unused Ship vehicle has two sets of sprites for years before and after 1950. Sprites 5 and 6 of the first set are broken, as well as sprite 3 of the second set.
+- The unused Ship vehicle has two sets of sprites for years before and after 1950. Sprites 5 and 6 of the first set are broken, as well as sprite 3 of the second set. CAN'T BE PATCHED
 - In the data for in-game menus there are two unused "YES/NO" windows: "DO YOU QUIT PLAYING WITHOUT SAVING?" and "DO YOU WANT TO START NEW CITY?". Both unused. In all cases except "LOAD GAME" the common "SAVE GAME" menu used instead.
 - The data used for Graphs screen in the current version calculated very briefly, and code looks like a mess sometimes. All values for this screen are fixed point values between -2 and 2, so the graphs display only a small columns for all parameters except crime rate, which is calculated differently. Also code lacks proper scaling of parameters although the max values for RCI data are calculated and stored. So we may presume the scaling has been planned.
 - Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
-- Helicopter spprites contains a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason.
+- Helicopter spprites contains a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason. FIX GG: 039-E37-E6E
 - There are a lot of unused CHR data for BG objects:
 	- BANK1E, TILES 0C 4x4 (Airport Terminal 2)
 	- BANK1F, TILES 0C 4x4 (Airport Terminal 3)
@@ -65,6 +66,11 @@
 - Also there are a little bit of ingame-icons:
 	- BANK20, TILES 20 8x2 ("CLEAR" tablet)
 	- BANK2B, TILES 16 2x2 ("BANK" icon with frame)
+- Message windows during the game has a various animation sequences depending on current message. There are 19 sequences are used for 10 scenes. Sequences 6 to 11 intended to be used in 4 additional scenes but they isn't. To see each of 4 unused scenes use FIX GG codes and open default hint window during the game by pushing to the "HINT" button. The evidence that the game should have 4 more hint messages is that there are two of the arrays has 40 entries instead of 36 (the number of hint messages currently, see APPEND A below).
+	- Scenes 6-7. Uses the same sprites as for Traffic Jam message, but the "Mayor" character stands still at the rightmost window size and constantly looking to the left sweating. The closed door animation in the center of the window which someone badging from the outside. Sprites of it never appear elsewhere. Both animated sprites together exceeded the 8 sprites per line limit and thus the "Mayor" missing part of its face. Probably should have been used when the city gone broke at some point, but there are no such warning in current version. FIX GG: ZAEAPGPA+ZTANAPGLA+YANAZGGA
+	- Scene 8. The "Mayor" character stand with his back toward us. Sprites never used before. Animation very short. Usage isn't clear. FIX GG: AANAPGLE
+	- Scene 9. The mayor character at the middle of the screen with crutch and a bandage on its head, explaining something. Sprites aren't used enywhere else also. Most probably should be used for earnings about disasters or low funding of medicine. FIX GG: PANAPGLE
+	- Scenes 10-11. The "Mayor" character constantly running from the left side to the right side of the window. The green cloud is floating after him. Most probalby this animation is for pollution warning message. Also exceeded the 8 sprites limit at some point. In any case, there aren't messages of pollution warning in the game. FIX GG: ZAEAPGPA+ZANAPGLE+LANAZGGE+LUEZYALU
 
 	BUGS
 
@@ -83,7 +89,7 @@
 - Tere is a var $67D, which never written by any code, but read sometimes and used in calcs. It used at $A:$AB69, where the calc results stored in vars $6D6-6DB. May it be a mistakenly swapped numbers 67D-6D7 for a proper var? Then it should be a high nibble of traffic level value. However, it is used also at $A:$A9F7 in an overall city assessed value, added to police stations count and weighted then summed in overal value. Both places should seemingly use a different variables, both seems incorrect by now.
 - The clear routine clears only the lower nibble of _city_assessed_value not touching the high ones and then immediately clears the _annual_score_change var which is temporary recalculated var actually sitting near the _city_assessed_value ram address. There is unknown if they wether missed two more bytes to be cleared or clear a wrong vars instead.
 - _city_assessed_value_recalc routine have a major calc mistake: 6 out of 9 parameters has wrong weight multipliers, basicly they swapped hi and low nibbles of the 16-bit constants. So instead of weight of hospitals $0190 (decimal 400) we have $9001 (decimal 36865) and so on.
-- Monster Disaster appearance logic choses randomly the appearnce point inside the map, then calculates the destination point based on what side of the map is farther (by one of directions) and one random position on that side. The random selection routine stores both X and Y destination coordinates in the same _obj_dest_pos._monster._X variable. The most noticeable result of this bug is at that the first appearance with higher probability the monster will go UP on the map.
+- Monster Disaster appearance logic choses randomly the appearnce point inside the map, then calculates the destination point based on what side of the map is farther (by one of directions) and one random position on that side. The random selection routine stores both X and Y destination coordinates in the same _obj_dest_pos._monster._COL variable. The most noticeable result of this bug is at that the first appearance with higher probability the monster will go UP on the map.
 
 	MISC
 
@@ -93,7 +99,7 @@
 - All music tracks are used in the game. Most of tracks used to highlight the town population value. some tracks are "paired" and consists of two conjuncted parts. An intro and looped main track (01-02 title, 08-10 practice, 48-50, 60-40 information).
 - (*2) There is an automatically spawned helicopter for observing the road traffic. It floats randomly and every iteration its coordinates tested against the traffic map. If helicopter flying over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement with a quick and lazy method, avoiding the regular message system and called from the top of the system loop.
 - Sound engine tables the same as in Nintendo games: Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All has similar way to play SE by setting flag bits and so on.
-- Power consumption calculated as: TOTAL_POWER = COAL*700 + NUCLEAR*2000 pts. Every single powerable building tile and every electric wire consume 1 pt. Due to recursive method of collecting the network data, there will be extra power points consumed according to placement and location of adjascent buildings. So the same amount of building may consume more or less power just because of placement and grouping of the buildings.
+- Power consumption calculated as: TOTAL_POWER = COAL*700+NUCLEAR*2000 pts. Every single powerable building tile and every electric wire consume 1 pt. Due to recursive method of collecting the network data, there will be extra power points consumed according to placement and location of adjascent buildings. So the same amount of building may consume more or less power just because of placement and grouping of the buildings.
 
 	APPEND. A - EVENTS/PRESENTS
 

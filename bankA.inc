@@ -80,7 +80,7 @@ _RCI_meters_recalc:
 		LDA		#$4D
 		STA		_tmpE6							; if divider = 0, then result 1.4Dfp
 loc_10409D:
-		ADDW8	_tmpE6,#$05						; add 0.05fp
+		ADDWB	_tmpE6,#$05						; add 0.05fp
 		LDX		#$00
 		JSR		_RCI_meter_recalc				; R recalc
 		MOVW	_tmpE7,_tmp6AA					; dividend = L_R/8
@@ -258,7 +258,7 @@ loc_10420F:
 		STA		_tmpE7
 loc_104253:
 		MOVW	_tmp6CC,_tmpE6
-		MOVWI	_tmp6CE,$0000
+		MOVWI	_tmp6CE,0
 loc_104265:
 		LDA		_power_stations_list_pos
 		ORA		_power_stations_list_pos+1
@@ -275,8 +275,8 @@ loc_10427F:
 		LDX		_tmp_recalc_bufs+$100,Y
 		LDA		_tmp_recalc_bufs+$200,Y
 loc_104285:
-		STX		_tmp_map_pos._X
-		STA		_tmp_map_pos._Y
+		STX		_tmp_map_pos._COL
+		STA		_tmp_map_pos._ROW
 		DEY
 		STY		_power_stations_list_pos
 		CPY		#$FF
@@ -326,32 +326,32 @@ locret_1042F9:
 _tmp_map_surrounding_tile_pos_select:
 		CPX		#$00
 		BNE		loc_104307
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		BEQ		locret_10432E
-		DEC		_tmp_map_pos._Y
+		DEC		_tmp_map_pos._ROW
 		RTS
 loc_104307:
 		DEX
 		BNE		loc_104315
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		CMP		#$4B
 		BEQ		locret_10432E
-		INC		_tmp_map_pos._X
+		INC		_tmp_map_pos._COL
 		RTS
 loc_104315:
 		DEX
 		BNE		loc_104323
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		CMP		#$4B
 		BEQ		locret_10432E
-		INC		_tmp_map_pos._Y
+		INC		_tmp_map_pos._ROW
 		RTS
 loc_104323:
 		DEX
 		BNE		locret_10432E
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		BEQ		locret_10432E
-		DEC		_tmp_map_pos._X
+		DEC		_tmp_map_pos._COL
 locret_10432E:
 		RTS
 
@@ -371,26 +371,26 @@ loc_10433C:
 		LDY		_power_stations_list_pos
 		CPX		#$00
 		BEQ		loc_10435C
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		STA		_tmp_recalc_bufs,Y
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		STA		_tmp_recalc_bufs+$300,Y
 		JMP		loc_104368						; optimize me
 loc_10435C:
-		LDA		_tmp_map_pos._X
+		LDA		_tmp_map_pos._COL
 		STA		_tmp_recalc_bufs+$100,Y
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		STA		_tmp_recalc_bufs+$200,Y
 loc_104368:
 		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
 _power_grid_map_bit_set:
-		LDA		_tmp_map_pos._Y
+		LDA		_tmp_map_pos._ROW
 		MULAI	#$4C
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_tmp_map_pos._X
+		ADC		_tmp_map_pos._COL
 		STA		_tmpE6
 		PHA
 		LDA		_MMC5_MUL1
@@ -438,12 +438,12 @@ loc_1043D1:
 		BNE		loc_1043D1
 		STA		_obj_active_flags
 		LDA		#$FF
-		STA		_city._year_to_build_bank			; special years clear
-		STA		_city._year_to_build_bank+1
-		STA		_city._year_to_expo
-		STA		_city._year_to_expo+1
-		STA		_city._year_to_liberty
-		STA		_city._year_to_liberty+1
+		STA		_city._Year_to_build_bank			; special years clear
+		STA		_city._Year_to_build_bank+1
+		STA		_city._Year_to_expo
+		STA		_city._Year_to_expo+1
+		STA		_city._Year_to_liberty
+		STA		_city._Year_to_liberty+1
 		LDX		_cur_game_mode						; dependent from the game mode
 		BNE		loc_1043FF
 		FJSRA	_sram_data_load,SRAM,PRG3				; game mode 0, load saved city data
@@ -499,7 +499,7 @@ loc_10445D:
 		STA		_city._game_flags					; default game settings
 		JMP		.complete_game_setup
 loc_104476:
-		MOVWI	_city._money,$4E20					; game mode 3, practice
+		MOVWI	_city._money,20000					; game mode 3, practice
 		MOVWI	_city._cur_year,1900				; starting year fixed
 		LDA		#$00
 		STA		_city._city_type
@@ -795,7 +795,7 @@ _fiscal_year_over_calculations:
 		LDA		#$00
 		STA		_taxes_income
 		MOVW	_tmp6CC,_city._tax_year_rate
-		MOVWI	_city._tax_year_rate,$0000
+		MOVWI	_city._tax_year_rate,0
 		LDA		_fiscal_year_results_draw_req
 		BEQ		loc_1046EB
 		RTS
@@ -885,63 +885,19 @@ loc_1047C7:
 		BCC		loc_1047E4
 		INC		_city._money+2
 loc_1047E4:
-		LDA		_city._money
-		SEC
-		SBC		_road_fund_alloc
-		STA		_city._money
-		LDA		_city._money+1
-		SBC		_road_fund_alloc+1
-		STA		_city._money+1
-		BCS		loc_1047FC
-		DEC		_city._money+2
-loc_1047FC:
-		LDA		_city._money
-		SEC
-		SBC		_fire_fund_alloc
-		STA		_city._money
-		LDA		_city._money+1
-		SBC		_fire_fund_alloc+1
-		STA		_city._money+1
-		BCS		loc_104814
-		DEC		_city._money+2
-loc_104814:
-		LDA		_city._money
-		SEC
-		SBC		_police_fund_alloc
-		STA		_city._money
-		LDA		_city._money+1
-		SBC		_police_fund_alloc+1
-		STA		_city._money+1
-		BCS		loc_10482C
-		DEC		_city._money+2
-loc_10482C:
-		LDA		_city._money
-		SEC
-		SBC		_education_fund_alloc
-		STA		_city._money
-		LDA		_city._money+1
-		SBC		_education_fund_alloc+1
-		STA		_city._money+1
-		BCS		loc_104844
-		DEC		_city._money+2
-loc_104844:
-		LDA		_city._bank_loan_period
+		SUBDW	_city._money,_road_fund_alloc
+		SUBDW	_city._money,_fire_fund_alloc
+		SUBDW	_city._money,_police_fund_alloc
+		SUBDW	_city._money,_education_fund_alloc
+		LDA		_city._loan_period				; if loan period isn't zero
 		BEQ		loc_10486C
-		DEC		_city._bank_loan_period
+		DEC		_city._loan_period				; decrement
 		BNE		loc_104856
-		LDA		_city._bank_flags
+		LDA		_city._bank_flags				; if the last year, clear loan flag
 		AND		#$BF
 		STA		_city._bank_flags
 loc_104856:
-		LDA		_city._money
-		SEC
-		SBC		#$F4
-		STA		_city._money
-		LDA		_city._money+1
-		SBC		#$01
-		STA		_city._money+1
-		BCS		loc_10486C
-		DEC		_city._money+2
+		SUBDI16	_city._money,500				; loan amount hardcoded here, the var never used
 loc_10486C:
 		LDA		_taxes_collected
 		SEC
@@ -1836,9 +1792,9 @@ _event0B_bank:
 		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_city._cur_year
-		CMP		_city._year_to_build_bank
+		CMP		_city._Year_to_build_bank
 		LDA		_city._cur_year+1
-		SBC		_city._year_to_build_bank+1
+		SBC		_city._Year_to_build_bank+1
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
 
@@ -1944,9 +1900,9 @@ _event16_expo_monument:
 		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
-		CMP		_city._year_to_expo
+		CMP		_city._Year_to_expo
 		LDA		_city._cur_year+1
-		SBC		_city._year_to_expo+1
+		SBC		_city._Year_to_expo+1
 		BCC		nullsub_2
 		BCS		_new_event_register_flag
 
@@ -1955,9 +1911,9 @@ _event17_liberty:
 		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
-		CMP		_city._year_to_liberty
+		CMP		_city._Year_to_liberty
 		LDA		_city._cur_year+1
-		SBC		_city._year_to_liberty+1
+		SBC		_city._Year_to_liberty+1
 		BCC		nullsub_2
 		BCS		_new_event_register_flag
 

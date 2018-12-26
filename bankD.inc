@@ -9,21 +9,21 @@ sub_150124:
 		BEQ		loc_15012B
 		JMP		loc_1501C5
 loc_15012B:
-		LDA		_cur_map_wnd_pos._X
+		LDA		_cur_map_wnd_pos._COL
 		SEC
 		SBC		#$07
-		STA		_tmp_tile_pos._X
-		LDA		_cur_map_wnd_pos._Y
+		STA		_tmp_tile_pos._COL
+		LDA		_cur_map_wnd_pos._ROW
 		CLC
 		ADC		byte_72
-		STA		_tmp_tile_pos._Y
+		STA		_tmp_tile_pos._ROW
 		JSR		sub_150262
-		LDA		_cur_screen_tile._X
+		LDA		_cur_screen_tile._COL
 		LSR
 		STA		byte_74
-		CIADDB	byte_75,_cur_screen_tile._Y,byte_73,NONE,#$1E
+		CIADDB	byte_75,_cur_screen_tile._ROW,byte_73,NONE,#$1E
 		JSR		_buf_pos_calc_74_75_77
-		LDA		_cur_screen_tile._X
+		LDA		_cur_screen_tile._COL
 		LSR
 		EOR		#$FF
 		SEC
@@ -70,20 +70,20 @@ loc_1501BF:
 		EXTQEND
 		RTS
 loc_1501C5:
-		LDA		_cur_map_wnd_pos._X
+		LDA		_cur_map_wnd_pos._COL
 		CLC
 		ADC		byte_72
-		STA		_tmp_tile_pos._X
-		LDA		_cur_map_wnd_pos._Y
+		STA		_tmp_tile_pos._COL
+		LDA		_cur_map_wnd_pos._ROW
 		SEC
 		SBC		#$07
-		STA		_tmp_tile_pos._Y
+		STA		_tmp_tile_pos._ROW
 		JSR		sub_150282
-		CIADDB	byte_74,_cur_screen_tile._X,byte_73,NONE,#$20
+		CIADDB	byte_74,_cur_screen_tile._COL,byte_73,NONE,#$20
 		LDA		#$00
 		STA		byte_75
 		JSR		_buf_pos_calc_74_75_77
-		LDA		_cur_screen_tile._Y
+		LDA		_cur_screen_tile._ROW
 		LSR
 		STA		_ptr0
 		LDA		#$07
@@ -149,7 +149,7 @@ loc_150269:
 		JSR		sub_137E6E
 		PLA
 		TAX
-		INC		_tmp_tile_pos._X
+		INC		_tmp_tile_pos._COL
 		LDA		word_6C
 		STA		_pre_ppu_buf,X
 		LDA		word_6C+1
@@ -171,7 +171,7 @@ loc_150288:
 		JSR		sub_137E6E
 		PLA
 		TAX
-		INC		_tmp_tile_pos._Y
+		INC		_tmp_tile_pos._ROW
 		LDA		word_6C
 		STA		_pre_ppu_buf,X
 		LDA		word_6C+1
@@ -206,16 +206,16 @@ loc_1502D4:
 		AND		#$03
 		BEQ		loc_1502EC
 		LSR
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		BCC		loc_1502E7
 		CLC
 		ADC		#$02
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		JMP		loc_1502EC
 loc_1502E7:
 		SEC
 		SBC		#$02
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 loc_1502EC:
 		LDA		_pad0_held
 		AND		#$0C
@@ -223,38 +223,38 @@ loc_1502EC:
 		LSR
 		LSR
 		LSR
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		BCC		loc_150301
 		CLC
 		ADC		#$02
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		JMP		loc_150306
 loc_150301:
 		SEC
 		SBC		#$02
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 loc_150306:
 		JSR		sub_15035F
-		JSR		sub_150383
-		RTS
+		JMP		sub_150383
+
 loc_15030D:
 		LDA		#$00
-		STA		_game_map_area_cursor_pos_backup._X
+		STA		_game_map_area_cursor_pos_backup._COL
 		LDA		_pad0_autorep_release
 		AND		#$03
 		BEQ		loc_15032D
 		LSR
 		BCC		loc_150324
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		CLC
 		ADC		#$08
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		BNE		loc_15032D
 loc_150324:
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		SEC
 		SBC		#$08
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		BNE		loc_15032D
 loc_15032D:
 		LDA		_pad0_autorep_release
@@ -264,42 +264,42 @@ loc_15032D:
 		LSR
 		LSR
 		BCC		loc_150341
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		CLC
 		ADC		#$08
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		BNE		loc_15034A
 loc_150341:
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		SEC
 		SBC		#$08
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		BNE		loc_15034A
 loc_15034A:
 		JSR		sub_15035F
-		JSR		sub_150383
-		RTS
+		JMP		sub_150383
+
 _building_sizes_list:
 		.BYTE	$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$03,$03,$03,$03
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_15035F:
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$38
 		BCC		loc_15037E
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		CMP		#$38
 		BCC		loc_15037E
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		LSR
 		LSR
 		LSR
-		STA		_constr_cursor_tile._X
-		LDA		_cur_game_cursor_scr_pos._Y
+		STA		_constr_cursor_tile._COL
+		LDA		_cur_game_cursor_scr_pos._ROW
 		LSR
 		LSR
 		LSR
-		STA		_constr_cursor_tile._Y
+		STA		_constr_cursor_tile._ROW
 		LDA		#$01
 		STA		_cur_game_cursor_area
 		RTS
@@ -329,73 +329,73 @@ loc_150395:
 		LDA		#$F0
 		SEC
 		SBC		_ptr0
-		CMP		_cur_game_cursor_scr_pos._X
+		CMP		_cur_game_cursor_scr_pos._COL
 		BCS		loc_1503AD
 		LDA		#$F0
 		SEC
 		SBC		_ptr0
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 loc_1503AD:
 		LDA		#$E0
 		SEC
 		SBC		_ptr0
-		CMP		_cur_game_cursor_scr_pos._Y
+		CMP		_cur_game_cursor_scr_pos._ROW
 		BCS		loc_1503BD
 		LDA		#$E0
 		SEC
 		SBC		_ptr0
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 loc_1503BD:
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		LSR
 		LSR
 		LSR
 		SEC
 		SBC		#$07
-		STA		_constr_cursor_tile._X
-		LDA		_cur_game_cursor_scr_pos._Y
+		STA		_constr_cursor_tile._COL
+		LDA		_cur_game_cursor_scr_pos._ROW
 		LSR
 		LSR
 		LSR
 		SEC
 		SBC		#$07
-		STA		_constr_cursor_tile._Y
+		STA		_constr_cursor_tile._ROW
 		RTS
 loc_1503D2:
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$10
 		BCS		loc_1503DE
 		LDA		#$10
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		BNE		loc_1503E6
 loc_1503DE:
 		CMP		#$E9
 		BCC		loc_1503E6
 		LDA		#$E8
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 loc_1503E6:
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		CMP		#$10
 		BCS		loc_1503F2
 		LDA		#$10
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		BNE		loc_1503E6
 loc_1503F2:
 		CMP		#$D9
 		BCC		locret_1503FA
 		LDA		#$D8
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 locret_1503FA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_push_area_test:
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		CMP		#$38
 		BCS		loc_150425
 		CMP		#$28
 		BCC		loc_150450
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$98
 		BCS		loc_150450
 		CMP		#$10
@@ -417,12 +417,12 @@ loc_150421:
 		CLC
 		RTS
 loc_150425:
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$30
 		BCS		loc_150450
 		CMP		#$10
 		BCC		loc_150450
-		LDA		_cur_game_cursor_scr_pos._Y
+		LDA		_cur_game_cursor_scr_pos._ROW
 		CMP		#$B0
 		BCS		loc_150450
 		SEC
@@ -433,7 +433,7 @@ loc_150425:
 		LSR
 		AND		#$FE
 		STA		_ptr0
-		LDA		_cur_game_cursor_scr_pos._X
+		LDA		_cur_game_cursor_scr_pos._COL
 		SEC
 		SBC		#$10
 		LSR
@@ -460,12 +460,12 @@ _bank_build_year_init:
 		LDA		_city._cur_year
 		CLC
 		ADC		#$05
-		STA		_city._year_to_build_bank
+		STA		_city._Year_to_build_bank
 		LDX		_city._cur_year+1
 		BCC		loc_150471
 		INX
 loc_150471:
-		STX		_city._year_to_build_bank+1
+		STX		_city._Year_to_build_bank+1
 locret_150474:
 		RTS
 
@@ -587,13 +587,13 @@ loc_150531:
 		INY
 		BNE		loc_150518
 loc_150545:
-		JSR		_sram_off
-		RTS
+		JMP		_sram_off
+
 loc_150549:
 		LDY		#$00
 		STA		(word_C1),Y
-		JSR		_sram_off
-		RTS
+		JMP		_sram_off
+
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_150551:
@@ -626,8 +626,8 @@ loc_15057E:
 		INY
 		BNE		loc_15056C
 loc_150581:
-		JSR		_sram_off
-		RTS
+		JMP		_sram_off
+
 off_150585:
 		.BYTE	<[byte_15058D]
 		.BYTE	<[byte_150598]
@@ -659,13 +659,13 @@ byte_1505C2:
 sub_1505E3:
 		INY
 		CLC
-		ADC		_cur_constr_cursor_map_pos._X
+		ADC		_cur_constr_cursor_map_pos._COL
 		STA		byte_511
 		CMP		#$4C
 		BCS		loc_150634
 		LDA		(word_D0),Y
 		CLC
-		ADC		_cur_constr_cursor_map_pos._Y
+		ADC		_cur_constr_cursor_map_pos._ROW
 		STA		byte_512
 		CMP		#$4C
 		BCS		loc_150634
@@ -1247,9 +1247,9 @@ sub_1509D5:
 		LDA		_cur_selected_buildings_size
 		STA		_ptr0
 loc_1509DF:
-		LDA		_cur_map_wnd_pos._X
+		LDA		_cur_map_wnd_pos._COL
 		CLC
-		ADC		_constr_cursor_tile._X
+		ADC		_constr_cursor_tile._COL
 		SEC
 		SBC		byte_CE
 		SBC		#$01
@@ -1265,9 +1265,9 @@ loc_1509EE:
 		LDA		#$4B
 loc_1509F9:
 		STA		byte_5F
-		LDA		_cur_map_wnd_pos._Y
+		LDA		_cur_map_wnd_pos._ROW
 		CLC
-		ADC		_constr_cursor_tile._Y
+		ADC		_constr_cursor_tile._ROW
 		SEC
 		SBC		#$01
 		SBC		byte_CF
@@ -1290,18 +1290,18 @@ loc_150A15:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_constr_cursor_map_ofs:
-		LDA		_cur_map_wnd_pos._X
+		LDA		_cur_map_wnd_pos._COL
 		CLC
-		ADC		_constr_cursor_tile._X
-		STA		_cur_constr_cursor_map_pos._X
-		LDA		_cur_map_wnd_pos._Y
+		ADC		_constr_cursor_tile._COL
+		STA		_cur_constr_cursor_map_pos._COL
+		LDA		_cur_map_wnd_pos._ROW
 		CLC
-		ADC		_constr_cursor_tile._Y
-		STA		_cur_constr_cursor_map_pos._Y
+		ADC		_constr_cursor_tile._ROW
+		STA		_cur_constr_cursor_map_pos._ROW
 		LDX		#$4C
 		MULXA
 		CLC
-		ADC		_cur_constr_cursor_map_pos._X
+		ADC		_cur_constr_cursor_map_pos._COL
 		STA		word_C1
 		TXA
 		ADC		#>[_wram_map_buf]
@@ -2303,8 +2303,8 @@ sub_1510F5:
 		PHA
 		LDA		byte_534
 		BNE		loc_151115
-		LDA		_tmp_tile_pos._X
-		EOR		_tmp_tile_pos._Y
+		LDA		_tmp_tile_pos._COL
+		EOR		_tmp_tile_pos._ROW
 		ASL
 		CLC
 		ADC		_ptr0
@@ -2529,12 +2529,12 @@ loc_1512D9:
 ; =============== S U B	R O U T	I N E =======================================
 _traffic_dencity_area_read:
 		LDX		#$00
-		LDA		_tmp_tile_pos._Y
+		LDA		_tmp_tile_pos._ROW
 		LSR
 		LDY		#$13
 		MULYA
 		STA		_ptr0
-		LDA		_tmp_tile_pos._X
+		LDA		_tmp_tile_pos._COL
 		LSR
 		LSR
 		BCC		loc_1512FF
@@ -2623,8 +2623,8 @@ _gui_ctrl_menu_icon_draw:
 		STA		_tmp5
 		JSR		gui_ctrl_menu_icon_pos_calc
 ;		JSR		gui_ctrl_menu_icon_release_queue; REDUNDANT, merged
-		JSR		gui_ctrl_menu_icon_queue		; FIX: merged
-		RTS
+		JMP		gui_ctrl_menu_icon_queue		; FIX: merged
+
 
 gui_ctrl_menu_icons_posX_list:
 		.BYTE	$02,$04,$06,$08,$0A,$0C
@@ -2638,9 +2638,9 @@ gui_ctrl_menu_icons_posY_list:
 ; FIX: when we switch to macroses, we put extra BEQ opcode in other such plces
 ;
 gui_ctrl_menu_icon_pos_calc:
-		CIADDB	_tmp0,_cur_screen_tile._X,_tmp4,NONE,#$20
+		CIADDB	_tmp0,_cur_screen_tile._COL,_tmp4,NONE,#$20
 		WRAPB	_tmp2,_tmp3,_tmp0,_tmp6,#$20
-		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp5,NONE,#$1E
+		CIADDB	_tmp1,_cur_screen_tile._ROW,_tmp5,NONE,#$1E
 		WRAPA	_tmp4,_tmp5,#$02,#$1E
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#>[_MMC5_EXRAM]	; DST=(_ptr0+1*#$20+_ptr0)+#>[_MMC5_EXRAM]00
 		RTS
@@ -2676,7 +2676,7 @@ loc_151475:
 		STA		_tmp6+1
 		BEQ		loc_151474
 loc_1514A0:
-		ADDW8	_ptr0,#$20
+		ADDWB	_ptr0,#$20
 		DEC		_tmp4
 		BNE		loc_15145B
 		LDA		_tmp5
@@ -2724,7 +2724,7 @@ gui_ctrl_menu_mode_byte:
 ;		STA		_tmp6+1
 ;		BEQ		loc_151402
 ;loc_15142D:
-;		LDA		_ptr0							; TODO: optimize, this is ADDW8 opcode actually
+;		LDA		_ptr0							; TODO: optimize, this is ADDWB opcode actually
 ;		CLC
 ;		ADC		#$20
 ;		STA		_ptr0
@@ -3802,23 +3802,23 @@ byte_151EA4:
 _map_scroll_mode_minimap_draw:
 		LDA		#$07
 		STA		_spr_insert_args._idx
-		LDA		_cur_map_wnd_pos._X
+		LDA		_cur_map_wnd_pos._COL
 		LSR
 		CLC
 		ADC		#$0C
-		STA		_spr_insert_args._pos._X
-		LDA		_cur_map_wnd_pos._Y
+		STA		_spr_insert_args._pos._COL
+		LDA		_cur_map_wnd_pos._ROW
 		LSR
 		CLC
 		ADC		#$53
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert
 		LDA		#$06
 		STA		_spr_insert_args._idx
 		LDA		#$08
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		#$48
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$00
 		STA		_spr_insert_args._attr
 		JMP		_spr_lib_attr_insert
@@ -3848,9 +3848,9 @@ loc_151EE6:
 		ADC		#$08
 		STA		_spr_insert_args._idx
 		LDA		_map_scroll_arrows_posX_list,Y
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._COL
 		LDA		_map_scroll_arrows_posY_list,Y
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._ROW
 		LDA		#$00
 		STA		_spr_insert_args._attr
 		JSR		_spr_lib_attr_insert
@@ -3916,8 +3916,8 @@ loc_151F6D:
 		STA		_MMC5_CHR_MODE
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
-		JSR		_render_on
-		RTS
+		JMP		_render_on
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_flush_wait:
@@ -3931,8 +3931,8 @@ _ppu_flush_wait:
 _far_heavy_traffic_report_test:
 		LDA		_frames_counter
 		BNE		locret_151FA1
-		LDX		_obj_pos._heli._X
-		LDY		_obj_pos._heli._Y
+		LDX		_obj_pos._heli._COL
+		LDY		_obj_pos._heli._ROW
 		FJSRA	_heavy_traffic_report_test,SRAM,PRGB
 locret_151FA1:
 		RTS
@@ -3993,8 +3993,8 @@ loc_5804F:
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_hud_money_pos_calc:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+;		CIADDB	_tmp1,_cur_screen_tile._ROW,#$1C,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._COL,#$16,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$08,#$20
 ;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00
 ;		RTS
@@ -4049,8 +4049,8 @@ _hud_date_to_str:
 		LDA		#$DF
 		STA		_pre_ppu_buf,X
 		INX
-		JSR		_hud_month_str_queue
-		RTS
+		JMP		_hud_month_str_queue
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _hud_year_str_queue:
@@ -4155,8 +4155,8 @@ loc_58E2E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _hud_date_pos_calc:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+;		CIADDB	_tmp1,_cur_screen_tile._ROW,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._COL,#$16,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$08,#$20
 ;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZED, merged
 ;		RTS
@@ -4384,8 +4384,8 @@ loc_B8095:
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_hud_city_name_pos_set:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
+;		CIADDB	_tmp1,_cur_screen_tile._ROW,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._COL,#$02,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$0A,#$20
 ;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
 ;		RTS
@@ -4453,8 +4453,8 @@ loc_B8095:
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_hud_popul_pos_calc:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
+;		CIADDB	_tmp1,_cur_screen_tile._ROW,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._COL,#$0E,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$06,#$20
 ;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
 ;		RTS
@@ -4472,8 +4472,8 @@ loc_B8095:
 ; ppuOfs  = ((ppuY * 32) + ppuX) + 0x2000
 ;
 _hud_str_pos_calc_and_queue:
-		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp3,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,_tmp2,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._ROW,_tmp3,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._COL,_tmp2,NONE,#$20
 		WRAPB	_tmp2,_tmp3,_tmp0,_tmp4,#$20
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		PPUQSTART

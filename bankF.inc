@@ -96,14 +96,14 @@ loc_18A09D:
 		LDA		#$00
 		STA		_MMC5_CHR_BANKSA+7
 		LDA		#$02
-		STA		_MMC5_CHR_MODE
 		STA		_mmc5_chr_mode_shadow
+		STA		_MMC5_CHR_MODE
 		LDA		#$00
 		STA		_mmc5_sp_mode_shadow
 		STA		_MMC5_SP_MODE
 		LDA		#$00
-		STA		_MMC5_SP_SCROLL
 		STA		_mmc5_sp_scroll_shadow
+		STA		_MMC5_SP_SCROLL
 		STA		_MMC5_SP_PAGE
 		LDA		#$00
 		STA		_MMC5_NT_MODE
@@ -135,8 +135,8 @@ loc_18A0F0:
 		STA		_game_core_state
 		STA		byte_37
 		LDA		#$01
-		STA		_MMC5_CHR_MODE
 		STA		_mmc5_chr_mode_shadow
+		STA		_MMC5_CHR_MODE
 		LDA		#$80
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
@@ -248,7 +248,10 @@ loc_18A1F3:
 		JSR		_ppu_scrolls_reload
 		LDA		_main_sub_idx
 		BNE		loc_18A213
-		MOVW	_MMC5_CHR_BANKSA,_mmc5_chr_banks_shadow
+		LDA		_mmc5_chr_banks_shadow
+		STA		_MMC5_CHR_BANKSA
+		LDA		_mmc5_chr_banks_shadow+1
+		STA		_MMC5_CHR_BANKSA+1
 		LDA		_mmc5_chr_banks_shadow+2
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		_mmc5_chr_banks_shadow+3
@@ -500,7 +503,7 @@ _ppu_scrolls_reload:
 		TAX
 		BEQ		loc_18A45A
 loc_18A41F:
-		LDA		_cur_screen_tile._X
+		LDA		_cur_screen_tile._COL
 		ASL
 		ASL
 		LDX		_game_msg_wnd_active_flag
@@ -526,7 +529,7 @@ loc_18A448:
 		ADC		#$02
 loc_18A44B:
 		TAX
-		LDA		_cur_screen_tile._Y
+		LDA		_cur_screen_tile._ROW
 		ASL
 		ASL
 		SEC
@@ -619,7 +622,7 @@ loc_18A4BE:
 ; =============== S U B	R O U T	I N E =======================================
 ; WTF?
 _delay:
-		JSR		locret_18A4E3
+		JMP		locret_18A4E3
 locret_18A4E3:
 		RTS
 
@@ -1073,7 +1076,7 @@ loc_18A881:
 		LSR
 		BCC		locret_18A889
 		LDY		#$00
-		JSR		_pal_ppu_buf_send
+		JMP		_pal_ppu_buf_send
 locret_18A889:
 		RTS
 
@@ -1513,7 +1516,7 @@ loc_18AB87:
 		STA		_extnt_backup0,X
 loc_18AB8C:
 		INX
-		ADDW8	word_9B,#$20
+		ADDWB	word_9B,#$20
 		DEC		byte_9F
 		BNE		loc_18AB7B
 		DO_WRAP	byte_9F,byte_A0,loc_18AB71
@@ -1571,17 +1574,17 @@ _thread1_init:
 		STA		_ppu_ctrl_shadow				; initial game CHR banks
 		JSR		_game_chr_common_reload		; OPTIMIZED
 ;		LDA		#$34							; REDUNDANT, call routine above
-;		STA		_MMC5_CHR_BANKSA				; instead.
 ;		STA		_mmc5_chr_banks_shadow
+;		STA		_MMC5_CHR_BANKSA				; instead.
 		LDA		#$35
-		STA		_MMC5_CHR_BANKSA+1
 		STA		_mmc5_chr_banks_shadow+1
+		STA		_MMC5_CHR_BANKSA+1
 ;		LDA		#$3A							; REDUNDANT
-;		STA		_MMC5_CHR_BANKSA+2
 ;		STA		_mmc5_chr_banks_shadow+2
+;		STA		_MMC5_CHR_BANKSA+2
 ;		LDA		#$37
-;		STA		_MMC5_CHR_BANKSA+3
 ;		STA		_mmc5_chr_banks_shadow+3
+;		STA		_MMC5_CHR_BANKSA+3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1971,7 +1974,7 @@ loc_18AEB4:
 ;		STA		_ptr0
 ;		LDA		_spr_lib_hi,X
 ;		STA		_ptr0+1
-;		DEC		_spr_insert_args._pos._Y
+;		DEC		_spr_insert_args._pos._ROW
 ;		LDX		_spr_buf_pos
 ;		LDY		#$00
 ;loc_18A603:
@@ -1987,7 +1990,7 @@ loc_18AEB4:
 ;		SBC		#$06
 ;loc_18A615:
 ;		CLC
-;		ADC		_spr_insert_args._pos._Y
+;		ADC		_spr_insert_args._pos._ROW
 ;		STA		_spr_buf,X
 ;		INX
 ;		LDA		(_ptr0),Y
@@ -2009,7 +2012,7 @@ loc_18AEB4:
 ;		SBC		#$06
 ;loc_18A639:
 ;		CLC
-;		ADC		_spr_insert_args._pos._X
+;		ADC		_spr_insert_args._pos._COL
 ;		STA		_spr_buf,X
 ;		INX
 ;		JMP		loc_18A603
@@ -2036,7 +2039,7 @@ loc_18AEB4:
 ;		STA		_ptr0
 ;		LDA		_spr_lib_hi,X
 ;		STA		_ptr0+1
-;		DEC		_spr_insert_args._pos._Y
+;		DEC		_spr_insert_args._pos._ROW
 ;		LDX		_spr_buf_pos
 ;		LDY		#$00
 ;loc_18A666:
@@ -2046,7 +2049,7 @@ loc_18AEB4:
 ;		LDA		(_ptr0),Y
 ;		INY
 ;		CLC
-;		ADC		_spr_insert_args._pos._Y
+;		ADC		_spr_insert_args._pos._ROW
 ;		STA		_spr_buf,X
 ;		INX
 ;		LDA		(_ptr0),Y
@@ -2060,7 +2063,7 @@ loc_18AEB4:
 ;		LDA		(_ptr0),Y
 ;		INY
 ;		CLC
-;		ADC		_spr_insert_args._pos._X
+;		ADC		_spr_insert_args._pos._COL
 ;		CMP		#$38
 ;		BCC		loc_18A692
 ;		CMP		#$F8
@@ -2120,7 +2123,7 @@ _spr_lib_insert_ex:
 		STA		_ptr0
 		LDA		_spr_lib_hi,X
 		STA		_ptr0+1
-		DEC		_spr_insert_args._pos._Y
+		DEC		_spr_insert_args._pos._ROW
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_18A603:
@@ -2136,7 +2139,7 @@ loc_18A603:
 		SBC		#$06
 loc_18A615:
 		CLC
-		ADC		_spr_insert_args._pos._Y
+		ADC		_spr_insert_args._pos._ROW
 		STA		_spr_buf,X
 		INX
 		LDA		(_ptr0),Y
@@ -2158,7 +2161,7 @@ loc_18A615:
 		SBC		#$06
 loc_18A639:
 		CLC
-		ADC		_spr_insert_args._pos._X
+		ADC		_spr_insert_args._pos._COL
 		BIT		_tmp17
 		BPL		loc_18A69D						; no 80 flag, no clip
 		CMP		#$38
@@ -2181,21 +2184,21 @@ loc_18A643:
 		RTS
 
 _spr_lib_lo:
-		.BYTE	<[_spr00]
-		.BYTE	<[_spr01]
-		.BYTE	<[_spr02]
-		.BYTE	<[_spr03]
-		.BYTE	<[_spr04]
-		.BYTE	<[_spr05]
-		.BYTE	<[_spr06]
-		.BYTE	<[_spr07]
-		.BYTE	<[_spr08]
-		.BYTE	<[_spr09]
-		.BYTE	<[_spr0A]
-		.BYTE	<[_spr0B]
-		.BYTE	<[_spr0C]
-		.BYTE	<[_spr0D]
-		.BYTE	<[_spr0E]
+		.BYTE	<[_spr00]		; generic HAND cursor
+		.BYTE	<[_spr01]		; top-left build frame corner
+		.BYTE	<[_spr02]		; top-right build frame corner
+		.BYTE	<[_spr03]		; bottom-left build frame corner
+		.BYTE	<[_spr04]		; bottom-right build frame corner
+		.BYTE	<[_spr05]		; options STAR cursor
+		.BYTE	<[_spr06]		; mini-map
+		.BYTE	<[_spr07]		; mini-map cursor
+		.BYTE	<[_spr08]		; map scroll arrow UP
+		.BYTE	<[_spr09]		; map scroll arrow DOWN
+		.BYTE	<[_spr0A]		; map scroll arrow LEFT
+		.BYTE	<[_spr0B]		; map scroll arrow RIGHT
+		.BYTE	<[_spr0C]		; push icon YES
+		.BYTE	<[_spr0D]		; push icon NO
+		.BYTE	<[_spr0E]		; frame *unused*
 		.BYTE	0
 		.BYTE	<[_spr10]
 		.BYTE	<[_spr11]
@@ -2225,8 +2228,8 @@ _spr_lib_lo:
 		.BYTE	<[_spr29]
 		.BYTE	<[_spr2A]
 		.BYTE	<[_spr2B]
-		.BYTE	<[_spr2C]
-		.BYTE	<[_spr2D]
+		.BYTE	<[_spr2C]						; Mayor *unused*
+		.BYTE	<[_spr2D]						; Mayor *unused*
 		.BYTE	<[_spr2E]
 		.BYTE	<[_spr2F]
 		.BYTE	<[_spr30]
@@ -2234,8 +2237,8 @@ _spr_lib_lo:
 		.BYTE	<[_spr32]
 		.BYTE	<[_spr33]
 		.BYTE	<[_spr34]
-		.BYTE	<[_spr35]
-		.BYTE	<[_spr36]
+		.BYTE	<[_spr35]						; Mayor *unused*
+		.BYTE	<[_spr36]						; Mayor *unused*
 		.BYTE	<[_spr37]
 		.BYTE	<[_spr38]
 		.BYTE	<[_spr39]

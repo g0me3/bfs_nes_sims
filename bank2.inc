@@ -39,8 +39,7 @@ loc_3E0C1:
 loc_3E0CD:
 		DEX
 		BPL		loc_3E0C1
-		JSR		_sram_off
-		RTS
+		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
 _presents_wnd_icon_insert:
@@ -73,10 +72,10 @@ loc_3E104:
 		DEY
 		BPL		loc_3E104
 ;		JSR		_present_icon_pos_adjust		; REDUNDANT
-		ADDW8	_ptr0,#$05						; OPTIMIZED: -4 bytes
-		ADDW8	_tmp4,#$05
-		ADDW8	_tmp2,#$0F
-		ADDW8	_tmp6,#$0F
+		ADDWB	_ptr0,#$05						; OPTIMIZED: -4 bytes
+		ADDWB	_tmp4,#$05
+		ADDWB	_tmp2,#$0F
+		ADDWB	_tmp6,#$0F
 		DEX
 		BNE		loc_3E102
 		RTS
@@ -84,10 +83,10 @@ loc_3E104:
 ; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
 ;_present_icon_pos_adjust:
-;		ADDW8	_ptr0,#$05
-;		ADDW8	_tmp4,#$05
-;		ADDW8	_tmp2,#$0F
-;		ADDW8	_tmp6,#$0F
+;		ADDWB	_ptr0,#$05
+;		ADDWB	_tmp4,#$05
+;		ADDWB	_tmp2,#$0F
+;		ADDWB	_tmp6,#$0F
 ;		RTS
 
 _tlm_nt_presents_menu:
@@ -413,7 +412,7 @@ _presents_build_menu:
 		CLC
 		ADC		_ptr0
 		ADC		#$5B
-		STA		_spr_insert_args._pos._X		; sprX = curX * 48 + 91
+		STA		_spr_insert_args._pos._COL		; sprX = curX * 48 + 91
 		LDA		_cur_present_select_idx
 		AND		#$02
 		ASL
@@ -424,7 +423,7 @@ _presents_build_menu:
 		CLC
 		ADC		_ptr0
 		ADC		#$A4
-		STA		_spr_insert_args._pos._Y		; sprY = curY * 38 + 164
+		STA		_spr_insert_args._pos._ROW		; sprY = curY * 38 + 164
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert			; draw cursor, idx == $00
@@ -475,8 +474,8 @@ loc_3E6BD:
 .present_wnd_buttons:							; exit with A/B buttons
 		LDA		#$03
 		STA		_cur_selected_buildings_size	; all buildings here 3x3
-		JSR		_spr_clear
-		RTS
+		JMP		_spr_clear
+
 
 		SECTION_END	C0A
 

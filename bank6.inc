@@ -10,8 +10,8 @@ _scr_chr_vars_init:
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
 		LDA		#$84
-		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
 		LDA		_scr_res_idx
 		ASL
 		STA		_scr_res_idx
@@ -116,9 +116,9 @@ _scr_res_wnd_close:
 		LDA		#$14
 		STA		byte_57
 		LDA		#$44
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		LDA		#$30
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		JSR		_flush_wait_0
 		JSR		_pal_fade_out
 		LDA		_ppu_ctrl_shadow
@@ -400,8 +400,8 @@ loc_A0266:
 		LDA		_extnt_queue_pos_head
 		JSR		_strcpy_lib_ex
 		EXTQEND
-		JSR		_flush_wait_0
-		RTS
+		JMP		_flush_wait_0
+
 
 ; =============== S U B	R O U T	I N E =======================================
 _strcpy_lib_ex:
@@ -500,10 +500,10 @@ _scr_res_cursor_spr_insert_ex:
 		STA		_spr_buf_pos
 		STA		_spr_insert_args._idx
 		STA		_spr_insert_args._attr
-		LDA		_cur_game_cursor_scr_pos._X
-		STA		_spr_insert_args._pos._X
-		LDA		_cur_game_cursor_scr_pos._Y
-		STA		_spr_insert_args._pos._Y
+		LDA		_cur_game_cursor_scr_pos._COL
+		STA		_spr_insert_args._pos._COL
+		LDA		_cur_game_cursor_scr_pos._ROW
+		STA		_spr_insert_args._pos._ROW
 		JMP		_spr_lib_attr_insert
 
 byte_A0374:
@@ -761,9 +761,9 @@ _scr_common_draw:
 		LDA		#$DF
 		JSR		_ppu_area_fill
 		LDA		#$10
-		STA		_cur_game_cursor_scr_pos._X
+		STA		_cur_game_cursor_scr_pos._COL
 		LDA		#$62
-		STA		_cur_game_cursor_scr_pos._Y
+		STA		_cur_game_cursor_scr_pos._ROW
 		MOVWO	_ptr0,byte_A0B6A
 		JSR		_tlm_transfer
 		LDX		#$2C

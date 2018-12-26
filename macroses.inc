@@ -35,8 +35,8 @@ SRAM	EQU		$00
 
 	MAC	_tpos
 {1}		SET	.
-{1}._X:		.BYTE	0
-{1}._Y:		.BYTE	0
+{1}._COL:		.BYTE	0
+{1}._ROW:		.BYTE	0
 	ENDM
 
 	MAC	_trci
@@ -109,9 +109,9 @@ I_AREA_WIDX	EQU 4
 	; bit4 - debug mode (free construction)
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
-{1}._year_to_build_bank:				.WORD	0
-{1}._year_to_expo:						.WORD	0
-{1}._year_to_liberty:					.WORD	0
+{1}._Year_to_build_bank:				.WORD	0
+{1}._Year_to_expo:						.WORD	0
+{1}._Year_to_liberty:					.WORD	0
 {1}._presents_list:			.BYTE	0,0,0,0
 {1}._history_list:						.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 {1}._bank_flags:						.BYTE	0
@@ -119,7 +119,7 @@ I_AREA_WIDX	EQU 4
 	; bit6 - money loaned, wait for end of period
 	; bit7 - loan message enabled, may loan now
 {1}._tax_year_rate:						.WORD	0
-{1}._bank_loan_period:					.BYTE	0
+{1}._loan_period:					.BYTE	0
 {1}._unused:							.BYTE	0
 	ENDM
 
@@ -144,8 +144,8 @@ OTHER_WIDX			EQU 4
 
 	MAC	_tobj6w
 {1}		SET	.
-{1}._X	SET	.
-{1}._Y	SET	[.+1]
+{1}._COL	SET	.
+{1}._ROW	SET	[.+1]
 		_tpos {1}._heli
 		_tpos {1}._plane
 		_tpos {1}._ship
@@ -178,7 +178,7 @@ OTHER_WIDX			EQU 4
 {1}._police:		.WORD	0
 {1}._trans:			.WORD	0
 {1}._education:		.WORD	0
-{1}._bank_loan_year:.WORD	0
+{1}._loan_fee:.WORD	0
 	ENDM
 
 	MAC	_tsprarg
@@ -693,9 +693,9 @@ _total_free	SET _total_free+_bank{1}_free
 	ENDM
 
 	; \t\tLDA\t\t(.*)\n\t\tCLC\n\t\tADC\t\t(.*)\n\t\tSTA\t\t\1\n\t\tBCC\t\t(.*)\n\t\tINC\t\t\1\+1\n\3:
-	; \t\tADDW8\t\1,\2\n\3:
+	; \t\tADDWB\t\1,\2\n\3:
 	;
-	MAC	ADDW8
+	MAC	ADDWB
 		LDA		{1}
 		CLC
 		ADC		{2}
@@ -760,6 +760,41 @@ _total_free	SET _total_free+_bank{1}_free
 		CMP		#[[{2}>>0]&$FF]
 		LDA		{1}+1
 		SBC		#[[{2}>>8]&$FF]
+	ENDM
+
+	; \t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t\#\$(..)\n\t\tSTA\t\t\1\n\t\tLDA\t\t\1\+1\n\t\tSBC\t\t\#\$(..)\n\t\tSTA\t\t\1\+1\n\t\tBCS\t\t(.*)\n\t\tDEC\t\t\1\+2\n\4\:\n
+	; \t\tSUBDI16\t\1,\$\3\2\n\4\:\n
+	;
+	; Subtract 16-bit Word from 24-bit Dword
+	; in third arg.
+	;
+	MAC	SUBDI16
+		LDA		{1}
+		SEC
+		SBC		#<[{2}]
+		STA		{1}
+		LDA		{1}+1
+		SBC		#>[{2}]
+		STA		{1}+1
+		BCS		.1
+		DEC		{1}+2
+.1:
+	ENDM
+
+	; \t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t(.*)\n\t\tSTA\t\t\1\n\t\tLDA\t\t\1\+1\n\t\tSBC\t\t\2\+1\n\t\tSTA\t\t\1\+1\n\t\tBCS\t\t(.*)\n\t\tDEC\t\t\1\+2\n\3\:\n
+	; \t\tSUBDW\t\1,\2\n\3\:\n
+	;
+	MAC	SUBDW
+		LDA		{1}
+		SEC
+		SBC		{2}
+		STA		{1}
+		LDA		{1}+1
+		SBC		{2}+1
+		STA		{1}+1
+		BCS		.1
+		DEC		{1}+2
+.1:
 	ENDM
 
 ;-------------------F-O-N-T-S-------------------
