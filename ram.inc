@@ -379,7 +379,7 @@ _ptrDC:
 		.BYTE	0,0
 ;_unref_11:
 ;		.BYTE	0,0,0,0,0,0,0
-byte_E5:
+_tmpE5:
 		.BYTE	0
 
 _tmpE6	EQU		.
@@ -969,7 +969,7 @@ _last_map_tile_read:
 		.BYTE	0
 _cur_map_tile_is_inside_a_building_flag:
 		.BYTE	0
-_tmp_last_read_map_tile_power_state:
+_cur_area_power_state:
 		.BYTE	0
 _powered_areas:
 		.BYTE	0,0

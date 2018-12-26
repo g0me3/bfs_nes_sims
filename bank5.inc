@@ -63,7 +63,7 @@ loc_8801C:
 		CMP		#$03
 		BNE		locret_88076					; special test if heli and plane are in the same
 		LDA		_obj_pos._heli._COL				; position currently, they CRAAASHHHHH!!
-		CMP		_obj_pos._plane._COL				; so we can crash airplane without request
+		CMP		_obj_pos._plane._COL			; so we can crash airplane without request
 		BNE		locret_88076					; NOTE, with this crash we destroy only plane, not heli!
 		LDA		_obj_pos._heli._ROW
 		CMP		_obj_pos._plane._ROW
@@ -85,20 +85,14 @@ _airplane_crash_start:
 		AND		#$FD
 		STA		_obj_active_flags
 		APUA_SE	_SE_IDX_DESTROY					; crash sound
-		PUSHB	_ptr0
-		PUSHB	_ptr0+1
-		PUSHB	_tmp2
-		PUSHB	_tmp3
-		PUSHB	_tmp4
-		PUSHB	_tmp5
+		PUSHW	_ptr0
+		PUSHW	_tmp2
+		PUSHW	_tmp4
 		LDY		#$08
 		FJSRA	_city_history_write,SRAM,PRGA	; to memories!
-		POPB	_tmp5
-		POPB	_tmp4
-		POPB	_tmp3
-		POPB	_tmp2
-		POPB	_ptr0+1
-		POPB	_ptr0
+		POPW	_tmp4
+		POPW	_tmp2
+		POPW	_ptr0
 locret_88076:
 		RTS
 
@@ -398,8 +392,8 @@ loc_8826A:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_ship_dst_test:
 ; -
-; WRONG: similar function to train object
-; as against the train ship can move diagonally
+; WRONG: similar to train object routine
+; as against the train, ship can move diagonally
 ; but here we test if he moves always diagonally lol
 ; so if ship moving vertically or horizontally,
 ; we never arrive to the dest

@@ -284,7 +284,7 @@ FF		-							-		-
 	5bit (20) - road tile
 	4bit (10) -	rail tile
 	3bit (08) -	building large tile
-	2bit (04) - protected tile
+	2bit (04) - valuable tile
 	1bit (02) - floodable tile
 	0bit (01) - water tile
 
