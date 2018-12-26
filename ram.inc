@@ -303,7 +303,7 @@ byte_B1:
 		.BYTE	0
 word_B2:
 		.BYTE	0,0
-_tmp_extnt_dest_ofs:
+_tmp_extnt_dst_ofs:
 		.BYTE	0,0
 byte_B6:
 		.BYTE	0
@@ -529,7 +529,7 @@ _obj_monster_chr_idx:
 _obj_monster_spr_idx:
 		.BYTE	0
 
-		_tobj6w	_obj_timer
+		_tobj6w	_obj_shift
 
 byte_15B:
 		.BYTE	0
@@ -616,7 +616,7 @@ _common_yes_no_menu_cursor_pos:
 
 		_tpos _cur_obj_pos
 
-		_tpos _next_obj_pos
+		_tpos _cur_dst_pos
 
 _ppu_pal_dequeue_req:
 		.BYTE	0
@@ -732,13 +732,13 @@ byte_547:
 
 		_tobj6w	_obj_pos
 
-		_tobj6w	_obj_next_pos
+		_tobj6w	_obj_dst_pos
 
-		_tobj4b	_obj_spr_idx
+		_tobj4b	_obj_cur_spr_idx
 
-		_tobj4b	_obj_anim_max
+		_tobj4b	_obj_dst_spr_idx
 
-		_tobj4b	_obj_anim_cnt
+		_tobj4b	_obj_spr_delta
 
 _unref?:
 		.BYTE	0
@@ -845,7 +845,7 @@ _goto_alert_req:
 _goto_transition_counter:
 		.BYTE	0
 
-		_tpos _goto_dest_tile
+		_tpos _goto_dst_tile
 
 _airplane_crash_req:
 		.BYTE	0

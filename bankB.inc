@@ -195,15 +195,15 @@ loc_11E1A2:
 		INY										; bottom-rightmost airport)
 		STY		_obj_pos._heli._X
 		INY
-		STY		_obj_next_pos._heli._X
+		STY		_obj_dst_pos._heli._X
 		LDY		_last_airport_pos._Y
 		INY
 		INY
 		STY		_obj_pos._heli._Y
 		INY
-		STY		_obj_next_pos._heli._Y
+		STY		_obj_dst_pos._heli._Y
 		LDA		#$03
-		STA		_obj_spr_idx._heli
+		STA		_obj_cur_spr_idx._heli
 		BNE		loc_11E230
 loc_11E1F2:
 		LSR		_tmpE6
@@ -217,7 +217,7 @@ loc_11E1F2:
 		LDA		#$20
 		STA		_obj_plane_anim_timer
 		LDA		_last_airport_pos._X
-		STA		_obj_next_pos._plane._X
+		STA		_obj_dst_pos._plane._X
 		CLC
 		ADC		#$03
 		STA		_obj_pos._plane._X
@@ -225,9 +225,9 @@ loc_11E1F2:
 		STY		_obj_pos._plane._Y
 		INY
 		INY
-		STY		_obj_next_pos._plane._Y
+		STY		_obj_dst_pos._plane._Y
 		LDA		#$06
-		STA		_obj_spr_idx._plane
+		STA		_obj_cur_spr_idx._plane
 		BNE		loc_11E230
 .no_airports:
 		LDA		_obj_active_flags				; no airports - no flying objects
@@ -240,19 +240,17 @@ loc_11E1F2:
 		LDA		_obj_active_flags				; test if obj already deployed
 		AND		#$04
 		BNE		loc_11E230						; test if already deployed
+		LDA		_obj_active_flags
 		ORA		#$04
 		STA		_obj_active_flags
-		LDY		_obj_pos._ship._X				; just assume port is at the right side shore
-		INY
-		INY
-		INY
-		INY
-		STY		_obj_pos._ship._X
-		STY		_obj_next_pos._ship._X
+		LDA		_obj_pos._ship._X				; temp ship pos and direction
+		CLC
+		ADC		#$02							; EXPERIMENTAL: sale to 2 tiles right
+		STA		_obj_dst_pos._ship._X
 		LDY		_obj_pos._ship._Y
-		STY		_obj_next_pos._ship._Y
-		LDA		#$03							; Y pos already set
-		STA		_obj_spr_idx._ship
+		STY		_obj_dst_pos._ship._Y
+		LDA		#$02
+		STA		_obj_cur_spr_idx._ship			; select right orienter tile
 		BNE		loc_11E230						; test if already deployed
 ._no_sea_ports:
 		LDA		_obj_active_flags				; no sea ports - no floating objects
@@ -278,7 +276,9 @@ loc_11E23D:
 		STA		_city._bank_flags
 .bank_break:
 		MADDW	_tmpE6,_RCI_counts._R,_RCI_counts._C
-;		LDA		_tmpE6							; BUG! copy-paste, second CLC wrong here!
+; BUG! copy-paste, second CLC wrong here!
+; -
+;		LDA		_tmpE6
 ;		CLC
 ;		ADC		_RCI_counts._I
 ;		STA		_total_RCI_counts
@@ -286,6 +286,7 @@ loc_11E23D:
 ;		CLC
 ;		ADC		_RCI_counts._I+1
 ;		STA		_total_RCI_counts+1
+; -
 		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I
 		LDA		_nuke_power_station_count
 		CLC
@@ -503,10 +504,10 @@ _rails_collect:
 		BEQ		_no_train_start
 		LDA		_tmp_map_pos._X
 		STA		_obj_pos._train._X
-		STA		_obj_next_pos._train._X
+		STA		_obj_dst_pos._train._X
 		LDA		_tmp_map_pos._Y
 		STA		_obj_pos._train._Y
-		STA		_obj_next_pos._train._Y
+		STA		_obj_dst_pos._train._Y
 		LDA		_tmp_map_pos._X
 		CMP		#$4B
 		BCS		_no_train_start
@@ -537,11 +538,11 @@ loc_11E4BA:
 		INC		_tmp_map_pos._Y
 		BPL		loc_11E49F
 loc_11E4C8:
-		STX		_obj_spr_idx._train
-		STX		_obj_anim_max._train
+		STX		_obj_cur_spr_idx._train
+		STX		_obj_dst_spr_idx._train
 		LDA		#$00
-		STA		_obj_timer._train._X
-		STA		_obj_timer._train._Y
+		STA		_obj_shift._train._X
+		STA		_obj_shift._train._Y
 		LDA		_obj_active_flags
 		ORA		#$08
 		STA		_obj_active_flags
@@ -1019,29 +1020,34 @@ loc_11E879:
 		LDA		_obj_active_flags
 		AND		#$04
 		BNE		locret_11E8AC
-; TODO: reimplement this
-;
+; REDUNDANT: use regular sea tile, correct end of buffer check
+; -
 ;		LDY		#>[_wram_map_buf]				; UNFINISHED very briefly written code
 ;		STY		_tmpE7							; to search a special symbol in the sea
 ;		LDY		#<[_wram_map_buf]				; which probably should be placed near
 ;		STY		_tmpE6							; port building in sea to start ship animations
-;loc_11E888:
+loc_11E888:
 ;		LDA		(_tmpE6),Y
-;		CMP		#$FE							; special sea tile, never used.
+;		CMP		#$FE							; UNUSED: special sea tile
+;		CMP		#$BD							; FIX: regular tile
 ;		BEQ		loc_11E8A0
 ;		INC		_tmpE6
 ;		BNE		loc_11E894
 ;		INC		_tmpE7
-;loc_11E894:
+loc_11E894:
 ;		LDA		_tmpE6
-;		CMP		#$90							; here test value not the end of the buffer ptr
-;		LDA		_tmpE7							; but buffer size
-;		SBC		#$16
+;		CMP		#$90							; BUG: here test value not the end of the buffer ptr
+;		CMP		#<[_power_grid_map_buf]			; FIX: correct
+;		LDA		_tmpE7							; BUG: but buffer size
+;		SBC		#$16							; FIX: correct
+;		CMP		#>[_power_grid_map_buf]
 ;		BNE		loc_11E888
 ;		BEQ		locret_11E8AC
-;loc_11E8A0:
+loc_11E8A0:
 ; -
-		LDA		_tmp_map_pos._X					; let's try to show something at least for now.
+		LDA		_tmp_map_pos._X
+		CLC
+		ADC		#$03
 		STA		_obj_pos._ship._X
 		LDA		_tmp_map_pos._Y
 		STA		_obj_pos._ship._Y
@@ -3743,10 +3749,10 @@ _tornado_disaster_start:
 		STA		_tmp_map_pos._Y
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_obj_next_pos._tornado._X
+		STA		_obj_dst_pos._tornado._X
 		LDA		#$4C
 		JSR		_rand_clamp
-		STA		_obj_next_pos._tornado._Y
+		STA		_obj_dst_pos._tornado._Y
 		LDA		_disasters_flags
 		AND		#$F7
 		STA		_disasters_flags
@@ -3777,7 +3783,7 @@ _monster_disaster_start:
 		BCS		loc_11FD17
 		LDY		#$4B
 loc_11FD17:
-		STY		_obj_next_pos._monster._X
+		STY		_obj_dst_pos._monster._X
 		LDY		#$00
 		LDA		#$4C
 		JSR		_rand_clamp
@@ -3787,15 +3793,15 @@ loc_11FD17:
 		BCS		loc_11FD2D
 		LDY		#$4B
 loc_11FD2D:
-		STY		_obj_next_pos._monster._X
+		STY		_obj_dst_pos._monster._X
 		LDA		#$97
 		JSR		_rand_clamp
 		LSR
 		BCS		loc_11FD3D
-		STA		_obj_next_pos._monster._X
+		STA		_obj_dst_pos._monster._X
 		BCC		_force_monster_disaster
 loc_11FD3D:
-		STA		_obj_next_pos._monster._Y
+		STA		_obj_dst_pos._monster._Y
 
 ; =============== S U B	R O U T	I N E =======================================
 _force_monster_disaster:
@@ -4028,9 +4034,9 @@ loc_11FEEA:
 ; !FALLTHROUGH!
 _goto_alert_start:
 		LDA		_tmp_map_pos._X
-		STA		_goto_dest_tile._X
+		STA		_goto_dst_tile._X
 		LDA		_tmp_map_pos._Y
-		STA		_goto_dest_tile._Y
+		STA		_goto_dst_tile._Y
 		LDA		#$01
 		STA		_goto_alert_req
 		RTS
@@ -4075,17 +4081,17 @@ loc_11FF45:
 		STA		_obj_pos._monster._Y
 		STA		_tmp_map_pos._Y
 		LDA		#$00
-		STA		_obj_next_pos._monster._X
+		STA		_obj_dst_pos._monster._X
 		LDA		#$4B
-		STA		_obj_next_pos._monster._Y
+		STA		_obj_dst_pos._monster._Y
 		LDA		#$97
 		JSR		_rand_clamp
 		LSR
 		BCS		loc_11FF7B
-		STA		_obj_next_pos._monster._X
+		STA		_obj_dst_pos._monster._X
 		BCC		loc_11FF7E
 loc_11FF7B:
-		STA		_obj_next_pos._monster._Y
+		STA		_obj_dst_pos._monster._Y
 loc_11FF7E:
 		JMP		_force_monster_disaster
 loc_11FF81:

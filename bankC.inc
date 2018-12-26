@@ -3688,13 +3688,13 @@ loc_137BC6:
 loc_137BEC:
 		CLC
 		ADC		_ptr0+1
-		STA		_tmp_extnt_dest_ofs
+		STA		_tmp_extnt_dst_ofs
 		TXA
 		ORA		#>[_MMC5_EXRAM]
-		STA		_tmp_extnt_dest_ofs+1
+		STA		_tmp_extnt_dst_ofs+1
 		CMP		#$5F
 		BNE		loc_137C01
-		LDA		_tmp_extnt_dest_ofs
+		LDA		_tmp_extnt_dst_ofs
 		CMP		#$A0
 		BCC		loc_137C01
 		INY
@@ -3712,8 +3712,8 @@ sub_137C04:
 ; =============== S U B	R O U T	I N E =======================================
 sub_137C08:
 		EXTQSTART
-		EXTQMOVB	_tmp_extnt_dest_ofs,OP_NOP,0
-		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dst_ofs,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dst_ofs+1,OP_NOP,0
 		LDA		byte_B6
 		AND		#$02
 		BNE		loc_137C58
@@ -3722,13 +3722,13 @@ sub_137C08:
 		LDA		byte_B6
 		LSR
 		BCS		loc_137C3E
-		EXTQMOVB	_tmp_extnt_dest_ofs,OP_ADD,#$20
-		LDA		_tmp_extnt_dest_ofs+1
+		EXTQMOVB	_tmp_extnt_dst_ofs,OP_ADD,#$20
+		LDA		_tmp_extnt_dst_ofs+1
 		ADC		#$00
 		EXTQMOVA
 		JMP		loc_137C4C
 loc_137C3E:
-		EXTQMOVB	_tmp_extnt_dest_ofs,OP_AND,#$1F
+		EXTQMOVB	_tmp_extnt_dst_ofs,OP_AND,#$1F
 		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
 loc_137C4C:
 		EXTQMOVB	#$02,OP_NOP,0
@@ -3738,34 +3738,34 @@ loc_137C4C:
 loc_137C58:
 		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
-		EXTQMOVB	_tmp_extnt_dest_ofs,OP_AND,#$E0
-		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dst_ofs,OP_AND,#$E0
+		EXTQMOVB	_tmp_extnt_dst_ofs+1,OP_NOP,0
 		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
 		LDA		byte_B6
 		LSR
 		BCS		loc_137C8C
-		LDA		_tmp_extnt_dest_ofs
+		LDA		_tmp_extnt_dst_ofs
 		CLC
 		ADC		#$20
-		STA		_tmp_extnt_dest_ofs
-		LDA		_tmp_extnt_dest_ofs+1
+		STA		_tmp_extnt_dst_ofs
+		LDA		_tmp_extnt_dst_ofs+1
 		ADC		#$00
-		STA		_tmp_extnt_dest_ofs+1
+		STA		_tmp_extnt_dst_ofs+1
 		BNE		loc_137C96
 loc_137C8C:
-		LDA		_tmp_extnt_dest_ofs
+		LDA		_tmp_extnt_dst_ofs
 		AND		#$1F
-		STA		_tmp_extnt_dest_ofs
+		STA		_tmp_extnt_dst_ofs
 		LDA		#>[_MMC5_EXRAM]
-		STA		_tmp_extnt_dest_ofs+1
+		STA		_tmp_extnt_dst_ofs+1
 loc_137C96:
-		EXTQMOVB	_tmp_extnt_dest_ofs,OP_NOP,0
-		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dst_ofs,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dst_ofs+1,OP_NOP,0
 		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
-		EXTQMOVB	_tmp_extnt_dest_ofs,OP_AND,#$E0
-		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dst_ofs,OP_AND,#$E0
+		EXTQMOVB	_tmp_extnt_dst_ofs+1,OP_NOP,0
 		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
 		EXTQEND
@@ -4154,7 +4154,7 @@ _goto_start:
 		BEQ		locret_137F7B
 		LDA		_goto_transition_counter
 		BNE		locret_137F7B
-		LDA		_goto_dest_tile._X
+		LDA		_goto_dst_tile._X
 		SEC
 		SBC		#$0C
 		BCS		loc_137F48
@@ -4170,7 +4170,7 @@ loc_137F4E:
 		CLC
 		ADC		#$18
 		STA		byte_55
-		LDA		_goto_dest_tile._Y
+		LDA		_goto_dst_tile._Y
 		SEC
 		SBC		#$0A
 		BCS		loc_137F63
