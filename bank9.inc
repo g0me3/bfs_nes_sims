@@ -370,7 +370,7 @@ loc_EA0EC:
 		STA		_scr_res_control_flags			; exit, when done
 		RTS
 .no_mimi_map_redraw:
-		BIT		_pad0_autorep_press				; press B test
+		BIT		_pad0_press				; press B test
 		BVC		.no_b_pressed
 		LDA		#$40							; exit to title
 		STA		_scr_res_control_flags
@@ -379,7 +379,7 @@ loc_EA0EC:
 		RTS
 .no_b_pressed:
 		BMI		.button_a_pressed				; test if A pressed instead
-		BIT		_pad0_autorep_release			; or autorep falling edge
+		BIT		_pad0_autorep			; or autorep falling edge
 		BMI		.button_a_pressed
 		JSR		_new_city_screen_cursor_move	; move cursor then, C=1 if moved
 		BCS		.new_city_defalut_darw
@@ -436,13 +436,13 @@ _new_city_cur_pos_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_screen_cursor_move:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$0F
 		BEQ		.no_cursor_moved				; if any dpad pressed
 		APUX_SE	_SE_IDX_SELECT					; play sound
 		AND		#$03
 		BNE		.hor_movements
-		LDA		_pad0_autorep_release			; vert movements here
+		LDA		_pad0_autorep			; vert movements here
 		CMP		#$08
 		BNE		.up_movements
 		DEC		_new_city_screen_cur_row_idx	; dec twice to not to use jmp instead
@@ -457,7 +457,7 @@ _new_city_screen_cursor_move:
 		LDA		_new_city_screen_cur_row_idx
 		CMP		#$02
 		BCC		.no_cursor_moved				; no left-right movements for upper buttons
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep
 		LSR
 		BCC		.left_movements
 		DEC		_new_city_screen_cur_col_idx	; the same for hor idxes
@@ -990,7 +990,7 @@ loc_EA588:
 		LDA		#$00							; idle state for info maps screen
 		STA		_scr_res_control_flags
 		STA		_game_core_state
-		BIT		_pad0_autorep_press				; regular button press test performed here
+		BIT		_pad0_press				; regular button press test performed here
 		BPL		_info_maps_idle
 		APUA_SE	_SE_IDX_BCLICK
 		LDA		#$80
@@ -1061,7 +1061,7 @@ _info_maps_budget_screen_warp:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_mini_map_update:
-		BIT		_pad0_autorep_press				; when map is already drawn, you
+		BIT		_pad0_press				; when map is already drawn, you
 		BPL		.no_buttons_redraw				; still able to press other buttons
 		LDA		_info_maps_button_pending		; they set pending request and immediately
 		BNE		.no_buttons_redraw				; applied after redraw proccess is over
@@ -1903,10 +1903,10 @@ _info_maps_menu_handler:
 		JMP		.info_menu_spr_update
 .info_menu_loop:
 		JSR		_wait_for_nmi					; menu idle loop
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BMI		.info_menu_A_press				; test for A/B buttons
 		BVS		.info_menu_B_press
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$0F
 		BEQ		.info_menu_loop					; cursor movement test
 		TAX										; X = d-pad buttons pressed value
@@ -2259,19 +2259,19 @@ _info_maps_arrows_move:
 		LDA		#$28
 		STA		_scr_res_control_flags			; control flags are set to frame move mode
 		STA		_game_core_state				; THREAD0 takes control for now, THREAD1 suspended
-		LDA		_pad0_autorep_press				; d-pad autorep test
+		LDA		_pad0_press				; d-pad autorep test
 		AND		#$0F
 		BEQ		.dpad_released
 		LDX		#$04
-		STX		_pad0_dpad_autorep_delay		; when press, reload dpad autorep counter
+		STX		_dpad0_autorep_timer		; when press, reload dpad autorep counter
 		BNE		.arrows_move
 .dpad_released:
 		LDA		_pad0_held
 		AND		#$0F
 		BEQ		.arrows_draw					; now test an actual input
-		LDX		_pad0_dpad_autorep_delay
+		LDX		_dpad0_autorep_timer
 		BEQ		.arrows_move
-		DEC		_pad0_dpad_autorep_delay
+		DEC		_dpad0_autorep_timer
 		BNE		.arrows_draw
 .arrows_move:
 		JSR		_info_maps_rect_pos_adjust
@@ -2364,7 +2364,7 @@ loc_EAEEC:
 		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$00
 		STA		_budget_tax_cur_pos
-		STA		_pad0_autorep_press
+		STA		_pad0_press
 		STA		_tmp118+2
 		LDA		#$A0
 		STA		_scr_res_control_flags			; draw static values for budget screen calculated
@@ -2507,6 +2507,7 @@ _far_scr_res_hndl2_B_budget_input:
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_cur_fund_update:
+		JSR		_buffers_test_wait_flush		; FIX to turbo button screen garble
 ;		FJSRA	_budget_cur_fund_alloc_update,PRG6,PRG9; REDUNDANT, now local
 		JSR		_budget_cur_fund_alloc_update	; apply allocated funds value changes for cur column
 		JSR		_budget_funds_alloc_sum_calc	; same as at the budget init, summing
@@ -3128,7 +3129,7 @@ _city_eval_vars_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl3_B_city_eval_input:
-		BIT		_pad0_autorep_press				; simple skip test, simpliest of all here
+		BIT		_pad0_press				; simple skip test, simpliest of all here
 		BVC		locret_EB11F
 		LDA		#$40
 		STA		_scr_res_control_flags
@@ -3159,7 +3160,7 @@ _scr_res_hndl4_B_city_overview_input:
 		CMP		#$21
 		BCC		locret_EB161					; unless draw all can't skip
 .overwiew_skip_test:
-		BIT		_pad0_autorep_press				; finally we could skip
+		BIT		_pad0_press				; finally we could skip
 		BVC		locret_EB161
 		LDA		#$40
 		STA		_scr_res_control_flags			; set control flags to signal main loop
@@ -3365,7 +3366,7 @@ _printf_history_year:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl5_B_history_input:
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BVC		locret_EB2BE
 		LDA		#$40
 		STA		_scr_res_control_flags

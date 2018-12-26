@@ -15,7 +15,7 @@
 ; but draws only single line and uses intermediate buffer for it.
 ;
 _map_scroll_line_draw:
-		LDA		byte_71
+		LDA		_tmp71
 		BEQ		.map_scroll_hor_line_draw
 		JMP		.map_scroll_vert_line_draw
 .map_scroll_hor_line_draw:
@@ -25,13 +25,13 @@ _map_scroll_line_draw:
 		STA		_tmp_tile_pos._COL
 		LDA		_cur_map_wnd_pos._ROW
 		CLC
-		ADC		_anim_pos_col
+		ADC		_tmp72
 		STA		_tmp_tile_pos._ROW
 		JSR		_map_scroll_hor_line_fill		; fill pre buffer with tile data
 		LDA		_cur_screen_tile._COL
 		LSR
 		STA		_anim_pos_row
-		CIADDB	byte_75,_cur_screen_tile._ROW,byte_73,NONE,#$1E
+		CIADDB	_tmp75,_cur_screen_tile._ROW,_tmp73,NONE,#$1E
 		JSR		_map_scroll_line_pos_calc
 		LDA		_cur_screen_tile._COL
 		LSR
@@ -39,13 +39,13 @@ _map_scroll_line_draw:
 		SEC
 		ADC		#$20
 		AND		#$1F
-		STA		byte_76
+		STA		_tmp76
 		PPUQSTART
-		PPUQMOVB	byte_77,OP_AND,#$E0
-		PPUQMOVB	byte_78,OP_NOP,0
+		PPUQMOVB	_tmp77,OP_AND,#$E0
+		PPUQMOVB	_tmp78,OP_NOP,0
 		PPUQMOVB	#$20,OP_NOP,0
 		STA		_ptr0
-		LDY		byte_76
+		LDY		_tmp76
 loc_150178:
 		LDA		_pre_ppu_buf,Y
 		PPUQMOVA
@@ -60,11 +60,11 @@ loc_15018C:
 		TXA
 		PHA
 		EXTQSTART
-		EXTQMOVB	byte_77,OP_AND,#$E0
-		EXTQMOVB	byte_78,OP_ADD,#$3C
+		EXTQMOVB	_tmp77,OP_AND,#$E0
+		EXTQMOVB	_tmp78,OP_ADD,#$3C
 		EXTQMOVB	#$20,OP_NOP,0
 		STA		_ptr0
-		LDY		byte_76
+		LDY		_tmp76
 loc_1501AB:
 		LDA		_pre_ppu_buf+$20,Y
 		EXTQMOVA
@@ -82,16 +82,16 @@ loc_1501BF:
 .map_scroll_vert_line_draw:
 		LDA		_cur_map_wnd_pos._COL
 		CLC
-		ADC		_anim_pos_col
+		ADC		_tmp72
 		STA		_tmp_tile_pos._COL
 		LDA		_cur_map_wnd_pos._ROW
 		SEC
 		SBC		#$07
 		STA		_tmp_tile_pos._ROW
 		JSR		_map_scroll_vert_line_fill
-		CIADDB	_anim_pos_row,_cur_screen_tile._COL,byte_73,NONE,#$20
+		CIADDB	_anim_pos_row,_cur_screen_tile._COL,_tmp73,NONE,#$20
 		LDA		#$00
-		STA		byte_75
+		STA		_tmp75
 		JSR		_map_scroll_line_pos_calc
 		LDA		_cur_screen_tile._ROW
 		LSR
@@ -102,15 +102,15 @@ loc_1501BF:
 		BCS		loc_1501F9
 		ADC		#$1E
 loc_1501F9:
-		STA		byte_76
+		STA		_tmp76
 		PPUQSTART
-		PPUQMOVB	byte_77,OP_NOP,0
-		PPUQMOVB	byte_78,OP_NOP,0
+		PPUQMOVB	_tmp77,OP_NOP,0
+		PPUQMOVB	_tmp78,OP_NOP,0
 		LDA		#$1E
 		STA		_ptr0
 		ORA		#$80
 		PPUQMOVA
-		LDY		byte_76
+		LDY		_tmp76
 loc_150215:
 		LDA		_pre_ppu_buf,Y
 		PPUQMOVA
@@ -125,13 +125,13 @@ loc_150229:
 		TXA
 		PHA
 		EXTQSTART
-		EXTQMOVB	byte_77,OP_NOP,0
-		EXTQMOVB	byte_78,OP_ADD,#$3C
+		EXTQMOVB	_tmp77,OP_NOP,0
+		EXTQMOVB	_tmp78,OP_ADD,#$3C
 		LDA		#$1E
 		STA		_ptr0
 		ORA		#$80
 		EXTQMOVA
-		LDY		byte_76
+		LDY		_tmp76
 loc_150248:
 		LDA		_pre_ppu_buf+$20,Y
 		EXTQMOVA
@@ -150,7 +150,7 @@ loc_15025C:
 ; =============== S U B	R O U T	I N E =======================================
 _map_scroll_hor_line_fill:
 		LDA		#$20
-		STA		byte_79
+		STA		_tmp79
 		LDX		#$00
 		SEC
 loc_150269:
@@ -165,14 +165,14 @@ loc_150269:
 		LDA		word_6C+1
 		STA		_pre_ppu_buf+$20,X
 		INX
-		DEC		byte_79
+		DEC		_tmp79
 		BNE		loc_150269
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_scroll_vert_line_fill:
 		LDA		#$1E
-		STA		byte_79
+		STA		_tmp79
 		LDX		#$00
 loc_150288:
 		TXA
@@ -187,13 +187,13 @@ loc_150288:
 		LDA		word_6C+1
 		STA		_pre_ppu_buf+$20,X
 		INX
-		DEC		byte_79
+		DEC		_tmp79
 		BNE		loc_150288
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_scroll_line_pos_calc:
-		BUFPOS	byte_77,_anim_pos_row,byte_75,#$20,#$20	; DST=(byte_75*#$20+_anim_pos_row)+#$2000
+		BUFPOS	_tmp77,_anim_pos_row,_tmp75,#$20,#$20	; DST=(_tmp75*#$20+_anim_pos_row)+#$2000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -250,7 +250,7 @@ loc_150306:
 loc_15030D:
 		LDA		#$00
 		STA		_game_map_area_cursor_pos_backup._COL
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep
 		AND		#$03
 		BEQ		loc_15032D
 		LSR
@@ -267,7 +267,7 @@ loc_150324:
 		STA		_cur_game_cursor_scr_pos._COL
 		BNE		loc_15032D
 loc_15032D:
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep
 		AND		#$0C
 		BEQ		loc_15034A
 		LSR
@@ -330,7 +330,7 @@ sub_150383:
 		BEQ		loc_150395
 		INX
 loc_150395:
-		STX		_cur_selected_buildings_size
+		STX		_cur_building_size
 		TXA
 		ASL
 		ASL
@@ -536,7 +536,7 @@ loc_1504B2:
 loc_1504BF:
 		ASL										; fetch price
 		TAX
-		LDA		_buildings_prices_list,X
+		LDA		_buildings_prices_list,X		; now shared list in system bank
 		STA		_cur_building_price
 		INX
 		LDA		_buildings_prices_list,X
@@ -557,7 +557,7 @@ loc_1504BF:
 ;
 _get_cur_constr_cursor_map_tile:
 		JSR		_get_cur_constr_cursor_map_ofs
-		JSR		_get_cur_building_scheme_ptr
+		JSR		_get_build_scheme_ptr
 		LDY		#$00
 		LDA		(_tmp_ptrC1),Y
 		STA		_cur_build_sample_tile_idx
@@ -569,7 +569,7 @@ _build_cur_constr_cursor_area:
 		LDA		_cur_build_store_tile_idx		; previously calcularet duild tile idx
 		CMP		#$FF
 		BNE		.instant_build_single_tile		; if !=FF, then custom 1x1 tile here
-		JSR		_get_build_construc_data_ptr
+		JSR		_get_build_constr_data_ptr
 		LDY		#$00
 loc_150518:
 		LDA		(_tmp_ptrC3),Y					; read building data tiles from lib
@@ -606,38 +606,39 @@ loc_150545:
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
-_adjust_surround_net_tilesCC:
-		JSR		_sram_write_enable
-		LDX		byte_CC
-		JMP		_adjust_surround_net_tiles_ex
+_rebend_bulldoze_nearest_tiles:
+		JSR		_sram_write_enable				; for specially use in bulldoze routine
+		LDX		_cur_bulldoze_size
+		BNE		_rebend_neares_tiles_ex			; OPTIMIZED, can't be zero here
+;		JMP		_rebend_neares_tiles_ex			; REDUNDANT
 
 ; =============== S U B	R O U T	I N E =======================================
-_adjust_surround_net_tiles:
-		JSR		_sram_write_enable
-		LDX		_cur_selected_buildings_size
+_rebend_bulding_nearest_tiles:
+		JSR		_sram_write_enable				; for specially use in build routine
+		LDX		_cur_building_size
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_adjust_surround_net_tiles_ex:
-		DEX
-		LDA		_surround_tiles_lib_lo,X
+_rebend_neares_tiles_ex:
+		DEX										; get the surronding tiles schemes
+		LDA		_surround_tiles_lib_lo,X		; ptr for the selected building type
 		STA		word_D0
 		LDA		_surround_tiles_lib_hi,X
 		STA		word_D0+1
 		LDY		#$00
 loc_15056C:
-		LDA		(word_D0),Y
+		LDA		(word_D0),Y						; read col pos, test if end of list
 		CMP		#$80
 		BEQ		loc_150581
-		JSR		_get_building_tile_map_ptr
+		JSR		_calc_surround_tile_map_ptr		; read the rest if not, then calc ptr
 		BCS		loc_15057E
-		STY		byte_D4
-		JSR		_adjust_conjunction_tiles
+		STY		byte_D4							; store Y counter temporarily
+		JSR		_adjust_conjunction_tiles		; re-bend conjuncted tiles if needeed
 		LDY		byte_D4
 loc_15057E:
 		INY
-		BNE		loc_15056C
+		BNE		loc_15056C						; do next scheme tile
 loc_150581:
 		JMP		_sram_write_disable
 
@@ -736,7 +737,7 @@ _surround_tiles3_list:
 ; 		 C=1 out of bounds
 ;		word_D2 - ptr to map tile
 ;
-_get_building_tile_map_ptr:
+_calc_surround_tile_map_ptr:
 		INY
 		CLC
 		ADC		_cur_constr_cursor_map_pos._COL
@@ -791,7 +792,7 @@ _adjust_conjunction_tiles:
 		STY		byte_D5
 		LDA		(word_D2),Y						; get surrounding map tile
 		CMP		#_MAP_ROAD_LR					; all you need is electro/transport tile here
-		BCC		locret_150644
+		BCC		locret_150644					; the rest does not change
 		CMP		#_MAP_GRASS
 		BCC		loc_150645
 locret_150644:
@@ -1287,12 +1288,12 @@ loc_1508BA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_bulldoze_a_building:
-		JSR		_get_cur_constr_cursor_map_ofs
-		JSR		_get_price_to_bulldoze_a_building	; once again we calculate price of bulldozing
-		JSR		_test_valid_buildings_to_bulldoze
+_do_bulldoze:
+		JSR		_get_cur_constr_cursor_map_ofs	; once again we calculate price of bulldozing
+		JSR		_get_bulldoze_params			; as well as building size and real build tile ptr
+		JSR		_is_area_can_be_bulldozed		; test if we could destroy this
 		BCS		locret_1508E5
-		JSR		_get_building_scheme_ex
+		JSR		_get_bulldoze_scheme_ptr		; get bulldoze scheme data ptr
 		JSR		_sram_write_enable
 		LDY		#$00
 loc_1508CF:
@@ -1301,7 +1302,7 @@ loc_1508CF:
 		CMP		#$80
 		BEQ		loc_1508E1						; end of scheme list
 		TAY
-		LDA		byte_CB
+		LDA		_bulldoze_tile_idx				; write previously selected tile
 		STA		(_tmp_ptrC1),Y
 		LDY		_ptr0
 		INY
@@ -1313,10 +1314,10 @@ locret_1508E5:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_price_to_bulldoze_a_building:
+_get_bulldoze_params:
 		LDA		#$00
-		STA		byte_CE
-		STA		byte_CF
+		STA		_bulldoze_start_delta_col
+		STA		_bulldoze_start_delta_row
 		LDY		#$00
 		LDA		(_tmp_ptrC1),Y					; read map tile sample
 		BPL		.do_instant_bulldoze
@@ -1326,12 +1327,12 @@ _get_price_to_bulldoze_a_building:
 		SBC		#_MAP_INTERNAL_BUILD0
 		TAX
 		LDA		_special_build_tile_delta_ROW_list,X
-		STA		byte_CE							; get tile deltas
+		STA		_bulldoze_start_delta_col		; get tile deltas
 		LDA		_special_build_tile_delta_COL_list,X
-		STA		byte_CF
+		STA		_bulldoze_start_delta_row
 		LDA		_special_tiles_ofs_list,X		; get tile Y idx for fetch opcode
 		STA		_ptr0
-		LDA		_tmp_ptrC1
+		LDA		_tmp_ptrC1						; adjust the current build tile ptr also
 		SEC
 		SBC		_ptr0
 		STA		_tmp_ptrC1
@@ -1341,7 +1342,7 @@ _get_price_to_bulldoze_a_building:
 		LDA		(_tmp_ptrC1),Y					; read actual building tile idx
 .do_instant_bulldoze:
 		LDX		#$01
-		STA		byte_CB
+		STA		_bulldoze_tile_idx
 		AND		#$FF
 		BMI		loc_150930
 		INX
@@ -1355,7 +1356,7 @@ _get_price_to_bulldoze_a_building:
 		BCC		loc_150930
 		DEX
 loc_150930:
-		STX		byte_CC							; tmp building size type idx
+		STX		_cur_bulldoze_size				; tmp building size type idx
 		DEX
 		LDA		_bulldoze_building_price_list,X
 		STA		_cur_building_price
@@ -1373,36 +1374,36 @@ _bulldoze_building_price_list:
 		.BYTE	$01,$04,$09,$10
 
 ; =============== S U B	R O U T	I N E =======================================
-_test_valid_buildings_to_bulldoze:
-		LDA		_city._game_flags				; cheat for forced bulldozing a sigle tile
-		AND		#$10
+_is_area_can_be_bulldozed:
+		LDA		_city._game_flags				; when cheat is enabled, bulldoze always
+		AND		#$10							; no restrictions
 		BEQ		.no_bulldoze_cheat
 		LDX		#_MAP_GROUND
 		BNE		.large_bulldoze_area_test		; force to bulldoze anything
 .no_bulldoze_cheat:
 		LDX		#_MAP_CORRUPT0					; start corruption animation with this tile
-		LDA		byte_CC
+		LDA		_cur_bulldoze_size
 		CMP		#$02
 		BCS		.large_bulldoze_area_test		; for single tiled bulldoze areas
-		LDA		byte_CB
+		LDA		_bulldoze_tile_idx							; test for flood, pollution fires and bridges
 		CMP		#_MAP_FLOOD
-		BEQ		.cant_bulldoze_that0
+		BEQ		.cant_bulldoze_with_sound
 		CMP		#_MAP_POLLUTION
-		BEQ		.cant_bulldoze_that0
+		BEQ		.cant_bulldoze_with_sound
 		CMP		#_MAP_FIRE
-		BEQ		.cant_bulldoze_that0
+		BEQ		.cant_bulldoze_with_sound
 		CMP		#_MAP_BRIDGE0
 		BCC		loc_150997
 		CMP		#_MAP_BRIDGEF+1
-		BCC		.cant_bulldoze_that0
+		BCC		.cant_bulldoze_with_sound
 loc_150997:
-		CMP		#_MAP_WATER_ROUTE
-		BEQ		.cant_bulldoze_that1
+		CMP		#_MAP_WATER_ROUTE				; can't bulldoze water routes
+		BEQ		.cant_bulldoze_no_sound
 		CMP		#_MAP_GROUND
-		BEQ		.cant_bulldoze_that1
+		BEQ		.cant_bulldoze_no_sound
 		CMP		#_MAP_WATER
-		BEQ		.cant_bulldoze_that1
-		LDX		#_MAP_GROUND
+		BEQ		.cant_bulldoze_no_sound
+		LDX		#_MAP_GROUND					; bulldoze other tiles with ground
 		CMP		#_MAP_WATER_ROAD_LR
 		BCC		.large_bulldoze_area_test
 		CMP		#_MAP_CORRUPT0
@@ -1410,79 +1411,84 @@ loc_150997:
 		CMP		#_MAP_BRIDGE_ROAD_LR
 		BCC		.large_bulldoze_area_test
 		CMP		#_MAP_BRIDGE0
-		BCS		.cant_bulldoze_that0
+		BCS		.cant_bulldoze_with_sound
 loc_1509B5:
-		LDX		#_MAP_WATER
+		LDX		#_MAP_WATER						; bulldoze water tiles with water
 .large_bulldoze_area_test:
-		STX		byte_CB
+		STX		_bulldoze_tile_idx
 		FJSRA	_money_subtract,PRG7,PRG3
-		BCS		.cant_bulldoze_that0
+		BCS		.cant_bulldoze_with_sound
 		RTS
-.cant_bulldoze_that0:
+.cant_bulldoze_with_sound:
 		LDA		#$00
-		STA		byte_CD
+		STA		_bulldoze_error_beep_flag
 		SEC
 		RTS
-.cant_bulldoze_that1:
+.cant_bulldoze_no_sound:
 		LDA		#$FF
-		STA		byte_CD
+		STA		_bulldoze_error_beep_flag
 		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1509CF:
-		LDA		byte_CC
-		STA		_ptr0
-		BNE		loc_1509DF
+_get_bulldoze_invalidate_area:
+		LDA		_cur_bulldoze_size
+;		STA		_ptr0							; REDUNDANT, merged
+		BNE		_get_invalidate_area			; unconditional jump
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_game_field_update_params:
-		LDA		#$00
-		STA		byte_CE
-		STA		byte_CF
-		LDA		_cur_selected_buildings_size
-		STA		_ptr0
-loc_1509DF:
-		LDA		_cur_map_wnd_pos._COL
-		CLC
-		ADC		_constr_cursor_tile._COL
-		SEC
-		SBC		byte_CE
+_get_build_invalidate_area:
+		LDA		#$00							; since we put buildings always at its corner
+		STA		_bulldoze_start_delta_col		; no need to adjust position here to calculate
+		STA		_bulldoze_start_delta_row		; correct area, so set them zero
+		LDA		_cur_building_size				;
+;		STA		_ptr0							; REDUNDANT, merged
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_get_invalidate_area:
+		STA		_ptr0							; OPTIMIZED, merged
+		LDA		_cur_map_wnd_pos._COL			; get the constr cursor position -1
+		CLC										; so we will update not only the building
+		ADC		_constr_cursor_tile._COL		; area, but surrounding area as well
+		SEC										; where may be adjusted tiles also
 		SBC		#$01
+		SBC		_bulldoze_start_delta_col		; may benon-zero when used in bulldoze routine
 		TAX
-		BPL		loc_1509EE
+		BPL		loc_1509EE						; edge tests
 		LDX		#$00
 loc_1509EE:
-		STX		_update_rect_left_tmp
+		STX		_update_rect_left_tmp			; store
 		SEC
-		ADC		_ptr0
+		ADC		_ptr0							; add building size+1 (C=1 here!), so 1 tile more also
 		CMP		#$4C
 		BCC		loc_1509F9
 		LDA		#$4B
 loc_1509F9:
-		STA		_update_rect_right_tmp
+		STA		_update_rect_right_tmp			; the same for ROWs
 		LDA		_cur_map_wnd_pos._ROW
 		CLC
 		ADC		_constr_cursor_tile._ROW
 		SEC
 		SBC		#$01
-		SBC		byte_CF
+		SBC		_bulldoze_start_delta_row		; may benon-zero when used in bulldoze routine
 		TAX
 		BPL		loc_150A0A
 		LDX		#$00
 loc_150A0A:
-		STX		_update_rect_top_tmp
+		STX		_update_rect_top_tmp			; also add size+1
 		SEC
 		ADC		_ptr0
 		CMP		#$4C
-		BCC		loc_150A15
+		BCC		loc_150A15						; clamp to bottom
 		LDA		#$4B
 loc_150A15:
 		STA		_update_rect_bottom_tmp
 		LDA		#$FF
-		STA		_game_field_redraw_req_tmp
-		STA		_game_field_update_req
-		JMP		_swap_game_field_update_params
+		STA		_game_field_redraw_req_tmp		; set requests, tmp req after swap will stay
+		STA		_game_field_update_req			; in a main reqest field, update req here is unique
+		JMP		_swap_game_field_update_params	; backup curren update parameters store new ones for now
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_constr_cursor_map_ofs:
@@ -1505,7 +1511,7 @@ _get_cur_constr_cursor_map_ofs:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_build_construc_data_ptr:
+_get_build_constr_data_ptr:
 		LDX		_constr_palette_selected_idx
 		CPX		#$0D
 		BNE		loc_150A5C
@@ -1610,86 +1616,97 @@ _build_constuct_data_lib_hi:
 		.BYTE	>[_build_constuct_data1B]
 		.BYTE	>[_build_constuct_data1C]
 _build_constuct_data00:
-		.BYTE	$91,$DF
+		.BYTE	_MAP_ROAD_LR,$DF
 _build_constuct_data01:
-		.BYTE	$A7,$DF
+		.BYTE	_MAP_ELECTRO_LR,$DF
 _build_constuct_data02:
-		.BYTE	$9C,$DF
+		.BYTE	_MAP_RAIL_LR,$DF
 _build_constuct_data03:
-		.BYTE	$B2,$DF
+		.BYTE	_MAP_GRASS,$DF
 _build_constuct_data0C:
-		.BYTE	$B3,$DF
+		.BYTE	_MAP_TREE,$DF
 _build_constuct_data04:
-		.BYTE	$00,$80,$81,$82,$DF
+		.BYTE	_MAP_R_AREA_DEF,$80,$81,$82,$DF
 _build_constuct_data05:
-		.BYTE	$20,$80,$81,$82,$DF
+		.BYTE	_MAP_C_AREA_DEF,$80,$81,$82,$DF
 _build_constuct_data06:
-		.BYTE	$40,$80,$81,$82,$DF
+		.BYTE	_MAP_I_AREA_DEF,$80,$81,$82,$DF
 _build_constuct_data07:
-		.BYTE	$50,$80,$81,$82,$DF
+		.BYTE	_MAP_POLICE_STATION,$80,$81,$82,$DF
 _build_constuct_data08:
-		.BYTE	$51,$80,$81,$82,$DF
+		.BYTE	_MAP_FIRE_STATION,$80,$81,$82,$DF
 _build_constuct_data09:
-		.BYTE	$63,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_STADIUM,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data0A:
-		.BYTE	$60,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_COAL_POWER,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data0B:
-		.BYTE	$62,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_SEA_PORT,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data0D:
-		.BYTE	$64,$80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8A,$8B,$8C,$8D,$8E
+		.BYTE	_MAP_AIR_PORT,$80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8A,$8B,$8C,$8D,$8E
 		.BYTE	$DF
 _build_constuct_data0E:
-		.BYTE	$70,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_BANK,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data0F:
-		.BYTE	$71,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_AMUSEMENT_PARK,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data10:
-		.BYTE	$72,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_ZOO,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data11:
-		.BYTE	$73,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_CASINO,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data12:
-		.BYTE	$90,$90,$90,$90,$90,$90,$90,$90,$90,$DF
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	_MAP_GROUND
+		.BYTE	$DF
 _build_constuct_data13:
-		.BYTE	$75,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_NEW_POLICE,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data14:
-		.BYTE	$76,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_NEW_FIRE,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data15:
-		.BYTE	$77,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_10TH_MONUMENT,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data16:
-		.BYTE	$78,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_100TH_MONUMENT,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data17:
-		.BYTE	$79,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_EXPO_MONUMENT,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data18:
-		.BYTE	$7A,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_LIBERTY_MONUMENT,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data19:
-		.BYTE	$7B,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_LIBRARY,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data1A:
-		.BYTE	$7C,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_PARK_EXPAND,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data1B:
-		.BYTE	$7D,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_TRAIN_STATION,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 _build_constuct_data1C:
-		.BYTE	$7E,$80,$81,$82,$83,$84,$85,$86,$87,$DF
+		.BYTE	_MAP_WHITE_HOUSE,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_building_scheme_ex:
-		LDY		byte_CC
-		DEY
-		JMP		_get_building_scheme_ptr
+_get_bulldoze_scheme_ptr:
+		LDY		_cur_bulldoze_size
+;		DEY										; REDUNDANT, optimized
+;		JMP		_get_area_scheme_ptr
+		BNE		_get_area_scheme_ptr			; OPTIMIZED
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_cur_building_scheme_ptr:
+_get_build_scheme_ptr:
 		LDX		_constr_palette_selected_idx
 		LDY		_building_sizes_list,X
-		DEY
+;		DEY										; REDUNDANT, optimized
 		CPX		#$0C
-		BNE		_get_building_scheme_ptr
+		BNE		_get_area_scheme_ptr
 		LDA		_cur_port_type_select_idx
-		BEQ		_get_building_scheme_ptr
+		BEQ		_get_area_scheme_ptr
 		INY
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_building_scheme_ptr:
+_get_area_scheme_ptr:
+		DEY
 		LDA		_build_schemes_lib_lo,Y
 		STA		_tmp_ptrC5
 		LDA		_build_schemes_lib_hi,Y
@@ -2117,7 +2134,7 @@ _map_get_single_ppu_tile_lib:
 		BCC		.map_put_tile_as_is
 		CMP		#_MAP_RAIL_LR
 		BCC		.map_put_roads_tile
-		CMP		#_MAP_THREE						; special case for tree
+		CMP		#_MAP_TREE						; special case for tree
 		BEQ		.map_put_tree
 		CMP		#_MAP_ROAD_RAIL_LR				; roads rails and other, as is
 		BCC		.map_put_tile_as_is

@@ -795,8 +795,8 @@ loc_18A54E:
 loc_18A557:
 		LDA		#$00
 		STA		_pad0_held
-		STA		_pad0_autorep_press
-		STA		_pad0_autorep_release
+		STA		_pad0_press
+		STA		_pad0_autorep
 		RTS
 loc_18A560:
 		LDX		#$01
@@ -832,8 +832,8 @@ loc_18A590:
 		BEQ		loc_18A5AE
 		EOR		_pad0_held
 		AND		_ptr15
-		STA		_pad0_autorep_press
-		STA		_pad0_autorep_release
+		STA		_pad0_press
+		STA		_pad0_autorep
 		CMP		#$00
 		BEQ		loc_18A5C8
 		LDA		#$08
@@ -841,19 +841,19 @@ loc_18A590:
 		JMP		loc_18A5C8
 loc_18A5AE:
 		LDA		#$00
-		STA		_pad0_autorep_press
+		STA		_pad0_press
 		DEC		_pad0_autorep_timer
 		BNE		loc_18A5BD
 		LDA		_pad0_autorep_delay
 		STA		_pad0_autorep_timer
 		LDA		_ptr15
 loc_18A5BD:
-		STA		_pad0_autorep_release
+		STA		_pad0_autorep
 		JMP		loc_18A5C8
 loc_18A5C2:
 		LDA		#$00
-		STA		_pad0_autorep_press
-		STA		_pad0_autorep_release
+		STA		_pad0_press
+		STA		_pad0_autorep
 loc_18A5C8:
 		LDA		_ptr15
 		STA		_pad0_held

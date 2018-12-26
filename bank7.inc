@@ -535,7 +535,7 @@ _test_for_valid_vert_electric_water_joint:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_is_building_available_here:
+_is_build_available_here:
 		LDA		#$FF
 		STA		_cur_build_store_tile_idx		; set default building flag
 		LDA		_city._game_flags
@@ -799,7 +799,7 @@ _title_sub0_init:
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub1_title_input:
-		LDA		_pad0_autorep_press				; first title, wait for START
+		LDA		_pad0_press				; first title, wait for START
 		AND		#$90
 		BEQ		locret_B855E
 		INC		_title_sub_idx
@@ -865,17 +865,17 @@ loc_B85CB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub3_menu_input:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$90
 		BNE		.title_menu_select_apply
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$0C
 		BEQ		.title_menu_default				; test UP/DOWN buttons
 		APUA_SE	_SE_IDX_CLICK					; menu change sound
 		LDX		_cur_game_mode
 		LDA		_title_menu_item_decode,X
 		TAX
-		LDA		_pad0_autorep_press				; test one more time, old value lost
+		LDA		_pad0_press				; test one more time, old value lost
 		AND		#$0C
 		BEQ		.title_menu_default
 		CMP		#$08
@@ -1109,14 +1109,14 @@ loc_B8A5F:
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BMI		loc_B8A8A
 		BVC		loc_B8A79
 		LDA		#$01
 		STA		_tmp118+4
 		BNE		loc_B8AA2
 loc_B8A79:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$03
 		BEQ		locret_B8AA7
 		LDA		_tmp118+4
@@ -1372,7 +1372,7 @@ _loan_font_tiles_bottom_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub8_already_load_input:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$C0
 		BEQ		_bank_spr_curtain_draw_pos3F
 		LDA		#$80
@@ -1943,7 +1943,7 @@ _scr_res_hndl1_B_graphs_input:
 		JSR		_graphs_period_spr_start_year_draw	; sprite number, need to be drawn each frame
 		BIT		_scr_res_control_flags
 		BMI		loc_B8E30
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BVS		loc_B8E36
 		BPL		locret_B8E3F
 		APUA_SE	_SE_IDX_BCLICK
@@ -2465,13 +2465,13 @@ _scr_res_hndl2_B_budget_input:
 		STA		_budget_display_timer
 		STA		_budget_display_timer+1
 		JSR		_budget_screen_clock_spr_animate; not sure why animated once here
-		LDA		_pad0_autorep_release			; test for d-pan press
+		LDA		_pad0_autorep					; test for d-pan press
 		AND		#$0F
 		BEQ		.budget_buttons_test
 		JSR		_budget_screen_dpad_test
 		JMP		.budget_screen_animate
 .budget_buttons_test:
-		BIT		_pad0_autorep_release
+		BIT		_pad0_autorep
 		BPL		.budget_screen_animate
 		APUA_SE	_SE_IDX_CLICK					; A button pressed
 		LDA		_budget_tax_cur_pos				; check cursor position
@@ -2556,7 +2556,7 @@ _scr_res_hndl2_B_budget_input:
 _budget_screen_dpad_test:
 		BIT		_city._bank_flags
 		BPL		.budget_common_dpad_test		; common tests if no bank enabled
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep
 		AND		#$0C
 		BEQ		.budget_common_dpad_test
 		LDX		_budget_tax_cur_pos
@@ -2585,7 +2585,7 @@ _budget_screen_dpad_test:
 		STA		_budget_tax_cur_pos
 		RTS
 .budget_common_dpad_test:
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep
 		AND		#$0F							; extract dpad buttons
 		CMP		#$04							; test for hor/vert ranges
 		AND		#$05							; mask UP or RIGHT
@@ -2731,7 +2731,7 @@ _budget_tax_change_input:
 		STA		_budget_tax_adjust_value
 		RTS
 loc_B9461:
-		LDA		_pad0_autorep_release			; if held, test for autorep
+		LDA		_pad0_autorep			; if held, test for autorep
 		BPL		locret_B9472
 		INC		_budget_tax_adjust_value		; increment while held
 		LDA		_budget_tax_adjust_value		; max value here 40

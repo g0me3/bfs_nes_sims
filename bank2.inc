@@ -427,10 +427,10 @@ _presents_build_menu:
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert			; draw cursor, idx == $00
-		LDA		_pad0_autorep_press				; input parsing start
+		LDA		_pad0_press				; input parsing start
 		AND		#$0F
 		BNE		.present_wnd_dpad
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$C0
 		BEQ		.present_wnd_loop
 		BNE		.present_wnd_buttons
@@ -472,7 +472,7 @@ loc_3E6BD:
 		JMP		.present_wnd_loop
 .present_wnd_buttons:							; exit with A/B buttons
 		LDA		#$03
-		STA		_cur_selected_buildings_size	; all buildings here 3x3
+		STA		_cur_building_size	; all buildings here 3x3
 		JMP		_spr_clear
 
 		SECTION_ENDS	C0A, "PRGC EXT WND DYNAMIC DATA/CODE"

@@ -125,13 +125,13 @@ _pad_tmp:
 		.BYTE	0
 _pad0_held:
 		.BYTE	0
-_pad0_autorep_press:
+_pad0_press:
 		.BYTE	0
-_pad0_autorep_release:
+_pad0_autorep:
 		.BYTE	0
 _pad0_autorep_timer:
 		.BYTE	0
-_pad0_dpad_autorep_delay:
+_dpad0_autorep_timer:
 		.BYTE	0
 _pad0_prev_held:
 		.BYTE	0
@@ -198,47 +198,65 @@ word_6C:
 _tmp6E:
 		.BYTE	0,0
 
-_tmp70	EQU		.
-
+_tmp70:
 _anim_pos_is_load:
 		.BYTE	0
 byte_71:
+_tmp71:
 		.BYTE	0
 _anim_pos_col:
+_tmp72:
 		.BYTE	0
 byte_73:
+_tmp73:
 		.BYTE	0
 _anim_pos_row:
+_tmp74:
 		.BYTE	0
 byte_75:
+_tmp75:
 		.BYTE	0
 byte_76:
+_tmp76:
 		.BYTE	0
 byte_77:
+_tmp77:
 		.BYTE	0
 byte_78:
+_tmp78:
 		.BYTE	0
 byte_79:
+_tmp79:
 		.BYTE	0
 byte_7A:
+_tmp7A:
 		.BYTE	0
 byte_7B:
+_tmp7B:
 		.BYTE	0
 byte_7C:
+_tmp7C:
 		.BYTE	0
 byte_7D:
+_tmp7D:
 		.BYTE	0
 byte_7E:
+_tmp7E:
 		.BYTE	0
 byte_7F:
+_tmp7F:
 		.BYTE	0
 byte_80:
+_tmp80:
 		.BYTE	0
 byte_81:
+_tmp81:
 		.BYTE	0
 byte_82:
+_tmp82:
 		.BYTE	0
 byte_83:
+_tmp83:
 		.BYTE	0
 _mmc5_prgA000_bank_tmp:
 		.BYTE	0
@@ -331,7 +349,7 @@ _pal_anim_counter:
 		.BYTE	0
 ;_unref_10:
 ;		.BYTE	0
-_cur_selected_buildings_size:
+_cur_building_size:
 		.BYTE	0
 _tmp_ptrC1:
 		.BYTE	0,0
@@ -347,15 +365,15 @@ _cur_port_type_select_idx:
 		.BYTE	0
 _cur_build_store_tile_idx:
 		.BYTE	0
-byte_CB:
+_bulldoze_tile_idx:
 		.BYTE	0
-byte_CC:
+_cur_bulldoze_size:
 		.BYTE	0
-byte_CD:
+_bulldoze_error_beep_flag:
 		.BYTE	0
-byte_CE:
+_bulldoze_start_delta_col:
 		.BYTE	0
-byte_CF:
+_bulldoze_start_delta_row:
 		.BYTE	0
 word_D0:
 		.BYTE	0,0
@@ -960,7 +978,7 @@ _counters_area_size	EQU	[.-_total_RCI_counts]
 ; end if statistic parameters
 ; -
 
-_corruption_anim_flag:
+_corruption_anim_req:
 		.BYTE	0
 
 ;		_tpos _tmp_map_pos

@@ -66,7 +66,7 @@ loc_58144:
 		LDA		_nmi_seconds_timer				; timeout for message window is 30 seconds
 		CMP		#$1E							; force quit when exceeded
 		BCS		loc_581EC
-		LDA		_pad0_autorep_press				; test for manual skip/quit buttons
+		LDA		_pad0_press				; test for manual skip/quit buttons
 		AND		#$C0
 		BEQ		.game_msg_loop
 		LDA		_ptr0							; increment pages counter
@@ -2180,13 +2180,13 @@ loc_59047:
 		LDA		#$37
 		STA		_MMC5_CHR_BANKSA+3
 		JSR		_common_yes_no_menu_cursor_draw
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$80
 		BNE		loc_5907B
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$40
 		BNE		loc_5909C
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$0F
 		BEQ		loc_59047
 		APUA_SE	_SE_IDX_SELECT
@@ -2788,7 +2788,7 @@ locret_5953D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_woods:
-		LDX		#$32							; random select of amount of trees
+		LDX		#$32							; random select of amount of woods
 		JSR		_rand_clamp_X					; counter = rand(50) + 23 (half of the
 		CLC										; Micropolis version)
 		ADC		#$17
@@ -3086,7 +3086,7 @@ _smooth_woods_edges:
 .woods_edges_loop:
 		JSR		_map_pos_read					; OPTIMIZED size
 		BMI		.woods_next_pixel				; skip already filled water tiles
-		BEQ		.woods_next_pixel				; and empty grounds, the rest is trees
+		BEQ		.woods_next_pixel				; and empty grounds, the rest are woods
 		LDY		#$00							; FIX, the same copypaste code as for
 		STY		_tmp57B							; sea shores
 ;		STY		_tmp4

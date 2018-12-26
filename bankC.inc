@@ -78,12 +78,12 @@ _state01_constr_palette_redraw:
 		LDA		#$3A
 		STA		_MMC5_CHR_BANKSA+2				; restore cursor sprites CHR bank
 		LDA		#$FF
-		STA		_hud_build_name_draw_req		; two more request to draw current
+		STA		_hud_build_name_draw_req		; erquest to update build name and price
 		LDA		_gui_active_controls_flags		; raise the GUI activity flag
 		ORA		#$02
 		STA		_gui_active_controls_flags
 		LDA		#$FF
-		STA		_RCI_meter_redraw_req
+		STA		_RCI_meter_redraw_req			; also redraw RCI meters request
 loc_150019:
 		JMP		_state17_common
 
@@ -164,7 +164,7 @@ _state02_map_scroll:
 .mini_map_scroll_done:
 		LDA		#$00
 		STA		_tmp70
-		JMP		_state17_common			; clear states when fine scroll is over
+		JMP		_state17_common					; clear states when fine scroll is over
 .button_B_held:
 		LDA		_pad0_held						; now get actual input and refresh
 		AND		#$0F							; scroll directions and refill new map data
@@ -189,7 +189,7 @@ loc_13617F:
 		BEQ		loc_1361A4
 		LDA		_constr_cursor_tile._COL
 		CLC
-		ADC		_cur_selected_buildings_size	; adjust scroll position with constr cursor size info
+		ADC		_cur_building_size	; adjust scroll position with constr cursor size info
 		CMP		#$19
 		BCS		loc_1361A4
 		LDA		_cur_game_cursor_scr_pos._COL
@@ -198,11 +198,11 @@ loc_13617F:
 		STA		_cur_game_cursor_scr_pos._COL
 loc_1361A4:
 		LDA		#$FF							; draw scroll line with common routine
-		STA		byte_71							; set vertical draw flag,
+		STA		_tmp71							; set vertical draw flag,
 		LDA		#$F8							; fine scroll delta
-		STA		_anim_pos_col
+		STA		_tmp72
 		LDA		#$1F
-		STA		byte_73							; colump position to draw
+		STA		_tmp73							; colump position to draw
 		JSR		_map_scroll_line_draw
 		DEC		_cur_map_wnd_pos._COL
 		DEC		_cur_screen_tile._COL
@@ -224,11 +224,11 @@ loc_1361BD:
 		STA		_cur_game_cursor_scr_pos._COL
 loc_1361D4:
 		LDA		#$FF
-		STA		byte_71
+		STA		_tmp71
 		LDA		#$19
-		STA		_anim_pos_col
+		STA		_tmp72
 		LDA		#$00
-		STA		byte_73
+		STA		_tmp73
 		JSR		_map_scroll_line_draw
 		INC		_cur_map_wnd_pos._COL
 		INC		_cur_screen_tile._COL
@@ -248,7 +248,7 @@ loc_1361E7:
 		BEQ		loc_13620D
 		LDA		_constr_cursor_tile._ROW
 		CLC
-		ADC		_cur_selected_buildings_size
+		ADC		_cur_building_size
 		CMP		#$15
 		BCS		loc_13620D
 		LDA		_cur_game_cursor_scr_pos._ROW
@@ -257,11 +257,11 @@ loc_1361E7:
 		STA		_cur_game_cursor_scr_pos._ROW
 loc_13620D:
 		LDA		#$00							; draw bottom horizontal line
-		STA		byte_71
+		STA		_tmp71
 		LDA		#$F8
-		STA		_anim_pos_col
+		STA		_tmp72
 		LDA		#$16
-		STA		byte_73
+		STA		_tmp73
 		JSR		_map_scroll_line_draw
 		DEC		_cur_map_wnd_pos._ROW
 		DEC		_cur_screen_tile._ROW
@@ -283,11 +283,11 @@ loc_136226:
 		STA		_cur_game_cursor_scr_pos._ROW
 loc_13623D:
 		LDA		#$00
-		STA		byte_71
+		STA		_tmp71
 		LDA		#$15
-		STA		_anim_pos_col
+		STA		_tmp72
 		LDA		#$15
-		STA		byte_73
+		STA		_tmp73
 		JSR		_map_scroll_line_draw
 		INC		_cur_map_wnd_pos._ROW
 		INC		_cur_screen_tile._ROW
@@ -300,17 +300,17 @@ loc_136250:
 _state03_map_scroll_mode_set:
 		LDA		#$01
 		STA		_scr_mode_idx					; simply set the scroll request
-		JMP		_state17_common			; why?
+		JMP		_state17_common					; why?
 
 ; =============== S U B	R O U T	I N E =======================================
 _state07_buttons_push:
 		LDA		_cur_game_cursor_scr_pos._ROW	; we already know this is buttons
 		CMP		#$38							; if below 38, this is const palette
 		BCS		.constr_button_push				; otherwize this in config/info buttons
-		LDA		_pad0_autorep_press				; config windows activates differently
+		LDA		_pad0_press						; config windows activates differently
 		AND		#$80							;
 		STA		_game_msg_wnd_active_flag		; upper side of the screen activate the
-		JMP		_state17_common			; menu windows
+		JMP		_state17_common					; menu windows
 .constr_button_push:
 		PUSHB	_constr_palette_press_idx		; backup idx by now
 		JSR		_is_constr_palette_item_active	; test if button is active
@@ -328,7 +328,7 @@ _state07_buttons_push:
 		LDA		_cur_game_cursor_scr_pos._ROW
 		STA		_constr_palette_area_cursor_pos._ROW
 		LDA		_building_sizes_list,X			; apply selected tool
-		STA		_cur_selected_buildings_size
+		STA		_cur_building_size
 loc_13629E:
 		LDA		#$FF
 		STA		_hud_build_name_draw_req		; set request to update tool name on HUD
@@ -399,6 +399,7 @@ _is_constr_palette_item_active:
 loc_136300:
 		CLC
 		RTS
+
 _palette_activity_flags:
 		.BYTE	$03,$08
 		.BYTE	$03,$02
@@ -426,134 +427,181 @@ loc_136325:
 		JMP		_bulldoze_area
 .other_builds:
 		CMP		#$04
-		BEQ		_build_garden_area				; =4 - gardens selected
+		BEQ		_build_garden_area				; index 4 - gardens selected
 		BCS		_bulid_large_buildings			; all above 4 - buildings
-		LDA		_pad0_held						; here we start to build single tiled objects
-		CMP		_pad0_prev_held					; areas - roads, rails, electrics
-		BNE		.something_changed				; buttons changes, test if we need to do something
-		LDA		_constr_cursor_tile._COL
-		CMP		_prev_constr_cursor_tile._COL
-		BNE		.something_changed				; as well as cursor position changed
-		LDA		_constr_cursor_tile._ROW
-		CMP		_prev_constr_cursor_tile._ROW
-		BEQ		.no_changes
-.something_changed:
+; REDUNDANT, merged
+;		LDA		_pad0_held						; here we start to build single tiled objects
+;		CMP		_pad0_prev_held					; areas - roads, rails, electrics
+;		BNE		.something_changed				; buttons changes, test if we need to do something
+;		LDA		_constr_cursor_tile._COL		; as well as cursor position changed
+;		CMP		_prev_constr_cursor_tile._COL
+;		BNE		.something_changed
+;		LDA		_constr_cursor_tile._ROW
+;		CMP		_prev_constr_cursor_tile._ROW
+		JSR		_prev_tile_test					; the rest is for single tiles
+		BEQ		_store_prev_cursor_and_exit
 		JSR		_get_cur_building_price			; calc price, of tile to build, position where
 		JSR		_get_cur_constr_cursor_map_tile	; to build, then choose what exactly tile we
 		FJSRA	_get_new_map_single_tile,PRG7,PRGD	; need to build according to nearest
 		BCC		loc_136358						; tiles and special rules (bending roads, etc)
 		JMP		.cant_build_anything_beep		; if not possible, beep
 loc_136358:
-		JSR		_build_cur_constr_cursor_area	; put this tile to the map
-		JSR		_adjust_surround_net_tiles
-		JSR		_calc_game_field_update_params
-		LDA		#$FF
-		STA		_hud_money_redraw_req
-		LDA		_constr_cursor_tile._COL
-		STA		_prev_constr_cursor_tile._COL
-		LDA		_constr_cursor_tile._ROW
-;		JSR		_apu_se_small_build
+; REDUNDANT, merged
+;		JSR		_build_cur_constr_cursor_area	; put this tile to the map
+;		JSR		_rebend_bulding_nearest_tiles	; re-bend surrounding tiles (roads, electrics)
+;		JSR		_get_build_invalidate_area		; invalidate area request for new building
+;		LDA		#$FF
+;		STA		_hud_money_redraw_req			; also update request for decreased money
+		JSR		_build_something				; OPTIMIZED, merged
 		APUA_SE	_SE_IDX_SBUILD
-.no_changes:
-		JSR		_save_constr_cursor_pos
+;		LDA		_constr_cursor_tile._COL		; REDUNDANT, will be stored in _store_prev_constr_cursor
+;		STA		_prev_constr_cursor_tile._COL	; double building
+;		LDA		_constr_cursor_tile._ROW		; also wrong, no store opcode here
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_store_prev_cursor_and_exit:
+		JSR		_store_prev_constr_cursor
 		JMP		_state17_common
+
+; OPTIMIZED, merged code
+; =============== S U B	R O U T	I N E =======================================
+_build_something:
+		JSR		_build_cur_constr_cursor_area	; put this tile to the map
+		JSR		_rebend_bulding_nearest_tiles	; re-bend surrounding tiles (roads, electrics)
+		JSR		_get_build_invalidate_area		; invalidate area request for new building
+		LDA		#$FF
+		STA		_hud_money_redraw_req			; also update request for decreased money
+		RTS
+
+; OPTIMIZED, merged code
+; =============== S U B	R O U T	I N E =======================================
+_prev_tile_test:
+		LDA		_pad0_held						; here we start to build single tiled objects
+		CMP		_pad0_prev_held					; areas - roads, rails, electrics
+		BNE		.something_changed				; buttons changes, test if we need to do something
+		LDA		_constr_cursor_tile._COL		; as well as cursor position changed
+		CMP		_prev_constr_cursor_tile._COL
+		BNE		.something_changed
+		LDA		_constr_cursor_tile._ROW
+		CMP		_prev_constr_cursor_tile._ROW
+.something_changed:
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _build_garden_area:
-		LDA		_pad0_held
-		CMP		_pad0_prev_held
-		BNE		loc_136389
-		LDA		_constr_cursor_tile._COL
-		CMP		_prev_constr_cursor_tile._COL
-		BNE		loc_136389
-		LDA		_constr_cursor_tile._ROW
-		CMP		_prev_constr_cursor_tile._ROW
-		BEQ		.no_changes
-loc_136389:
-		JSR		_get_cur_building_price
-		JSR		_get_cur_constr_cursor_map_tile
-		FJSRA	_is_building_available_here,PRG7,PRGD
+; REDUNDANT, merged
+;		LDA		_pad0_held
+;		CMP		_pad0_prev_held
+;		BNE		loc_136389
+;		LDA		_constr_cursor_tile._COL
+;		CMP		_prev_constr_cursor_tile._COL
+;		BNE		loc_136389
+;		LDA		_constr_cursor_tile._ROW
+;		CMP		_prev_constr_cursor_tile._ROW
+		JSR		_prev_tile_test
+		BEQ		_store_prev_cursor_and_exit		; jump up to common code
+;loc_136389:
+; REDUNDANT, merged
+;		JSR		_get_cur_building_price			; garden area not need much complex bending
+;		JSR		_get_cur_constr_cursor_map_tile	; logic, just test if we could build something
+;		FJSRA	_is_build_available_here,PRG7,PRGD
+		JSR		_is_it_possible_to_build		; OPTIMIZED, merged
 		BCS		.cant_build_anything_beep
-		JSR		_build_cur_constr_cursor_area
-		JSR		_adjust_surround_net_tiles
-		JSR		_calc_game_field_update_params
-		LDA		#$FF
-		STA		_hud_money_redraw_req
-;		JSR		_apu_se_small_build
+; REDUNDANT, merged
+;		JSR		_build_cur_constr_cursor_area	; put garden tile
+;		JSR		_rebend_bulding_nearest_tiles
+;		JSR		_get_build_invalidate_area
+;		LDA		#$FF
+;		STA		_hud_money_redraw_req
+		JSR		_build_something				; OPTIMIZED, merged
 		APUA_SE	_SE_IDX_SBUILD
-		JSR		_save_constr_cursor_pos
-		JMP		_state17_common
+;		JSR		_store_prev_constr_cursor
+;		JMP		_state17_common
+		JMP		_store_prev_cursor_and_exit
+
+; =============== S U B	R O U T	I N E =======================================
+_is_it_possible_to_build:
+		JSR		_get_cur_building_price			; garden area not need much complex bending
+		JSR		_get_cur_constr_cursor_map_tile	; logic, just test if we could build something
+		FJSRA	_is_build_available_here,PRG7,PRGD
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _bulid_large_buildings:
-		LDA		_pad0_autorep_press
-		BPL		loc_1363F5
-		LDA		_constr_palette_selected_idx
+		LDA		_pad0_press						; not using held code, press only so we
+		BPL		.large_build_exit				; don't need to prevent from build to prev tile
+		LDA		_constr_palette_selected_idx	; test if we build a presents
 		CMP		#$0D
 		BNE		loc_1363BE
-		LDA		_constr_palette_flags
+		LDA		_constr_palette_flags			; test if prize button enabled
 		AND		#$02
 		BNE		.cant_build_anything_beep
 loc_1363BE:
-		JSR		_get_cur_building_price
-		JSR		_get_cur_constr_cursor_map_tile
-		FJSRA	_is_building_available_here,PRG7,PRGD
+;		JSR		_get_cur_building_price			; REDUNDANT, merged
+;		JSR		_get_cur_constr_cursor_map_tile
+;		FJSRA	_is_build_available_here,PRG7,PRGD
+		JSR		_is_it_possible_to_build		; OPTIMIZED, merged
 		BCS		.cant_build_anything_beep
-		JSR		_build_cur_constr_cursor_area
-		JSR		_adjust_surround_net_tiles
-		JSR		_calc_game_field_update_params
-		LDA		#$FF
-		STA		_hud_money_redraw_req
-;		JSR		_apu_se_large_build
+; REDUNDANT, merged
+;		JSR		_build_cur_constr_cursor_area
+;		JSR		_rebend_bulding_nearest_tiles
+;		JSR		_get_build_invalidate_area
+;		LDA		#$FF
+;		STA		_hud_money_redraw_req
+		JSR		_build_something				; OPTIMIZED, merged
 		APUA_SE	_SE_IDX_LBUILD
-		JSR		_bank_build_year_init
-		JSR		_present_remove_from_list
+		JSR		_bank_build_year_init			; special case when we build a bank
+		JSR		_present_remove_from_list		; special case for presents built
 		LDA		_constr_palette_selected_idx
 		CMP		#$0D
-		BNE		loc_1363F5
+		BNE		.large_build_exit
 		LDA		#$FF
-		STA		_hud_build_name_draw_req
-		BNE		loc_1363F5
+		STA		_hud_build_name_draw_req		; also refresh present name on HUD
+		BNE		.large_build_exit				; for other buildings here are no changes
 .cant_build_anything_beep:
-		JSR		_save_constr_cursor_pos
-;		JSR		_apu_se_error
 		APUA_SE	_SE_IDX_ERROR
-loc_1363F5:
+.large_build_exit:
+;		JSR		_store_prev_constr_cursor		; REDUNDANT, we dont test it here
 		JMP		_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _bulldoze_area:
 ; REDUNDANT, this routine is actually redundant, because the bulldoze price
-; is calculated later in _bulldoze_a_building routine and overwrites these ones
-;
-;		JSR		_get_cur_building_price			; bulldoze price ($1)
-		JSR		_bulldoze_a_building
+; is calculated later in _do_bulldoze routine and overwrites this value
+;		JSR		_get_cur_building_price
+; NOTE: there is no test for previous tile already set, so when you bulldoze
+; the large buildings, and keep holding the A button, you'll erase immediately
+; rubble tile!
+		JSR		_prev_tile_test					; FIX, to avoid mentioned above
+		JSR		_do_bulldoze					; attempt to bulldoze
 		BCS		.fail
-		JSR		_adjust_surround_net_tilesCC
-		JSR		sub_1509CF
+		JSR		_rebend_bulldoze_nearest_tiles	; fix conjuncted tiles
+		JSR		_get_bulldoze_invalidate_area	; also invalidate area after bulldoze
 		LDA		#$FF
-		STA		_hud_money_redraw_req
-		LDX		byte_CC
+		STA		_hud_money_redraw_req			; again money redraw
+		LDX		_cur_bulldoze_size
 		DEX
-		BEQ		.ok
-		INC		_corruption_anim_flag
-;		JSR		_apu_se_destroy
-		APUA_SE	_SE_IDX_DESTROY
-		JMP		_state17_common
-.ok:
-;		JSR		_apu_se_bulldozer
-		APUA_SE	_SE_IDX_BULLDOZE
-		JMP		_state17_common
+		BEQ		.no_corrupt_anim				; if more than simgle tile selected
+		INC		_corruption_anim_req			; set corrup anim request
+		APUA_SE	_SE_IDX_DESTROY					; play destroy sound
+		BNE		.skip
+;		JMP		_state17_common
+.no_corrupt_anim:
+		APUA_SE	_SE_IDX_BULLDOZE				; for single tiles just play simple sound
+		BNE		.skip
+;		JMP		_state17_common
 .fail:
-		LDA		byte_CD
-		BNE		.skip							; with error sound or without
-;		JSR		_apu_se_error
-		APUA_SE	_SE_IDX_ERROR
+		LDA		_bulldoze_error_beep_flag
+		BNE		.skip
+		APUA_SE	_SE_IDX_ERROR					; when no bulldoze, play error sound if needed
 .skip:
-		JMP		_state17_common
+;		JMP		_state17_common
+		JMP		_store_prev_cursor_and_exit		; FIX, to support mentioned above
 
 ; =============== S U B	R O U T	I N E =======================================
-_save_constr_cursor_pos:
+_store_prev_constr_cursor:
 		LDA		_constr_cursor_tile._COL
 		STA		_prev_constr_cursor_tile._COL
 		LDA		_constr_cursor_tile._ROW
@@ -966,7 +1014,7 @@ loc_136684:
 		LDA		#$13
 		JMP		_set_game_state_idx
 loc_13668E:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$30
 		BEQ		loc_136699
 		LDA		#$15
@@ -1003,7 +1051,7 @@ loc_1366C9:
 		LDA		#$03
 		JMP		_set_game_state_idx
 loc_1366D4:
-		LDA		_pad0_autorep_press				; game screen push button test
+		LDA		_pad0_press						; game screen push button test
 		AND		#$80
 		BEQ		loc_1366E4
 		JSR		_test_for_game_buttons_push		; test if any button pushed, C=1 if no
@@ -1011,7 +1059,7 @@ loc_1366D4:
 		LDA		#$07
 		JMP		_set_game_state_idx				; change state to handle buttons pushes
 loc_1366E4:
-		LDA		_pad0_autorep_release			; here we push either the empty part of the screen
+		LDA		_pad0_autorep					; here we push either the empty part of the screen
 		AND		#$80							; or game cfield
 		BEQ		loc_1366F3
 		LDA		_cur_game_cursor_area			; if cursor in game area
@@ -1080,16 +1128,16 @@ _constr_palette_static_nt_draw:
 		LDY		#$00
 ;		LDX		_ppu_queue_pos_tail				; BUG, load pos TAIL instead of head!
 		PPUQSTART								; FIX, does not make any difference because
-		MOVW	_ptr0,byte_7A					; we have both values the same at this point
-		MOVW	_tmp2,byte_7E
+		MOVW	_ptr0,_tmp7A					; we have both values the same at this point
+		MOVW	_tmp2,_tmp7E
 loc_136A2D:
 		PPUQMOVB	_ptr0,OP_NOP,0
 		PPUQMOVB	_ptr0+1,OP_NOP,0
-		LDA		byte_7C
+		LDA		_tmp7C
 		STA		_tmp4
 		ORA		#$80							; vertical draw flag set
 		PPUQMOVA
-		LDA		byte_7D
+		LDA		_tmp7D
 		STA		_tmp5
 loc_136A47:
 		LDA		_tlm_constr_palette_static_nt,Y	; transposed construction palette nt
@@ -1127,21 +1175,21 @@ _constr_palette_static_extnt_draw:
 		LDY		#$00
 ;		LDX		_extnt_queue_pos_tail			; BUG, again load TAIL! why!?
 		EXTQSTART
-		LDA		byte_7A							; reload ppu offset but with
+		LDA		_tmp7A							; reload ppu offset but with
 		STA		_ptr0							; adjust to EXTNT RAM
-		LDA		byte_7B
+		LDA		_tmp7B
 		CLC
 		ADC		#$3C
 		STA		_ptr0+1
-		MOVW	_tmp2,byte_7E
+		MOVW	_tmp2,_tmp7E
 loc_136AAA:
 		EXTQMOVB	_ptr0,OP_NOP,0				; the same vertical mode
 		EXTQMOVB	_ptr0+1,OP_NOP,0
-		LDA		byte_7C
+		LDA		_tmp7C
 		STA		_tmp4
 		ORA		#$80
 		EXTQMOVA
-		LDA		byte_7D
+		LDA		_tmp7D
 		STA		_tmp5
 loc_136AC4:
 		LDA		_tlm_constr_palette_static_extnt,Y
@@ -1191,9 +1239,9 @@ locret_136759:
 ; =============== S U B	R O U T	I N E =======================================
 _constr_palette_map_redraw:
 		PPUQSTART								; backup PPU queue positions to tmp vars
-		STX		byte_80							; which we will use instead
+		STX		_tmp80							; which we will use instead
 		EXTQSTART
-		STX		byte_81
+		STX		_tmp81
 		LDA		_cur_map_wnd_pos._COL			; calculate invalidate area
 		STA		_update_rect_right				; on the city map and starting position
 		SEC
@@ -1213,64 +1261,64 @@ loc_136B2A:
 		STA		_tmp_tile_pos._ROW
 		JSR		_constr_palette_map_vert_draw
 		INC		_update_rect_left
-		DEC		byte_7E
+		DEC		_tmp7E
 		BEQ		loc_136B43
-		INC		byte_7A
+		INC		_tmp7A
 		BNE		loc_136B2A
 loc_136B43:
-		LDA		byte_7A
+		LDA		_tmp7A
 		AND		#$E0
-		STA		byte_7A
-		DO_WRAP	byte_7E,byte_7F,loc_136B56
+		STA		_tmp7A
+		DO_WRAP	_tmp7E,_tmp7F,loc_136B56
 		JMP		loc_136B2A
 loc_136B56:
-		LDX		byte_80
+		LDX		_tmp80
 		PPUQEND
-		LDX		byte_81
+		LDX		_tmp81
 		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _constr_palette_map_vert_draw:
-		LDX		byte_80
-		PPUQMOVB	byte_7A,OP_NOP,0
-		PPUQMOVB	byte_7B,OP_NOP,0
-		PPUQMOVB	byte_7C,OP_ORA,#$80
-		STX		byte_80
-		LDX		byte_81
-		EXTQMOVB	byte_7A,OP_NOP,0
-		EXTQMOVB	byte_7B,OP_ADD,#$3C
-		LDA		byte_7C
-		STA		byte_82
+		LDX		_tmp80
+		PPUQMOVB	_tmp7A,OP_NOP,0
+		PPUQMOVB	_tmp7B,OP_NOP,0
+		PPUQMOVB	_tmp7C,OP_ORA,#$80
+		STX		_tmp80
+		LDX		_tmp81
+		EXTQMOVB	_tmp7A,OP_NOP,0
+		EXTQMOVB	_tmp7B,OP_ADD,#$3C
+		LDA		_tmp7C
+		STA		_tmp82
 		ORA		#$80
 		EXTQMOVA
-		STX		byte_81
-		LDA		byte_7D
-		STA		byte_83
+		STX		_tmp81
+		LDA		_tmp7D
+		STA		_tmp83
 loc_136B98:
 		SEC
 		JSR		_map_get_ppu_tile
-		LDX		byte_80
+		LDX		_tmp80
 		PPUQMOVB	word_6C,OP_NOP,0
-		STX		byte_80
-		LDX		byte_81
+		STX		_tmp80
+		LDX		_tmp81
 		EXTQMOVB	word_6C+1,OP_NOP,0
-		STX		byte_81
+		STX		_tmp81
 		INC		_tmp_tile_pos._ROW
 		CLC
-		DEC		byte_82
+		DEC		_tmp82
 		BNE		loc_136B98
-		DO_WRAP	byte_82,byte_83,locret_136BF8
-		LDX		byte_80
-		PPUQMOVB	byte_7A,OP_AND,#$1F
+		DO_WRAP	_tmp82,_tmp83,locret_136BF8
+		LDX		_tmp80
+		PPUQMOVB	_tmp7A,OP_AND,#$1F
 		PPUQMOVB	#$20,OP_NOP,0
-		PPUQMOVB	byte_82,OP_ORA,#$80
-		STX		byte_80
-		LDX		byte_81
-		EXTQMOVB	byte_7A,OP_AND,#$1F
+		PPUQMOVB	_tmp82,OP_ORA,#$80
+		STX		_tmp80
+		LDX		_tmp81
+		EXTQMOVB	_tmp7A,OP_AND,#$1F
 		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
-		EXTQMOVB	byte_82,OP_ORA,#$80
-		STX		byte_81
+		EXTQMOVB	_tmp82,OP_ORA,#$80
+		STX		_tmp81
 		JMP		loc_136B98
 locret_136BF8:
 		RTS
@@ -1286,51 +1334,51 @@ _constr_palette_pos_calc:
 		LSR
 		CLC
 		ADC		_ptr0
-		STA		byte_7A							; 7A/7B - ppu offset
+		STA		_tmp7A							; 7A/7B - ppu offset
 		TXA
 		ADC		#$20
-		STA		byte_7B
+		STA		_tmp7B
 		CMP		#$23
 		BNE		loc_1369E2
-		LDA		byte_7A
+		LDA		_tmp7A
 		CMP		#$C0
 		BCC		loc_1369E2
 		SBC		#$C0
-		STA		byte_7A
+		STA		_tmp7A
 		LDA		#$20
-		STA		byte_7B
+		STA		_tmp7B
 loc_1369E2:
 		LDA		_cur_screen_tile._ROW			; 7C - height, 7D - height wrap
 		LSR
 		CMP		#$0A
 		BCC		loc_1369F5
 		SBC		#$09
-		STA		byte_7D
+		STA		_tmp7D
 		LDA		#$15
-		SBC		byte_7D
-		STA		byte_7C
+		SBC		_tmp7D
+		STA		_tmp7C
 		BCS		loc_1369FD
 loc_1369F5:
 		LDA		#$15
-		STA		byte_7C
+		STA		_tmp7C
 		LDA		#$00
-		STA		byte_7D
+		STA		_tmp7D
 loc_1369FD:
-		LDA		byte_7A							; 7F - width, 7D - width wrap
+		LDA		_tmp7A							; 7F - width, 7D - width wrap
 		AND		#$1F
 		CMP		#$1A
 		BCC		loc_136A10
 		SBC		#$19
-		STA		byte_7F
+		STA		_tmp7F
 		LDA		#$07
-		SBC		byte_7F
-		STA		byte_7E
+		SBC		_tmp7F
+		STA		_tmp7E
 		RTS
 loc_136A10:
 		LDA		#$07
-		STA		byte_7E
+		STA		_tmp7E
 		LDA		#$00
-		STA		byte_7F
+		STA		_tmp7F
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1381,36 +1429,36 @@ loc_136862:
 		LSR
 		CLC
 		ADC		_ptr0
-		STA		byte_7A							; 7A/7B now has a pointer to ppu
+		STA		_tmp7A							; 7A/7B now has a pointer to ppu
 		TXA
 		ADC		#$20							; adjust offset to ppu nt buffer
-		STA		byte_7B
+		STA		_tmp7B
 		CMP		#$23							; test for wrap
 		BNE		loc_136892						; wrap ppu offset after 23C0
-		LDA		byte_7A
+		LDA		_tmp7A
 		CMP		#$C0
 		BCC		loc_136892
 		SBC		#$C0
-		STA		byte_7A
+		STA		_tmp7A
 		LDA		#$20
-		STA		byte_7B
+		STA		_tmp7B
 loc_136892:
 		PLA
 		CMP		#$18							; calc screen line width
 		BCC		loc_1368A3						; and line wrap width
 		SBC		#$17
-		STA		byte_7D
+		STA		_tmp7D
 		LDA		#$07
-		SBC		byte_7D
-		STA		byte_7C
+		SBC		_tmp7D
+		STA		_tmp7C
 		BCS		loc_1368AB
 loc_1368A3:
 		LDA		#$07							; or line without wrap by default
-		STA		byte_7C
+		STA		_tmp7C
 		LDA		#$00
-		STA		byte_7D
+		STA		_tmp7D
 loc_1368AB:
-		LDA		byte_7A
+		LDA		_tmp7A
 		AND		#$1F
 		EOR		#$FF
 		SEC
@@ -1419,7 +1467,7 @@ loc_1368AB:
 		BCC		loc_1368BA
 		LDA		#$00
 loc_1368BA:
-		STA		byte_7E
+		STA		_tmp7E
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1439,19 +1487,19 @@ _hud_map_redraw:
 loc_13679B:
 		JSR		_hud_map_hor_draw
 		INC		_tmp543
-		ADDWB	byte_7A,#$20
-		DEC		byte_7C
+		ADDWB	_tmp7A,#$20
+		DEC		_tmp7C
 		BNE		loc_13679B
-		LDA		byte_7D
+		LDA		_tmp7D
 		BEQ		loc_1367C8
-		STA		byte_7C
-		LDA		byte_7A
+		STA		_tmp7C
+		LDA		_tmp7A
 		AND		#$1F
-		STA		byte_7A
+		STA		_tmp7A
 		LDA		#$20
-		STA		byte_7B
+		STA		_tmp7B
 		LDA		#$00
-		STA		byte_7D
+		STA		_tmp7D
 		BEQ		loc_13679B
 loc_1367C8:
 		LDA		_tmp544
@@ -1463,25 +1511,25 @@ loc_1367C8:
 ; =============== S U B	R O U T	I N E =======================================
 _hud_map_hor_draw:
 		LDX		_tmp544
-		PPUQMOVB	byte_7A,OP_AND,#$E0
-		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	_tmp7A,OP_AND,#$E0
+		PPUQMOVB	_tmp7B,OP_NOP,0
 		PPUQMOVB	#$20,OP_NOP,0
 		STX		_tmp544
 		LDX		_tmp545
-		EXTQMOVB	byte_7A,OP_AND,#$E0
-		EXTQMOVB	byte_7B,OP_ADD,#$3C
+		EXTQMOVB	_tmp7A,OP_AND,#$E0
+		EXTQMOVB	_tmp7B,OP_ADD,#$3C
 		EXTQMOVB	#$20,OP_NOP,0
 		STX		_tmp545
 		STA		_tmp546
 		LDA		_tmp542
 		CLC
-		ADC		byte_7E
+		ADC		_tmp7E
 		STA		_tmp_tile_pos._COL
 		LDA		_tmp543
 		STA		_tmp_tile_pos._ROW
 		LDA		#$20
 		SEC
-		SBC		byte_7E
+		SBC		_tmp7E
 		STA		_tmp547
 		SEC
 loc_136823:
@@ -1509,17 +1557,17 @@ locret_136857:
 ; =============== S U B	R O U T	I N E =======================================
 _hud_static_nt_draw:
 		MOVWO	_ptr0,_tlm_hud_static_nt		; too large to access via absolute address opcode
-		LDA		byte_7A							; we have all parameters already calculated before
+		LDA		_tmp7A							; we have all parameters already calculated before
 		AND		#$E0							; so just load them here
 		STA		_tmp2							; mask low ppu offset to be sure we start at the
-		LDA		byte_7B							; 32b boundary
+		LDA		_tmp7B							; 32b boundary
 		STA		_tmp3
-		LDA		byte_7C							; also reload len and wrap len
+		LDA		_tmp7C							; also reload len and wrap len
 		STA		_tmp4
-		LDA		byte_7D
+		LDA		_tmp7D
 		STA		_tmp5
 		PPUQSTART
-		LDY		byte_7E							; Y = tlm ofs
+		LDY		_tmp7E							; Y = tlm ofs
 loc_1368DB:
 		PPUQMOVB	_tmp2,OP_NOP,0				; TODO very common routine for most of ppu transfers here
 		PPUQMOVB	_tmp3,OP_NOP,0				; the problem is they have very small variants
@@ -1553,19 +1601,19 @@ loc_136932:
 ; =============== S U B	R O U T	I N E =======================================
 _hud_static_extnt_draw:
 		MOVWO	_ptr0,_tlm_hud_static_extnt		; same routine as previous one
-		LDA		byte_7A							; with offset adjustment
+		LDA		_tmp7A							; with offset adjustment
 		AND		#$E0
 		STA		_tmp2
-		LDA		byte_7B
+		LDA		_tmp7B
 		CLC
 		ADC		#$3C
 		STA		_tmp3
-		LDA		byte_7C
+		LDA		_tmp7C
 		STA		_tmp4
-		LDA		byte_7D
+		LDA		_tmp7D
 		STA		_tmp5
 		EXTQSTART
-		LDY		byte_7E
+		LDY		_tmp7E
 loc_136956:
 		EXTQMOVB	_tmp2,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_NOP,0
@@ -1673,11 +1721,11 @@ _hud_build_name_pos_calc:
 loc_136C79:
 		LDX		#$20
 		MULXA
-		STA		byte_7A
+		STA		_tmp7A
 		TXA
 		CLC
 		ADC		#$20
-		STA		byte_7B
+		STA		_tmp7B
 		LDA		_cur_screen_tile._COL
 		LSR
 		CLC
@@ -1685,33 +1733,33 @@ loc_136C79:
 		AND		#$1F
 		PHA
 		CLC
-		ADC		byte_7A
-		STA		byte_7A
+		ADC		_tmp7A
+		STA		_tmp7A
 		PLA
 		CMP		#$15
 		BCC		loc_136CAF
 		SEC
 		SBC		#$14
-		STA		byte_7F
+		STA		_tmp7F
 		LDA		#$0C
 		SEC
-		SBC		byte_7F
-		STA		byte_7E
+		SBC		_tmp7F
+		STA		_tmp7E
 		RTS
 loc_136CAF:
 		LDA		#$0C
-		STA		byte_7E
+		STA		_tmp7E
 		LDA		#$00
-		STA		byte_7F
+		STA		_tmp7F
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _hud_build_name_nt_queue:
 ;		LDX		_tmp0							; REDUNDANT, read tmp queue pos
 		PPUQSTART								; FIX
-		LDA		byte_7E
+		LDA		_tmp7E
 		STA		_tmp2
-		LDA		byte_7F
+		LDA		_tmp7F
 		STA		_tmp3
 ; ADDED
 		LDA		_ptr0
@@ -1724,9 +1772,9 @@ _hud_build_name_nt_queue:
 ; -
 ;		LDY		_hud_build_name_src_ofs			; REDUNDANT
 		LDY		#$00							; ADDED
-		PPUQMOVB	byte_7A,OP_NOP,0
+		PPUQMOVB	_tmp7A,OP_NOP,0
 loc_136CD5:
-		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	_tmp7B,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_136CD6:
 ;		LDA		_tlm_nt_building_names_lib,Y	; REDUNDANT
@@ -1736,7 +1784,7 @@ loc_136CD6:
 		DEC		_tmp2
 		BNE		loc_136CD6
 		DO_WRAP	_tmp2,_tmp3,loc_136D03
-		PPUQMOVB	byte_7A,OP_AND,#$E0
+		PPUQMOVB	_tmp7A,OP_AND,#$E0
 		JMP		loc_136CD5
 loc_136D03:
 ;		STX		_tmp0							; REDUNDANT, save tmp queue pos
@@ -1758,19 +1806,19 @@ _hud_build_name_extnt_queue:
 		STA		_ptr4+1
 ; -
 		LDY		#$00
-		EXTQMOVB	byte_7A,OP_NOP,0
+		EXTQMOVB	_tmp7A,OP_NOP,0
 loc_136D1E:
-		EXTQMOVB	byte_7B,OP_ADD,#$3C
-		EXTQMOVB	byte_7E,OP_NOP,0
+		EXTQMOVB	_tmp7B,OP_ADD,#$3C
+		EXTQMOVB	_tmp7E,OP_NOP,0
 loc_136D1F:
 ;		LDA		_tlm_extnt_building_names_lib,Y	; REDUNDANT
 		LDA		(_ptr4),Y						; ADDED
 		EXTQMOVA
 		INY
-		DEC		byte_7E
+		DEC		_tmp7E
 		BNE		loc_136D1F
-		DO_WRAP	byte_7E,byte_7F,loc_136D4F
-		EXTQMOVB	byte_7A,OP_AND,#$E0
+		DO_WRAP	_tmp7E,_tmp7F,loc_136D4F
+		EXTQMOVB	_tmp7A,OP_AND,#$E0
 		JMP		loc_136D1E
 loc_136D4F:
 ;		STX		_tmp1							; REDUNDANT
@@ -1803,10 +1851,10 @@ _airport_build_menu:
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$0F
 		BNE		loc_136D8E
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$C0
 		BEQ		.airport_menu_loop
 		BNE		.port_menu_close
@@ -1822,7 +1870,7 @@ loc_136DA3:
 		LDY		#$04
 		LDA		#$01
 .port_name_update:
-		STY		_cur_selected_buildings_size
+		STY		_cur_building_size
 		STA		_cur_port_type_select_idx
 		JSR		_hud_build_name_draw
 		JMP		.airport_menu_loop
@@ -1869,10 +1917,10 @@ loc_136DD6:
 		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$0F
 		BNE		loc_136E05
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$C0
 		BEQ		loc_136DD6
 		BNE		loc_136E1E
@@ -1925,11 +1973,11 @@ _power_build_wnd_draw:
 ;loc_136E44:
 ;		LDX		#$20
 ;		MUXA
-;		STA		byte_7A
+;		STA		_tmp7A
 ;		TXA
 ;		CLC
 ;		ADC		#$20
-;		STA		byte_7B
+;		STA		_tmp7B
 ;		LDA		_cur_screen_tile._COL
 ;		LSR
 ;		STA		_ptr0+1
@@ -1940,23 +1988,23 @@ _power_build_wnd_draw:
 ;		SBC		#$20
 ;loc_136E68:
 ;		CLC
-;		ADC		byte_7A
-;		STA		byte_7A
+;		ADC		_tmp7A
+;		STA		_tmp7A
 ;		AND		#$1F
 ;		CMP		#$17
 ;		BCC		loc_136E81
 ;		SBC		#$16
-;		STA		byte_7F
+;		STA		_tmp7F
 ;		LDA		#$0A
 ;		SEC
-;		SBC		byte_7F
-;		STA		byte_7E
+;		SBC		_tmp7F
+;		STA		_tmp7E
 ;		JMP		loc_136E89
 ;loc_136E81:
 ;		LDA		#$0A
-;		STA		byte_7E
+;		STA		_tmp7E
 ;		LDA		#$00
-;		STA		byte_7F
+;		STA		_tmp7F
 ;loc_136E89:
 ;		LDA		_ptr0
 ;		CMP		#$11
@@ -1965,40 +2013,40 @@ _power_build_wnd_draw:
 ;		BCS		loc_136EA0
 ;		SEC
 ;		SBC		#$10
-;		STA		byte_7D
+;		STA		_tmp7D
 ;		LDA		#$04
 ;		SEC
-;		SBC		byte_7D
-;		STA		byte_7C
+;		SBC		_tmp7D
+;		STA		_tmp7C
 ;		RTS
 ;loc_136EA0:
 ;		LDA		#$04
-;		STA		byte_7C
+;		STA		_tmp7C
 ;		LDA		#$00
-;		STA		byte_7D
+;		STA		_tmp7D
 ;		RTS
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_unref_1:
-;		LDA		byte_7A
+;		LDA		_tmp7A
 ;		PHA
-;		LDA		byte_7B
+;		LDA		_tmp7B
 ;		PHA
 ;		LDX		_ptr0
 ;		LDY		#$00
-;		LDA		byte_7C
+;		LDA		_tmp7C
 ;		STA		_tmp2
-;		LDA		byte_7D
+;		LDA		_tmp7D
 ;		STA		_tmp3
 ;loc_136EBB:
-;		LDA		byte_7E
+;		LDA		_tmp7E
 ;		STA		_tmp4
-;		LDA		byte_7F
+;		LDA		_tmp7F
 ;		STA		_tmp5
-;		LDA		byte_7A
+;		LDA		_tmp7A
 ;		STA		_ppu_queue_buf,X
 ;		INX
-;		LDA		byte_7B
+;		LDA		_tmp7B
 ;		STA		_ppu_queue_buf,X
 ;		INX
 ;		LDA		_tmp4
@@ -2016,11 +2064,11 @@ _power_build_wnd_draw:
 ;		STA		_tmp4
 ;		LDA		#$00
 ;		STA		_tmp5
-;		LDA		byte_7A
+;		LDA		_tmp7A
 ;		AND		#$E0
 ;		STA		_ppu_queue_buf,X
 ;		INX
-;		LDA		byte_7B
+;		LDA		_tmp7B
 ;		STA		_ppu_queue_buf,X
 ;		INX
 ;		LDA		_tmp4
@@ -2028,13 +2076,13 @@ _power_build_wnd_draw:
 ;		INX
 ;		JMP		loc_136ED5
 ;loc_136F02:
-;		LDA		byte_7A
+;		LDA		_tmp7A
 ;		CLC
 ;		ADC		#$20
-;		STA		byte_7A
-;		LDA		byte_7B
+;		STA		_tmp7A
+;		LDA		_tmp7B
 ;		ADC		#$00
-;		STA		byte_7B
+;		STA		_tmp7B
 ;		DEC		_tmp2
 ;		BNE		loc_136EBB
 ;		LDA		_tmp3
@@ -2042,39 +2090,39 @@ _power_build_wnd_draw:
 ;		STA		_tmp2
 ;		LDA		#$00
 ;		STA		_tmp3
-;		LDA		byte_7A
+;		LDA		_tmp7A
 ;		AND		#$1F
-;		STA		byte_7A
+;		STA		_tmp7A
 ;		LDA		#$20
-;		STA		byte_7B
+;		STA		_tmp7B
 ;		BNE		loc_136EBB
 ;loc_136F29:
 ;		STX		_ptr0
 ;		PLA
-;		STA		byte_7B
+;		STA		_tmp7B
 ;		PLA
-;		STA		byte_7A
+;		STA		_tmp7A
 ;		RTS
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;unref_3:
 ;		LDX		_ptr0+1
-;		LDA		byte_7B
+;		LDA		_tmp7B
 ;		CLC
 ;		ADC		#$3C
-;		STA		byte_7B
-;		LDA		byte_7C
+;		STA		_tmp7B
+;		LDA		_tmp7C
 ;		STA		_tmp2
-;		LDA		byte_7D
+;		LDA		_tmp7D
 ;		STA		_tmp3
 ;loc_136F43:
-;		LDA		byte_7E
+;		LDA		_tmp7E
 ;		STA		_tmp4
-;		LDA		byte_7F
+;		LDA		_tmp7F
 ;		STA		_tmp5
-;		EXTQMOVB	byte_7A,OP_NOP,0
+;		EXTQMOVB	_tmp7A,OP_NOP,0
 ;loc_136F5C:
-;		EXTQMOVB	byte_7B,OP_NOP,0
+;		EXTQMOVB	_tmp7B,OP_NOP,0
 ;		EXTQMOVB	_tmp4,OP_NOP,0
 ;loc_136F5D:
 ;		EXTQMOVB	#$41,OP_NOP,0
@@ -2082,18 +2130,18 @@ _power_build_wnd_draw:
 ;		DEC		_tmp4
 ;		BNE		loc_136F5D
 ;		DO_WRAP	_tmp4,_tmp5,loc_136F89
-;		EXTQMOVB	byte_7A,OP_AND,#$E0
+;		EXTQMOVB	_tmp7A,OP_AND,#$E0
 ;		JMP		loc_136F5C
 ;loc_136F89:
-;		ADDWB	byte_7A,#$20
+;		ADDWB	_tmp7A,#$20
 ;		DEC		_tmp2
 ;		BNE		loc_136F43
 ;		DO_WRAP	_tmp2,_tmp3,loc_136FB0
-;		LDA		byte_7A
+;		LDA		_tmp7A
 ;		AND		#$1F
-;		STA		byte_7A
+;		STA		_tmp7A
 ;		LDA		#>[_MMC5_EXRAM]
-;		STA		byte_7B
+;		STA		_tmp7B
 ;		BNE		loc_136F43
 ;loc_136FB0:
 ;		STX		_ptr0+1
@@ -2140,7 +2188,7 @@ loc_13700F:
 loc_137018:
 		LDA		_pad0_held
 		BEQ		loc_13707F
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		BEQ		loc_137064
 		AND		#$80
 		BEQ		loc_13704E
@@ -2168,7 +2216,7 @@ loc_13704A:
 		PLA
 		JMP		loc_137054
 loc_13704E:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		AND		#$40
 		BEQ		loc_137064
 loc_137054:
@@ -3900,7 +3948,7 @@ loc_137CEF:
 		BCC		loc_137CEF
 		JSR		sub_137F16
 		BCC		loc_137CE8
-		JSR		sub_137F22
+		JSR		_restore_game_filed_update_params
 		LDA		byte_62
 		STA		_ppu_queue_pos_head
 		LDA		byte_63
@@ -4183,10 +4231,14 @@ loc_137F20:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137F22:
+_restore_game_filed_update_params:
 		LDA		byte_65
 		BNE		locret_137F29
-		JMP		sub_15011A
+;		JMP		sub_15011A						; REDUNDANT, merged
+		JSR		_swap_game_field_update_params	; OPTIMIZEd, meged
+		LDA		#$00
+		STA		_game_field_redraw_req_tmp
+		STA		_game_field_update_req
 locret_137F29:
 		RTS
 
@@ -4214,13 +4266,14 @@ _swap_game_field_update_params:
 		STX		_update_rect_bottom
 		RTS
 
+; REDUNDANT, merged
 ; =============== S U B	R O U T	I N E =======================================
-sub_15011A:
-		JSR		_swap_game_field_update_params
-		LDA		#$00
-		STA		_game_field_redraw_req_tmp
-		STA		_game_field_update_req
-		RTS
+;sub_15011A:
+;		JSR		_swap_game_field_update_params
+;		LDA		#$00
+;		STA		_game_field_redraw_req_tmp
+;		STA		_game_field_update_req
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _auto_goto_test:
@@ -4311,7 +4364,7 @@ loc_137F93:
 		STA		_cur_game_cursor_scr_pos._ROW
 		STA		_constr_palette_area_cursor_pos._ROW
 		LDA		#$01
-		STA		_cur_selected_buildings_size
+		STA		_cur_building_size
 		JSR		_full_screen_redraw
 		JSR		_seasonal_pal_load
 		JSR		_pal_fade_in

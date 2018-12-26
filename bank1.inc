@@ -325,7 +325,7 @@ _tlm_scenario_closed_extnt:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup06_scenario_select_input:
 		JSR		_scenario_select_input
-		BIT		_pad0_autorep_press				; test B button
+		BIT		_pad0_press				; test B button
 		BVC		loc_2420C
 		LDA		#$02
 		STA		_title_sub_idx					; if pressed, return back to the title menu
@@ -336,13 +336,13 @@ loc_2420C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_select_input:
-		LDA		_pad0_autorep_release			; test if any d-pad pressed
+		LDA		_pad0_autorep			; test if any d-pad pressed
 		AND		#$0F
 		BEQ		.no_dpad_pressed
 		APUA_SE	_SE_IDX_SELECT					; then do sound
 .no_dpad_pressed:
 		LDX		_tmp6D2							; column idx selector
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep
 		LSR
 		BCC		loc_24229
 		INX										; dpad RIGHT pressed
@@ -373,7 +373,7 @@ loc_24233:
 		LDA		_scenario_cursor_row_list4,X	; ...or 4 if all scenarios cleared
 loc_24256:
 		STA		_tmp6CC
-		LDA		_pad0_autorep_press				; store cursor pos tmp
+		LDA		_pad0_press				; store cursor pos tmp
 		BPL		locret_24273					; test for A button now
 		LDA		_tmp6D3							; calc scenarios list ofs
 		ASL
@@ -445,7 +445,7 @@ _game_setup07_scenario_intro_init:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup08_scenario_intro_draw:
 		JSR		_msg_print_out_handler			; do pritnout letter by letter
-		BIT		_pad0_autorep_press				; all this tile wait for A button
+		BIT		_pad0_press				; all this tile wait for A button
 		BPL		loc_242EC
 		APUA_SE	_SE_IDX_CLICK					; skip scenario intro if pressed
 		JSR		_scenario_map_load				; load scenario map from PPU ROM
@@ -864,7 +864,7 @@ _game_setup02_name_input_input:
 ;		JSR		_name_input_char_extnt_queue
 		JSR		_name_input_name_buf_queue		; OPTIMIZED, called both at the same time, merge
 		JSR		_spr_finish
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BVC		locret_245A9
 		JMP		_name_input_previous_scr		; test for back button B
 locret_245A9:
@@ -881,7 +881,7 @@ _name_input_next_scr:
 ;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_word
 		LDX		#$08							; OPTIMIZED
 		JSR		_rle_tlm_queue
-		JMP		_buffers_wait_flush
+		JMP		_buffers_test_wait_flush
 loc_245C9:
 		LDA		#$0D							; jump to difficult setting
 		STA		_game_setup_sub_idx				; if 1, then we at fav word input,
@@ -898,7 +898,7 @@ _name_input_previous_scr:
 ;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
 		LDX		#$04							; OPTIMIZED
 		JSR		_rle_tlm_queue
-		JMP		_buffers_wait_flush
+		JMP		_buffers_test_wait_flush
 loc_245EE:
 		LDA		#$00
 		STA		_game_setup_sub_idx
@@ -912,11 +912,11 @@ _name_input_clear_header_area:
 ;		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
 		LDX		#$00							; OPTIMIZED
 		JSR		_rle_tlm_queue
-		JMP		_buffers_wait_flush
+		JMP		_buffers_test_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_select_cursor_control:
-		LDA		_pad0_autorep_press				; test for any button press
+		LDA		_pad0_press				; test for any button press
 		BEQ		loc_24614
 		LDA		#$FF							; if any button pressed
 		STA		_tmp6D0+1						; stop blinking flag set
@@ -970,7 +970,7 @@ _name_input_button_push_draw:
 ;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_space_press
 		LDX		#$30
 		JSR		_tlm_lib_queue					; OPTIMIZED
-		JMP		_buffers_wait_flush				; FIX
+		JMP		_buffers_test_wait_flush		; FIX
 loc_24676:
 		CPY		#$0C
 		BNE		locret_246DB
@@ -978,7 +978,7 @@ loc_24676:
 ;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_back_button_press
 		LDX		#$2C
 		JSR		_tlm_lib_queue					; OPTIMIZED
-		JMP		_buffers_wait_flush				; FIX
+		JMP		_buffers_test_wait_flush		; FIX
 .push_wait:
 		CMP		#$01							; last anim frame, release buttons
 		BEQ		_all_buttons_release_draw		; all at once.
@@ -1020,18 +1020,18 @@ _all_buttons_release_draw:
 ;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
 		LDX		#$38
 		JSR		_tlm_lib_queue					; OPTIMIZED
-		JMP		_buffers_wait_flush
+		JMP		_buffers_test_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_cursor_move_control:
-		LDA		_pad0_autorep_release			; here is the calcs for selecting keyboard buttons on the screen
+		LDA		_pad0_autorep			; here is the calcs for selecting keyboard buttons on the screen
 		AND		#$0F
 		BEQ		loc_246E6
 		APUA_SE	_SE_IDX_SELECT					; if any button pressed, do sound
 loc_246E6:
 		LDX		_tmp6D2							; load cur button idx in X/Y
 		LDY		_tmp6D3
-		LDA		_pad0_autorep_release			; check the actual button pressed
+		LDA		_pad0_autorep			; check the actual button pressed
 		LSR
 		BCC		.name_cur_left
 		INX										; right pressed is here
@@ -1115,7 +1115,7 @@ loc_24746:
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_char_select:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_press
 		BPL		.no_a_pushed
 		APUA_SE	_SE_IDX_CLICK					; OPTIMIZED
 		LDA		_tmp6D3							; Y * 12 + X
@@ -1140,7 +1140,7 @@ _name_input_char_select:
 ;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_end_press
 		LDX		#$34
 		JSR		_tlm_lib_queue					; OPTIMIZED
-		JSR		_buffers_wait_flush
+		JSR		_buffers_test_wait_flush
 		JMP		_name_input_next_scr
 .no_enter_pushed:
 		LDA		_tmp6CC							; prepare button push parameters
@@ -1356,7 +1356,7 @@ _game_setup09_practice_msg_init:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0A_practice_msg_draw:
 		JSR		_msg_print_out_handler			; practice mode briefing display
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BVC		loc_24AE4
 		LDA		#$02							; press B to return to the title menu
 		STA		_title_sub_idx
@@ -1452,7 +1452,7 @@ loc_24B6C:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0C_scenario_over_input:
 		JSR		_msg_print_out_handler			; similar header as for practice screen
-		LDA		_pad0_autorep_press				; but A/B skips alltogether
+		LDA		_pad0_press				; but A/B skips alltogether
 		AND		#$C0
 		BEQ		locret_24BC1
 		LDA		#$00
@@ -1491,7 +1491,7 @@ _game_setup0D_difficult_init:
 _game_setup0E_difficult_input:
 		JSR		_difficult_scr_cursor_move		; cursor movement input test
 		JSR		_common_select_cursor_control	; cursor draw
-		BIT		_pad0_autorep_press
+		BIT		_pad0_press
 		BPL		loc_2493D						; press A button
 		APUA_SE	_SE_IDX_CLICK
 ; REDUNDANT
@@ -1580,7 +1580,7 @@ locret_24916:
 
 ; =============== S U B	R O U T	I N E =======================================
 _difficult_scr_cursor_move:
-		LDA		_pad0_autorep_press				; up-down test
+		LDA		_pad0_press				; up-down test
 		AND		#$0C
 		BEQ		locret_2496C
 		LDY		_city._difficult				; change difficult up down
@@ -1697,7 +1697,7 @@ _game_setup0F_all_complete_init:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup10_all_complete_input:
 		JSR		_msg_print_out_handler			; the same as for scenario complete screen
-		LDA		_pad0_autorep_press				; A/B skips message
+		LDA		_pad0_press				; A/B skips message
 		AND		#$C0
 		BEQ		locret_24C44
 		LDA		#$00

@@ -194,12 +194,12 @@ loc_11F26A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_corruption_tiles_animate:
-		LDA		_corruption_anim_flag			; end of loop signal, if equal
+		LDA		_corruption_anim_req			; end of loop signal, if equal
 		BEQ		loc_11F33A						; then no tiles to animate left
 		JSR		_sram_write_enable				; enable access to sram
 		MOVWO	_tmpE6,_city_map				; pointer to the beginning
 		LDY		#$00
-		STY		_corruption_anim_flag
+		STY		_corruption_anim_req
 loc_11F310:
 		LDA		(_tmpE6),Y						; scan, look for corrupt tiles
 		SEC
@@ -210,7 +210,7 @@ loc_11F310:
 		TAX										; and one common corrupted ground
 		LDA		_corrupt_ground_tiles_list,X	; then change to the next in list
 		STA		(_tmpE6),Y
-		STA		_corruption_anim_flag			; set flag
+		STA		_corruption_anim_req			; set flag
 loc_11F324:
 		INCW	_tmpE6
 		CMPWI	_tmpE6,_city_map_end			; test for end of buffer
@@ -431,7 +431,7 @@ loc_11E344:
 		BNE		.protected_collect				; FIX
 		CPY		#_MAP_CORRUPT0
 		BNE		locret_11E355
-		STY		_corruption_anim_flag			; animate corrupted tile request
+		STY		_corruption_anim_req			; animate corrupted tile request
 locret_11E355:
 		RTS
 .protected_collect:
@@ -3428,7 +3428,7 @@ loc_11F82C:
 ; =============== S U B	R O U T	I N E =======================================
 _write_select_map_10_10:
 		LDY		_tmp6C4							; there are only two maps 10x10
-		BEQ		_write_police_map				; so they did already optimized case tree
+		BEQ		_write_police_map				; so they did already optimized switch
 		DEY										; as we did above for 19x19 maps
 		BEQ		_write_fire_map
 

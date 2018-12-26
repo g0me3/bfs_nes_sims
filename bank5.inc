@@ -82,7 +82,7 @@ _airplane_crash_start:
 		LDA		#$01
 		STA		_goto_alert_req
 		STA		_game_msg_awaits_flag
-		JSR		_far_disaster_destroy_tile; X,Y aregs goes here
+		JSR		_far_disaster_destroy_tile		; X,Y aregs goes here
 		LDA		_obj_active_flags				; destroy plane
 		AND		#$FD
 		STA		_obj_active_flags
@@ -1388,12 +1388,12 @@ loc_88110:
 .obj_train_draw:
 		LDA		_train_hide_mode
 		BEQ		.obj_common_draw				; hide if inside train station
-		RTS
+		JMP		_obj_flush						; FIX(BFS) for hide mode movements
 .obj_monster_draw:
 		LDA		_obj_monster_spr_idx
 		STA		_spr_insert_args._idx
-		JSR		_obj_spr_draw
-		LDX		_cur_obj_pos._COL
+		JSR		_obj_spr_draw					; NOTE, does not flush obj data because use it
+		LDX		_cur_obj_pos._COL				; directly
 		LDY		_cur_obj_pos._ROW
 		JMP		_far_disaster_destroy_tile
 .obj_tornado_draw:

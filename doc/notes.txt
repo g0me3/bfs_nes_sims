@@ -139,7 +139,7 @@ UNFINISHED#23.FIXED(BFS) Funding calcs can't drop cur money to negative value, t
 BUGS#1.FIXED(BFS) Var at $6CC RAM address is a temporary variable used in many places of the program to store intermediate calc data. However, most of the time it has a value of POWER STATIONS counter, which is calculated every game iteration. This var used exactly as a POWER STATIONS count for the warning scrolled messages tests. Although it used for calculations at the end of the fiscal year and has a semi-random value immediately after the year budget screen is closed, this has no really significant effect to the game and message triggering except the case this semi random value gets ZERO, which is rarely possible.
 BUGS#2. Use the turbo button A on some input screens to glitch the screen because of ppu queue buffer overflow due to lack of proper sync. CANNOT BE PATCHED
 	BUGS#2.1.FIXED(BFS) Name input screen.
-	BUGS#2.2.TODO Budget money adjust screen.
+	BUGS#2.2.FIXED(BFS) Budget money adjust screen.
 BUGS#3.FIXED(GG GESLGPTZ) There is an unused disabled code in Practice mode events handler which checks if you go well or bad during this game mode. This branch should check your town population after year 1905 (should be 30000), then send a message if you did it well or you need more practice. For some reason they decided to disable it or just make bug in a selection logic.
 BUGS#4.FIXED(BFS) Some events haven't appear automatically when you get it (see table below) due to some sort of hardly visible bug with indexes comparisons. In case you get this bug, you need to open Hints window manually in order to obtain a Special item. Most of events works just fine, there only 2 of them which are affected. With this bug you may loose your current present if any other message appear before you go to the Hint screen.
 BUGS#5.FIXED(BFS) The extra scenarios selecting screen code trying to draw "CLEAR" icons on unlocked scenarios, but there aren't proper icon position data for that, so if you manage to beat at least one of them, the scenarios select screen will glitch, if you beat both, game will hang. This is not really important at all, because you just can't beat any of extra scenarios. Also there is an copy-paste error mistakenly put a wrong variable as a counter, this isn't break anything but does an extra redundant cycles.
@@ -180,6 +180,7 @@ BUGS#26.FIXED(BFS) Overal calculations of average values mostly broken. However,
 BUGS#27.FIXED(BFS) Save/Load option in the game has a special game mode index 0. At the same time you may save and load any mode of the game. When restored, the game mode turns zero and then special scenario or practice events won't appear anymore. So literally you just couldn't continue the game properly unless you've played the new city mode.
 BUGS#28.FIXED(BFS) The Fires control routine tries to fire up all tiles near it, however, due to incorrect using of the subroutine which corrupts X register, most of the time fires skip the rest of the nearest tiles as soon as at least one near tile appears to be inside any building.
 BUGS#29.FIXED(BFS) The liberty statue and an expo statues are presents which should appear automatically after some years of a trigger event, the relationship and expro correspondingly (see APPEND. A). However, there is a bug in addition routine which prevents the correct values to be stored, so both presents appears immediately after trigger events on the next simulation loop. There is a third event with same condition, it's a Bank. But this time the addition performed manually and in different portion of code so does not affected by this bug.
+BUGS#30. At the New City generate screen, push any arrow buttons to change the map number manually, then quick put cursor to the "START NEW GAME" button and try to push it. Instead the map number area will blink. This happens when the map generating started but cursor movements not locked when manual map change used.
 
 	APPEND. A - EVENTS/PRESENTS
 
@@ -370,6 +371,5 @@ So this is restored and fixed the original bug at the same time.
 
 	BFS BUGS
 
-- Ship object goes completely invisible when stuck on the edge of the map on in the ponds.
-- The train object goes invisible on the Water/Rails tiles and never comes back in some cases.
-- During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
+- Ship object goes completely invisible when stuck on the edge of the map or in the ponds.
+- During the New City mode game (or other maybe), sometimes an unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
