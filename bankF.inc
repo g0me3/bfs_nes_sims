@@ -1870,13 +1870,13 @@ loc_18AE69:
 		STA		_spr_buf+9,X
 		LDA		#$3F
 		STA		_spr_buf+$D,X
-		LDA		_goto_transition_counter
+		LDA		_goto_in_progress_delay
 		BNE		loc_18AEA8
 		LDA		#$00
 		BEQ		loc_18AEB4
 loc_18AEA8:
 		LDA		#$02
-		DEC		_goto_transition_counter
+		DEC		_goto_in_progress_delay
 		BNE		loc_18AEB4
 		LDA		#$00
 		STA		_goto_alert_req

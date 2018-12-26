@@ -144,7 +144,7 @@ _pad1_prev_held:
 
 		_tpos		_cur_map_wnd_pos
 
-_game_field_redraw_req:
+_full_game_field_redraw_req:
 		.BYTE	0
 _update_rect_left:
 		.BYTE	0
@@ -161,9 +161,9 @@ byte_59:
 
 		_tpos	_tmp_tile_pos
 
-_game_field_update_req:
+_build_game_field_update_req:
 		.BYTE	0
-_game_field_redraw_req_tmp:
+_full_game_field_redraw_req_tmp:
 		.BYTE	0
 _update_rect_left_tmp:
 		.BYTE	0
@@ -465,7 +465,7 @@ _tmp_map_pos_backup_buf_X:
 
 _mmc5_nt_mode_shadow:
 		.BYTE	0
-_hud_and_game_field_update_req:
+_screen_refresh_req:
 		.BYTE	0
 _game_msg_wnd_active_flag:
 		.BYTE	0
@@ -841,7 +841,7 @@ _scenario_idx	EQU	_city._scenario_idx
 
 _goto_alert_req:
 		.BYTE	0
-_goto_transition_counter:
+_goto_in_progress_delay:
 		.BYTE	0
 
 		_tpos _goto_dst_tile

@@ -1486,8 +1486,8 @@ loc_150A0A:
 loc_150A15:
 		STA		_update_rect_bottom_tmp
 		LDA		#$FF
-		STA		_game_field_redraw_req_tmp		; set requests, tmp req after swap will stay
-		STA		_game_field_update_req			; in a main reqest field, update req here is unique
+		STA		_full_game_field_redraw_req_tmp	; set requests, tmp req after swap will stay
+		STA		_build_game_field_update_req	; in a main reqest field, update req here is unique
 		JMP		_swap_game_field_update_params	; backup curren update parameters store new ones for now
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2815,7 +2815,6 @@ _gui_ctrl_menu_icon_draw:
 ;		JSR		gui_ctrl_menu_icon_release_queue; REDUNDANT, merged
 		JMP		gui_ctrl_menu_icon_queue		; FIX: merged
 
-
 gui_ctrl_menu_icons_posX_list:
 		.BYTE	$02,$04,$06,$08,$0A,$0C
 gui_ctrl_menu_icons_posY_list:
@@ -3052,7 +3051,7 @@ _tlm_extnt_inactive_buttons_lib:
 		.BYTE	$04,$84,$04,$04
 		.BYTE	$04,$04,$04,$04
 		.BYTE	$84,$84,$84,$84
-byte_151740:
+_rci_white_tile_list:
 		.BYTE	$0B,$17,$03,$02,$01,$00
 byte_151746:
 		.BYTE	$0B,$17,$16,$15,$14,$13,$12,$11,$10
@@ -4106,7 +4105,7 @@ loc_151F3B:
 loc_151F6D:
 		JSR		_buffers_force_flush
 		JSR		_game_field_redraw
-		LDA		_game_field_redraw_req
+		LDA		_full_game_field_redraw_req
 		BNE		loc_151F6D
 		LDA		#$01
 		STA		_MMC5_CHR_MODE

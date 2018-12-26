@@ -99,7 +99,7 @@ loc_581EC:
 ;		LDA		_mmc5_chr_banks_shadow+3		; REDUNDANT, already loaded in
 ;		STA		_MMC5_CHR_BANKSA+3				; _game_chr_common_reload routine!
 		LDA		#$FF
-		STA		_game_field_redraw_req			; set request for game area update
+		STA		_full_game_field_redraw_req			; set request for game area update
 		LDA		#$00
 		STA		_update_rect_left				; special counters for update area
 		STA		_update_rect_top				; choses the whole screen, the display

@@ -696,18 +696,14 @@ _total_free	SET _total_free+_bank{1}_free
 		.WORD IRQ
 	ENDM
 
-	; simple pair of macroses, used for exporting the routine
-	; from the external banks and unconditionally call it
-	; use it when there are no options (always far)
-	;
-	MAC PTR_OFS
-{1}_pidx	SET	[[. - CUR_BANK_START] >> 1]
-{1}_bank	SET CUR_PRG_BANK
-		.WORD	{1}
+	MAC SWITCH
+		JSR		_switch
+_SW_START	SET	.
 	ENDM
 
-	MAC	PTR_IDX
-		.BYTE	{1}_bank,{1}_pidx
+	MAC	SW_PTR
+{1}_sidx	SET	[[. - _SW_START] >> 1]
+		.WORD	{1}
 	ENDM
 
 ;---------------A-R-I-T-H-M---------------------

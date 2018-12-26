@@ -3153,11 +3153,11 @@ _tmp_map_pos_restore:
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_hud_and_game_field_update:
 		LDA		#$FF							; set flag to the chain of redraw functions in THREAD0
-		STA		_hud_and_game_field_update_req	; redraws upper hud, tool palette, and game screen
+		STA		_screen_refresh_req	; redraws upper hud, tool palette, and game screen
 		LDA		#$01
 		STA		_game_core_state				; switch to the THREAD0 on next nmi
 loc_11E198:
-		LDA		_hud_and_game_field_update_req	; wait for request is accepted
+		LDA		_screen_refresh_req	; wait for request is accepted
 		BNE		loc_11E198
 		RTS
 

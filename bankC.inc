@@ -35,7 +35,7 @@ loc_13601B:
 		.WORD	_state03_map_scroll_mode_set
 		.WORD	_state04_game_field_redraw
 		.WORD	_state05_constr_palette_update
-		.WORD	_state06_hud_and_game_field_update
+		.WORD	_state06_screen_refresh
 		.WORD	_state07_buttons_push
 		.WORD	_state08_build
 		.WORD	_state09_hud_build_name_draw
@@ -418,8 +418,8 @@ _palette_activity_flags:
 
 ; =============== S U B	R O U T	I N E =======================================
 _state08_build:
-		LDA		_game_field_update_req			; can build something only if game
-		BEQ		loc_136325						; field not in update state
+		LDA		_build_game_field_update_req			; can build something only if game
+		BEQ		loc_136325						; already draw previous builds
 		JMP		_state17_common
 loc_136325:
 		LDA		_constr_palette_selected_idx	; index 0 - bulldoze area
@@ -575,6 +575,7 @@ _bulldoze_area:
 ; the large buildings, and keep holding the A button, you'll erase immediately
 ; rubble tile!
 		JSR		_prev_tile_test					; FIX, to avoid mentioned above
+		BEQ		.skip							; -
 		JSR		_do_bulldoze					; attempt to bulldoze
 		BCS		.fail
 		JSR		_rebend_bulldoze_nearest_tiles	; fix conjuncted tiles
@@ -619,26 +620,28 @@ _state05_constr_palette_update:
 		JMP		_state17_common					; drawn previously as a static bitmap
 
 ; =============== S U B	R O U T	I N E =======================================
-_state06_hud_and_game_field_update:
+_state06_screen_refresh:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136472
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136472
-		LDA		_cur_map_wnd_pos._COL			; does only a chain of requests
-		STA		_update_rect_left				; to update game field and hud info
-		CLC										; calculate game field area to refresh
-		ADC		#$18
-		STA		_update_rect_right
-		LDA		_cur_map_wnd_pos._ROW
-		STA		_update_rect_top
-		CLC
-		ADC		#$14
-		STA		_update_rect_bottom
-		LDA		#$FF
-		STA		_game_field_redraw_req			; set game field request
+; REDUNDANT, merged
+;		LDA		_cur_map_wnd_pos._COL			; does only a chain of requests
+;		STA		_update_rect_left				; to update game field and hud info
+;		CLC										; calculate game field area to refresh
+;		ADC		#$18							;
+;		STA		_update_rect_right
+;		LDA		_cur_map_wnd_pos._ROW
+;		STA		_update_rect_top
+;		CLC
+;		ADC		#$14
+;		STA		_update_rect_bottom
+;		LDA		#$FF
+;		STA		_full_game_field_redraw_req		; set full game field refresh request
+		JSR		_full_game_field_refresh_set	; OPTIMIZED, merged
 		LDA		#$00
-		STA		_hud_and_game_field_update_req	; clear this request
-		LDA		#$FF							; set info parameters requests flags
+		STA		_screen_refresh_req				; clear this request
+		LDA		#$FF							; set hud dinamic params refresh requests flags
 		STA		_RCI_meter_redraw_req			; all will be refreshed one by one
 		STA		_hud_date_redraw_req
 		STA		_hud_popul_redraw_req
@@ -649,14 +652,30 @@ loc_136472:
 		JMP		_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
+_full_game_field_refresh_set:
+		LDA		_cur_map_wnd_pos._COL			; does only a chain of requests
+		STA		_update_rect_left				; to update game field and hud info
+		CLC										; calculate game field area to refresh
+		ADC		#$18							;
+		STA		_update_rect_right
+		LDA		_cur_map_wnd_pos._ROW
+		STA		_update_rect_top
+		CLC
+		ADC		#$14
+		STA		_update_rect_bottom
+		LDA		#$FF
+		STA		_full_game_field_redraw_req		; set full game field refresh request
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _state0A_power_build_menu:
-;		JSR		_buffers_test_flush
+;		JSR		_buffers_test_flush				; self-describing routine
 ;		BCS		loc_136482
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136482
 		JSR		_power_build_menu
 		LDA		#$00
-		STA		_power_build_menu_req
+		STA		_power_build_menu_req			; when done, clear request
 loc_136482:
 		JMP		_state17_common
 
@@ -665,50 +684,50 @@ _state0B_gui_ctrl_menu:
 		JSR		_spr_clear
 		LDA		#$00
 		STA		_wnd_lvl_idx
-		LDA		_gui_ctrl_menu_press_idx
+		LDA		_gui_ctrl_menu_press_idx		; load selected menu wnd idx
 		STA		_wnd_idx
 		CMP		#$05
-		BEQ		_game_msg_wnd_display
+		BEQ		_game_msg_wnd_display			; a special case, game hint wnd
 		CMP		#$06
-		BNE		loc_1364A3
-		JSR		_goto_start
+		BNE		.regular_config_menu
+		JSR		_goto_start						; also special case for goto button
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JMP		_state17_common
-loc_1364A3:
+.regular_config_menu:
 		ASL
 		TAX
-		LDA		_city._menu_pos,X
+		LDA		_city._menu_pos,X				; read dinamic settings for wnd positions
 		STA		_wnd_left_tile
 		INX
 		LDA		_city._menu_pos,X
 		STA		_wnd_top_tile
-		JSR		_gui_ctrl_menu_icon_push_draw
-		JSR		_wnd_draw
-		JSR		_gui_ctrl_menu_input
+		JSR		_gui_ctrl_menu_icon_push_draw	; push button animate
+		JSR		_wnd_draw						; draw window
+		JSR		_gui_ctrl_menu_input			; generic menu input test
 		BCS		loc_1364C9
-		JSR		_wnd_erase
+		JSR		_wnd_erase						; menu cancelled
 		JSR		_gui_ctrl_menu_icon_release_draw
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JMP		_state17_common
 loc_1364C9:
-		LDX		_wnd_idx
-		CPX		#$03
-		BEQ		loc_1364DA
-		LDA		#$00
-		STA		_game_msg_wnd_active_flag
-		JSR		_game_chr_common_reload
-		JMP		_state17_common
-loc_1364DA:
-		STA		_scr_res_idx
-		LDA		#$02
+		LDX		_wnd_idx						; if selection is done
+		CPX		#$03							; test if this were a info maps menu
+;		BEQ		loc_1364DA						; REDUNDANT, case for confog menus which
+;		LDA		#$00							; returning an option indexes upon item selections
+;		STA		_game_msg_wnd_active_flag		; however, there are no other such menus here except
+;		JSR		_game_chr_common_reload			; info screens menu
+;		JMP		_state17_common
+;loc_1364DA:
+		STA		_scr_res_idx					; store info screen index and open common
+		LDA		#$02							; routine to draw this screen
 		STA		_scr_mode_idx
 		JSR		_pal_fade_out
 		FJSRA	_scr_res_common,SRAM,PRG9
 		LDA		#$00
-		STA		_game_msg_wnd_active_flag
-		JSR		_game_chr_common_reload
+		STA		_game_msg_wnd_active_flag		; restore the full game screen, other parameters and
+		JSR		_game_chr_common_reload			; continue to the game
 		JSR		_full_screen_redraw
 		JSR		_scroll_msg_reset
 		LDA		#$00
@@ -720,28 +739,28 @@ loc_1364DA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _state13_msg_wnd_display:
-		INC		_game_msg_wnd_active_flag
+		INC		_game_msg_wnd_active_flag		; automatic lock if we get here by engine request
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_display:
 ; WHERE BUG? sometimes scroller line not cleared completely, at least one letter
 ; may appear. can't reproduce it for sure, very hard to catch and seems random
 ;
-		JSR		_clear_scroll_area
-		JSR		_wait_for_nmi
-		LDA		#$05
+		JSR		_clear_scroll_area				; otherwise lock is set manually in other code
+		JSR		_wait_for_nmi					; maybe we should wait here untill buffers are empty instead?
+		LDA		#$05							; it is possible to incomplete dequeue process for 1 frame?
 		STA		_gui_ctrl_menu_press_idx
-		JSR		_gui_ctrl_menu_icon_push_draw
-		FJSRA	_game_msg_handler,PRG4,PRG3
-		JSR		_gui_ctrl_menu_icon_release_draw
-		JSR		_scroll_msg_reset
-		LDA		_debug_scroll_msg_flags
-		CMP		#$03
+		JSR		_gui_ctrl_menu_icon_push_draw	; special push draw for hint message
+		FJSRA	_game_msg_handler,PRG4,PRG3		; display hint window, index already set or =0
+		JSR		_gui_ctrl_menu_icon_release_draw; release pushed button
+		JSR		_scroll_msg_reset				; clear scroller messages
+		LDA		_debug_scroll_msg_flags			; also test if we triggered debug, so we reload
+		CMP		#$03							; scroller active with a special value
 		BNE		loc_136530
 		STA		_scroll_msg_active_flag
 loc_136530:
 		LDA		#$00
-		STA		_game_msg_wnd_active_flag
+		STA		_game_msg_wnd_active_flag		; clear requests
 		STA		_game_msg_awaits_flag
 		JMP		_state17_common
 
@@ -749,7 +768,7 @@ loc_136530:
 _clear_scroll_area:
 		LDA		_cur_screen_tile._ROW			; calculate current position
 		LSR										; of scroll area
-		CLC										; then fill it with spaces to
+		CLC										; then fill it with 32 spaces to
 		ADC		#$1B							; clear scroller
 		CMP		#$1E
 		BCC		loc_1500BA
@@ -808,18 +827,20 @@ _state0E_idle_state:
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136582
 		INC		_map_bg_anim_counter			; increase animation counter for
-		LDA		_cur_map_wnd_pos._COL			; map bg objects
-		STA		_update_rect_left
-		CLC
-		ADC		#$18
-		STA		_update_rect_right
-		LDA		_cur_map_wnd_pos._ROW
-		STA		_update_rect_top
-		CLC
-		ADC		#$14
-		STA		_update_rect_bottom
-		LDA		#$FF
-		STA		_game_field_redraw_req
+; REDUNDANT, merged
+;		LDA		_cur_map_wnd_pos._COL			; map bg objects
+;		STA		_update_rect_left
+;		CLC
+;		ADC		#$18
+;		STA		_update_rect_right
+;		LDA		_cur_map_wnd_pos._ROW
+;		STA		_update_rect_top
+;		CLC
+;		ADC		#$14
+;		STA		_update_rect_bottom
+;		LDA		#$FF
+;		STA		_full_game_field_redraw_req
+		JSR		_full_game_field_refresh_set	; OPTIMIZED, merged
 		LDA		#$00
 		STA		_game_core_stop_flag
 loc_136582:
@@ -933,8 +954,8 @@ _state17_common:
 		ORA		_hud_money_redraw_req
 		ORA		_scroll_msg_active_flag
 ;		STA		byte_37							; REDUNDANT, never read!
-		ORA		_game_field_update_req
-		ORA		_hud_and_game_field_update_req
+		ORA		_build_game_field_update_req
+		ORA		_screen_refresh_req
 		ORA		_game_msg_wnd_active_flag
 		ORA		_budget_scr_draw_req
 		STA		_game_core_state				; any of these flags gives priority to this thread
@@ -958,10 +979,10 @@ loc_13661B:
 		LDA		#$0B
 		JMP		_set_game_state_idx
 loc_136625:
-		LDA		_game_field_update_req			; one of two game field redraw requests, set and
-		BEQ		loc_13662E						; clear usually at the same time, such a mess
-		LDA		#$04
-		JMP		_set_game_state_idx
+		LDA		_build_game_field_update_req	; one of two game field redraw requests, set and
+		BEQ		loc_13662E						; clear usually at the same time, but the first one
+		LDA		#$04							; is set when you build something and has a priority
+		JMP		_set_game_state_idx				; or idle screen updates
 loc_13662E:
 		LDA		_hud_redraw_req					; keep state of hud redraw till the end
 		BEQ		loc_136637
@@ -1067,7 +1088,7 @@ loc_1366E4:
 		LDA		#$08							; set state to handle building process
 		JMP		_set_game_state_idx
 loc_1366F3:
-		LDA		_game_field_redraw_req			; one of two similar requests, not sure why 2
+		LDA		_full_game_field_redraw_req			; one of two similar requests, not sure why 2
 		BEQ		loc_1366FC						; both selects the same state, probably
 		LDA		#$04							; one planned for full redraw, another for
 		JMP		_set_game_state_idx				; partial, but now both merged
@@ -1077,7 +1098,7 @@ loc_1366FC:
 		LDA		#$0C
 		JMP		_set_game_state_idx
 loc_136706:
-		LDA		_hud_and_game_field_update_req
+		LDA		_screen_refresh_req
 		BEQ		loc_136710
 		LDA		#$06
 		JMP		_set_game_state_idx
@@ -1114,7 +1135,7 @@ _constr_palette_redraw:
 		ADC		#$14
 		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		_game_field_redraw_req			; almost finished with screen update
+		STA		_full_game_field_redraw_req			; almost finished with screen update
 		STA		_constr_palette_update_req		; need to update button states and fame field
 ;		JSR		_constr_palette_update_req_set	; REDUNDANT
 		CLC
@@ -2154,73 +2175,73 @@ _power_build_wnd_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _gui_ctrl_menu_input:
-		LDA		#$36
-		STA		_MMC5_CHR_BANKSA+3
+		LDA		#$36							; load additional CHR bank for
+		STA		_MMC5_CHR_BANKSA+3				; cursor sprite
 		JSR		_wnd_rect_calc
 		LDA		_gui_ctrl_menu_press_idx
 		CMP		#$03
-		BNE		loc_136FF3
-		LDA		_cur_wnd_pos_backup._COL
-		STA		_cur_wnd_pos._COL
-		LDA		_cur_wnd_pos_backup._ROW
+		BNE		.common_ctrl_menu_start
+		LDA		_cur_wnd_pos_backup._COL		; the info maps select menu is a special
+		STA		_cur_wnd_pos._COL				; case, only this menu saves previous cursor
+		LDA		_cur_wnd_pos_backup._ROW		; position
 		STA		_cur_wnd_pos._ROW
-		BNE		loc_136FFB
-loc_136FF3:
-		LDA		_wnd_left_pos
-		STA		_cur_wnd_pos._COL
+		BNE		.ctrl_menu_main_loop
+.common_ctrl_menu_start:
+		LDA		_wnd_left_pos					; the rest initialized at the upper left
+		STA		_cur_wnd_pos._COL				; corner of the window
 		LDA		_wnd_top_pos
 		STA		_cur_wnd_pos._ROW
-loc_136FFB:
+.ctrl_menu_main_loop:
 		JSR		_wait_for_nmi
 		JSR		_gui_ctrl_menu_spr_draw
 		LDA		_gui_ctrl_menu_press_idx
 		CMP		#$03
 		BNE		loc_13700F
-		LDA		_cur_wnd_pos._COL
+		LDA		_cur_wnd_pos._COL				; for info maps menu always store cursor pos
 		STA		_cur_wnd_pos_backup._COL
 		LDA		_cur_wnd_pos._ROW
 		STA		_cur_wnd_pos_backup._ROW
 loc_13700F:
-		LDA		_pad0_held
-		AND		#$80
+		LDA		_pad0_held						; if we still hold A button, then we need to
+		AND		#$80							; draw cursor as a window frame
 		BNE		loc_137018
-		JSR		_gui_ctrl_menu_redraw
+		JSR		_gui_ctrl_menu_redraw			; or redraw the menu if we released the A button
 loc_137018:
 		LDA		_pad0_held
-		BEQ		loc_13707F
+		BEQ		.ctrl_menu_refresh				; test for any other buttons held or pressed
 		LDA		_pad0_press
-		BEQ		loc_137064
-		AND		#$80
-		BEQ		loc_13704E
-		LDA		_cur_wnd_pos._ROW
+		BEQ		loc_137064						; when button held but press is zero, means
+		AND		#$80							; we held something
+		BEQ		loc_13704E						; here we test if we press A once before held something
+		LDA		_cur_wnd_pos._ROW				; this means we push one of the menu options
 		LSR
 		LSR
 		LSR
-		CMP		_wnd_top_tile
-		BEQ		loc_137073
-		JSR		sub_137291
-		BCC		loc_13707F
-		PHA
-		LDA		_gui_ctrl_menu_press_idx
-		CMP		#$04
-		BEQ		loc_13704A
-		JSR		_spr_clear
+		CMP		_wnd_top_tile					; special case test if we push at the top-left corner
+		BEQ		.ctrl_wnd_top_press
+		JSR		_ctrl_menu_action_handler		; here we handle regular wnd push inside
+		BCC		.ctrl_menu_refresh				; if C=0, just do regular refresh
+		PHA										; if C=1 this is a special select case to exit and
+		LDA		_gui_ctrl_menu_press_idx		; do additional work according to pushed option
+		CMP		#$04							; A = option index on exit
+		BEQ		loc_13704A						; for save/load options this is a simple exit also
+		JSR		_spr_clear						; here we get after 03 window, info map screens select
 		JSR		_wait_for_nmi
-		JSR		_game_chr_common_reload
+		JSR		_game_chr_common_reload			; do regular exit work
 		LDA		#$00
 		STA		_tmp514
-		PLA
+		PLA										; restore option idx and exit with C=1
 		SEC
 		RTS
 loc_13704A:
 		PLA
-		JMP		loc_137054
+		JMP		.ctrl_menu_cancel
 loc_13704E:
-		LDA		_pad0_press
+		LDA		_pad0_press						; test for cancel button
 		AND		#$40
 		BEQ		loc_137064
-loc_137054:
-		JSR		_spr_clear
+.ctrl_menu_cancel:
+		JSR		_spr_clear						; exit with C=0
 		JSR		_wait_for_nmi
 		JSR		_game_chr_common_reload
 		LDA		#$00
@@ -2228,27 +2249,29 @@ loc_137054:
 		CLC
 		RTS
 loc_137064:
-		LDA		_pad0_held
-		AND		#$80
-		BEQ		loc_13707F
+		LDA		_pad0_held						; when we still held A button, means we
+		AND		#$80							; still moving the window
+		BEQ		.ctrl_menu_refresh				; test if refresh needed
 		LDA		_cur_wnd_pos._ROW
 		LSR
 		LSR
 		LSR
 		CMP		_wnd_top_tile
-		BNE		loc_13707F
-loc_137073:
+		BNE		.ctrl_menu_refresh
+.ctrl_wnd_top_press:
 		LDA		_cur_wnd_pos._COL
 		LSR
 		LSR
 		LSR
 		CMP		_wnd_left_tile
-		BNE		loc_13707F
-		JSR		_menu_wnd_redraw_flag_set
-loc_13707F:
-		JSR		sub_13738F
+		BNE		.ctrl_menu_refresh				; if we press top-left corner
+;		JSR		_menu_wnd_redraw_flag_set		; REDUNDANT, optimized
+		LDA		#$FF
+		STA		_gui_ctrl_menu_redraw_flag		; signal to refresh window
+.ctrl_menu_refresh:
+		JSR		_ctrl_menu_option_spr_draw
 		JSR		_spr_finish
-		JMP		loc_136FFB
+		JMP		.ctrl_menu_main_loop
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_rect_calc:
@@ -2284,16 +2307,16 @@ loc_1370A2:
 ; =============== S U B	R O U T	I N E =======================================
 _gui_ctrl_menu_spr_draw:
 		LDA		_gui_ctrl_menu_redraw_flag
-		BEQ		_gui_ctrl_menu_cursor_spr_draw
-		JMP		_gui_ctrl_menu_frame_spr_draw
-_gui_ctrl_menu_cursor_spr_draw:
+		BEQ		.cursor_spr_draw
+		JMP		.frame_spr_draw
+.cursor_spr_draw:								; regular menu cursor draw
 		LDA		_pad0_held
 		AND		#$0F
 		LSR
 		BCC		loc_1370D1
 		PHA
-		LDA		_cur_wnd_pos._COL
-		CLC
+		LDA		_cur_wnd_pos._COL				; test for limits inside current window rect
+		CLC										; and clamp positions then
 		ADC		#$02
 		BCS		loc_1370C9
 		CMP		_wnd_right_pos
@@ -2351,18 +2374,18 @@ loc_13710A:
 loc_13710C:
 		STA		_cur_wnd_pos._ROW
 loc_13710E:
-		LDA		_pad0_held
+		LDA		_pad0_held						; not blink cursor when pads held
 		BEQ		loc_137117
 		LDA		#$FF
 		STA		_tmp514
 loc_137117:
-		LDA		_tmp514
+		LDA		_tmp514							; reload blinking animations if pads released
 		BMI		loc_137122
 		AND		#$0F
 		CMP		#$0A
 		BCS		loc_137133
 loc_137122:
-		LDA		#$00
+		LDA		#$00							; draw cursor sprite
 		STA		_spr_insert_args._idx
 		STA		_spr_insert_args._attr
 		LDA		_cur_wnd_pos._COL
@@ -2371,7 +2394,7 @@ loc_137122:
 		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert
 loc_137133:
-		LDX		_tmp514
+		LDX		_tmp514							; animate blinking
 		BMI		locret_137142
 		INX
 		CPX		#$20
@@ -2381,18 +2404,16 @@ loc_13713F:
 		STX		_tmp514
 locret_137142:
 		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_gui_ctrl_menu_frame_spr_draw:
-		LDA		_wnd_width_tile
-		ASL
-		ASL
+.frame_spr_draw:
+		LDA		_wnd_width_tile					; when moving the window we actually moving
+		ASL										; little sprite frame, so we will
+		ASL										; calc its position and draw it here
 		ASL
 		EOR		#$FF
 		CLC
 		ADC		#$01
-		STA		_ptr0
-		LDA		_wnd_height_tile
+		STA		_ptr0							; calculate the limits of moving based on
+		LDA		_wnd_height_tile				; window size in tiles
 		ASL
 		ASL
 		ASL
@@ -2400,8 +2421,8 @@ _gui_ctrl_menu_frame_spr_draw:
 		SEC
 		SBC		#$1F
 		STA		_ptr0+1
-		LDA		_pad0_held
-		AND		#$0F
+		LDA		_pad0_held						; now do the same limits test but for
+		AND		#$0F							; the whole game field area minus window sizes
 		LSR
 		BCC		loc_137173
 		PHA
@@ -2455,7 +2476,7 @@ loc_137197:
 loc_1371A5:
 		STA		_cur_wnd_pos._ROW
 loc_1371A7:
-		LDA		#$00
+		LDA		#$00							; draw either the cursor
 		STA		_spr_insert_args._idx
 		STA		_spr_insert_args._attr
 		LDA		_cur_wnd_pos._COL
@@ -2463,8 +2484,8 @@ loc_1371A7:
 		LDA		_cur_wnd_pos._ROW
 		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert
-		LDA		_wnd_width_tile
-		SEC
+		LDA		_wnd_width_tile					; and a frame sprites with manually
+		SEC										; positions and dimensions set
 		SBC		#$01
 		ASL
 		ASL
@@ -2538,23 +2559,25 @@ loc_1371A7:
 		STX		_spr_buf_pos
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_menu_wnd_redraw_flag_set:
-		LDA		#$FF
-		STA		_gui_ctrl_menu_redraw_flag
-		RTS
 byte_137246:
 		.BYTE	$E0,$E1,$E2,$E3
 
+; REDUNDANT, optimized
+; =============== S U B	R O U T	I N E =======================================
+;_menu_wnd_redraw_flag_set:
+;		LDA		#$FF
+;		STA		_gui_ctrl_menu_redraw_flag
+;		RTS
+
 ; =============== S U B	R O U T	I N E =======================================
 _gui_ctrl_menu_redraw:
-		LDA		_gui_ctrl_menu_redraw_flag
+		LDA		_gui_ctrl_menu_redraw_flag		; if refresh needed
 		BNE		loc_13724F
 		RTS
 loc_13724F:
-		JSR		_spr_clear
-		LDA		_cur_wnd_pos._COL
-		AND		#$F8
+		JSR		_spr_clear						; we need to callculate the current
+		LDA		_cur_wnd_pos._COL				; new window position out of
+		AND		#$F8							; cursor sprite coordinates
 		CMP		_wnd_left_pos
 		BNE		loc_137262
 		LDA		_cur_wnd_pos._ROW
@@ -2562,7 +2585,7 @@ loc_13724F:
 		CMP		_wnd_top_pos
 		BEQ		loc_13728C
 loc_137262:
-		JSR		_wnd_erase
+		JSR		_wnd_erase						; erase window first (restore backgrounds)
 		LDA		_wnd_idx
 		ASL
 		TAX
@@ -2572,7 +2595,7 @@ loc_137262:
 		LSR
 		LSR
 		LSR
-		STA		_city._menu_pos,X
+		STA		_city._menu_pos,X				; update new position parameters
 		STA		_wnd_left_tile
 		INX
 		LDA		_cur_wnd_pos._ROW
@@ -2581,18 +2604,18 @@ loc_137262:
 		LSR
 		LSR
 		LSR
-		STA		_city._menu_pos,X
+		STA		_city._menu_pos,X				; and redraw window on the new position
 		STA		_wnd_top_tile
 		JSR		_wnd_draw
-		JSR		_wnd_rect_calc
+		JSR		_wnd_rect_calc					; also update wnd rect position
 loc_13728C:
 		LDA		#$00
 		STA		_gui_ctrl_menu_redraw_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137291:
-		LDA		_cur_wnd_pos._COL
+_ctrl_menu_action_handler:
+		LDA		_cur_wnd_pos._COL				; calculate tile position we pushed
 		LSR
 		LSR
 		LSR
@@ -2607,23 +2630,23 @@ sub_137291:
 		SBC		_wnd_top_tile
 		STA		_ptr0+1
 		LDY		_wnd_idx
-		LDX		byte_13734B,Y
-		LDA		off_137351,Y
+		LDX		_ctrl_menu_options_count_list,Y	; load list of hot points for
+		LDA		_ctrl_menu_areas_lib_lo,Y		; selected window
 		STA		_tmp2
-		LDA		off_137357,Y
+		LDA		_ctrl_menu_areas_lib_hi,Y
 		STA		_tmp3
 		LDY		#$00
-		STY		_tmp5
+		STY		_tmp5							; clear option index value
 loc_1372B8:
-		LDA		(_tmp2),Y
-		CLC
-		ADC		#$03
+		LDA		(_tmp2),Y						; test if we pushed inside the area
+		CLC										; with top left corner from list
+		ADC		#$03							; and size 3x3
 		STA		_tmp4
 		LDA		_ptr0
 		CMP		(_tmp2),Y
-		BCC		loc_1372F4
+		BCC		..ctrl_no_col_match
 		CMP		_tmp4
-		BCS		loc_1372F4
+		BCS		..ctrl_no_col_match
 		INY
 		LDA		(_tmp2),Y
 		CLC
@@ -2631,46 +2654,45 @@ loc_1372B8:
 		STA		_tmp4
 		LDA		_ptr0+1
 		CMP		(_tmp2),Y
-		BCC		loc_1372F5
+		BCC		.ctrl_no_row_match
 		CMP		_tmp4
-		BCS		loc_1372F5
+		BCS		.ctrl_no_row_match
 		LDX		_wnd_idx
-		CPX		#$04
-		BEQ		loc_137331
+		CPX		#$04							; save/load menu has special handler with additional
+		BEQ		.save_load_menu_exec			; option windows, external
 		PHA
-;		JSR		_apu_se_click
-		APUA_SE	_SE_IDX_CLICK
+		APUA_SE	_SE_IDX_CLICK					; the rest goest here with click
 		PLA
 		CPX		#$00
-		BEQ		loc_1372FD
+		BEQ		.speed_option_push				; now test what menu we pushed
 		DEX
-		BEQ		loc_137304
+		BEQ		.settings_option_push
 		DEX
-		BEQ		loc_137326
-		LDA		_tmp5
-		SEC
+		BEQ		.disasters_option_push
+		LDA		_tmp5							; the rest is info maps option, exit with C=1
+		SEC										; and option index in A
 		RTS
-loc_1372F4:
+..ctrl_no_col_match:
 		INY
-loc_1372F5:
+.ctrl_no_row_match:
 		INY
-		INC		_tmp5
-		DEX
-		BNE		loc_1372B8
+		INC		_tmp5							; previous idx isn't match, increment. when
+		DEX										; match _tmp5 will be index of selected item
+		BNE		loc_1372B8						; just exit with C=0 if no points match
 		CLC
 		RTS
-loc_1372FD:
+.speed_option_push:
 		LDA		_tmp5
-		STA		_city._game_speed
+		STA		_city._game_speed				; simple change speed idx (0-3 value)
 		CLC
 		RTS
-loc_137304:
-		LDX		_tmp5
-		LDA		_city._game_flags
+.settings_option_push:
+		LDX		_tmp5							; toggle the corresponding bits
+		LDA		_city._game_flags				; for game options
 		EOR		_bitmasks,X
-		STA		_city._game_flags
-		AND		#$08
-		BNE		loc_137317
+		STA		_city._game_flags				; if we toggled the bgm music option
+		AND		#$08							; either mute or restore the corresponding
+		BNE		loc_137317						; bg music
 		LDA		#$80
 		BNE		loc_13731D
 loc_137317:
@@ -2683,14 +2705,14 @@ loc_13731D:
 loc_137324:
 		CLC
 		RTS
-loc_137326:
-		LDX		_tmp5
-		LDA		_disasters_flags
+.disasters_option_push:
+		LDX		_tmp5							; disasters little bit simpler here
+		LDA		_disasters_flags				; just toggle the bits
 		EOR		_bitmasks,X
 		STA		_disasters_flags
 		CLC
 		RTS
-loc_137331:
+.save_load_menu_exec:
 		LDX		_tmp5
 ;		FJSRA	_game_menu_exec,PRG7,PRG3		; FIX, no code use PRG7, but SRAM
 		FJSRA	_game_menu_exec,SRAM,PRG3
@@ -2698,39 +2720,58 @@ loc_137331:
 		STA		_wnd_lvl_idx
 		RTS
 
-byte_13734B:
-		.BYTE	$04,$04,$06,$06,$04,$01
-off_137351:
-		.BYTE	<[byte_13735D]
-		.BYTE	<[byte_137365]
-		.BYTE	<[byte_13736D]
-		.BYTE	<[byte_137379]
-		.BYTE	<[byte_137385]
-		.BYTE	<[byte_13738D]
-off_137357:
-		.BYTE	>[byte_13735D]
-		.BYTE	>[byte_137365]
-		.BYTE	>[byte_13736D]
-		.BYTE	>[byte_137379]
-		.BYTE	>[byte_137385]
-		.BYTE	>[byte_13738D]
-byte_13735D:
-		.BYTE	$02,$04,$08,$04,$02,$09,$08,$09
-byte_137365:
-		.BYTE	$02,$04,$08,$04,$02,$0A,$08,$0A
-byte_13736D:
-		.BYTE	$02,$04,$06,$04,$0A,$04,$02,$09,$06,$09,$0A,$09
-byte_137379:
-		.BYTE	$02,$04,$0A,$04,$02,$09,$06,$04,$06,$09,$0A,$09
-byte_137385:
-		.BYTE	$03,$04,$08,$04,$03,$09,$08,$09
-byte_13738D:
-		.BYTE	$01,$01
+_ctrl_menu_options_count_list:
+		.BYTE	$04,$04,$06,$06,$04	;	,$01	; REDUNDANT 01 index is for hint message, never used here
+_ctrl_menu_areas_lib_lo:
+		.BYTE	<[_ctrl_menu0_areas_list]
+		.BYTE	<[_ctrl_menu1_areas_list]
+		.BYTE	<[_ctrl_menu2_areas_list]
+		.BYTE	<[_ctrl_menu3_areas_list]
+		.BYTE	<[_ctrl_menu4_areas_list]
+;		.BYTE	<[_ctrl_menu5_areas_list]		; REDUNDANT
+_ctrl_menu_areas_lib_hi:
+		.BYTE	>[_ctrl_menu0_areas_list]
+		.BYTE	>[_ctrl_menu1_areas_list]
+		.BYTE	>[_ctrl_menu2_areas_list]
+		.BYTE	>[_ctrl_menu3_areas_list]
+		.BYTE	>[_ctrl_menu4_areas_list]
+;		.BYTE	>[_ctrl_menu5_areas_list]		; REDUNDANT
+_ctrl_menu0_areas_list:
+		.BYTE	$02,$04							; top left tile idx for area
+		.BYTE	$08,$04							; sizes are the same
+		.BYTE	$02,$09
+		.BYTE	$08,$09
+_ctrl_menu1_areas_list:
+		.BYTE	$02,$04
+		.BYTE	$08,$04
+		.BYTE	$02,$0A
+		.BYTE	$08,$0A
+_ctrl_menu2_areas_list:
+		.BYTE	$02,$04
+		.BYTE	$06,$04
+		.BYTE	$0A,$04
+		.BYTE	$02,$09
+		.BYTE	$06,$09
+		.BYTE	$0A,$09
+_ctrl_menu3_areas_list:
+		.BYTE	$02,$04
+		.BYTE	$0A,$04
+		.BYTE	$02,$09
+		.BYTE	$06,$04
+		.BYTE	$06,$09
+		.BYTE	$0A,$09
+_ctrl_menu4_areas_list:
+		.BYTE	$03,$04
+		.BYTE	$08,$04
+		.BYTE	$03,$09
+		.BYTE	$08,$09
+;_ctrl_menu5_areas_list:									; REDUNDANT
+;		.BYTE	$01,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_13738F:
-		LDA		_wnd_left_tile
-		ASL
+_ctrl_menu_option_spr_draw:
+		LDA		_wnd_left_tile					; calc left upper tile
+		ASL										; number
 		ASL
 		ASL
 		STA		byte_AA
@@ -2739,20 +2780,20 @@ sub_13738F:
 		ASL
 		ASL
 		STA		byte_AB
-		LDX		_wnd_idx
-		BEQ		loc_1373A8
+		LDX		_wnd_idx						; for every single menu there are
+		BEQ		.ctrl_speed_options_set			; different set of options
 		DEX
-		BEQ		loc_1373C6
+		BEQ		.ctrl_game_options_set
 		DEX
-		BEQ		loc_1373F5
+		BEQ		.ctrl_disaster_options_set
 		RTS
-loc_1373A8:
-		LDX		_city._game_speed
-		LDA		byte_137423,X
-		CLC
+.ctrl_speed_options_set:
+		LDX		_city._game_speed				; display current option sprite
+		LDA		_speed_options_col_list,X		; for speed setting, there may be
+		CLC										; only one option enabled
 		ADC		byte_AA
 		STA		_spr_insert_args._pos._COL
-		LDA		byte_137427,X
+		LDA		_speed_options_row_list,X
 		CLC
 		ADC		byte_AB
 		STA		_spr_insert_args._pos._ROW
@@ -2761,20 +2802,20 @@ loc_1373A8:
 		LDA		#$00
 		STA		_spr_insert_args._attr
 		JMP		_spr_lib_attr_insert
-loc_1373C6:
-		LDA		_city._game_flags
+.ctrl_game_options_set:
+		LDA		_city._game_flags				; here we may a multiple options to be set
 		LDX		#$00
 loc_1373CB:
 		LSR
-		BCC		loc_1373EF
+		BCC		loc_1373EF						; extract configuration bit
 		PHA
 		TXA
 		PHA
-		LDA		byte_13742B,X
+		LDA		_game_options_col_list,X
 		CLC
 		ADC		byte_AA
 		STA		_spr_insert_args._pos._COL
-		LDA		byte_13742F,X
+		LDA		_game_options_row_list,X
 		CLC
 		ADC		byte_AB
 		STA		_spr_insert_args._pos._ROW
@@ -2782,7 +2823,7 @@ loc_1373CB:
 		STA		_spr_insert_args._idx
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JSR		_spr_lib_attr_insert
+		JSR		_spr_lib_attr_insert			; draw them all
 		PLA
 		TAX
 		PLA
@@ -2791,20 +2832,20 @@ loc_1373EF:
 		CPX		#$04
 		BCC		loc_1373CB
 		RTS
-loc_1373F5:
-		LDA		_disasters_flags
-		LDX		#$00
+.ctrl_disaster_options_set:
+		LDA		_disasters_flags				; the same for disaster, but there are more
+		LDX		#$00							; options available
 loc_1373F9:
 		LSR
 		BCC		loc_13741D
 		PHA
 		TXA
 		PHA
-		LDA		byte_137433,X
+		LDA		_disaster_options_col_list,X
 		CLC
 		ADC		byte_AA
 		STA		_spr_insert_args._pos._COL
-		LDA		byte_137439,X
+		LDA		_disaster_options_row_list,X
 		CLC
 		ADC		byte_AB
 		STA		_spr_insert_args._pos._ROW
@@ -2821,17 +2862,18 @@ loc_13741D:
 		CPX		#$06
 		BCC		loc_1373F9
 		RTS
-byte_137423:
+
+_speed_options_col_list:
 		.BYTE	$14,$44,$14,$44
-byte_137427:
+_speed_options_row_list:
 		.BYTE	$18,$18,$40,$40
-byte_13742B:
+_game_options_col_list:
 		.BYTE	$14,$44,$14,$44
-byte_13742F:
+_game_options_row_list:
 		.BYTE	$18,$18,$48,$48
-byte_137433:
+_disaster_options_col_list:
 		.BYTE	$14,$34,$54,$14,$34,$54
-byte_137439:
+_disaster_options_row_list:
 		.BYTE	$18,$18,$18,$40,$40,$40
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3532,19 +3574,18 @@ loc_13797D:
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_draw:
 		LDX		#$00
-		JSR		_RCI_meters_R_prequeue
+		JSR		_RCI_meters_R_prequeue			; precalc rci meters columns
 		JSR		_RCI_meters_C_prequeue
 		JSR		_RCI_meters_I_prequeue
 		JSR		_RCI_meters_pos_calc
 		JMP		_RCI_meters_queue
 
-
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_R_prequeue:
-		LDA		_RCI_meters_values._R
-		LDY		#$80
+		LDA		_RCI_meters_values._R			; read an actual value and
+		LDY		#$80							; color/tileset settings
 		STY		_ptr0+1
-		LDY		#$80
+;		LDY		#$80							; REDUNDANT, obvious
 		BNE		_RCI_meters_prequeue
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3552,7 +3593,8 @@ _RCI_meters_C_prequeue:
 		LDA		_RCI_meters_values._C
 		LDY		#$80
 		STY		_ptr0+1
-		LDY		#$81
+;		LDY		#$81							; REDUNDANT
+		INY										; OPTIMIZED
 		BNE		_RCI_meters_prequeue
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3564,17 +3606,17 @@ _RCI_meters_I_prequeue:
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_prequeue:
-		STY		_ptr0
+		STY		_ptr0							; draw with common routine
 		AND		#$FF
-		BMI		loc_1379F9
-		PHA
-		SEC
+		BMI		.rci_draw_negative				; draw negative or positive separately
+		PHA										; for positive first calc the white
+		SEC										; part of the column
 		SBC		#$08
 		BCS		loc_1379BF
 		LDA		#$00
 loc_1379BF:
 		TAY
-		LDA		byte_151740,Y
+		LDA		_rci_white_tile_list,Y
 		CLC
 		ADC		_ptr0+1
 		STA		_pre_ppu_buf,X
@@ -3605,14 +3647,14 @@ loc_1379D1:
 		STA		_pre_ppu_buf,X
 		INX
 		RTS
-loc_1379F9:
+.rci_draw_negative:
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		PHA
 		PHA
 		LDY		#$00
-		LDA		byte_151740,Y
+		LDA		_rci_white_tile_list,Y
 		CLC
 		ADC		_ptr0+1
 		STA		_pre_ppu_buf,X
@@ -3943,7 +3985,7 @@ _game_field_redraw:
 ;		BCS		locret_137D0A
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_137D0A
-		LDA		_game_field_redraw_req			; also if we in this mode but
+		LDA		_full_game_field_redraw_req		; also if we in this mode but
 		BEQ		locret_137D0A					; already done, just skip
 		JSR		_calc_update_rect_screen_area	; calc rect area and wraps
 		LDA		_ppu_queue_pos_head				; get current queue pos
@@ -3973,7 +4015,7 @@ locret_137D0A:
 ; =============== S U B	R O U T	I N E =======================================
 ;unused_12:
 ;		LDA		#$00
-;		STA		_game_field_redraw_req
+;		STA		_full_game_field_redraw_req
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4252,17 +4294,17 @@ _restore_game_filed_update_params:
 ;		JMP		sub_15011A						; REDUNDANT, merged
 		JSR		_swap_game_field_update_params	; OPTIMIZEd, meged
 		LDA		#$00
-		STA		_game_field_redraw_req_tmp
-		STA		_game_field_update_req
+		STA		_full_game_field_redraw_req_tmp
+		STA		_build_game_field_update_req
 locret_137F29:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _swap_game_field_update_params:
-		LDA		_game_field_redraw_req
-		LDX		_game_field_redraw_req_tmp
-		STA		_game_field_redraw_req_tmp
-		STX		_game_field_redraw_req
+		LDA		_full_game_field_redraw_req
+		LDX		_full_game_field_redraw_req_tmp
+		STA		_full_game_field_redraw_req_tmp
+		STX		_full_game_field_redraw_req
 		LDA		_update_rect_left
 		LDX		_update_rect_left_tmp
 		STA		_update_rect_left_tmp
@@ -4286,25 +4328,25 @@ _swap_game_field_update_params:
 ;sub_15011A:
 ;		JSR		_swap_game_field_update_params
 ;		LDA		#$00
-;		STA		_game_field_redraw_req_tmp
-;		STA		_game_field_update_req
+;		STA		_full_game_field_redraw_req_tmp
+;		STA		_build_game_field_update_req
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _auto_goto_test:
-		LDA		_city._game_flags
-		AND		#$04
+		LDA		_city._game_flags				; idle call from common event handler
+		AND		#$04							; to do auto goto
 		BNE		_goto_start
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _goto_start:
-		LDA		_goto_alert_req
+		LDA		_goto_alert_req					; check if goto requests are raised
 		BEQ		locret_137F7B
-		LDA		_goto_transition_counter
+		LDA		_goto_in_progress_delay		; also check if we already doing goto scroll
 		BNE		locret_137F7B
-		LDA		_goto_dst_tile._COL
-		SEC
+		LDA		_goto_dst_tile._COL				; calculate new window position
+		SEC										; dst tile set in the middle of the screen
 		SBC		#$0C
 		BCS		loc_137F48
 		LDA		#$00
@@ -4314,7 +4356,7 @@ loc_137F48:
 		BCC		loc_137F4E
 		LDA		#$35
 loc_137F4E:
-		STA		_cur_map_wnd_pos._COL
+		STA		_cur_map_wnd_pos._COL			; set refresh rect area as well
 		STA		_update_rect_left
 		CLC
 		ADC		#$18
@@ -4330,15 +4372,15 @@ loc_137F63:
 		BCC		loc_137F69
 		LDA		#$37
 loc_137F69:
-		STA		_cur_map_wnd_pos._ROW
-		STA		_update_rect_top
-		CLC
+		STA		_cur_map_wnd_pos._ROW			; finish with calculating the refresh area
+		STA		_update_rect_top				; and new window position, set full screen
+		CLC										; refresh request
 		ADC		#$14
 		STA		_update_rect_bottom
 		LDA		#$1E
-		STA		_goto_transition_counter
+		STA		_goto_in_progress_delay			; set delay for goto button anim code in PRGF
 		LDA		#$FF
-		STA		_game_field_redraw_req
+		STA		_full_game_field_redraw_req		; send full screen refresh
 locret_137F7B:
 		RTS
 

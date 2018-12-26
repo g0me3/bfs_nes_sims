@@ -113,7 +113,7 @@ _screen_pal_extra_list:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
 		LDX		#$FF
-		STX		_game_field_redraw_req			; map area redraw request
+		STX		_full_game_field_redraw_req			; map area redraw request
 		INX
 		STX		_gui_active_controls_flags		; clear gui flags, request to redraw
 ;		STX		_update_rect_left				; REDUNDANT, redraw top-leftmost area of map
@@ -2020,7 +2020,7 @@ _info_maps_options_list:
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_menu_draw:
 		APUA_SE	_SE_IDX_ROLLIN
-		LDA		#$40							; FIX, since we have idxes changed
+		LDA		#$40							; FIX, since we have indexes changed
 		STA		_game_msg_wnd_active_flag		; may interfer with something in future
 		LDA		#$10
 		STA		_spr_buf_pos					; reserve the cursor buffer, not sure why
@@ -2195,10 +2195,10 @@ locret_EAE85:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_date_hud_draw:
-		LDA		_hud_and_game_field_update_req					; wait for external redraw request
+		LDA		_screen_refresh_req					; wait for external redraw request
 		BEQ		locret_EADB1
 		LDA		#$00
-		STA		_hud_and_game_field_update_req
+		STA		_screen_refresh_req
 
 ; !FALLTHROUGH!
 
