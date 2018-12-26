@@ -32,7 +32,7 @@ loc_13601B:
 		.WORD	_game_state06_game_hud_redraw
 		.WORD	_game_state07
 		.WORD	_game_state08
-		.WORD	_game_state09_special_constr_palette_redraw
+		.WORD	_game_state09_presents_constr_palette_redraw
 		.WORD	_game_state0A_power_build_menu
 		.WORD	_game_state0B_gui_ctrl_menu
 		.WORD	_game_state0C_RCI_meter_redraw
@@ -43,7 +43,7 @@ loc_13601B:
 		.WORD	_game_state11_cur_popul_redraw
 		.WORD	_game_state12_airport_build_menu
 		.WORD	_game_state13_msg_wnd_display
-		.WORD	_game_state14_special_build_menu
+		.WORD	_game_state14_presents_build_menu
 		.WORD	_game_state15_game_cursor_area_switch
 		.WORD	_game_state16_city_name_redraw
 		.WORD	_game_state17_common
@@ -70,7 +70,7 @@ _game_state_common:
 		ORA		byte_3A
 		ORA		byte_3B
 		ORA		_regular_constr_palette_redraw_req
-		ORA		_special_constr_palette_redraw_req
+		ORA		_presents_constr_palette_redraw_req
 		ORA		_RCI_meter_redraw_req
 		ORA		_cur_date_redraw_req
 		ORA		_cur_popul_redraw_req
@@ -361,7 +361,7 @@ loc_13626D:
 		LDA		byte_150351,X
 		STA		byte_C0
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 		CPX		#$0B
 		BNE		loc_13629F
 		STA		_power_build_menu_req
@@ -374,8 +374,8 @@ loc_13629F:
 loc_1362A9:
 		CPX		#$0D
 		BNE		_j_game_state_common
-		STA		_special_build_menu_req
-		FJSRA	_special_items_wnd_draw,PRGC,PRG2
+		STA		_presents_build_menu_req
+		FJSRA	_presents_wnd_draw,PRGC,PRG2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -391,23 +391,23 @@ sub_1362C0:
 		CMP		#$0B
 		BNE		loc_1362CE
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 		STA		_power_build_menu_req
 		JMP		_game_state_common
 loc_1362CE:
 		CMP		#$0C
 		BNE		loc_1362DC
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 		STA		_airport_build_menu_req
 		JMP		_game_state_common
 loc_1362DC:
 		CMP		#$0D
 		BNE		_j_apu_se_error
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
-		STA		_special_build_menu_req
-		FJSRA	_special_items_wnd_draw,PRGC,PRG2
+		STA		_presents_constr_palette_redraw_req
+		STA		_presents_build_menu_req
+		FJSRA	_presents_wnd_draw,PRGC,PRG2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -524,12 +524,12 @@ loc_1363BE:
 		STA		_cur_money_redraw_req
 		JSR		_apu_se_large_build
 		JSR		_bank_build_year_init
-		JSR		_special_building_remove_from_list
+		JSR		_present_remove_from_list
 		LDA		_prev_constr_palette_press_idx
 		CMP		#$0D
 		BNE		loc_1363F5
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 		BNE		loc_1363F5
 loc_1363EF:
 		JSR		_save_constr_cursor_pos
@@ -870,7 +870,7 @@ loc_136670:
 		LDA		#$12
 		JMP		_set_game_state_idx
 loc_13667A:
-		LDA		_special_build_menu_req
+		LDA		_presents_build_menu_req
 		BEQ		loc_136684
 		LDA		#$14
 		JMP		_set_game_state_idx
@@ -906,7 +906,7 @@ loc_1366B6:
 		LDA		#$11
 		JMP		_set_game_state_idx
 loc_1366C0:
-		LDA		_special_constr_palette_redraw_req
+		LDA		_presents_constr_palette_redraw_req
 		BEQ		loc_1366C9
 		LDA		#$09
 		JMP		_set_game_state_idx
@@ -1662,7 +1662,7 @@ locret_136BF8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_constr_palette_draw:
+_presents_constr_palette_draw:
 		PUSHB	_prg_prgA000_shadow
 		LDA		#$F2
 		STA		_prg_prgA000_shadow
@@ -1690,8 +1690,8 @@ loc_136C1D:
 loc_136C28:
 		CMP		#$0D
 		BNE		loc_136C3A
-		LDX		_cur_special_building_select_idx
-		LDY		_city._special_buildings_list,X
+		LDX		_cur_present_select_idx
+		LDY		_city._presents_list,X
 		DEY
 		BPL		loc_136C37
 		LDY		#$0F
@@ -1856,7 +1856,7 @@ _airport_build_menu:
 		JSR		_airport_build_wnd_draw
 		LDA		#$FF
 		STA		byte_37
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 loc_136D5F:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
@@ -1891,13 +1891,13 @@ loc_136D8E:
 		STA		byte_C0
 		LDA		#$00
 		STA		_cur_port_type_select_idx
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		JMP		loc_136D5F
 loc_136DA3:
 		LDA		#$04
 		STA		byte_C0
 		INC		_cur_port_type_select_idx
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		JMP		loc_136D5F
 loc_136DAF:
 		JSR		_spr_clear
@@ -1922,7 +1922,7 @@ _power_build_menu:
 		JSR		_power_build_wnd_draw
 		LDA		#$FF
 		STA		byte_37
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 loc_136DD6:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
@@ -1955,11 +1955,11 @@ loc_136E05:
 		BEQ		loc_136E16
 		LDA		#$00
 		STA		_cur_power_type_select_idx
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		JMP		loc_136DD6
 loc_136E16:
 		INC		_cur_power_type_select_idx
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		JMP		loc_136DD6
 loc_136E1E:
 		JSR		_spr_clear

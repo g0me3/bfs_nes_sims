@@ -153,10 +153,10 @@ loc_B80E6:
 		INX
 		CPX		#$0E
 		BCC		loc_B80CC
-		LDA		_city._special_buildings_list
-		ORA		_city._special_buildings_list+1
-		ORA		_city._special_buildings_list+2
-		ORA		_city._special_buildings_list+3
+		LDA		_city._presents_list
+		ORA		_city._presents_list+1
+		ORA		_city._presents_list+2
+		ORA		_city._presents_list+3
 		BEQ		loc_B810A
 		LDA		_ptr0
 		AND		#$FD
@@ -626,8 +626,8 @@ sub_B83D0:
 		LDA		_prev_constr_palette_press_idx
 		CMP		#$0D
 		BNE		loc_B83E1
-		LDY		_cur_special_building_select_idx
-		LDA		_city._special_buildings_list,Y
+		LDY		_cur_present_select_idx
+		LDA		_city._presents_list,Y
 		CMP		#$05
 		BEQ		loc_B8441
 loc_B83E1:
@@ -643,8 +643,8 @@ loc_B83E1:
 		LDA		_prev_constr_palette_press_idx
 		CMP		#$0D
 		BNE		loc_B8401
-		LDY		_cur_special_building_select_idx
-		LDA		_city._special_buildings_list,Y
+		LDY		_cur_present_select_idx
+		LDA		_city._presents_list,Y
 		CMP		#$0E
 		BEQ		loc_B8453
 loc_B8401:

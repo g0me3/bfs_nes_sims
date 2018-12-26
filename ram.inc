@@ -348,7 +348,7 @@ byte_D4:
 		.BYTE	0
 byte_D5:
 		.BYTE	0
-_special_constr_palette_redraw_req:
+_presents_constr_palette_redraw_req:
 		.BYTE	0
 byte_D7:
 		.BYTE	0
@@ -649,9 +649,9 @@ byte_524:
 		.BYTE	0
 byte_525:
 		.BYTE	0
-_special_build_menu_req:
+_presents_build_menu_req:
 		.BYTE	0
-_cur_special_building_select_idx:
+_cur_present_select_idx:
 		.BYTE	0
 byte_528:
 		.BYTE	0

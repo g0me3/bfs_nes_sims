@@ -84,11 +84,11 @@ loc_58076:
 		LDA		_tmp4
 		RTS
 _hex_to_dec_9999999_tbl0:
-		.BYTE	 $01,$0A,$64,$E8,$10,$A0,$40
+		.BYTE	$01,$0A,$64,$E8,$10,$A0,$40
 _hex_to_dec_9999999_tbl1:
-		.BYTE	 $00,$00, $00,$03,$27,$86,$42
+		.BYTE	$00,$00,$00,$03,$27,$86,$42
 _hex_to_dec_9999999_tbl2:
-		.BYTE	 $00,$00, $00,$00, $00,$01, $0F
+		.BYTE	$00,$00,$00,$00,$00,$01,$0F
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_str_pos_calc:
@@ -279,7 +279,7 @@ loc_581EC:
 		STA		byte_55
 		STA		byte_57
 		JSR		_game_msg_music_restore
-		JSR		_special_building_put_in_list
+		JSR		_present_put_in_list
 		JSR		_init_special_year_date
 		JSR		_debug_flag_toggle_test
 		LDA		#$00
@@ -523,7 +523,7 @@ loc_583F7:
 loc_583FA:
 		LDA		(_tmp6),Y
 		INY
-		JSR		_cmd_special_data_insert
+		JSR		_cmd_data_insert
 		BCS		loc_583F7
 		JMP		loc_583BE
 
@@ -745,7 +745,7 @@ _game_msg_wnd_animB:
 		RTS
 loc_58578:
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 		LDA		byte_528
 		BEQ		loc_58586
 		BPL		loc_585A5
@@ -1101,7 +1101,7 @@ locret_58876:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_cmd_special_data_insert:
+_cmd_data_insert:
 		CMP		#$23
 		BNE		loc_5887E
 		JMP		_cmd40_23_popul
@@ -1276,13 +1276,11 @@ _get_select_popul_num:
 		CMP		#$01
 		BEQ		loc_589B9
 loc_589A4:
-		MOVW	_tmp_popul_hex,_popul_cur
-		LDA		_popul_cur+2
-		STA		_tmp_popul_hex+2
+		MOVD	_tmp_popul_hex,_popul_cur
 		JMP		loc_589C8
 loc_589B9:
-		MOVDI	_tmp_popul_hex,$002710
-loc_589C8:
+		MOVDI	_tmp_popul_hex,10000			; request for fixed amount of
+loc_589C8:										; citizens, not used anywhere
 		TYA
 		PHA
 		LDY		#$05
@@ -1326,12 +1324,28 @@ loc_589FA:
 		PLA
 		TAY
 		RTS
+
 byte_58A25:
-		.BYTE	$01,$0A,$64,$E8,$10,$A0
+		.BYTE	[[1 >> 0] & $FF]		; $01
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
 byte_58A2B:
-		.BYTE	$00,$00,$00,$03,$27,$86
+		.BYTE	[[1 >> 8] & $FF]		; $00
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
 byte_58A31:
-		.BYTE	$00,$00,$00,$00,$00,$01
+		.BYTE	[[1 >> 16] & $FF]		; $00
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
 
 ; =============== S U B	R O U T	I N E =======================================
 ; event	1 x
@@ -1362,7 +1376,7 @@ byte_58A31:
 ; event	1A item	E
 ;
 ;
-_special_building_put_in_list:
+_present_put_in_list:
 		LDX		#$0F
 		LDA		_game_msg_idx
 		CMP		#$02
@@ -1389,13 +1403,13 @@ loc_58A5A:
 		LDY		#$04
 loc_58A60:
 		INX
-		LDA		_city._special_buildings_list,X
+		LDA		_city._presents_list,X
 		BEQ		loc_58A69
 		DEY
 		BNE		loc_58A60
 loc_58A69:
 		PLA
-		STA		_city._special_buildings_list,X
+		STA		_city._presents_list,X
 locret_58A6D:
 		RTS
 

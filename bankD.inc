@@ -10,7 +10,7 @@ _game_state01:
 		LDA		#$3A
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		#$FF
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 		LDA		byte_3C
 		ORA		#$02
 		STA		byte_3C
@@ -20,17 +20,17 @@ loc_150019:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state09_special_constr_palette_redraw:
+_game_state09_presents_constr_palette_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_150028
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		LDA		#$00
-		STA		_special_constr_palette_redraw_req
+		STA		_presents_constr_palette_redraw_req
 loc_150028:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state14_special_build_menu:
+_game_state14_presents_build_menu:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_150055
 		JSR		_spr_clear
@@ -43,10 +43,10 @@ _game_state14_special_build_menu:
 		LDA		#$0D
 		STA		_wnd_top_tile
 		JSR		_wnd_draw
-		FJSRA	_special_build_menu,PRGC,PRG2
+		FJSRA	_presents_build_menu,PRGC,PRG2
 		JSR		_wnd_erase
 		LDA		#$00
-		STA		_special_build_menu_req
+		STA		_presents_build_menu_req
 loc_150055:
 		JMP		_game_state_common
 
@@ -710,8 +710,8 @@ _bank_build_year_init:
 		LDA		_prev_constr_palette_press_idx
 		CMP		#$0D
 		BNE		locret_150474
-		LDX		_cur_special_building_select_idx
-		LDA		_city._special_buildings_list,X
+		LDX		_cur_present_select_idx
+		LDA		_city._presents_list,X
 		CMP		#$0F
 		BNE		locret_150474
 		LDA		_city._cur_year
@@ -727,25 +727,25 @@ locret_150474:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_building_remove_from_list:
+_present_remove_from_list:
 		LDA		_prev_constr_palette_press_idx
 		CMP		#$0D
 		BEQ		loc_15047C
 		RTS
 loc_15047C:
-		LDX		_cur_special_building_select_idx
+		LDX		_cur_present_select_idx
 		LDA		#$00
-		STA		_city._special_buildings_list,X
+		STA		_city._presents_list,X
 loc_150484:
 		INX
 		CPX		#$04
 		BCS		loc_150492
-		LDA		_city._special_buildings_list,X
-		STA		_city._special_buildings_list-1,X
+		LDA		_city._presents_list,X
+		STA		_city._presents_list-1,X
 		JMP		loc_150484
 loc_150492:
 		LDA		#$00
-		STA		_city._special_buildings_list+3
+		STA		_city._presents_list+3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -767,9 +767,9 @@ loc_1504A6:
 loc_1504B2:
 		CMP		#$0D
 		BNE		loc_1504BF
-		LDY		_cur_special_building_select_idx
-		LDX		_city._special_buildings_list,Y
-		LDA		_special_buildings_cost_idx_list,X
+		LDY		_cur_present_select_idx
+		LDX		_city._presents_list,Y
+		LDA		_presents_cost_idx_list,X
 loc_1504BF:
 		ASL
 		TAX
@@ -796,7 +796,7 @@ _buildings_cost_list:
 		.BYTE	$64,$00
 		.BYTE	$88,$13
 		.BYTE	$10,$27
-_special_buildings_cost_idx_list:
+_presents_cost_idx_list:
 		.BYTE	 $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1576,8 +1576,8 @@ sub_150A4A:
 		LDX		_prev_constr_palette_press_idx
 		CPX		#$0D
 		BNE		loc_150A5C
-		LDX		_cur_special_building_select_idx
-		LDA		_city._special_buildings_list,X
+		LDX		_cur_present_select_idx
+		LDA		_city._presents_list,X
 		CLC
 		ADC		_prev_constr_palette_press_idx
 		TAX
@@ -4179,7 +4179,7 @@ loc_151F3B:
 		LDA		_regular_constr_palette_redraw_req
 		BNE		loc_151F3B
 		JSR		_ppu_flush_wait
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		JSR		_RCI_meters_draw
 		FJSRA	_cur_date_draw,PRG7,PRG3
 		FJSRA	_cur_money_draw,PRGC,PRG3

@@ -111,7 +111,7 @@ I_AREA_WIDX	EQU 4
 {1}._year_to_build_bank:				.WORD	0
 {1}._year_to_expo:						.WORD	0
 {1}._year_to_liberty:					.WORD	0
-{1}._special_buildings_list:			.BYTE	0,0,0,0
+{1}._presents_list:			.BYTE	0,0,0,0
 {1}._history_list:						.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 {1}._bank_flags:						.BYTE	0
 	; bit0 - bank built, wait for loan message
@@ -386,6 +386,15 @@ _total_free	SET _total_free+_bank{1}_free
 		STA		{1}
 		LDA		{2}+1
 		STA		{1}+1
+	ENDM
+
+	MAC	MOVD
+		LDA		{2}
+		STA		{1}
+		LDA		{2}+1
+		STA		{1}+1
+		LDA		{2}+2
+		STA		{1}+2
 	ENDM
 
 	; \t\tLDA\t\t#<\[(.*)\]\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t#>\[\1\]\n\t\tSTA\t\t\2\+1\n

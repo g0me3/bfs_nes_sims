@@ -435,7 +435,7 @@ loc_1043D1:
 		BNE		loc_1043D1
 		STA		_obj_active_flags
 		LDA		#$FF
-		STA		_city._year_to_build_bank			; special game vars clear
+		STA		_city._year_to_build_bank			; special years clear
 		STA		_city._year_to_build_bank+1
 		STA		_city._year_to_expo
 		STA		_city._year_to_expo+1
@@ -482,7 +482,7 @@ loc_10443E:
 		TAY
 		LDX		#$00
 loc_10445D:
-		LDA		_scenario_special_events_flags_lib,Y; disable already accepted special
+		LDA		_scenario_presents_flags_lib,Y		; disable already accepted present
 		STA		_city._events_used_flags,X			; buildings to stop it's appearance
 		INY
 		INX
@@ -589,7 +589,7 @@ _scenario_disaster_delays_list:
 		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
 _scenario_disaster_years_delay_list:
 		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
-_scenario_special_events_flags_lib:
+_scenario_presents_flags_lib:
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
@@ -1698,7 +1698,7 @@ loc_104EBC:
 		PHA
 		TYA
 		PHA
-		JSR		_special_events_check
+		JSR		_presents_events_check
 		PLA
 		TAY
 		PLA
@@ -1716,10 +1716,10 @@ locret_104ED8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_events_check:
-		LDA		_special_events_lib_lo,Y
+_presents_events_check:
+		LDA		_presents_events_lib_lo,Y
 		STA		_tmpE7
-		LDA		_special_events_lib_hi,Y
+		LDA		_presents_events_lib_hi,Y
 		STA		_tmpE8
 		JMP		(_tmpE7)
 
@@ -1778,7 +1778,7 @@ nullsub_3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0B_bank:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_city._cur_year
 		CMP		_city._year_to_build_bank
@@ -1800,7 +1800,7 @@ _event0C_relationships:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0D_amusement:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDX		#$06
 		JSR		_popul_compare
@@ -1809,7 +1809,7 @@ _event0D_amusement:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0E_zoo:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDX		#$07
 		JSR		_popul_compare
@@ -1818,7 +1818,7 @@ _event0E_zoo:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0F_casino:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDX		#$08
 		JSR		_popul_compare
@@ -1827,7 +1827,7 @@ _event0F_casino:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event10_extra_land:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_sea_ports_count
 		CMP		#$02
@@ -1836,7 +1836,7 @@ _event10_extra_land:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event11_new_police:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_police_stations_count
 		CMP		#$0A
@@ -1845,7 +1845,7 @@ _event11_new_police:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event12_new_fire:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_fire_stations_count
 		CMP		#$0A
@@ -1854,7 +1854,7 @@ _event12_new_fire:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event13_10th_monument:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_city._cur_year
 		CMP		#$76
@@ -1865,7 +1865,7 @@ _event13_10th_monument:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event14_100th_monument:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
 		CMP		#$D0
@@ -1886,7 +1886,7 @@ _event15_expo:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event16_expo_monument:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
 		CMP		_city._year_to_expo
@@ -1897,7 +1897,7 @@ _event16_expo_monument:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event17_liberty:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
 		CMP		_city._year_to_liberty
@@ -1908,7 +1908,7 @@ _event17_liberty:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event18_library:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDX		#$09
 		JSR		_popul_compare
@@ -1918,7 +1918,7 @@ _event18_library:
 ; =============== S U B	R O U T	I N E =======================================
 ; 200 parks needed
 _event19_park:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_parks_counter
 		CMP		#$C8
@@ -1928,7 +1928,7 @@ _event19_park:
 ; =============== S U B	R O U T	I N E =======================================
 ; 150 railroars	needed
 _event1A_railroad:
-		JSR		_check_for_free_special_biulding_slot
+		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_rails_count
 		CMP		#$96
@@ -1978,14 +1978,14 @@ loc_105059:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_check_for_free_special_biulding_slot:
+_check_for_free_present_slot:
 		LDX		#$02
 		LDA		_city._events_used_flags			; test if city status acquired
 		AND		#$04
 		BEQ		loc_105069							; if no, only 3 slots are available
 		LDX		#$03
 loc_105069:
-		LDA		_city._special_buildings_list,X		; technically calc here is correct
+		LDA		_city._presents_list,X		; technically calc here is correct
 ; BUG! loop not needed.
 		BEQ		locret_105071						; it'll always get last slot
 		DEY											; but then DEY loop not needed here then
@@ -2032,7 +2032,7 @@ _popul_compare:
 		SBC		_popul_vals_lib2,X
 		RTS
 
-_special_events_lib_lo:
+_presents_events_lib_lo:
 		.BYTE	<[nullsub_1]
 		.BYTE	<[_event01_city_growt]
 		.BYTE	<[_event01_city_growt]
@@ -2060,7 +2060,7 @@ _special_events_lib_lo:
 		.BYTE	<[_event18_library]
 		.BYTE	<[_event19_park]
 		.BYTE	<[_event1A_railroad]
-_special_events_lib_hi:
+_presents_events_lib_hi:
 		.BYTE	>[nullsub_1]
 		.BYTE	>[_event01_city_growt]
 		.BYTE	>[_event01_city_growt]

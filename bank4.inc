@@ -1119,7 +1119,7 @@ _game_msg_lisb_lo:
 		.BYTE	<[_msg0D_amusement_park]
 		.BYTE	<[_msg0E_zoo]
 		.BYTE	<[_msg0F_casino]
-		.BYTE	<[_msg10_special_extra_land]
+		.BYTE	<[_msg10_extra_land]
 		.BYTE	<[_msg11_new_police]
 		.BYTE	<[_msg12_new_fire]
 		.BYTE	<[_msg13_monument_10th_years]
@@ -1156,7 +1156,7 @@ _game_msg_lisb_hi:
 		.BYTE	>[_msg0D_amusement_park]
 		.BYTE	>[_msg0E_zoo]
 		.BYTE	>[_msg0F_casino]
-		.BYTE	>[_msg10_special_extra_land]
+		.BYTE	>[_msg10_extra_land]
 		.BYTE	>[_msg11_new_police]
 		.BYTE	>[_msg12_new_fire]
 		.BYTE	>[_msg13_monument_10th_years]
@@ -1176,6 +1176,9 @@ _game_msg_lisb_hi:
 		.BYTE	>[_msg21_flood]
 		.BYTE	>[_msg22_airplane_crash]
 		.BYTE	>[_msg23_tornado]
+
+; TODO: may be macrocified for convinience and representation
+
 _msg00:
 		.WORD	off_70EC1
 off_70EC1:
@@ -1459,7 +1462,7 @@ aNeighborsComplainA:
 		.BYTE	"neighbors complain a-",$F
 aBoutTheNoise_:
 		.BYTE	"bout the noise.",$F
-_msg10_special_extra_land:
+_msg10_extra_land:
 		.WORD	off_71490
 off_71490:
 		.WORD	aNowThatYouCanCre

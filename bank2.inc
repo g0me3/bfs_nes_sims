@@ -33,7 +33,7 @@ _game_msg_chr3_list:
 		.BYTE	$33,$33,$33,$33
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_items_wnd_draw:
+_presents_wnd_draw:
 		JSR		_sram_on
 		LDX		#$F0
 loc_3E0B0:
@@ -45,11 +45,11 @@ loc_3E0B0:
 		BNE		loc_3E0B0
 		LDX		#$03
 loc_3E0C1:
-		LDA		_city._special_buildings_list,X
+		LDA		_city._presents_list,X
 		BEQ		loc_3E0CD
 		TXA
 		PHA
-		JSR		_special_item_icon_draw
+		JSR		_present_icon_draw
 		PLA
 		TAX
 loc_3E0CD:
@@ -59,24 +59,24 @@ loc_3E0CD:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_item_icon_draw:
-		LDY		_city._special_buildings_list,X
+_present_icon_draw:
+		LDY		_city._presents_list,X
 		DEY
-		LDA		_special_item_icon_tlm_lib_lo,Y
+		LDA		_present_icon_tlm_lib_lo,Y
 		STA		_ptr0
-		LDA		_special_item_icon_tlm_lib_hi,Y
+		LDA		_present_icon_tlm_lib_hi,Y
 		STA		_ptr0+1
-		LDA		_special_item_icon_nt_dst_lo,X
+		LDA		_present_icon_nt_dst_lo,X
 		STA		_tmp2
-		LDA		_special_item_icon_nt_dst_hi,X
+		LDA		_present_icon_nt_dst_hi,X
 		STA		_tmp3
-		LDA		_special_item_icon_extnt_tlm_lib_hi,Y
+		LDA		_present_icon_extnt_tlm_lib_hi,Y
 		STA		_tmp4
-		LDA		_special_item_icon_extnt_tlm_lib_lo,Y
+		LDA		_present_icon_extnt_tlm_lib_lo,Y
 		STA		_tmp5
-		LDA		_special_item_icon_extnt_dst_lo,X
+		LDA		_present_icon_extnt_dst_lo,X
 		STA		_tmp6
-		LDA		_special_item_icon_extnt_dst_hi,X
+		LDA		_present_icon_extnt_dst_hi,X
 		STA		_tmp6+1
 		LDX		#$05
 loc_3E102:
@@ -88,13 +88,13 @@ loc_3E104:
 		STA		(_tmp6),Y
 		DEY
 		BPL		loc_3E104
-		JSR		_special_item_icon_pos_adjust
+		JSR		_present_icon_pos_adjust
 		DEX
 		BNE		loc_3E102
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_item_icon_pos_adjust:
+_present_icon_pos_adjust:
 		ADDW8	_ptr0,#$05
 		ADDW8	_tmp4,#$05
 		ADDW8	_tmp2,#$0F
@@ -133,265 +133,265 @@ byte_3E224:
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
-_special_item_icon_tlm_lib_lo:
-		.BYTE	<[_special_item_icon_tlm0]
-		.BYTE	<[_special_item_icon_tlm1]
-		.BYTE	<[_special_item_icon_tlm2]
-		.BYTE	<[_special_item_icon_tlm3]
-		.BYTE	<[_special_item_icon_tlm4]
-		.BYTE	<[_special_item_icon_tlm5]
-		.BYTE	<[_special_item_icon_tlm6]
-		.BYTE	<[_special_item_icon_tlm7]
-		.BYTE	<[_special_item_icon_tlm8]
-		.BYTE	<[_special_item_icon_tlm9]
-		.BYTE	<[_special_item_icon_tlmA]
-		.BYTE	<[_special_item_icon_tlmB]
-		.BYTE	<[_special_item_icon_tlmC]
-		.BYTE	<[_special_item_icon_tlmD]
-		.BYTE	<[_special_item_icon_tlmE]
-_special_item_icon_tlm_lib_hi:
-		.BYTE	>[_special_item_icon_tlm0]
-		.BYTE	>[_special_item_icon_tlm1]
-		.BYTE	>[_special_item_icon_tlm2]
-		.BYTE	>[_special_item_icon_tlm3]
-		.BYTE	>[_special_item_icon_tlm4]
-		.BYTE	>[_special_item_icon_tlm5]
-		.BYTE	>[_special_item_icon_tlm6]
-		.BYTE	>[_special_item_icon_tlm7]
-		.BYTE	>[_special_item_icon_tlm8]
-		.BYTE	>[_special_item_icon_tlm9]
-		.BYTE	>[_special_item_icon_tlmA]
-		.BYTE	>[_special_item_icon_tlmB]
-		.BYTE	>[_special_item_icon_tlmC]
-		.BYTE	>[_special_item_icon_tlmD]
-		.BYTE	>[_special_item_icon_tlmE]
-_special_item_icon_nt_dst_lo:
+_present_icon_tlm_lib_lo:
+		.BYTE	<[_present_icon_tlm0]
+		.BYTE	<[_present_icon_tlm1]
+		.BYTE	<[_present_icon_tlm2]
+		.BYTE	<[_present_icon_tlm3]
+		.BYTE	<[_present_icon_tlm4]
+		.BYTE	<[_present_icon_tlm5]
+		.BYTE	<[_present_icon_tlm6]
+		.BYTE	<[_present_icon_tlm7]
+		.BYTE	<[_present_icon_tlm8]
+		.BYTE	<[_present_icon_tlm9]
+		.BYTE	<[_present_icon_tlmA]
+		.BYTE	<[_present_icon_tlmB]
+		.BYTE	<[_present_icon_tlmC]
+		.BYTE	<[_present_icon_tlmD]
+		.BYTE	<[_present_icon_tlmE]
+_present_icon_tlm_lib_hi:
+		.BYTE	>[_present_icon_tlm0]
+		.BYTE	>[_present_icon_tlm1]
+		.BYTE	>[_present_icon_tlm2]
+		.BYTE	>[_present_icon_tlm3]
+		.BYTE	>[_present_icon_tlm4]
+		.BYTE	>[_present_icon_tlm5]
+		.BYTE	>[_present_icon_tlm6]
+		.BYTE	>[_present_icon_tlm7]
+		.BYTE	>[_present_icon_tlm8]
+		.BYTE	>[_present_icon_tlm9]
+		.BYTE	>[_present_icon_tlmA]
+		.BYTE	>[_present_icon_tlmB]
+		.BYTE	>[_present_icon_tlmC]
+		.BYTE	>[_present_icon_tlmD]
+		.BYTE	>[_present_icon_tlmE]
+_present_icon_nt_dst_lo:
 		.BYTE	<[_nt_backup_buf1+$12]
 		.BYTE	<[_nt_backup_buf1+$6C]
 		.BYTE	<[_nt_backup_buf1+$17]
 		.BYTE	<[_nt_backup_buf1+$71]
-_special_item_icon_nt_dst_hi:
+_present_icon_nt_dst_hi:
 		.BYTE	>[_nt_backup_buf1+$12]
 		.BYTE	>[_nt_backup_buf1+$6C]
 		.BYTE	>[_nt_backup_buf1+$17]
 		.BYTE	>[_nt_backup_buf1+$71]
-_special_item_icon_extnt_tlm_lib_hi:
-		.BYTE	<[_special_item_icon_extnt_tlm0]
-		.BYTE	<[_special_item_icon_extnt_tlm1]
-		.BYTE	<[_special_item_icon_extnt_tlm2]
-		.BYTE	<[_special_item_icon_extnt_tlm3]
-		.BYTE	<[_special_item_icon_extnt_tlm4]
-		.BYTE	<[_special_item_icon_extnt_tlm5]
-		.BYTE	<[_special_item_icon_extnt_tlm6]
-		.BYTE	<[_special_item_icon_extnt_tlm7]
-		.BYTE	<[_special_item_icon_extnt_tlm8]
-		.BYTE	<[_special_item_icon_extnt_tlm9]
-		.BYTE	<[_special_item_icon_extnt_tlmA]
-		.BYTE	<[_special_item_icon_extnt_tlmB]
-		.BYTE	<[_special_item_icon_extnt_tlmC]
-		.BYTE	<[_special_item_icon_extnt_tlmD]
-		.BYTE	<[_special_item_icon_extnt_tlmE]
-_special_item_icon_extnt_tlm_lib_lo:
-		.BYTE	>[_special_item_icon_extnt_tlm0]
-		.BYTE	>[_special_item_icon_extnt_tlm1]
-		.BYTE	>[_special_item_icon_extnt_tlm2]
-		.BYTE	>[_special_item_icon_extnt_tlm3]
-		.BYTE	>[_special_item_icon_extnt_tlm4]
-		.BYTE	>[_special_item_icon_extnt_tlm5]
-		.BYTE	>[_special_item_icon_extnt_tlm6]
-		.BYTE	>[_special_item_icon_extnt_tlm7]
-		.BYTE	>[_special_item_icon_extnt_tlm8]
-		.BYTE	>[_special_item_icon_extnt_tlm9]
-		.BYTE	>[_special_item_icon_extnt_tlmA]
-		.BYTE	>[_special_item_icon_extnt_tlmB]
-		.BYTE	>[_special_item_icon_extnt_tlmC]
-		.BYTE	>[_special_item_icon_extnt_tlmD]
-		.BYTE	>[_special_item_icon_extnt_tlmE]
-_special_item_icon_extnt_dst_lo:
+_present_icon_extnt_tlm_lib_hi:
+		.BYTE	<[_present_icon_extnt_tlm0]
+		.BYTE	<[_present_icon_extnt_tlm1]
+		.BYTE	<[_present_icon_extnt_tlm2]
+		.BYTE	<[_present_icon_extnt_tlm3]
+		.BYTE	<[_present_icon_extnt_tlm4]
+		.BYTE	<[_present_icon_extnt_tlm5]
+		.BYTE	<[_present_icon_extnt_tlm6]
+		.BYTE	<[_present_icon_extnt_tlm7]
+		.BYTE	<[_present_icon_extnt_tlm8]
+		.BYTE	<[_present_icon_extnt_tlm9]
+		.BYTE	<[_present_icon_extnt_tlmA]
+		.BYTE	<[_present_icon_extnt_tlmB]
+		.BYTE	<[_present_icon_extnt_tlmC]
+		.BYTE	<[_present_icon_extnt_tlmD]
+		.BYTE	<[_present_icon_extnt_tlmE]
+_present_icon_extnt_tlm_lib_lo:
+		.BYTE	>[_present_icon_extnt_tlm0]
+		.BYTE	>[_present_icon_extnt_tlm1]
+		.BYTE	>[_present_icon_extnt_tlm2]
+		.BYTE	>[_present_icon_extnt_tlm3]
+		.BYTE	>[_present_icon_extnt_tlm4]
+		.BYTE	>[_present_icon_extnt_tlm5]
+		.BYTE	>[_present_icon_extnt_tlm6]
+		.BYTE	>[_present_icon_extnt_tlm7]
+		.BYTE	>[_present_icon_extnt_tlm8]
+		.BYTE	>[_present_icon_extnt_tlm9]
+		.BYTE	>[_present_icon_extnt_tlmA]
+		.BYTE	>[_present_icon_extnt_tlmB]
+		.BYTE	>[_present_icon_extnt_tlmC]
+		.BYTE	>[_present_icon_extnt_tlmD]
+		.BYTE	>[_present_icon_extnt_tlmE]
+_present_icon_extnt_dst_lo:
 		.BYTE	<[_extnt_backup1+$12]
 		.BYTE	<[_extnt_backup1+$6C]
 		.BYTE	<[_extnt_backup1+$17]
 		.BYTE	<[_extnt_backup1+$71]
-_special_item_icon_extnt_dst_hi:
+_present_icon_extnt_dst_hi:
 		.BYTE	>[_extnt_backup1+$12]
 		.BYTE	>[_extnt_backup1+$6C]
 		.BYTE	>[_extnt_backup1+$17]
 		.BYTE	>[_extnt_backup1+$71]
-_special_item_icon_tlm0:
+_present_icon_tlm0:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$03,$13,$23,$66,$DC
 		.BYTE	$04,$14,$24,$67,$DC
 		.BYTE	$05,$15,$25,$68,$DC
 		.BYTE	$DC,$DC,$DC,$DC,$DC
-_special_item_icon_tlm1:
+_present_icon_tlm1:
 		.BYTE	$DC,$DC,$DC,$91,$DC
 		.BYTE	$31,$41,$51,$92,$96
 		.BYTE	$32,$42,$52,$93,$97
 		.BYTE	$33,$43,$53,$94,$98
 		.BYTE	$DC,$DC,$DC,$95,$DC
-_special_item_icon_tlm2:
+_present_icon_tlm2:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$09,$19,$29,$86,$DC
 		.BYTE	$0A,$1A,$2A,$87,$DC
 		.BYTE	$0B,$1B,$2B,$88,$DC
 		.BYTE	$DC,$DC,$DC,$DC,$DC
-_special_item_icon_tlm3:
+_present_icon_tlm3:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$06,$16,$26,$7D,$DC
 		.BYTE	$07,$17,$27,$7E,$DC
 		.BYTE	$08,$18,$28,$7F,$DC
 		.BYTE	$DC,$DC,$DC,$DC,$DC
-_special_item_icon_tlm4:
+_present_icon_tlm4:
 		.BYTE	$DC,$DC,$DC,$DC,$3B
 		.BYTE	$DD,$ED,$FD,$33,$3C
 		.BYTE	$DE,$EE,$FE,$34,$3D
 		.BYTE	$DF,$EF,$FF,$35,$3E
 		.BYTE	$DC,$DC,$DC,$DC,$3F
-_special_item_icon_tlm5:
+_present_icon_tlm5:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$A6,$B6,$C6,$43,$2B
 		.BYTE	$A7,$B7,$C7,$44,$2C
 		.BYTE	$A8,$B8,$C8,$45,$2D
 		.BYTE	$DC,$DC,$DC,$DC,$2E
-_special_item_icon_tlm6:
+_present_icon_tlm6:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$A9,$B9,$C9,$56,$2B
 		.BYTE	$AA,$BA,$CA,$57,$2C
 		.BYTE	$AB,$BB,$CB,$5B,$2D
 		.BYTE	$DC,$DC,$DC,$DC,$2E
-_special_item_icon_tlm7:
+_present_icon_tlm7:
 		.BYTE	$DC,$DC,$DC,$DC,$4B
 		.BYTE	$A0,$B0,$C0,$5C,$4C
 		.BYTE	$A1,$B1,$C1,$6B,$4D
 		.BYTE	$A2,$B2,$C2,$6C,$4E
 		.BYTE	$DC,$DC,$DC,$DC,$4F
-_special_item_icon_tlm8:
+_present_icon_tlm8:
 		.BYTE	$DC,$DC,$DC,$DC,$4B
 		.BYTE	$A3,$B3,$C3,$53,$4C
 		.BYTE	$A4,$B4,$C4,$54,$4D
 		.BYTE	$A5,$B5,$C5,$55,$4E
 		.BYTE	$DC,$DC,$DC,$DC,$4F
-_special_item_icon_tlm9:
+_present_icon_tlm9:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$D0,$E0,$F0,$30,$DC
 		.BYTE	$D1,$E1,$F1,$40,$DC
 		.BYTE	$D2,$E2,$F2,$65,$DC
 		.BYTE	$DC,$DC,$DC,$DC,$DC
-_special_item_icon_tlmA:
+_present_icon_tlmA:
 		.BYTE	$DC,$DC,$DC,$6D,$DC
 		.BYTE	$00,$10,$20,$6E,$DC
 		.BYTE	$01,$11,$21,$6F,$DC
 		.BYTE	$02,$12,$22,$76,$DC
 		.BYTE	$DC,$DC,$DC,$77,$DC
-_special_item_icon_tlmB:
+_present_icon_tlmB:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$AC,$BC,$CC,$36,$DC
 		.BYTE	$AD,$BD,$CD,$37,$DC
 		.BYTE	$AE,$BE,$CE,$46,$DC
 		.BYTE	$DC,$DC,$DC,$47,$DC
-_special_item_icon_tlmC:
+_present_icon_tlmC:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$0C,$1C,$2C,$99,$DC
 		.BYTE	$0D,$1D,$2D,$9A,$DC
 		.BYTE	$0E,$1E,$2E,$9B,$DC
 		.BYTE	$DC,$DC,$DC,$DC,$DC
-_special_item_icon_tlmD:
+_present_icon_tlmD:
 		.BYTE	$DC,$DC,$DC,$DC,$DC
 		.BYTE	$37,$47,$57,$69,$DC
 		.BYTE	$38,$48,$58,$6A,$DC
 		.BYTE	$39,$49,$59,$6B,$DC
 		.BYTE	$DC,$DC,$DC,$6C,$DC
-_special_item_icon_tlmE:
+_present_icon_tlmE:
 		.BYTE	$DC,$DC,$DC,$78,$DC
 		.BYTE	$3A,$4A,$5A,$79,$DC
 		.BYTE	$3B,$4B,$5B,$7A,$DC
 		.BYTE	$3C,$4C,$5C,$7B,$DC
 		.BYTE	$DC,$DC,$DC,$7C,$DC
-_special_item_icon_extnt_tlm0:
+_present_icon_extnt_tlm0:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$12,$92,$12,$52,$41
 		.BYTE	$92,$92,$12,$52,$41
 		.BYTE	$92,$92,$12,$52,$41
 		.BYTE	$41,$41,$41,$41,$41
-_special_item_icon_extnt_tlm1:
+_present_icon_extnt_tlm1:
 		.BYTE	$41,$41,$41,$52,$41
 		.BYTE	$D2,$D2,$12,$52,$52
 		.BYTE	$D2,$D2,$12,$52,$52
 		.BYTE	$92,$92,$12,$52,$52
 		.BYTE	$41,$41,$41,$52,$41
-_special_item_icon_extnt_tlm2:
+_present_icon_extnt_tlm2:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$41,$41,$41,$41,$41
-_special_item_icon_extnt_tlm3:
+_present_icon_extnt_tlm3:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$92,$92,$92,$52,$41
 		.BYTE	$D2,$92,$92,$52,$41
 		.BYTE	$D2,$92,$92,$52,$41
 		.BYTE	$41,$41,$41,$41,$41
-_special_item_icon_extnt_tlm4:
+_present_icon_extnt_tlm4:
 		.BYTE	$41,$41,$41,$41,$56
 		.BYTE	$12,$12,$12,$56,$56
 		.BYTE	$92,$92,$12,$56,$56
 		.BYTE	$92,$92,$12,$56,$56
 		.BYTE	$41,$41,$41,$41,$56
-_special_item_icon_extnt_tlm5:
+_present_icon_extnt_tlm5:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$12,$12,$52,$56,$56
 		.BYTE	$12,$12,$12,$56,$56
 		.BYTE	$12,$12,$12,$56,$56
 		.BYTE	$41,$41,$41,$41,$56
-_special_item_icon_extnt_tlm6:
+_present_icon_extnt_tlm6:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$92,$92,$12,$56,$56
 		.BYTE	$92,$92,$92,$56,$56
 		.BYTE	$92,$92,$92,$56,$56
 		.BYTE	$41,$41,$41,$41,$56
-_special_item_icon_extnt_tlm7:
+_present_icon_extnt_tlm7:
 		.BYTE	$41,$41,$41,$41,$56
 		.BYTE	$D2,$D2,$D2,$56,$56
 		.BYTE	$52,$52,$D2,$56,$56
 		.BYTE	$52,$52,$D2,$56,$56
 		.BYTE	$41,$41,$41,$41,$56
-_special_item_icon_extnt_tlm8:
+_present_icon_extnt_tlm8:
 		.BYTE	$41,$41,$41,$41,$56
 		.BYTE	$D2,$52,$52,$56,$56
 		.BYTE	$D2,$52,$52,$56,$56
 		.BYTE	$D2,$52,$D2,$56,$56
 		.BYTE	$41,$41,$41,$41,$56
-_special_item_icon_extnt_tlm9:
+_present_icon_extnt_tlm9:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$12,$12,$52,$56,$41
 		.BYTE	$12,$12,$52,$56,$41
 		.BYTE	$12,$12,$52,$56,$41
 		.BYTE	$41,$41,$41,$41,$41
-_special_item_icon_extnt_tlmA:
+_present_icon_extnt_tlmA:
 		.BYTE	$41,$41,$41,$52,$41
 		.BYTE	$D2,$D2,$12,$52,$41
 		.BYTE	$12,$12,$12,$52,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$41,$41,$41,$52,$41
-_special_item_icon_extnt_tlmB:
+_present_icon_extnt_tlmB:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$D2,$D2,$D2,$56,$41
 		.BYTE	$92,$92,$D2,$56,$41
 		.BYTE	$92,$92,$D2,$56,$41
 		.BYTE	$41,$41,$41,$56,$41
-_special_item_icon_extnt_tlmC:
+_present_icon_extnt_tlmC:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$41,$41,$41,$41,$41
-_special_item_icon_extnt_tlmD:
+_present_icon_extnt_tlmD:
 		.BYTE	$41,$41,$41,$41,$41
 		.BYTE	$12,$12,$12,$52,$41
 		.BYTE	$12,$12,$12,$52,$41
 		.BYTE	$12,$12,$12,$52,$41
 		.BYTE	$41,$41,$41,$52,$41
-_special_item_icon_extnt_tlmE:
+_present_icon_extnt_tlmE:
 		.BYTE	$41,$41,$41,$52,$41
 		.BYTE	$D2,$D2,$D2,$52,$41
 		.BYTE	$D2,$92,$D2,$52,$41
@@ -399,16 +399,16 @@ _special_item_icon_extnt_tlmE:
 		.BYTE	$41,$41,$41,$52,$41
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_build_menu:
+_presents_build_menu:
 		LDA		#$FF
 		STA		byte_37
 		LDA		#$00
-		STA		_cur_special_building_select_idx
-		JSR		_special_constr_palette_draw
+		STA		_cur_present_select_idx
+		JSR		_presents_constr_palette_draw
 loc_3E64B:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
-		LDA		_cur_special_building_select_idx
+		LDA		_cur_present_select_idx
 		AND		#$01
 		ASL
 		ASL
@@ -420,7 +420,7 @@ loc_3E64B:
 		ADC		_ptr0
 		ADC		#$5B
 		STA		_spr_insert_args._pos._X
-		LDA		_cur_special_building_select_idx
+		LDA		_cur_present_select_idx
 		AND		#$02
 		ASL
 		ASL
@@ -445,7 +445,7 @@ loc_3E68B:
 		AND		#$03
 		BEQ		loc_3E6A3
 		LSR
-		LDA		_cur_special_building_select_idx
+		LDA		_cur_present_select_idx
 		BCS		loc_3E69E
 		SEC
 		SBC		#$01
@@ -457,7 +457,7 @@ loc_3E69E:
 		ADC		#$01
 		BNE		loc_3E6A9
 loc_3E6A3:
-		LDA		_cur_special_building_select_idx
+		LDA		_cur_present_select_idx
 		CLC
 		ADC		#$02
 loc_3E6A9:
@@ -465,16 +465,16 @@ loc_3E6A9:
 		BCC		loc_3E6AF
 		SBC		#$04
 loc_3E6AF:
-		STA		_cur_special_building_select_idx
+		STA		_cur_present_select_idx
 		TAX
-		LDA		_city._special_buildings_list,X
+		LDA		_city._presents_list,X
 		BNE		loc_3E6BD
 		LDA		#$00
-		STA		_cur_special_building_select_idx
+		STA		_cur_present_select_idx
 loc_3E6BD:
 		LDA		#$40
 		STA		_apu_se_flags+1
-		JSR		_special_constr_palette_draw
+		JSR		_presents_constr_palette_draw
 		JMP		loc_3E64B
 loc_3E6C7:
 		LDA		#$03

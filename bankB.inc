@@ -3517,7 +3517,7 @@ _I_area_develop_states_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _disasters_handlers_select:
-		JSR		_special_disasters_trigger_for_scenario_mode
+		JSR		_disasters_trigger_for_scenario_mode
 		LDA		_disasters_flags
 		BEQ		locret_11FB47
 		LSR
@@ -4035,7 +4035,7 @@ _goto_alert_start:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_disasters_trigger_for_scenario_mode:
+_disasters_trigger_for_scenario_mode:
 		LDA		_cur_game_mode
 		CMP		#$02
 		BNE		locret_11FF87
