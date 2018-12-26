@@ -174,7 +174,7 @@
 7A		liberty monument			CE		11001110
 7B		library						CE		11001110
 7C		park						CE		11001110
-7D		bus station					CE		11001110
+7D		train station				CE		11001110
 7E		white house					CE		11001110
 7F		-							-		-
 80-8E	internal building's tiles	C0		11000000

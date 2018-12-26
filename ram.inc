@@ -743,9 +743,9 @@ byte_547:
 
 _unref?:
 		.BYTE	0
-byte_571:
+_train_hide_mode:
 		.BYTE	0
-byte_572:
+_train_turns_counter:
 		.BYTE	0
 byte_573:
 		.BYTE	0

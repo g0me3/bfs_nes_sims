@@ -267,7 +267,7 @@ _obj_flying_retarget:
 		STA		_obj_dst_pos._Y,Y
 		JSR		_obj_fetch
 		JSR		_obj_flying_dst_test_adjust		; check if we already there
-		CMP		#$FF							; repeat if yeas
+		CMP		#$FF							; repeat if yes
 		BEQ		_obj_flying_retarget
 		LDY		_cur_obj_idx					; store destination spr idx
 		STA		_obj_dst_spr_idx,Y				; corresponds to plane sprite
@@ -309,64 +309,66 @@ locret_88BFE:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_flying_dst_test_adjust:
-		LDA		_cur_obj_pos._X
-		CMP		_cur_dst_pos._X
-		BEQ		loc_88B97
-		BCS		loc_88BA7
-		LDA		_cur_obj_pos._Y
+		LDA		_cur_obj_pos._X					; we have dst pos and
+		CMP		_cur_dst_pos._X					; relative vector to it
+		BEQ		.test_vert						; so we decide the direction
+		BCS		.fly_left_test_hor
+		LDA		_cur_obj_pos._Y					; fly right, test hor
 		CMP		_cur_dst_pos._Y
-		BEQ		loc_88B91
-		BCC		loc_88B94
-		LDA		#$01
+		BEQ		.fly_right
+		BCC		.fly_right_down
+		LDA		#$01							; fly right-up
 		RTS
-loc_88B91:
+.fly_right:
 		LDA		#$02
 		RTS
-loc_88B94:
+.fly_right_down:
 		LDA		#$03
 		RTS
-loc_88B97:
+.test_vert:
 		LDA		_cur_obj_pos._Y
 		CMP		_cur_dst_pos._Y
-		BEQ		loc_88BBA
-		BCC		loc_88BA4
-		LDA		#$00
+		BEQ		.stop
+		BCC		.fly_down
+		LDA		#$00							; fly up
 		RTS
-loc_88BA4:
+.fly_down:
 		LDA		#$04
 		RTS
-loc_88BA7:
+.fly_left_test_hor:
 		LDA		_cur_obj_pos._Y
 		CMP		_cur_dst_pos._Y
-		BEQ		loc_88BB4
-		BCS		loc_88BB7
-		LDA		#$05
+		BEQ		.fly_left
+		BCS		.fly_left_up
+		LDA		#$05							; fly left-down
 		RTS
-loc_88BB4:
+.fly_left:
 		LDA		#$06
 		RTS
-loc_88BB7:
+.fly_left_up:
 		LDA		#$07
 		RTS
-loc_88BBA:
-		CPY		#$03
-		BNE		loc_88BD9
-		LDA		_obj_cur_spr_idx._train
-		AND		#$02
-		BEQ		loc_88BCE
-		LDA		_obj_shift._train._X
-		CMP		#$04
-		BEQ		loc_88BD9
-		BEQ		loc_88BD5
-loc_88BCE:
-		LDA		_obj_shift._train._Y
-		CMP		#$04
-		BEQ		loc_88BD9
-loc_88BD5:
-		LDA		_obj_cur_spr_idx._train
-		RTS
-loc_88BD9:
-		LDA		#$FF
+.stop:
+; -
+;		CPY		#$03							; REDUNDANT, something from early
+;		BNE		loc_88BD9						; dev stage, seems this sub were used
+;		LDA		_obj_cur_spr_idx._train			; also for train retarget, but not now
+;		AND		#$02							; Y do not used here as an argument with
+;		BEQ		loc_88BCE						; _cur_obj_idx. the only place it get's
+;		LDA		_obj_shift._train._X			; similar value, in _obj_flying_retarget
+;		CMP		#$04							; but Y there is _cur_obj_idx*2, so we
+;		BEQ		loc_88BD9						; can't have 3 here ever.
+;		BEQ		loc_88BD5						; <- luke, i'm a second BEQ in row to a different location lol
+;loc_88BCE:
+;		LDA		_obj_shift._train._Y			; this code is just a trash, never get executed
+;		CMP		#$04
+;		BEQ		loc_88BD9
+;loc_88BD5:
+;		LDA		_obj_cur_spr_idx._train
+;		RTS
+;loc_88BD9:
+; -
+		LDA		#$FF							; all we need here is $FF
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -394,8 +396,8 @@ loc_8826A:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_ship_dst_test:
 ; -
-; BAD CODE: similar function to train object
-; as against the train, ship can move diagonally
+; WRONG: similar function to train object
+; as against the train ship can move diagonally
 ; but here we test if he moves always diagonally lol
 ; so if ship moving vertically or horizontally,
 ; we never arrive to the dest
@@ -407,7 +409,7 @@ _obj_ship_dst_test:
 ;		CMP		#$04
 ;		BNE		loc_8828E
 ; -
-; FIX: some possible logic flaw still left. there is no
+; NEW: some possible logic flaw still left. there is no
 ; test here for virtually possible not moving at all state
 ; but actually it handled with rotate routine
 ; -
@@ -439,7 +441,7 @@ loc_8828E:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_ship_retarget:
 		JSR		_get_cur_obj_map_ptr			; _tmp15/_tmp15+1 = map_buf_pos ofs
-;		LDA		#$00							; REDUNDANT, seems unused here
+;		LDA		#$00							; REDUNDANT, unused here
 ;		STA		_tmp17
 		LDA		_obj_cur_spr_idx._ship			; X = cur ship spr idx
 		TAX
@@ -465,7 +467,7 @@ _obj_ship_retarget:
 		STA		_obj_spr_delta,Y				; setup rotation
 ; WRONG: this code does the same work as _obj_rotate,
 ; when angles less than 2, _obj_rotate will do full
-; round, because will start from desired value already...
+; round, because starting from desired value already...
 ; so let the right code do the right work instead.
 ; -
 ;		LDA		_ptr18
@@ -495,7 +497,6 @@ _obj_ship_retarget:
 _obj_ship_look_for_new_dir:
 ; -
 ; NEW: let's make ship more interesting
-; WARNING: this will change rand_seed as well!
 ; -
 		LDA		_rand_seed
 		CMP		#$F0							; probability of course change	1/16
@@ -651,111 +652,144 @@ _obj_train_retarget:
 		STA		_ptr18							; calc opposite direction
 		LDX		#$00
 		LDY		#$00
-		LDA		(_tmp15),Y
+		LDA		(_tmp15),Y						; check cur tile
 loc_88386:
-		CMP		_rail_tiles_allowed,X			; search for cur allowed tile
-		BEQ		loc_883A1
+		CMP		_rail_tiles_allowed,X			; search if tile is allowed to ride
+		BEQ		.path_decide
 		INX
 		CPX		#$11
 		BCC		loc_88386						; X has its index now in arrays
-		LDA		byte_571						; no available tiles, special bounce check
-		BNE		.building_bounce
-		JMP		.remove_train
+		LDA		_train_hide_mode				; not on the rails, hidden object,
+		BNE		.building_bounce				; continue to ride inside only
+		JMP		.remove_train					; building available for it - rail station
 .building_bounce:
-		LDA		_obj_cur_spr_idx._train
-		AND		#$02
-		BEQ		.building_bounce_vert
-		BNE		.building_bounce_hor
-loc_883A1:
+		LDA		_obj_cur_spr_idx._train			; any other building except rail station
+		AND		#$02							; should bounce the train, else
+		BEQ		.search_vertically				; ride straigth forward inside
+		BNE		.search_horisontally
+.path_decide:
 		CPX		#$04
 		BCS		loc_883AA
-.building_bounce_hor:
-		LDY		#$00
-		JMP		loc_88402
+.search_horisontally:
+		LDY		#$00							; 00-03, Y=0 (X ofs)
+		JMP		.search_straigth_path
 loc_883AA:
 		CPX		#$08
 		BCS		loc_883B3
-.building_bounce_vert:
-		LDY		#$01
-		JMP		loc_88402
+.search_vertically:
+		LDY		#$01							; 04-07, Y=1 (Y ofs)
+		JMP		.search_straigth_path
 loc_883B3:
 		CPX		#$0C
 		BCS		loc_883BA
-		JMP		loc_88451
+		JMP		.train_dst_rotate_set			; 08-0B
 loc_883BA:
 		CPX		#$10
-		BCS		loc_883C1
-		JMP		loc_884A3
-loc_883C1:
-		INC		byte_572
-		LDA		_obj_cur_spr_idx._train
+		BCS		.search_cross_path				; 10
+		BCC		.search_t_cross_path			; 0C-0F
+
+_rail_tiles_allowed:
+		.BYTE	$9C,$E2,$BB,$B7					; 00 horizontal rails
+		.BYTE	$9D,$E3,$BC,$B8					; 04 vertical rails
+		.BYTE	$9E,$9F,$A0,$A1					; 08 bend rails
+		.BYTE	$A2,$A3,$A4,$A5					; 0C t-cross rails
+		.BYTE	$A6								; 10 cross rails
+
+.search_cross_path:
+		INC		_train_turns_counter			; can turn any direction, select next one
+		LDA		_obj_cur_spr_idx._train			; current train position
 		ASL
 		STA		_tmp118
-		LDA		byte_572
+		LDA		_train_turns_counter			; current turn direction
 		AND		#$03
 		CLC
 		ADC		_tmp118
 		TAX
-		LDA		byte_883E1,X
+		LDA		_train_cross_allow_table,X		; test if we positioned right
 		BEQ		loc_883DE
 		TAX
-		JMP		loc_88451
+		JMP		.train_dst_rotate_set			; if no, rotate first
 loc_883DE:
-		JMP		.train_dest_pos_load
-byte_883E1:
-		.BYTE	$00,$08,$00,$09,$00,$09,$00,$0B,$00,$0A,$00,$0B,$00,$08,$00,$0A
+		JMP		.train_dest_pos_set				; if yes, just move
 
-_rail_tiles_allowed:
-		.BYTE	$9C,$E2,$BB,$B7
-		.BYTE	$9D,$E3,$BC,$B8
-		.BYTE	$9E,$9F,$A0,$A1
-		.BYTE	$A2,$A3,$A4,$A5
-		.BYTE	$A6
+_train_cross_allow_table:
+		.BYTE	$00,$08,$00,$09
+		.BYTE	$00,$09,$00,$0B
+		.BYTE	$00,$0A,$00,$0B
+		.BYTE	$00,$08,$00,$0A
 
-loc_88402:
-		LDA		_cur_obj_pos,Y
-		BEQ		loc_8840D
-		CMP		#$4B
-		BNE		loc_88425
-		INY
-		INY
-loc_8840D:
-		LDX		_obj_cur_spr_idx._train
+.search_t_cross_path:
+		INC		_train_turns_counter
 		TXA
-		CMP		byte_8844D,Y
-		BEQ		loc_8841E
-		LDX		_ptr18
+		SEC
+		SBC		#$0C
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_obj_cur_spr_idx._train			; t-cross little bit harder
+		TAX										; but still can be calculated
+		LDA		_train_turns_counter
+		AND		#$01
+		BEQ		loc_884BA
+		INX
+loc_884BA:
+		LDA		_train_t_cross_allow_table,X
+		BEQ		loc_884C3
+		TAX
+		JMP		.train_dst_rotate_set			; again, turn or move
+loc_884C3:
+		JMP		.train_dest_pos_set
+
+_train_t_cross_allow_table:
+		.BYTE	$00,$08,$00,$00,$00,$0A,$08,$0A
+		.BYTE	$00,$09,$09,$0B,$00,$0B,$00,$00
+		.BYTE	$08,$09,$00,$09,$00,$00,$00,$08
+		.BYTE	$00,$00,$00,$0B,$0A,$0B,$00,$0A
+
+.search_straigth_path:
+		LDA		_cur_obj_pos,Y
+		BEQ		.map_side_test
+		CMP		#$4B
+		BNE		.map_normal_test
+		INY
+		INY
+.map_side_test:
+		LDX		_obj_cur_spr_idx._train			; check the direction
+		TXA
+		CMP		_train_straight_allow_list,Y
+		BEQ		loc_8841E						; if out of the map, then
+		LDX		_ptr18							; turn opposite direction
 		STX		_obj_cur_spr_idx._train
 		STX		_obj_dst_spr_idx._train
 loc_8841E:
-		JSR		_obj_train_near_tile_test
+		JSR		_obj_train_near_tile_test		; test next tile
 		BCC		.remove_train
-		BCS		loc_8844A
-loc_88425:
+		BCS		.train_dest_pos_set
+.map_normal_test:
 		LDX		_obj_cur_spr_idx._train
-		JSR		_obj_train_near_tile_test
-		BCS		loc_8844A
+		JSR		_obj_train_near_tile_test		; if next tile in the same direction
+		BCS		.train_dest_pos_set				; is ok, then ride continue
 		LDX		_ptr18
-		JSR		_obj_train_near_tile_test
-		BCS		loc_88442
+		JSR		_obj_train_near_tile_test		; or test for the opposite direction
+		BCS		.set_opposite_direction
 .remove_train:
 		LDA		_obj_active_flags
 		AND		#$F7
 		STA		_obj_active_flags
 		LDA		#$00
-		STA		byte_571
+		STA		_train_hide_mode
 		RTS
-loc_88442:
+.set_opposite_direction:
 		LDA		_ptr18
 		STA		_obj_cur_spr_idx._train
 		STA		_obj_dst_spr_idx._train
-loc_8844A:
-		JMP		.train_dest_pos_load
+		JMP		.train_dest_pos_set
 
-byte_8844D:
+_train_straight_allow_list:
 		.BYTE	$02,$04,$06,$00
 
-loc_88451:
+.train_dst_rotate_set:
 		TXA
 		SEC
 		SBC		#$08
@@ -769,15 +803,15 @@ loc_88451:
 		INX
 		INX
 loc_88461:
-		LDA		byte_88493,X
+		LDA		_train_dst_data_table,X
 		STA		_obj_dst_spr_idx._train
-		LDA		byte_88493+1,X
+		LDA		_train_dst_data_table+1,X
 		STA		_obj_spr_delta._train
 		LDX		_obj_shift._train._X
 		LDA		_obj_shift._train._Y
 		STA		_obj_shift._train._X
 		STX		_obj_shift._train._Y
-.train_dest_pos_load:
+.train_dest_pos_set:
 		LDA		_obj_dst_spr_idx._train
 		ASL
 		TAX
@@ -791,98 +825,72 @@ loc_88461:
 		STA		_obj_dst_pos._train._Y
 		RTS
 
-byte_88493:
-		.BYTE	$04,$FF
-		.BYTE	$02,$01
-		.BYTE	$04,$01
-		.BYTE	$06,$FF
-		.BYTE	$00,$01
-		.BYTE	$02,$FF
-		.BYTE	$00,$FF
-		.BYTE	$06,$01
-
-loc_884A3:
-		INC		byte_572
-		TXA
-		SEC
-		SBC		#$0C
-		ASL
-		ASL
-		ASL
-		CLC
-		ADC		_obj_cur_spr_idx._train
-		TAX
-		LDA		byte_572
-		AND		#$01
-		BEQ		loc_884BA
-		INX
-loc_884BA:
-		LDA		byte_884C6,X
-		BEQ		loc_884C3
-		TAX
-		JMP		loc_88451
-loc_884C3:
-		JMP		.train_dest_pos_load
-
-byte_884C6:
-		.BYTE	$00,$08,$00,$00,$00,$0A,$08,$0A,$00,$09,$09,$0B,$00,$0B,$00,$00
-		.BYTE	$08,$09,$00,$09,$00,$00,$00,$08,$00,$00,$00,$0B,$0A,$0B,$00,$0A
+_train_dst_data_table:
+		.BYTE	$04,$FF							; down, counter clockwise
+		.BYTE	$02,$01							; right, clockwise
+		.BYTE	$04,$01							; down, counter clockwise
+		.BYTE	$06,$FF							; left, counter clockwise
+		.BYTE	$00,$01							; up, clockwise
+		.BYTE	$02,$FF							; right, counter clockwise
+		.BYTE	$00,$FF							; up, counter clockwise
+		.BYTE	$06,$01							; left, clockwise
 
 ; =============== S U B	R O U T	I N E =======================================
-; most of the following code is for determine if we run into the bus station
+; most of the following code is for determine if we run into the rail station
 ; or not. this is not trivial task because we won't know for sure wether it
-; bus station or not, if just bounce into special building tile (80-8E) so we need
-; here carefully calc the side you run into the building, then calc position of building
-; index tile, read it and CHECK!
+; rail station or not if just bounce into a special building tile (80-8E) so we
+; need here carefully calc the side you run into the building, then calc
+; position of building index tile, read it and check again
 ;
 _obj_train_near_tile_test:
-		LDY		_obj_map_tile_dir_buf_ofs_list,X
-		BPL		loc_884F3
-		DEC		_tmp15+1
-		LDA		(_tmp15),Y
+		LDY		_obj_map_tile_dir_buf_ofs_list,X; tiles around special building are special
+		BPL		loc_884F3						; arranged. if you know tile index (0-E),
+		DEC		_tmp15+1						; you know for sure where the actual building
+		LDA		(_tmp15),Y						; tile is.
 		INC		_tmp15+1
 		BNE		loc_884F5
 loc_884F3:
 		LDA		(_tmp15),Y
 loc_884F5:
-		CMP		#$7D								; lucky! run into bus station already!
+		CMP		#$7D							; lucky! run straigth into the rail station!
 		BNE		loc_884FC
-		JMP		.bus_station_ride
+		JMP		.rail_station_ride
 loc_884FC:
-		CMP		#$80
+		CMP		#$80							; run into top-left corner of any building
+		BCC		.stop_move						; we know it is not the rail station for sure
+		CMP		#$88							; this time it's harder, we know this is
+		BCC		.rail_station_ride_test			; a building, but need to check which one
+		CMP		#$9C							; run into buldozered ground and roads,
+		BCC		.stop_move						; stop
+		CMP		#$A7							; all kind of rails here,
+		BCC		.continue_move					; move along
+		CMP		#$B7							; the rest of not rideable grounds here
+		BCC		.stop_move						; stop
+		CMP		#$B9							; special road/rail crosses
+		BCC		.continue_move					; move along
+		CMP		#$BB							; skip again
 		BCC		.stop_move
-		CMP		#$88
-		BCC		.bus_station_ride_test
-		CMP		#$9C
-		BCC		.stop_move
-		CMP		#$A7
-		BCC		.continue_move
-		CMP		#$B7
-		BCC		.stop_move
-		CMP		#$B9
-		BCC		.continue_move
-		CMP		#$BB
-		BCC		.stop_move
-		CMP		#$BD
-		BCC		.continue_move
-		CMP		#$E2
-		BCC		.stop_move
-		CMP		#$E4
-		BCS		.stop_move
-		LDA		#$03
-		BNE		.water_rails
+		CMP		#$BD							; electric/rail crosses
+		BCC		.continue_move					; move further
+		CMP		#$E2							; test for two special tiles, rails on water
+		BCC		.stop_move						; it seems they planned some special
+		CMP		#$E4							; behavior for this, but currently no matter what
+		BCS		.stop_move						; value in _train_hide_mode, it always just hiding
+		LDA		#$03							; the train if non-zero, so here train will be
+		BNE		.continue_move_set				; hidden the same way as in train station while ride
 .continue_move:
 		LDA		#$00
-.water_rails:
-		STA		byte_571
-		SEC
-		RTS
+.continue_move_set:
+		STA		_train_hide_mode				; if non-zero, hide the train and continue ride
+.continue_move_set_ex:
+		SEC										; may be either 0, 3 here and 1 or 2 when
+		RTS										; inside train station (see below)
 .stop_move:
 		CLC
 		RTS
-.bus_station_ride_test:
-		LDA		byte_571
-		BNE		loc_8858A
+.rail_station_ride_test:
+		LDA		_train_hide_mode				; already hidden, just continue
+		BNE		.continue_move_set_ex
 		PUSHB	_ptr18
 		TXA
 		PHA
@@ -900,7 +908,7 @@ loc_884FC:
 		SBC		#$00
 		STA		_ptr18+1
 		INC		_tmp15+1
-		LDA		(_ptr18),Y
+;		LDA		(_ptr18),Y						; OPTIMIZE
 		JMP		loc_88570
 loc_8855B:
 		LDA		(_tmp15),Y
@@ -913,78 +921,73 @@ loc_8855B:
 		LDA		_tmp15+1
 		SBC		#$00
 		STA		_ptr18+1
-		LDA		(_ptr18),Y
 loc_88570:
+		LDA		(_ptr18),Y
 		STA		_ptr18+1
 		PLA
 		TAX
 		POPB	_ptr18
 		LDA		_ptr18+1
 		CMP		#$7D
-		BEQ		.bus_station_ride
-		CLC
-		RTS
-.bus_station_ride:
-		LDA		_obj_cur_spr_idx._train
-		AND		#$02
-		LSR
+;		BEQ		.rail_station_ride
+;		CLC
+;		RTS
+		BNE		.stop_move						; OPTIMIZE size
+.rail_station_ride:
+		LDA		_obj_cur_spr_idx._train			; attempt to keep track of move direction
+		AND		#$02							; inside the building, but never used this way
+		LSR										; all this just REDUNDANT
 		ADC		#$01
-		STA		byte_571
-loc_8858A:
-		SEC
-		RTS
+;		STA		_train_hide_mode
+;loc_8858A:
+;		SEC
+;		RTS
+		BNE		.continue_move_set				; OPTIMIZE size
 
 byte_8858C:
 		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02
 
 ; =============== S U B	R O U T	I N E =======================================
-; WARNING: DUMB DELAY HERE!
-;
-; also
-;
-; should've change var0 at some timer basis, but cmp test performed
-; aganst cur_obj_idx, not monster_var0, which seems should instead
-; probably makes difference on monster anim
-;
 _obj_hndl10_monster:
-		LDX		#$00
-loc_88596:
-		DEX
-		BNE		loc_88596
+;		LDX		#$00							; WARNING: DUMB DELAY HERE!
+;loc_88596:										; stealing cycles
+;		DEX										;
+;		BNE		loc_88596						; may I remove it, please?
 		LDA		#$04
-		STA		_cur_obj_idx
-		BIT		_obj_monster_anim_phase1
-		BMI		loc_885A9
-		JSR		_obj_monster_anim0
-		JMP		locret_885D8
-loc_885A9:
-		JSR		_obj_fetch
+		STA		_cur_obj_idx					; mostly the same common handler
+		BIT		_obj_monster_anim_phase1		; with some difference
+		BMI		.monster_regular_mode
+		JMP		_monster_retarget				; OPTIMIZED
+;		JMP		locret_885D8
+.monster_regular_mode:
+		JSR		_obj_fetch						; move only at it's own frame
 		LDA		_frames_div8_counter
 		CMP		_cur_obj_idx
-		BNE		loc_885D5
+		BNE		.monster_draw
 		DEC		_obj_monster_delay
-		BEQ		loc_885C3
-		CMP		#$07
-		BCC		loc_885C6
-		LDA		#$02
-		STA		_obj_monster_delay
-		BNE		loc_885C6
-loc_885C3:
-		JSR		_obj_monster_anim1
-loc_885C6:
+		BNE		.monster_skip_anim
+;		BEQ		.monster_anim1
+;		CMP		#$07							; REDUNDANT, branch takes in any case
+;		BCC		.monster_skip_anim				; this counter counts backwards
+;		LDA		#$02							; also have no values above 6
+;		STA		_obj_monster_delay
+;		BNE		.monster_skip_anim
+;.monster_anim1:
+		JSR		_monster_anim
+.monster_skip_anim:
 		LDA		_obj_monster_anim_phase0
 		CMP		#$20
-		BEQ		loc_885D5
-		JSR		_obj_monster_move
+		BEQ		.monster_draw
+		JSR		_monster_move
 		BCS		locret_885D8
 		JSR		_obj_fetch
-loc_885D5:
+.monster_draw:
 		JMP		_obj_draw
 locret_885D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_monster_chr01_select:
+_monster_chr_select0:
 		LDA		_obj_monster_anim_phase1
 		AND		#$7F
 		BEQ		loc_885E9
@@ -1014,7 +1017,7 @@ loc_88602:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_monster_chr2_select:
+_monster_chr_select1:
 		LDX		#$00
 		LDA		_obj_monster_chr_idx
 		AND		#$01
@@ -1041,26 +1044,26 @@ loc_88628:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_monster_move:
-		LDA		_obj_monster_anim_phase1
+_monster_move:
+		LDA		_obj_monster_anim_phase1		; select vert/hor direction
 		AND		#$01
 		TAY
-		LDA		_obj_monster_chr_idx
-		AND		byte_8873F,Y
-		BNE		loc_886ED
-		LDA		_obj_shift._monster,Y
+		LDA		_obj_monster_chr_idx			; get direction delta
+		AND		byte_8873F,Y					; from sprite idx
+		BNE		.monster_pos_dec
+		LDA		_obj_shift._monster,Y			; precise positions increment
 		CLC
 		ADC		#$01
 		AND		#$07
 		STA		_obj_shift._monster,Y
 		BNE		loc_8872E
-		LDA		_obj_pos._monster,Y
+		LDA		_obj_pos._monster,Y				; tile position increment
 		CLC
 		ADC		#$01
 		STA		_obj_pos._monster,Y
 		JMP		loc_88705
-loc_886ED:
-		LDA		_obj_shift._monster,Y
+.monster_pos_dec:
+		LDA		_obj_shift._monster,Y			; the same for decrement
 		SEC
 		SBC		#$01
 		AND		#$07
@@ -1074,25 +1077,25 @@ loc_886ED:
 loc_88705:
 		LDA		_obj_pos._monster,Y
 		CMP		_obj_dst_pos._monster,Y
-		BNE		loc_8872E
+		BNE		loc_8872E						; dst point reached for current axis?
 		TYA
 		EOR		#$01
 		TAY
 		LDA		_obj_pos._monster,Y
 		CMP		_obj_dst_pos._monster,Y
-		BEQ		loc_88730
+		BEQ		.monster_remove					; test another axis then
 		LDA		#$00
-		STA		_obj_monster_delay
+		STA		_obj_monster_delay				; reload counters
 		LDA		#$1F
 		STA		_obj_monster_anim_phase0
-		LDA		_obj_monster_anim_phase1
+		LDA		_obj_monster_anim_phase1		; change direction
 		EOR		#$01
 		STA		_obj_monster_anim_phase1
-		JSR		_obj_monster_anim1
+		JSR		_monster_anim					; turn
 loc_8872E:
 		CLC
 		RTS
-loc_88730:
+.monster_remove:
 		LDA		_obj_active_flags
 		AND		#$EF
 		STA		_obj_active_flags
@@ -1100,12 +1103,13 @@ loc_88730:
 		STA		_obj_monster_anim_phase1
 		SEC
 		RTS
+
 byte_8873F:
 		.BYTE	$01,$10
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_monster_anim0:
-		LDA		#$20
+_monster_retarget:
+		LDA		#$20							; default direction
 		STA		_obj_monster_chr_idx
 		LDA		#$01
 		STA		_obj_monster_delay
@@ -1117,8 +1121,8 @@ _obj_monster_anim0:
 loc_88754:
 		TXA
 		ORA		#$80
-		STA		_obj_monster_anim_phase1
-		LDA		_obj_dst_pos._monster._X
+		STA		_obj_monster_anim_phase1		; retargeted flag
+		LDA		_obj_dst_pos._monster._X		; choose direction delta
 		CMP		_obj_pos._monster._X
 		BCS		loc_8876A
 		LDA		_obj_monster_chr_idx
@@ -1138,10 +1142,10 @@ locret_8877A:
 ;		.BYTE	$02,$04,$02,$00,$06,$04,$06,$00
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_monster_anim1:
+_monster_anim:
 		INC		_obj_monster_anim_phase0
 loc_88633:
-		JSR		_obj_monster_chr01_select
+		JSR		_monster_chr_select0
 		LDA		_obj_monster_anim_phase1
 		AND		#$7F
 		BEQ		loc_88645
@@ -1188,7 +1192,7 @@ loc_88665:
 		STA		_obj_monster_anim_phase1
 		LDA		byte_6CA
 		BNE		loc_88633
-		JSR		_obj_monster_chr2_select
+		JSR		_monster_chr_select1
 		CLC
 		ADC		#$14
 		STA		_obj_monster_spr_idx
@@ -1427,7 +1431,7 @@ loc_88A0D:
 		LDA		_cur_obj_idx
 		CMP		#$03
 		BNE		loc_88A42
-		LDA		byte_571
+		LDA		_train_hide_mode
 		BNE		locret_88A45
 loc_88A42:
 		JSR		_obj_spr_clip_draw
