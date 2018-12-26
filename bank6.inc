@@ -509,10 +509,11 @@ _scr_common_draw:
 		LDX		#$2C
 		LDA		#$01
 		JSR		_ppu_area_fill					; clear EXTNT mapper do NT3 with 01
-		MOVWO	_ptr0,_tlm_info_maps_nt_common
-;		JSR		_ppu_rle_unpack					; REDUNDANT, merged
-;		MOVWO	_ptr0,_tlm_info_maps_extnt_common
-		JMP		_ppu_rle_unpack
+;		MOVWO	_ptr0,_tlm_res_info_maps_nt_common
+		LDXY	_tlm_res_info_maps_nt_common
+;		JSR		_res_ppu_unpack					; REDUNDANT, merged
+;		MOVWO	_ptr0,_tlm_res_info_maps_extnt_common
+		JMP		_res_ppu_unpack
 loc_A0A9A:
 ; OPTIMIZED, 156 bytes less
 ; -
@@ -523,8 +524,8 @@ loc_A0A9A:
 		LDA		#$10
 loc_A0A9B:
 		TAY
-		LDX		_scr_tlm_lib-2,Y
-		LDA		_scr_tlm_lib-1,Y
+		LDX		_tlm_res_lz_scr_common_lib-2,Y
+		LDA		_tlm_res_lz_scr_common_lib-1,Y
 		TAY
 		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
@@ -567,42 +568,42 @@ loc_A0A9B:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr1
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scr1
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res2_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr2
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scr2
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res3_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr3
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scr3
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res4_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr4
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scr4
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res5_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr5
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scr5
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res7_draw:
 ;		PUSHB	_mmc5_nt_mode_shadow
 ;		LDA		#$24
 ;		STA		_MMC5_NT_MODE
-;		JSRXY	_res_ppu_lz_unpack,_tlm_res_scr7
+;		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scr7
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ;_scr_res6_draw:
@@ -611,46 +612,62 @@ loc_A0A9B:
 ;		STA		_MMC5_NT_MODE
 ;		BIT		_city._bank_flags
 ;		BVC		loc_A0B5E
-;		LDXY	_tlm_res_scr6A
+;		LDXY	_tlm_res_lz_scr6A
 ;		BNE		loc_A0B62
 ;loc_A0B5E:
-;		LDXY	_tlm_res_scr6B
+;		LDXY	_tlm_res_lz_scr6B
 ;loc_A0B62:
 ;		JSR		_res_ppu_lz_unpack
 ;		POPB	_MMC5_NT_MODE
 ;		RTS
 ; -
 
-_scr_tlm_lib:
-		.WORD	_tlm_res_scr1
-		.WORD	_tlm_res_scr2
-		.WORD	_tlm_res_scr3
-		.WORD	_tlm_res_scr4
-		.WORD	_tlm_res_scr5
-		.WORD	_tlm_res_scr6A
-		.WORD	_tlm_res_scr7
-		.WORD	_tlm_res_scr6B
+_tlm_res_info_maps_nt_common:
+		.BYTE	$24,$6D,$01,$AF
+		.BYTE	$24,$E1,$08,$D0,$D1,$D1,$D1,$D1,$D2,$DF,$D0
+		.BYTE	$24,$E9,$53,$D1
+		.BYTE	$24,$FC,$01,$D2
+		.BYTE	$25,$01,$D0,$D3
+		.BYTE	$25,$02,$84,$20,$30,$8C,$9C
+		.BYTE	$25,$82,$CC,$DE
+		.BYTE	$25,$03,$84,$21,$31,$8D,$9D
+		.BYTE	$25,$83,$CC,$DE
+		.BYTE	$25,$04,$90,$00,$10,$02,$12,$04,$14,$06,$16,$08,$18,$0A,$1A,$0C,$1C,$0E,$1E
+		.BYTE	$25,$05,$90,$01,$11,$03,$13,$05,$15,$07,$17,$09,$19,$0B,$1B,$0D,$1D,$0F,$1F
+		.BYTE	$25,$06,$D0,$D4
+		.BYTE	$27,$01,$06,$D5,$D6,$D6,$D6,$D6,$D7
+		.BYTE	$25,$08,$D3,$D3
+		.BYTE	$25,$1C,$D3,$D4
+		.BYTE	$27,$68,$01,$D5
+		.BYTE	$27,$69,$53,$D6
+		.BYTE	$27,$7C,$01,$D7
+		.BYTE	$2C,$6D,$01,$82
+		.BYTE	$2C,$7B,$43,$42
+		.BYTE	$2C,$E8,$55,$81
+		.BYTE	$2D,$02,$C4,$83	;	$84,$83,$83,$83,$83	; ORPIMIZED
+		.BYTE	$2D,$03,$C4,$83	;	$84,$83,$83,$83,$83	; OPTIMIZED
+		.BYTE	$2D,$04,$90,$43,$43,$43,$43,$83,$83,$83,$83,$83,$83,$43,$43,$43,$43,$83,$83
+		.BYTE	$2D,$05,$90,$43,$43,$43,$43,$43,$43,$83,$83,$83,$83,$43,$43,$43,$43,$83,$83
+		.BYTE	$2D,$08,$D3,$81
+		.BYTE	$2F,$68,$55,$81
+		.BYTE	$2D,$1C,$D3,$81
+		.BYTE	$00
 
-_tlm_info_maps_nt_common:
-		.BYTE	$24,$6D,$01,$AF,$24,$E1,$08,$D0,$D1,$D1,$D1,$D1,$D2,$DF,$D0,$24
-		.BYTE	$E9,$53,$D1,$24,$FC,$01,$D2,$25,$01,$D0,$D3,$25,$02,$84,$20,$30
-		.BYTE	$8C,$9C,$25,$82,$CC,$DE,$25,$03,$84,$21,$31,$8D,$9D,$25,$83,$CC
-		.BYTE	$DE,$25,$04,$90,$00,$10,$02,$12,$04,$14,$06,$16,$08,$18,$0A,$1A
-		.BYTE	$0C,$1C,$0E,$1E,$25,$05,$90,$01,$11,$03,$13,$05,$15,$07,$17,$09
-		.BYTE	$19,$0B,$1B,$0D,$1D,$0F,$1F,$25,$06,$D0,$D4,$27,$01,$06,$D5,$D6
-		.BYTE	$D6,$D6,$D6,$D7,$25,$08,$D3,$D3,$25,$1C,$D3,$D4,$27,$68,$01,$D5
-		.BYTE	$27,$69,$53,$D6,$27,$7C,$01,$D7	; ,$00							; REDUNDANT
-;_tlm_info_maps_extnt_common:
-		.BYTE	$2C,$6D,$01,$82,$2C,$7B,$43,$42,$2C,$E8,$55,$81,$2D,$02,$84,$83	; MERGED
-		.BYTE	$83,$83,$83,$2D,$03,$84,$83,$83,$83,$83,$2D,$04,$90,$43,$43,$43
-		.BYTE	$43,$83,$83,$83,$83,$83,$83,$43,$43,$43,$43,$83,$83,$2D,$05,$90
-		.BYTE	$43,$43,$43,$43,$43,$43,$83,$83,$83,$83,$43,$43,$43,$43,$83,$83
-		.BYTE	$2D,$08,$D3,$81,$2F,$68,$55,$81,$2D,$1C,$D3,$81,$00
-_tlm_res_scr2:
+_tlm_res_lz_scr_common_lib:
+		.WORD	_tlm_res_lz_scr1
+		.WORD	_tlm_res_lz_scr2
+		.WORD	_tlm_res_lz_scr3
+		.WORD	_tlm_res_lz_scr4
+		.WORD	_tlm_res_lz_scr5
+		.WORD	_tlm_res_lz_scr6A
+		.WORD	_tlm_res_lz_scr7
+		.WORD	_tlm_res_lz_scr6B
+
+_tlm_res_lz_scr2:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr2_rle0
-_tlm_scr2_rle0:
+		.WORD	_tlm_scr2_lz0
+_tlm_scr2_lz0:
 		.BYTE	$E4,$3F,$DF,$00,$A5,$3D,$A6,$01,$A7,$B5,$2A,$00,$64,$AB,$01,$C6
 		.BYTE	$00,$65,$C0,$25,$00,$00,$B7,$8B,$00,$60,$64,$BB,$01,$D6,$00,$65
 		.BYTE	$D0,$87,$00,$79,$00,$DC,$63,$AC,$38,$DC,$02,$B7,$B5,$DC,$63,$B0
@@ -682,11 +699,11 @@ _tlm_scr2_rle0:
 		.BYTE	$92,$05,$2C,$9F,$06,$9C,$F0,$53,$06,$7C,$F0,$5F,$06,$50,$90,$04
 		.BYTE	$B0,$3E,$8A,$3F,$00,$02,$38,$44,$08,$83,$07,$DF,$28,$00,$87,$03
 		.BYTE	$F0,$27,$00,$FF
-_tlm_res_scr5:
+_tlm_res_lz_scr5:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr5_rle0
-_tlm_scr5_rle0:
+		.WORD	_tlm_scr5_lz0
+_tlm_scr5_lz0:
 		.BYTE	$E4,$41,$DD,$00,$A5,$39,$A6,$00,$A7,$23,$DD,$00,$B5,$25,$D1,$0C
 		.BYTE	$0C,$01,$13,$14,$D1,$3D,$D1,$05,$16,$05,$0E,$14,$13,$26,$D1,$00
 		.BYTE	$B7,$8A,$00,$5E,$0C,$4C,$41,$53,$54,$D1,$7D,$D1,$45,$56,$45,$4E
@@ -699,11 +716,11 @@ _tlm_scr5_rle0:
 		.BYTE	$F0,$23,$04,$3E,$E4,$3D,$01,$27,$00,$22,$10,$83,$07,$C7,$14,$10
 		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$10,$10,$10,$10,$10,$10,$10,$10
 		.BYTE	$10,$10,$10,$10,$93,$07,$CC,$27,$00,$FF
-_tlm_res_scr7:
+_tlm_res_lz_scr7:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr7_rle0
-_tlm_scr7_rle0:
+		.WORD	_tlm_scr7_lz0
+_tlm_scr7_lz0:
 		.BYTE	$E4,$21,$DD,$00,$A5,$32,$A6,$00,$A7,$2A,$DD,$14,$B5,$00,$07,$25
 		.BYTE	$2E,$25,$32,$21,$34,$25,$00,$0E,$25,$37,$00,$0D,$21,$30,$00,$00
 		.BYTE	$B7,$8C,$00,$37,$0F,$47,$65,$6E,$65,$72,$61,$54,$65,$00,$4E,$65
@@ -727,11 +744,11 @@ _tlm_scr7_rle0:
 		.BYTE	$05,$D9,$9D,$05,$59,$00,$4A,$9E,$05,$58,$9F,$07,$17,$22,$46,$22
 		.BYTE	$03,$9A,$04,$DD,$04,$46,$46,$4A,$4A,$4A,$E4,$42,$46,$E4,$3F,$00
 		.BYTE	$FF
-_tlm_res_scr6A:
+_tlm_res_lz_scr6A:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr6A_rle0
-_tlm_scr6A_rle0:
+		.WORD	_tlm_scr6A_lz0
+_tlm_scr6A_lz0:
 		.BYTE	$E4,$22,$DC,$00,$00,$37,$01,$00,$02,$26,$DC,$37,$11,$27,$DC,$00
 		.BYTE	$21,$4A,$22,$12,$00,$23,$28,$DC,$66,$04,$00,$05,$86,$00,$86,$65
 		.BYTE	$05,$00,$0C,$29,$DC,$62,$14,$01,$3F,$4F,$62,$19,$86,$00,$A6,$85
@@ -781,11 +798,11 @@ _tlm_scr6A_rle0:
 		.BYTE	$4D,$06,$95,$3A,$06,$E4,$41,$88,$87,$03,$C0,$27,$01,$88,$03,$D0
 		.BYTE	$0D,$03,$0F,$3F,$02,$08,$20,$80,$FF,$FF,$FF,$FF,$00,$00,$00,$88
 		.BYTE	$00,$23,$8F,$07,$E0,$FF
-_tlm_res_scr6B:
+_tlm_res_lz_scr6B:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr6B_rle0
-_tlm_scr6B_rle0:
+		.WORD	_tlm_scr6B_lz0
+_tlm_scr6B_lz0:
 		.BYTE	$E4,$22,$DC,$00,$00,$37,$01,$00,$02,$26,$DC,$37,$11,$27,$DC,$00
 		.BYTE	$21,$4A,$22,$12,$00,$23,$28,$DC,$66,$04,$00,$05,$86,$00,$86,$65
 		.BYTE	$05,$00,$0C,$29,$DC,$62,$14,$01,$3F,$4F,$62,$19,$86,$00,$A6,$85
@@ -842,11 +859,11 @@ _tlm_scr6B_rle0:
 		.BYTE	$88,$85,$03,$C0,$01,$FF,$FF,$27,$01,$87,$07,$C0,$87,$07,$C0,$07
 		.BYTE	$FF,$01,$03,$03,$FF,$FC,$F8,$F8,$88,$07,$C8,$05,$FF,$FF,$FF,$00
 		.BYTE	$00,$00,$88,$00,$23,$FF
-_tlm_res_scr1:
+_tlm_res_lz_scr1:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr1_rle0
-_tlm_scr1_rle0:
+		.WORD	_tlm_scr1_lz0
+_tlm_scr1_lz0:
 		.BYTE	$E4,$49,$DC,$00,$A0,$2D,$A1,$00,$A2,$2F,$DC,$00,$B0,$23,$DE,$05
 		.BYTE	$07,$12,$01,$10,$08,$13,$23,$DE,$00,$B2,$94,$00,$5A,$05,$47,$52
 		.BYTE	$41,$50,$68,$53,$94,$00,$75,$00,$C0,$2D,$C1,$00,$C2,$E4,$2C,$DC
@@ -869,11 +886,11 @@ _tlm_scr1_rle0:
 		.BYTE	$03,$9F,$05,$63,$F0,$24,$05,$43,$33,$41,$F0,$25,$04,$FC,$9F,$04
 		.BYTE	$E2,$E4,$5D,$01,$2F,$00,$00,$FF,$85,$03,$D1,$28,$00,$22,$FC,$04
 		.BYTE	$7C,$02,$FE,$FE,$3E,$8A,$07,$C8,$00,$FF,$2B,$00,$FF
-_tlm_res_scr4:
+_tlm_res_lz_scr4:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr4_rle0
-_tlm_scr4_rle0:
+		.WORD	_tlm_scr4_lz0
+_tlm_scr4_lz0:
 		.BYTE	$E4,$40,$B6,$00,$A5,$3B,$A6,$03,$A7,$B6,$B6,$B5,$27,$00,$0C,$AE
 		.BYTE	$AC,$C5,$CA,$00,$C9,$C8,$C4,$C7,$C8,$AC,$C4,$CB,$26,$00,$00,$B7
 		.BYTE	$8A,$00,$5F,$0C,$BE,$BC,$D5,$DA,$00,$D9,$D8,$D4,$D7,$D8,$BC,$D4
@@ -905,11 +922,11 @@ _tlm_scr4_rle0:
 		.BYTE	$70,$0C,$95,$95,$15,$15,$15,$95,$15,$15,$15,$95,$15,$95,$95,$95
 		.BYTE	$06,$90,$01,$95,$95,$9A,$06,$A8,$39,$15,$9F,$06,$7D,$F0,$24,$05
 		.BYTE	$DD,$3C,$4A,$E4,$40,$8A,$E4,$3F,$15,$FF
-_tlm_res_scr3:
+_tlm_res_lz_scr3:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	_tlm_scr3_rle0
-_tlm_scr3_rle0:
+		.WORD	_tlm_scr3_lz0
+_tlm_scr3_lz0:
 		.BYTE	$4F,$5B,$5C,$4F,$5C,$5B,$00,$C3,$3D,$C4,$01,$C5,$D3,$29,$00,$0E
 		.BYTE	$03,$09,$14,$19,$00,$05,$16,$01,$0C,$15,$01,$14,$09,$0F,$0E,$24
 		.BYTE	$00,$00,$D5,$8A,$00,$60,$0E,$43,$49,$54,$59,$00,$45,$76,$41,$4C

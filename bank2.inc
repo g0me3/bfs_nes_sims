@@ -43,19 +43,19 @@ loc_3E0CD:
 
 ; =============== S U B	R O U T	I N E =======================================
 _presents_wnd_icon_insert:
-		LDY		_city._presents_list,X
-		DEY
-		LDA		_present_icon_tlm_lib_lo,Y
+		LDY		_city._presents_list,X			; raw copy of two blocks of icon data
+		DEY										; at the same time, nt to buf, extnt to buf
+		LDA		_present_icon_nt_lib_lo,Y
 		STA		_ptr0
-		LDA		_present_icon_tlm_lib_hi,Y
+		LDA		_present_icon_nt_lib_hi,Y
 		STA		_ptr0+1
 		LDA		_present_icon_nt_dst_lo,X
 		STA		_tmp2
 		LDA		_present_icon_nt_dst_hi,X
 		STA		_tmp3
-		LDA		_present_icon_extnt_tlm_lib_hi,Y
+		LDA		_present_icon_extnt_lib_hi,Y
 		STA		_tmp4
-		LDA		_present_icon_extnt_tlm_lib_lo,Y
+		LDA		_present_icon_extnt_lib_lo,Y
 		STA		_tmp5
 		LDA		_present_icon_extnt_dst_lo,X
 		STA		_tmp6
@@ -122,7 +122,7 @@ _tlm_extnt_presents_menu:
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
 
-_present_icon_tlm_lib_lo:
+_present_icon_nt_lib_lo:
 		.BYTE	<[_present_icon_tlm0]
 		.BYTE	<[_present_icon_tlm1]
 		.BYTE	<[_present_icon_tlm2]
@@ -138,7 +138,7 @@ _present_icon_tlm_lib_lo:
 		.BYTE	<[_present_icon_tlmC]
 		.BYTE	<[_present_icon_tlmD]
 		.BYTE	<[_present_icon_tlmE]
-_present_icon_tlm_lib_hi:
+_present_icon_nt_lib_hi:
 		.BYTE	>[_present_icon_tlm0]
 		.BYTE	>[_present_icon_tlm1]
 		.BYTE	>[_present_icon_tlm2]
@@ -164,7 +164,7 @@ _present_icon_nt_dst_hi:
 		.BYTE	>[_nt_backup_buf1+$6C]
 		.BYTE	>[_nt_backup_buf1+$17]
 		.BYTE	>[_nt_backup_buf1+$71]
-_present_icon_extnt_tlm_lib_hi:
+_present_icon_extnt_lib_hi:
 		.BYTE	<[_present_icon_extnt_tlm0]
 		.BYTE	<[_present_icon_extnt_tlm1]
 		.BYTE	<[_present_icon_extnt_tlm2]
@@ -180,7 +180,7 @@ _present_icon_extnt_tlm_lib_hi:
 		.BYTE	<[_present_icon_extnt_tlmC]
 		.BYTE	<[_present_icon_extnt_tlmD]
 		.BYTE	<[_present_icon_extnt_tlmE]
-_present_icon_extnt_tlm_lib_lo:
+_present_icon_extnt_lib_lo:
 		.BYTE	>[_present_icon_extnt_tlm0]
 		.BYTE	>[_present_icon_extnt_tlm1]
 		.BYTE	>[_present_icon_extnt_tlm2]

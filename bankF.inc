@@ -156,7 +156,7 @@ loc_18A09D:
 		LDX		#$04
 		LDA		#100
 loc_18A0F0:
-		STA		_funding_level,X
+		STA		_fund_rate,X
 		DEX
 		BPL		loc_18A0F0
 ;		JSR		_sram_on						; REDUNDANT
@@ -3262,14 +3262,24 @@ loc_18BB97:
 ;		PLA
 ;		RTS
 
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
-_ppu_rle_unpack_loop:
+_res_ppu_unpack:
+		STX		_ptr0
+		STY		_ptr0+1
+_res_ppu_unpack_loop:
+		LDY		#$00
+		LDA		(_ptr0),Y						; 00 - end of stream code
+		BNE		loc_18BBAB
+		JMP		_ppu_reset
+loc_18BBAB:
 		STA		_PPU_ADDR
 		INY
 		LDA		(_ptr0),Y
 		STA		_PPU_ADDR
 		INY
-		LDA		(_ptr0),Y						; extrack higher bit - vertical store flag
+		LDA		(_ptr0),Y						; extract higher bit - vertical store flag
 		ASL
 ;		JSR		_ppu_increment_select			; REDUNDANT
 		PHA										; OPTIMIZED
@@ -3303,15 +3313,7 @@ loc_18BBAC:
 		BCC		locret_18BBEC
 		INC		_ptr0+1
 locret_18BBEC:
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_ppu_rle_unpack:
-		LDY		#$00
-		LDA		(_ptr0),Y						; 00 - ent of stream code
-		BNE		_ppu_rle_unpack_loop
-		JMP		_ppu_reset
+		JMP		_res_ppu_unpack_loop
 
 ; =============== S U B	R O U T	I N E =======================================
 _res_ppu_lz_unpack:

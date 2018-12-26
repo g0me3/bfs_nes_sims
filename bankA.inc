@@ -545,7 +545,7 @@ loc_10445D:
 loc_1044A3:
 		LDA		#$07
 		STA		_city._tax_rate						; default tax rate always 7
-		STA		_tax_alloc._tax
+		STA		_fund_alloc._tax
 		LDA		#$0F
 		STA		_police_fund_rate					; def funding rate, will be recalculated anyways
 		STA		_fire_fund_rate						; mostly redundant here too
@@ -821,7 +821,7 @@ loc_104689:
 		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
-_fiscal_year_over_calculations:
+_fiscal_year_results_calc:
 		LDA		#$00
 		STA		_taxes_income
 		MOVW	_tmp6CC,_city._tax_year_rate
@@ -891,37 +891,37 @@ loc_1046EB:
 		JSR		_mmc5_mul16to16
 		PLA
 		POPD	_taxes_collected
-		LDA		_cur_RCI_levels_sum.FRAC
-		ORA		_cur_RCI_levels_sum.INT
-		BNE		loc_1047BF
+		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings, then taxes
+		ORA		_cur_RCI_levels_sum.INT			; does not calculated, skip budget screen at all
+		BNE		.do_budget_screen
 		LDA		#$0F
 		STA		_police_fund_rate
 		STA		_fire_fund_rate
 		RTS
-loc_1047BF:
-		LDA		#$01
-		STA		_budget_scr_draw_req
+.do_budget_screen:
+		LDA		#$01							; or else set the budget screen request
+		STA		_budget_scr_draw_req			; as well as suspend THREAD1 by now
 		STA		_game_core_state
 loc_1047C7:
-		LDA		_budget_scr_draw_req
-		BNE		loc_1047C7
-		LDA		_city._money
-		CLC
-		ADC		_taxes_collected
-		STA		_city._money
-		LDA		_city._money+1
-		ADC		_taxes_collected+1
+		LDA		_budget_scr_draw_req			; wait for request is clear means that
+		BNE		loc_1047C7						; the budget screen were displayed, and
+		LDA		_city._money					; player has finished adjustements, so
+		CLC										; now all fundings are recalculated
+		ADC		_taxes_collected				; and we can finally spend our money
+		STA		_city._money					; note, that budget can't get more money
+		LDA		_city._money+1					; than you have, so further subtraction never
+		ADC		_taxes_collected+1				; goes over
 		STA		_city._money+1
 		BCC		loc_1047E4
-		INC		_city._money+2
+		INC		_city._money+2					; first add taxes collected to our money
 loc_1047E4:
-		SUBDW	_city._money,_road_fund_alloc
+		SUBDW	_city._money,_road_fund_alloc	; subtract funds
 		SUBDW	_city._money,_fire_fund_alloc
 		SUBDW	_city._money,_police_fund_alloc
 		SUBDW	_city._money,_education_fund_alloc
 		LDA		_city._loan_period				; if loan period isn't zero
 		BEQ		loc_10486C
-		DEC		_city._loan_period				; decrement
+		DEC		_city._loan_period				; decrement loan year count
 		BNE		loc_104856
 		LDA		_city._bank_flags				; if the last year, clear loan flag
 		AND		#$BF
@@ -2455,11 +2455,13 @@ _scroll_msg_force_start:
 locret_105124:								; any currently displayed one but seems this never
 		RTS									; happens just because of long checking period.
 
-_tlm_res_scenario_complete:
+		SECTION_START	100
+
+_tlm_res_lz_scenario_complete:
 		.WORD	$2000
 		.BYTE	1
-		.WORD	byte_1053C7
-byte_1053C7:
+		.WORD	_tlm_lz_scenario_complete
+_tlm_lz_scenario_complete:
 		.BYTE	$E4,$61,$DD,$00,$A5,$3A,$A6,$00,$A7,$22,$DD,$1C,$B5,$DF,$DF,$AA
 		.BYTE	$AF,$C9,$AF,$C1,$AB,$DF,$AA,$8C,$AF,$C1,$C2,$AC,$C9,$DF,$AA,$C1
 		.BYTE	$AF,$8C,$AC,$AD,$C2,$8D,$DF,$DF,$B7,$85,$00,$7F,$16,$BA,$BF,$D9
@@ -2504,29 +2506,7 @@ byte_1053C7:
 		.BYTE	$9B,$06,$F5,$8C,$07,$10,$00,$CA,$F0,$22,$04,$5F,$E4,$5D,$81,$32
 		.BYTE	$00,$87,$07,$BF,$84,$07,$BF,$0B,$42,$18,$24,$81,$00,$00,$00,$00
 		.BYTE	$00,$00,$00,$00,$8F,$07,$DC,$23,$00,$FF
-_tlm_res_name_init:
-		.WORD	$2000
-		.BYTE	1
-		.WORD	_pak_tlm_name_init0
-_pak_tlm_name_init0:
-		.BYTE	$E5,$E1,$DD,$00,$60,$39,$61,$00,$62,$23,$DD,$01,$66,$C0,$4A,$C1
-		.BYTE	$0C,$03,$C1,$C1,$C2,$67,$84,$01,$FE,$19,$D0,$31,$1C,$32,$1C,$33
-		.BYTE	$1C,$34,$1C,$35,$1C,$36,$1C,$37,$1C,$38,$1C,$39,$1C,$30,$1C,$7D
-		.BYTE	$1C,$43,$4C,$D2,$85,$02,$1D,$00,$3A,$49,$2A,$3C,$04,$2A,$4E,$2A
-		.BYTE	$2A,$3D,$86,$02,$1D,$13,$51,$1C,$57,$1C,$45,$1C,$52,$1C,$54,$1C
-		.BYTE	$59,$1C,$55,$1C,$49,$1C,$4F,$1C,$50,$1C,$23,$DD,$9A,$02,$3C,$00
-		.BYTE	$29,$23,$E1,$00,$E2,$86,$02,$1D,$18,$41,$1C,$53,$1C,$44,$1C,$46
-		.BYTE	$1C,$47,$1C,$48,$1C,$4A,$1C,$4B,$1C,$4C,$1C,$3A,$1A,$C1,$C1,$C1
-		.BYTE	$C1,$C2,$99,$02,$3D,$00,$1D,$63,$A1,$86,$02,$3C,$14,$D0,$5A,$1C
-		.BYTE	$58,$1C,$43,$1C,$56,$1C,$42,$1C,$4E,$1C,$4D,$1C,$2C,$1C,$2E,$1C
-		.BYTE	$2D,$1C,$63,$B1,$86,$02,$3C,$00,$E0,$49,$E1,$2C,$89,$02,$98,$00
-		.BYTE	$63,$39,$64,$00,$65,$E4,$81,$DD,$2B,$FF,$23,$00,$8F,$03,$C0,$9B
-		.BYTE	$03,$C4,$23,$FF,$E5,$E1,$86,$3B,$06,$05,$86,$86,$86,$86,$06,$06
-		.BYTE	$4A,$06,$07,$89,$05,$FA,$49,$0B,$07,$03,$8B,$07,$8B,$8B,$86,$05
-		.BYTE	$FC,$39,$07,$86,$05,$FD,$49,$8B,$07,$23,$89,$9B,$06,$3C,$04,$06
-		.BYTE	$06,$06,$06,$06,$9A,$06,$5D,$03,$06,$06,$06,$06,$9B,$06,$3C,$23
-		.BYTE	$CA,$9B,$06,$9C,$03,$CA,$CA,$CA,$CA,$9C,$05,$FC,$04,$06,$06,$06
-		.BYTE	$06,$06,$F0,$23,$05,$DE,$E4,$7D,$86,$27,$00,$07,$FF,$FF,$FF,$FF
-		.BYTE	$00,$00,$00,$00,$8F,$07,$C0,$93,$07,$CC,$8B,$07,$C0,$FF
+
+		SECTION_ENDS	100, "TLM 'SCENARIO COMPLETE'"
 
 		BANK_END FA,$C000

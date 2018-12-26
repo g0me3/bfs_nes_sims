@@ -65,7 +65,7 @@ loc_11E0A9:
 		INCW	_city._cur_year
 loc_11E0B1:
 		FJSR	_graphs_10_year_data_update,SRAM,PRGA
-		FJSR	_fiscal_year_over_calculations,SRAM,PRGA
+		FJSR	_fiscal_year_results_calc,SRAM,PRGA
 		FJSR	_city_stats_recalc,SRAM,PRGA
 		JSR		_map_corruption_tiles_animate
 		FJSR	_test_for_new_decade,SRAM,PRGA

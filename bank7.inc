@@ -765,7 +765,7 @@ _title_sub0_init:
 		LDA		#$08
 		STA		_mmc5_nt_mode_shadow
 		STA		_MMC5_NT_MODE					; draw initial title screen
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_title_main
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_title_main
 		JSR		_wait_for_nmi
 		JSR		_ppu_reset
 		LDX		#$00
@@ -821,10 +821,10 @@ _title_sub2_menu_draw:
 		LDA		#$03
 		STA		_mmc5_chr_banks_shadow+3
 		STA		_MMC5_CHR_BANKSA+3
-		LDXY	_tlm_res_title_menu_default		; draw one of two menu
+		LDXY	_tlm_res_lz_title_menu_default		; draw one of two menu
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B858C
-		LDXY	_tlm_res_title_menu_continue
+		LDXY	_tlm_res_lz_title_menu_continue
 loc_B858C:
 		JSR		_res_ppu_lz_unpack
 		LDA		_has_saved_city_data_flag
@@ -938,35 +938,35 @@ loc_B864D:
 _title_cursor_pos_list:
 		.BYTE	$68,$A8,$C8,$88
 
-_tlm_res_title_main:
+_tlm_res_lz_title_main:
 		.WORD	$2000
 		.BYTE	4
-		.WORD	_tlm_rle_title_header0
-		.WORD	_tlm_rle_title1
-		.WORD	_tlm_rle_title2
-		.WORD	_tlm_rle_title3
-_tlm_res_title_menu_continue:
+		.WORD	_tlm_lz_title_header0
+		.WORD	_tlm_lz_title1
+		.WORD	_tlm_lz_title2
+		.WORD	_tlm_lz_title3
+_tlm_res_lz_title_menu_continue:
 		.WORD	$2000
 		.BYTE	4
-		.WORD	_tlm_rle_title_header0
-		.WORD	_tlm_rle_title1A
-		.WORD	_tlm_rle_title2
-		.WORD	_tlm_rle_title3A
-_tlm_res_title_menu_default:
+		.WORD	_tlm_lz_title_header0
+		.WORD	_tlm_lz_title1A
+		.WORD	_tlm_lz_title2
+		.WORD	_tlm_lz_title3A
+_tlm_res_lz_title_menu_default:
 		.WORD	$2000
 		.BYTE	4
-		.WORD	_tlm_rle_title_header0
-		.WORD	_tlm_rle_title1B
-		.WORD	_tlm_rle_title2
-		.WORD	_tlm_rle_title3B
-_tlm_rle_title_header0:
+		.WORD	_tlm_lz_title_header0
+		.WORD	_tlm_lz_title1B
+		.WORD	_tlm_lz_title2
+		.WORD	_tlm_lz_title3B
+_tlm_lz_title_header0:
 		.BYTE	$E4,$44,$FF,$67,$02,$23,$FF,$01,$0E,$0F,$65,$80,$03,$FF,$FF,$7A
 		.BYTE	$7B,$27,$FF,$67,$12,$22,$FF,$62,$1D,$66,$90,$02,$FF,$7C,$7D,$26
 		.BYTE	$FF,$6E,$21,$69,$A0,$25,$FF,$6F,$30,$69,$B0,$25,$FF,$6F,$40,$69
 		.BYTE	$C0,$25,$FF,$6F,$50,$68,$D0,$26,$FF,$6F,$60,$67,$E0,$28,$FF,$63
 		.BYTE	$71,$2F,$FF,$62,$F5,$3B,$FF,$63,$8B,$3C,$FF,$01,$9C,$9D,$25,$FF
 		.BYTE	$FF
-_tlm_rle_title1:
+_tlm_lz_title1:
 		.BYTE	$2F,$FF,$00,$9E,$83,$00,$0D,$27,$FF,$00,$04,$2A,$FF,$64,$00,$02
 		.BYTE	$FF,$9F,$AB,$62,$BA,$00,$AA,$63,$AC,$64,$CB,$8A,$00,$1A,$64,$09
 		.BYTE	$03,$FF,$9F,$AA,$AC,$62,$BD,$66,$D9,$2C,$FF,$65,$19,$00,$FF,$66
@@ -978,7 +978,7 @@ _tlm_rle_title1:
 		.BYTE	$00,$FF,$64,$66,$01,$FF,$FF,$72,$6D,$7F,$70,$7F,$80,$7F,$90,$7F
 		.BYTE	$A0,$7F,$B0,$7F,$C0,$7F,$D0,$72,$E0,$23,$FF,$03,$F7,$F8,$FF,$FF
 		.BYTE	$64,$FB,$6D,$F0,$E4,$41,$FF,$FF
-_tlm_rle_title1A:
+_tlm_lz_title1A:
 		.BYTE	$E4,$6A,$FF,$07,$8E,$AD,$AC,$C1,$AB,$C2,$C1,$AF,$37,$FF,$07,$9E
 		.BYTE	$BD,$BC,$D1,$BB,$D2,$D1,$BF,$E4,$54,$FF,$63,$AA,$09,$AB,$FF,$AE
 		.BYTE	$AF,$C0,$FF,$C1,$C2,$AB,$7B,$31,$FF,$63,$BA,$09,$BB,$FF,$BE,$BF
@@ -986,7 +986,7 @@ _tlm_rle_title1A:
 		.BYTE	$C9,$AF,$C1,$AB,$FF,$AA,$C1,$AF,$8C,$AC,$AD,$C2,$8D,$30,$FF,$0E
 		.BYTE	$BA,$BF,$D9,$BF,$D1,$BB,$FF,$BA,$D1,$BF,$9C,$BC,$BD,$D2,$9D,$E4
 		.BYTE	$E8,$FF,$FF
-_tlm_rle_title1B:
+_tlm_lz_title1B:
 		.BYTE	$E4,$26,$FF,$01,$C3,$AF,$62,$C4,$0B,$AF,$FF,$AA,$AC,$C7,$AF,$C8
 		.BYTE	$FF,$C1,$C2,$AB,$7B,$2E,$FF,$01,$D3,$BF,$62,$D4,$0B,$BF,$FF,$BA
 		.BYTE	$BC,$D7,$BF,$D8,$FF,$D1,$D2,$BB,$8B,$3E,$FF,$00,$9B,$E4,$32,$FF
@@ -996,12 +996,12 @@ _tlm_rle_title1B:
 		.BYTE	$0E,$AA,$AF,$C9,$AF,$C1,$AB,$FF,$AA,$C1,$AF,$8C,$AC,$AD,$C2,$8D
 		.BYTE	$30,$FF,$0E,$BA,$BF,$D9,$BF,$D1,$BB,$FF,$BA,$D1,$BF,$9C,$BC,$BD
 		.BYTE	$D2,$9D,$E4,$A8,$FF,$FF
-_tlm_rle_title2:
+_tlm_lz_title2:
 		.BYTE	$E4,$50,$14,$27,$54,$03,$14,$14,$94,$94,$32,$14,$29,$54,$9F,$00
 		.BYTE	$5A,$02,$54,$54,$54,$32,$14,$9F,$00,$90,$F0,$2B,$00,$90,$33,$14
 		.BYTE	$9E,$00,$F1,$08,$14,$14,$14,$14,$14,$14,$14,$14,$14,$9F,$01,$18
 		.BYTE	$F0,$21,$01,$18,$25,$14,$FF
-_tlm_rle_title3:
+_tlm_lz_title3:
 		.BYTE	$2F,$14,$00,$D4,$83,$00,$0D,$27,$14,$00,$D7,$2A,$14,$24,$D7,$00
 		.BYTE	$14,$2E,$D4,$03,$14,$14,$14,$D7,$99,$00,$22,$0D,$14,$14,$14,$14
 		.BYTE	$14,$14,$14,$14,$14,$14,$14,$14,$14,$D7,$94,$00,$29,$00,$D4,$8F
@@ -1015,13 +1015,13 @@ _tlm_rle_title3:
 		.BYTE	$01,$69,$2B,$97,$02,$96,$96,$96,$85,$01,$36,$26,$96,$92,$01,$40
 		.BYTE	$01,$D6,$D6,$8D,$01,$B5,$85,$00,$25,$01,$14,$14,$92,$02,$0B,$E4
 		.BYTE	$41,$14,$FF
-_tlm_rle_title3A:
+_tlm_lz_title3A:
 		.BYTE	$E4,$6A,$14,$00,$81,$26,$80,$37,$14,$9F,$00,$6B,$E4,$3C,$14,$85
 		.BYTE	$00,$6E,$83,$00,$70,$22,$80,$00,$81,$31,$14,$9F,$00,$E8,$0C,$14
 		.BYTE	$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$9F,$01,$15,$32
 		.BYTE	$14,$00,$80,$88,$00,$E8,$00,$81,$94,$00,$F2,$9F,$01,$68,$E4,$D7
 		.BYTE	$14,$FF
-_tlm_rle_title3B:
+_tlm_lz_title3B:
 		.BYTE	$E4,$26,$14,$25,$80,$85,$00,$26,$83,$00,$26,$00,$81,$9F,$00,$18
 		.BYTE	$3E,$14,$9F,$00,$57,$33,$14,$00,$81,$26,$80,$37,$14,$9F,$00,$AB
 		.BYTE	$E4,$3C,$14,$05,$80,$80,$80,$80,$80,$14,$99,$00,$50,$9F,$01,$28
@@ -1129,8 +1129,8 @@ loc_B8A8A:
 		LDA		#$15
 		STA		_city._loan_period					; just only for 21 year
 ; REDUNDANT, never used here, the loan amount fixed to 500
-; and calculated manually at _fiscal_year_over_calculations
-;		MOVWI	_tax_alloc._loan_fee,500			; 500 a year
+; and calculated manually at _fiscal_year_results_calc
+;		MOVWI	_fund_alloc._loan_fee,500			; 500 a year
 		INC		_tmp118+2
 		RTS
 loc_B8AA2:
@@ -1992,7 +1992,7 @@ _scr_res_hndl2_B_budget_input:
 		LDA		#$00							; REDUNDANT, not needed here, vars are clear
 		STA		_budget_display_timer			; always upon entering this screen and always
 		STA		_budget_display_timer+1
-		JSR		_budget_amount_test				; calc amount of total funds, if less than budget, can't skip
+		JSR		_budget_funds_amount_test		; calc amount of total funds, if less than budget, can't skip
 		BCC		.budget_screen_animate
 		LDA		_budget_screen_return_to_info_maps_flag
 		BEQ		.budget_normal_exit
@@ -2025,27 +2025,28 @@ _scr_res_hndl2_B_budget_input:
 		STA		_scr_res_control_flags
 		JMP		_pal_fade_out
 
+; REDUNDANT, merged with _budget_funds_amount_test
 ; =============== S U B	R O U T	I N E =======================================
-_budget_amount_test:
-		LDY		#$00
-		LDX		#$03
-		SEC
-loc_B9298:
-		LDA		_money_plus_taxes_collected,Y
-		SBC		_total_funds,Y
-		INY
-		DEX
-		BNE		loc_B9298
-		RTS
+;_budget_amount_test:
+;		LDY		#$00
+;		LDX		#$03
+;		SEC
+;loc_B9298:
+;		LDA		_end_of_year_money,Y
+;		SBC		_funds_alloc_sum,Y
+;		INY
+;		DEX
+;		BNE		loc_B9298
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _save_taxes_data:
-		LDA		_tax_alloc._tax
+		LDA		_fund_alloc._tax
 		STA		_city._tax_rate
-		MOVW	_fire_fund_alloc,_tax_alloc._fire
-		MOVW	_police_fund_alloc,_tax_alloc._police
-		MOVW	_road_fund_alloc,_tax_alloc._trans
-		MOVW	_education_fund_alloc,_tax_alloc._education
+		MOVW	_fire_fund_alloc,_fund_alloc._fire
+		MOVW	_police_fund_alloc,_fund_alloc._police
+		MOVW	_road_fund_alloc,_fund_alloc._trans
+		MOVW	_education_fund_alloc,_fund_alloc._education
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -57,8 +57,8 @@ _game_setup_sub_exec:
 		.WORD	_game_setup0C_scenario_over_input		; game over jump 05/0F
 		.WORD	_game_setup0D_difficult_init			; city gen continues
 		.WORD	_game_setup0E_difficult_input			; city gen stop
-		.WORD	_game_setup0F_all_complete_init
-		.WORD	_game_setup10_all_complete_input
+		.WORD	_game_setup0F_all_complete_init			; game won start
+		.WORD	_game_setup10_all_complete_input		; game won jump 05
 
 ; REDUNDANT
 ;		LDY		_game_setup_sub_idx
@@ -145,12 +145,12 @@ _game_setup05_scenario_init:
 ; -
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		.extra_scenarios				;  all scenarios are beaten, unlock full screen
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_scenario_normal
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_scenario_normal
 		LDY		#$03							; or load the regular one with 6 scenarios
 		BNE		loc_240B2
 .extra_scenarios:
-		LDXY	_tlm_res_scenario_complete		; tlm for this scenario is in extra bank
-		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA
+		LDXY	_tlm_res_lz_scenario_complete	; tlm for this scenario is in extra bank
+		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA	; the only extarnal tlm data here for now
 		LDY		#$04
 loc_240B2:
 		STY		_tmp6D4							; tmp var for number or icons per row
@@ -161,8 +161,8 @@ loc_240B2:
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		LDA		#$00
-		STA		_tmp6D0+1
 		STA		_tmp6D0
+		STA		_tmp6D0+1
 		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
 		LDA		#$02
@@ -172,15 +172,15 @@ loc_240B2:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup_screen_start:
-		INC		_game_setup_sub_idx
-		JSR		_render_on						; ppu work done, restart renders and fade in
-		INC		_mmc5_operation_in_progress_flag
-		JMP		_pal_fade_in
+		INC		_game_setup_sub_idx				; switch to the next sub
+		JSR		_render_on						; render on again
+		INC		_mmc5_operation_in_progress_flag; exit critical section
+		JMP		_pal_fade_in					; fade out screen
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_closed_screen_update:
-		LDY		#$00
-		LDX		#$06
+		LDY		#$00							; icons counter init
+;		LDX		#$06							; REDUNDANT, icons counter max
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		locret_2411B					; FIX: lets just exit here
 ;		BEQ		loc_240FA
@@ -206,22 +206,22 @@ _scenario_closed_screen_update:
 ;loc_240FA:
 		LDA		_city._scenarios_clear_flags
 loc_240FD:
-		STX		_tmp3							; store cycle max idx
+;		STX		_tmp3							; REDUNDANT, store cycle max idx
 ; BUG: _tmp2 here used as a cycle counter, also used inside the draw
 ; routine but nothing is modify it there as against _tmp3 which is
 ; used in this loop as max counts number, but also used inside draw
 ; routine as temporary var so erased inside it and loop will run for
 ; extra 250 cycles because of that.
 ;
-; FIX: it seems, they save wrong var before drawing routines: pushes
-; _tmp2 instead of _tmp3 lol, fixed it
+; REDUNDANT: it seems, they save wrong var before drawing routines: pushes
+; _tmp2 instead of _tmp3 lol, no need anymore, removed it
 ;
 loc_240FF:
 		STY		_tmp2							; store for convinience
 		LSR										; here is the bitflags in A
 		BCC		loc_2411A						; skip if flag clear
 		PHA										; save current shifted flags
-		PUSHB	_tmp3							; save cycles max idx
+;		PUSHB	_tmp3							; REDUNDANT, save cycles max idx
 		JSR		_scenario_closed_icon_draw		; draw
 ;loc_2410B:
 ;		JSR		_ppu_dequeue					; REDUNDANT, merged
@@ -229,12 +229,13 @@ loc_240FF:
 ;		JSR		_buffers_test_flush
 ;		BNE		loc_2410B
 		JSR		_buffers_force_flush			; OPTIMIZED
-		POPB	_tmp3							; restore cycle max count
+;		POPB	_tmp3							; REDUNDANT, restore cycle max count
 		PLA
 loc_2411A:
 		LDY		_tmp2							; get cur cycle idx
 		INY										; next (will be saved at the loop start)
-		CPY		_tmp3
+;		CPY		_tmp3							; REDUNDANT
+		CPY		#$06							; OPTIMIZED, fixed now to single value
 		BNE		loc_240FF						; test if loops is over
 locret_2411B:
 		RTS
@@ -401,13 +402,23 @@ _game_setup07_scenario_intro_init:
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear						; common full-screen window draw
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_fullscreen_wnd
 		LDY		_scenario_idx					; scenario name header draw
-		LDA		_scenario_intro_header_lib_lo,Y
-		STA		_ptr0
-		LDA		_scenario_intro_header_lib_hi,Y
-		STA		_ptr0+1
-		JSR		_ppu_rle_unpack
+; NOTE, scenario headers drawn by tilemap method, however they used the same
+; font as in PRG3 for ingame message headers draw. for ingame messages are
+; headers are ASCII encoded and converted to full 3-line fonts automatically
+; here we have a lot of redundancy because may use the same conversion routines
+; as for ingame menus and keep all scenario headers in ASCII as well
+; the problem is, the ingame window functions are more complex, they need to
+; calculate screen offsets on the fly. this code doesn't...
+; TODO: check if merging both codes worth it.
+		LDA		_tlm_res_scenario_hdr_lib_lo,Y
+;		STA		_ptr0
+		TAX
+		LDA		_tlm_res_scenario_hdr_lib_hi,Y
+;		STA		_ptr0+1
+		TAY
+		JSR		_res_ppu_unpack
 ; OPTIMIZED, common lib, indexes 0-7 for scenarios
 		LDA		_scenario_idx					; now load scenario message data
 		JSR		_msg_lib_load					; for printout routine
@@ -526,35 +537,6 @@ _msg_lib_load:
 		DEY
 		STY		_tmp6D8
 		RTS
-
-_msg_lib_lo:
-		.BYTE	<[_scenario_msg0]	; 00		; all messages in one lib now
-		.BYTE	<[_scenario_msg1]	; 01
-		.BYTE	<[_scenario_msg2]	; 02
-		.BYTE	<[_scenario_msg3]	; 03
-		.BYTE	<[_scenario_msg4]	; 04
-		.BYTE	<[_scenario_msg5]	; 05
-		.BYTE	<[_scenario_dummy]	; 06 *dummy*
-		.BYTE	<[_scenario_dummy]	; 07 *dummy*
-		.BYTE	<[_game_won_msg]	; 08
-		.BYTE	<[_game_lose_msg]	; 09
-		.BYTE	<[_practice_msg0]	; 0A
-		.BYTE	<[_practice_msg1]	; 0B
-		.BYTE	<[_all_scenarios_clear_msg]	; 0C
-_msg_lib_hi:
-		.BYTE	>[_scenario_msg0]
-		.BYTE	>[_scenario_msg1]
-		.BYTE	>[_scenario_msg2]
-		.BYTE	>[_scenario_msg3]
-		.BYTE	>[_scenario_msg4]
-		.BYTE	>[_scenario_msg5]
-		.BYTE	>[_scenario_dummy]
-		.BYTE	>[_scenario_dummy]
-		.BYTE	>[_game_won_msg]
-		.BYTE	>[_game_lose_msg]
-		.BYTE	>[_practice_msg0]
-		.BYTE	>[_practice_msg1]
-		.BYTE	>[_all_scenarios_clear_msg]
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_map_load:
@@ -785,9 +767,9 @@ _special_tiles_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup00_new_city_gen:
-		JSR		_ppu_queues_reset
-		JSR		_pal_fade_out
-		LDA		#$24
+		JSR		_ppu_queues_reset				; oddly enough, this is the only
+		JSR		_pal_fade_out					; game setup uses the regular ingame
+		LDA		#$24							; screen resource code
 		STA		_mmc5_nt_mode_shadow
 		STA		_MMC5_NT_MODE
 		LDA		#$07
@@ -824,8 +806,10 @@ _game_setup01_name_input_init:
 ; -
 		JSR		_game_setup_screen_init			; OPTIMIZED
 ; -
-		LDXY	_tlm_res_name_init				; draw external tilemap for namy input screen
-		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA
+;		LDXY	_tlm_res_lz_name_init			; REDUNDANT, draw external tilemap for name input screen
+;		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA
+; -
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_name_init	; OPTIMIZED, now lockal
 		LDA		#$00
 		STA		byte_6DC+2
 		LDA		#$02
@@ -1335,9 +1319,10 @@ _game_setup09_practice_msg_init:
 ; -
 		JSR		_game_setup_screen_init			; OPTIMIZED
 ; -
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd	; unpack common full screen window
-		MOVWO	_ptr0,_tlm_practice_wnd_header				; and particular window header separately
-		JSR		_ppu_rle_unpack
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_fullscreen_wnd	; unpack common full screen window
+;		MOVWO	_ptr0,_tlm_res_practice_wnd_header				; and particular window header separately
+;		JSR		_res_ppu_unpack
+		JSRXY	_res_ppu_unpack,_tlm_res_practice_wnd_header
 ; OPTIMIZED, library idx 0A, 0B now
 		LDA		_tmp6D5
 		CLC
@@ -1417,12 +1402,13 @@ _game_setup0B_scenario_over_init:
 ; -
 		JSR		_game_setup_screen_init			; OPTIMIZED
 ; -
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd	; draw common full-screen window
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_fullscreen_wnd	; draw common full-screen window
 		LDA		_scenario_result_idx			; actually, this window already have "YOU ARE A WINNER!"
 		CMP		#$01							; header which overwriting with other header elswhere
 		BEQ		loc_24B49						; but here it is already there
-		MOVWO	_ptr0,_tlm_scenario_loose_header; so we need another header header only for lose scenario
-		JSR		_ppu_rle_unpack
+;		MOVWO	_ptr0,_tlm_res_scenario_loose_header; so we need another header header only for lose scenario
+;		JSR		_res_ppu_unpack
+		JSRXY	_res_ppu_unpack,_tlm_res_scenario_loose_header
 loc_24B49:
 		LDA		_scenario_result_idx
 		CMP		#$01
@@ -1487,7 +1473,7 @@ _game_setup0D_difficult_init:
 		JSR		_pal_fade_out
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_game_play_level
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_game_play_level
 		JSR		_difficult_scr_cursor_draw
 		LDA		#$00
 		STA		_tmp6D0+1
@@ -1677,9 +1663,10 @@ _game_setup0F_all_complete_init:
 ; -
 		JSR		_game_setup_screen_init			; OPTIMIZED
 ; -
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_fullscreen_wnd	; this is a game complete
-		MOVWO	_ptr0,_tlm_all_complete						; screen
-		JSR		_ppu_rle_unpack
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_fullscreen_wnd	; this is a game complete
+;		MOVWO	_ptr0,_tlm_res_all_complete						; screen
+;		JSR		_res_ppu_unpack
+		JSRXY	_res_ppu_unpack,_tlm_res_all_complete
 ; OPTIMIZED, msg idx 0C
 		LDA		#$0C
 		JSR		_msg_lib_load								; all complete message load
@@ -2001,80 +1988,92 @@ _scenario_town_names_list:
 		CNAME	_name_free,	"FREEDOM"
 		CNAME	_name_sims,	"SIMCITY"
 
-_scenario_intro_header_lib_lo:
-		.BYTE	<[_tlm_scenario_header0]
-		.BYTE	<[_tlm_scenario_header1]
-		.BYTE	<[_tlm_scenario_header2]
-		.BYTE	<[_tlm_scenario_header3]
-		.BYTE	<[_tlm_scenario_header4]
-		.BYTE	<[_tlm_scenario_header5]
-		.BYTE	<[_tlm_scenario_header6]
-		.BYTE	<[_tlm_scenario_header7]
-_scenario_intro_header_lib_hi:
-		.BYTE	>[_tlm_scenario_header0]
-		.BYTE	>[_tlm_scenario_header1]
-		.BYTE	>[_tlm_scenario_header2]
-		.BYTE	>[_tlm_scenario_header3]
-		.BYTE	>[_tlm_scenario_header4]
-		.BYTE	>[_tlm_scenario_header5]
-		.BYTE	>[_tlm_scenario_header6]
-		.BYTE	>[_tlm_scenario_header7]
+_tlm_res_scenario_hdr_lib_lo:
+		.BYTE	<[_tlm_res_scenario_hdr0]
+		.BYTE	<[_tlm_res_scenario_hdr1]
+		.BYTE	<[_tlm_res_scenario_hdr2]
+		.BYTE	<[_tlm_res_scenario_hdr3]
+		.BYTE	<[_tlm_res_scenario_hdr4]
+		.BYTE	<[_tlm_res_scenario_hdr5]
+;		.BYTE	<[_tlm_res_scenario_hdr6]
+		.BYTE	<[_tlm_res_scenario_hdr_dummy]
+;		.BYTE	<[_tlm_res_scenario_hdr7]
+		.BYTE	<[_tlm_res_scenario_hdr_dummy]
+_tlm_res_scenario_hdr_lib_hi:
+		.BYTE	>[_tlm_res_scenario_hdr0]
+		.BYTE	>[_tlm_res_scenario_hdr1]
+		.BYTE	>[_tlm_res_scenario_hdr2]
+		.BYTE	>[_tlm_res_scenario_hdr3]
+		.BYTE	>[_tlm_res_scenario_hdr4]
+		.BYTE	>[_tlm_res_scenario_hdr5]
+;		.BYTE	>[_tlm_res_scenario_hdr6]
+		.BYTE	>[_tlm_res_scenario_hdr_dummy]
+;		.BYTE	>[_tlm_res_scenario_hdr7]
+		.BYTE	>[_tlm_res_scenario_hdr_dummy]
 
-_tlm_scenario_header6:
+; OPTIMIZED, by now, unless you add actual headers and briefings
+_tlm_res_scenario_hdr_dummy:
 		.WORD	$8520
-		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$46,$00
 		.WORD	$A520
-		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$46,$00
 		.BYTE	0
-_tlm_scenario_header7:
-		.WORD	$8520
-		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.WORD	$A520
-		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	0
-_tlm_scenario_header0:
+; REDUNDANT
+;_tlm_res_scenario_hdr6:
+;		.WORD	$8520
+;		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+;		.WORD	$A520
+;		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+;		.BYTE	0
+;_tlm_res_scenario_hdr7:
+;		.WORD	$8520
+;		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+;		.WORD	$A520
+;		.BYTE	$16,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+;		.BYTE	0
+_tlm_res_scenario_hdr0:
 		.WORD	$8520
 		.BYTE	$16,$13,$21,$2E,$00,$06,$32,$21,$2E,$23,$29,$33,$23,$2F,$00,$03,$01,$00,$00,$1C,$3F,$1B,$3C
 		.WORD	$A520
 		.BYTE	$16,$53,$61,$6E,$00,$46,$72,$61,$6E,$63,$69,$73,$63,$6F,$00,$43,$41,$BC,$00,$5C,$7F,$7C,$7C
 		.BYTE	0
-_tlm_scenario_header1:
+_tlm_res_scenario_hdr1:
 		.WORD	$8620
 		.BYTE	$15,$02,$25,$32,$2E,$9B,$13,$37,$29,$34,$3A,$25,$32,$2C,$21,$2E,$24,$00,$1C,$3F,$3C,$3B
 		.WORD	$A620
 		.BYTE	$15,$42,$65,$72,$6E,$BB,$53,$77,$69,$74,$7A,$65,$72,$6C,$61,$6E,$64,$00,$5C,$7F,$7C,$7B
 		.BYTE	0
-_tlm_scenario_header2:
+_tlm_res_scenario_hdr2:
 		.WORD	$8820
 		.BYTE	$10,$04,$25,$34,$32,$2F,$29,$34,$9B,$0D,$09,$9C,$1C,$3F,$3D,$1D,$00
 		.WORD	$A820
 		.BYTE	$10,$44,$65,$74,$72,$6F,$69,$74,$BB,$6D,$49,$BC,$5C,$7F,$7D,$5D,$00
 		.BYTE	0
-_tlm_scenario_header3:
+_tlm_res_scenario_hdr3:
 		.WORD	$8820
 		.BYTE	$10,$14,$2F,$2B,$39,$2F,$00,$0A,$21,$30,$21,$2E,$00,$1C,$3F,$3C,$1C
 		.WORD	$A820
 		.BYTE	$10,$54,$6F,$6B,$79,$6F,$BB,$4A,$61,$70,$61,$6E,$00,$5C,$7F,$7C,$5C
 		.BYTE	0
-_tlm_scenario_header4:
+_tlm_res_scenario_hdr4:
 		.WORD	$8820
 		.BYTE	$10,$02,$2F,$23,$34,$2F,$2E,$9B,$0D,$01,$00,$00,$1D,$1B,$1C,$1B,$00
 		.WORD	$A820
 		.BYTE	$10,$42,$6F,$73,$74,$6F,$6E,$BB,$6D,$41,$BC,$00,$5D,$5B,$5C,$5B,$00
 		.BYTE	0
-_tlm_scenario_header5:
+_tlm_res_scenario_hdr5:
 		.WORD	$8320
 		.BYTE	$1A,$12,$29,$2F,$00,$24,$25,$00,$0A,$21,$2E,$25,$29,$32,$2F,$9B,$02,$32,$21,$3A,$29,$2C,$00,$1D,$1B,$1F,$3D
 		.WORD	$A320
 		.BYTE	$1A,$52,$69,$6F,$00,$64,$65,$00,$4A,$61,$6E,$65,$69,$72,$6F,$BB,$42,$72,$61,$7A,$69,$6C,$00,$5D,$5B,$5F,$7D
 		.BYTE	0
-_tlm_scenario_loose_header:
+_tlm_res_scenario_loose_header:
 		.WORD	$8720
 		.BYTE	$12,$09,$2D,$30,$25,$21,$23,$28,$2D,$25,$2E,$34,$00,$2E,$2F,$34,$29,$23,$25
 		.WORD	$A720
 		.BYTE	$12,$49,$6D,$70,$65,$61,$63,$68,$6D,$65,$6E,$74,$00,$6E,$6F,$74,$69,$63,$65
 		.BYTE	0
-_tlm_practice_wnd_header:
+_tlm_res_practice_wnd_header:
 		.WORD	$8320
 		.BYTE	$5A,$DF
 		.WORD	$A320
@@ -2096,7 +2095,7 @@ _tlm_practice_wnd_header:
 		.WORD	$AD24
 		.BYTE	$47,$00
 		.BYTE	0
-_tlm_all_complete:
+_tlm_res_all_complete:
 		.WORD	$8320
 		.BYTE	$5A,$DF
 		.WORD	$A320
@@ -2240,6 +2239,35 @@ _scenario5_map_dict:
 		.BYTE	_MAP_GRASS,_MAP_GRASS
 		.BYTE	_MAP_ROAD_TCORSS_D,_MAP_ROAD_LR
 		.BYTE	_MAP_ROAD_LR,_MAP_ROAD_TCORSS_D
+
+_msg_lib_lo:
+		.BYTE	<[_scenario_msg0]	; 00		; all messages in one lib now
+		.BYTE	<[_scenario_msg1]	; 01
+		.BYTE	<[_scenario_msg2]	; 02
+		.BYTE	<[_scenario_msg3]	; 03
+		.BYTE	<[_scenario_msg4]	; 04
+		.BYTE	<[_scenario_msg5]	; 05
+		.BYTE	<[_scenario_dummy]	; 06 *dummy*
+		.BYTE	<[_scenario_dummy]	; 07 *dummy*
+		.BYTE	<[_game_won_msg]	; 08
+		.BYTE	<[_game_lose_msg]	; 09
+		.BYTE	<[_practice_msg0]	; 0A
+		.BYTE	<[_practice_msg1]	; 0B
+		.BYTE	<[_all_scenarios_clear_msg]	; 0C
+_msg_lib_hi:
+		.BYTE	>[_scenario_msg0]
+		.BYTE	>[_scenario_msg1]
+		.BYTE	>[_scenario_msg2]
+		.BYTE	>[_scenario_msg3]
+		.BYTE	>[_scenario_msg4]
+		.BYTE	>[_scenario_msg5]
+		.BYTE	>[_scenario_dummy]
+		.BYTE	>[_scenario_dummy]
+		.BYTE	>[_game_won_msg]
+		.BYTE	>[_game_lose_msg]
+		.BYTE	>[_practice_msg0]
+		.BYTE	>[_practice_msg1]
+		.BYTE	>[_all_scenarios_clear_msg]
 
 _eof	EQU		$5B
 _quo	EQU		$22
@@ -2408,7 +2436,7 @@ _all_scenarios_clear_msg:
 		.BYTE	"very difficult.",$A
 		.BYTE	_eof
 
-_tlm_res_fullscreen_wnd:
+_tlm_res_lz_fullscreen_wnd:
 		.WORD	$2000
 		.BYTE	1
 		.WORD	_pak_tlm_fullscreen_wnd0
@@ -2424,7 +2452,7 @@ _pak_tlm_fullscreen_wnd0:
 		.BYTE	$7D,$F0,$25,$04,$7D,$39,$0B,$9F,$04,$DD,$F0,$3F,$04,$DD,$F0,$7F
 		.BYTE	$04,$DD,$F0,$FF,$04,$DD,$F0,$65,$04,$DD,$3A,$CA,$E4,$61,$81,$E4
 		.BYTE	$3F,$00,$FF
-_tlm_res_scenario_normal:
+_tlm_res_lz_scenario_normal:
 		.WORD	$2000
 		.BYTE	1
 		.WORD	byte_25C2F
@@ -2463,7 +2491,7 @@ byte_25C2F:
 		.BYTE	$02,$89,$05,$B2,$00,$01,$25,$05,$F0,$29,$05,$BB,$0C,$01,$02,$02
 		.BYTE	$02,$02,$01,$01,$01,$01,$02,$02,$02,$02,$93,$05,$B2,$9D,$07,$06
 		.BYTE	$38,$CA,$E4,$62,$81,$E4,$3F,$00,$FF
-_tlm_res_game_play_level:
+_tlm_res_lz_game_play_level:
 		.WORD	$2000
 		.BYTE	1
 		.WORD	_pak_tlm_game_play_level0
@@ -2486,5 +2514,29 @@ _pak_tlm_game_play_level0:
 		.BYTE	$00,$89,$F0,$2E,$05,$B6,$36,$CA,$E5,$43,$86,$28,$00,$02,$FF,$FF
 		.BYTE	$FF,$2B,$00,$87,$03,$D8,$2B,$00,$03,$FF,$FF,$FF,$FF,$8F,$07,$E0
 		.BYTE	$FF
+_tlm_res_lz_name_init:
+		.WORD	$2000
+		.BYTE	1
+		.WORD	_pak_tlm_name_init0
+_pak_tlm_name_init0:
+		.BYTE	$E5,$E1,$DD,$00,$60,$39,$61,$00,$62,$23,$DD,$01,$66,$C0,$4A,$C1
+		.BYTE	$0C,$03,$C1,$C1,$C2,$67,$84,$01,$FE,$19,$D0,$31,$1C,$32,$1C,$33
+		.BYTE	$1C,$34,$1C,$35,$1C,$36,$1C,$37,$1C,$38,$1C,$39,$1C,$30,$1C,$7D
+		.BYTE	$1C,$43,$4C,$D2,$85,$02,$1D,$00,$3A,$49,$2A,$3C,$04,$2A,$4E,$2A
+		.BYTE	$2A,$3D,$86,$02,$1D,$13,$51,$1C,$57,$1C,$45,$1C,$52,$1C,$54,$1C
+		.BYTE	$59,$1C,$55,$1C,$49,$1C,$4F,$1C,$50,$1C,$23,$DD,$9A,$02,$3C,$00
+		.BYTE	$29,$23,$E1,$00,$E2,$86,$02,$1D,$18,$41,$1C,$53,$1C,$44,$1C,$46
+		.BYTE	$1C,$47,$1C,$48,$1C,$4A,$1C,$4B,$1C,$4C,$1C,$3A,$1A,$C1,$C1,$C1
+		.BYTE	$C1,$C2,$99,$02,$3D,$00,$1D,$63,$A1,$86,$02,$3C,$14,$D0,$5A,$1C
+		.BYTE	$58,$1C,$43,$1C,$56,$1C,$42,$1C,$4E,$1C,$4D,$1C,$2C,$1C,$2E,$1C
+		.BYTE	$2D,$1C,$63,$B1,$86,$02,$3C,$00,$E0,$49,$E1,$2C,$89,$02,$98,$00
+		.BYTE	$63,$39,$64,$00,$65,$E4,$81,$DD,$2B,$FF,$23,$00,$8F,$03,$C0,$9B
+		.BYTE	$03,$C4,$23,$FF,$E5,$E1,$86,$3B,$06,$05,$86,$86,$86,$86,$06,$06
+		.BYTE	$4A,$06,$07,$89,$05,$FA,$49,$0B,$07,$03,$8B,$07,$8B,$8B,$86,$05
+		.BYTE	$FC,$39,$07,$86,$05,$FD,$49,$8B,$07,$23,$89,$9B,$06,$3C,$04,$06
+		.BYTE	$06,$06,$06,$06,$9A,$06,$5D,$03,$06,$06,$06,$06,$9B,$06,$3C,$23
+		.BYTE	$CA,$9B,$06,$9C,$03,$CA,$CA,$CA,$CA,$9C,$05,$FC,$04,$06,$06,$06
+		.BYTE	$06,$06,$F0,$23,$05,$DE,$E4,$7D,$86,$27,$00,$07,$FF,$FF,$FF,$FF
+		.BYTE	$00,$00,$00,$00,$8F,$07,$C0,$93,$07,$CC,$8B,$07,$C0,$FF
 
 		BANK_END F1,$C000

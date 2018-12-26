@@ -795,9 +795,9 @@ _main_sub_idx:
 _budget_tax_cur_pos:
 		.BYTE	0
 
-		_tfund16 _tax_alloc
+		_tfund16 _fund_alloc
 
-		_tfund8	_funding_level
+		_tfund8	_fund_rate
 
 _budget_display_timer:
 		.WORD	0
@@ -873,11 +873,11 @@ _fire_fund_alloc:
 		.BYTE	0,0
 _education_fund_alloc:
 		.BYTE	0,0
-_total_funds:
+_funds_alloc_sum:
 		.BYTE	0,0,0
-_total_funds_tmp:
+_funds_alloc_sum_loan:
 		.BYTE	0,0,0
-_money_plus_taxes_collected:
+_end_of_year_money:
 		.BYTE	0,0,0
 _fund_request_police:
 		.BYTE	0,0
