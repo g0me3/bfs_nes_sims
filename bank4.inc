@@ -1005,7 +1005,7 @@ byte_70DEF:
 byte_70DF5:
 		.BYTE	$46,$10,$E0,$E0,$E0,$48,$FE,$06,$00
 _game_msg_screens_count_list:
-		.BYTE	$01, $01,$01, $01,$01, $01,$01, $01,$01, $01,$01, $01,$01, $01,$01, $01
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$03,$02,$01,$01,$01
 		.BYTE	$01,$01,$01,$01
 off_70E22:
@@ -1501,11 +1501,10 @@ _msg12_new_fire:
 		.WORD	off_71572
 off_71572:
 		.WORD	aMr_mayorOurFiremen
-					; " Mr.Mayor,our firemen\x0F"
-		.WORD	aNeedANewFirestation_ ; "need a new FireStation."
-		.WORD	aWithBetterWorking ; " With better working\x0F"
-		.WORD	aConditionsTheyWill ; "conditions,they will\x0F"
-		.WORD	aWorkMuchHarder_	; "work	much harder.\x0F"
+		.WORD	aNeedANewFirestation_
+		.WORD	aWithBetterWorking
+		.WORD	aConditionsTheyWill
+		.WORD	aWorkMuchHarder_
 aMr_mayorOurFiremen:
 		.BYTE	" Mr.Mayor,our firemen",$F
 aNeedANewFirestation_:
@@ -1535,10 +1534,9 @@ _msg14_monument_100th_years:
 		.WORD	off_7163C
 off_7163C:
 		.WORD	aLetSErectAMonument_0
-					; " Let*s erect	a Monument"
-		.WORD	aToCommemorateThe	; "to commemorate the\x0F"
-		.WORD	a100thAnniversaryOf ; "100th anniversary of\x0F"
-		.WORD	aOurFairCity_	; "our fair city.\x0F"
+		.WORD	aToCommemorateThe
+		.WORD	a100thAnniversaryOf
+		.WORD	aOurFairCity_
 aLetSErectAMonument_0:
 		.BYTE	" Let*s erect a Monument"
 aToCommemorateThe:
@@ -1731,7 +1729,7 @@ aIngTowardsAThriving:
 aMetropolis_:
 		.BYTE	"metropolis.",$F
 asc_71AD9:
-		.BYTE	"                   °",$F
+		.BYTE	"                   ",$B0,$F
 _msg1C_practice_hints:
 		.WORD	off_71AF2
 		.WORD	off_71B04
@@ -1781,15 +1779,14 @@ _msg1D_practice_success:
 		.WORD	off_71C04
 off_71C04:
 		.WORD	aCongratulations_1
-					; " Congratulations,\x0F"
-		.WORD	aMr_MayorYourCity	; "Mr. Mayor! Your city\x0F"
-		.WORD	aNowHasAPopulationOf ; "now has a	population of"
-		.WORD	a30000_YourExpert	; "30,000. Your	expert\x0F"
-		.WORD	aPlanningAndKindness ; "planning and kindness\x0F"
-		.WORD	aHaveMadeYouARe	; "have	made you a re-\x0F"
-		.WORD	aSpectableMayor_Build ; "spectable mayor.	Build "
-		.WORD	aANewTownByChoosing ; "a new town	by choosing "
-		.WORD	aTheStartNewCity_	; "the START NEW CITY.\x0F"
+		.WORD	aMr_MayorYourCity
+		.WORD	aNowHasAPopulationOf
+		.WORD	a30000_YourExpert
+		.WORD	aPlanningAndKindness
+		.WORD	aHaveMadeYouARe
+		.WORD	aSpectableMayor_Build
+		.WORD	aANewTownByChoosing
+		.WORD	aTheStartNewCity_
 aCongratulations_1:
 		.BYTE	" Congratulations,",$F
 aMr_MayorYourCity:
@@ -1928,9 +1925,5 @@ aWhileItDestroysEvery:
 		.BYTE	"while it destroys every"
 aThingInItSPath_:
 		.BYTE	"thing in it*s path.",$F
-
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FE,$FF,$DF,$FF,$DF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF
-
 
 		BANK_END 4,$A000

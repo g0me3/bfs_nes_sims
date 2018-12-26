@@ -68,8 +68,8 @@ byte_EA08C:
 		.BYTE	$00,$00,$20,$08,$08,$08,$08,$A8
 
 ; =============== S U B	R O U T	I N E =======================================
-; handles 2, 3,$05, 6 are called	once before tha	main loop
-; once,$02, 3, 5	are unrefrenced	here, 6	refrenced anyway
+; handles 2, 3,$05, 6 are called once before tha main loop
+; once,$02, 3, 5 are unrefrenced here, 6 refrenced anyway
 ;
 ;
 ; BUT WHY?!
@@ -1038,9 +1038,10 @@ loc_EA7B4:
 		STY		_tmp5
 locret_EA7B6:
 		RTS
-_unused_3:
-		.BYTE	$66,$67,$68,$70,$71,$72,$76,$77,$78,$AC,$DC,$D9,$DA,$DB,$D9,$DA
-		.BYTE	$DB,$D9,$DA,$DB,$D8,$D8
+
+;_unused_3:
+;		.BYTE	$66,$67,$68,$70,$71,$72,$76,$77,$78,$AC,$DC,$D9,$DA,$DB,$D9,$DA
+;		.BYTE	$DB,$D9,$DA,$DB,$D8,$D8
 
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info2356_draw:
@@ -3046,16 +3047,18 @@ byte_EB6B8:
 		.BYTE	$18,$0C,$1D,$80
 		.BYTE	$17,$18,$1F,$80
 		.BYTE	$0D,$0E,$0C,$80
-		.BYTE	$00,$07,$0E
-_unused?:
-		.BYTE	$26,$25,$06,$35,$DF,$58,$AC,$AD,$3A
-		.BYTE	$46,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF
-		.BYTE	$66,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF
-		.BYTE	$86,$25,$06,$DF,$C8,$C9,$CA,$CB,$32
-		.BYTE	$26,$5D,$06,$08,$01,$08,$C8,$C8,$08
-		.BYTE	$46,$5D,$06,$01,$C8,$C8,$C8,$C8,$01
-		.BYTE	$66,$5D,$06,$01,$C8,$C8,$C8,$C8,$01
-		.BYTE	$86,$5D,$06,$01,$C8,$C8,$C8,$C8,$08
+
+;_unused?:
+;		.BYTE	$00,$07,$0E
+;		.BYTE	$26,$25,$06,$35,$DF,$58,$AC,$AD,$3A
+;		.BYTE	$46,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF
+;		.BYTE	$66,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF
+;		.BYTE	$86,$25,$06,$DF,$C8,$C9,$CA,$CB,$32
+;		.BYTE	$26,$5D,$06,$08,$01,$08,$C8,$C8,$08
+;		.BYTE	$46,$5D,$06,$01,$C8,$C8,$C8,$C8,$01
+;		.BYTE	$66,$5D,$06,$01,$C8,$C8,$C8,$C8,$01
+;		.BYTE	$86,$5D,$06,$01,$C8,$C8,$C8,$C8,$08
+
 byte_EB733:
 		.BYTE	$00,$01,$01,$02,$01,$02,$02,$03,$01,$02,$02,$03,$02,$03,$03,$04
 byte_EB743:
@@ -3754,22 +3757,5 @@ _fund_reqest_ofs_list:
 		.WORD	_fund_request_police
 		.WORD	_fund_request_trans
 		.WORD	_fund_request_education
-		.BYTE	$FF,$DB,$FF,$FF,$F7,$FF,$DF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$40
-		.BYTE	$02,$00,$04,$00,$00,$10,$00,$00,$80,$00,$80,$11,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$02,$00,$00,$10,$00,$00,$00,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FE,$FF,$FF,$FB,$57,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$04,$08
-		.BYTE	$00,$00,$00,$08,$10,$00,$00,$00,$41,$00,$00,$20,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$10,$00,$00,$00,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$EF,$FD
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$BF,$FB,$FF,$DF,$FF,$FF,$FF,$FF,$00,$00,$00
-		.BYTE	$09,$00,$08,$00,$00,$00,$00,$40,$00,$00,$04,$00,$04,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$7B,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$F7,$FF,$FF,$14,$00,$00
-		.BYTE	$02,$10,$00,$00,$00,$00,$00,$08,$00,$40,$00,$00,$02,$00,$00,$00
-		.BYTE	$00,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$FF,$FF,$7B,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FD,$FF,$F7,$FF,$FF,$FF,$FE
 
 		BANK_END 9,$C000

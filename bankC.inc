@@ -2014,151 +2014,151 @@ _power_build_wnd_draw:
 		JMP		_wnd_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_0:
-		LDA		_cur_screen_tile._Y
-		LSR
-		STA		_ptr0
-		CLC
-		ADC		#$A
-		CMP		#$1E
-		BCC		loc_136E44
-		SBC		#$1E
-loc_136E44:
-		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
-		STA		byte_7A
-		TXA
-		CLC
-		ADC		#$20
-		STA		byte_7B
-		LDA		_cur_screen_tile._X
-		LSR
-		STA		_ptr0+1
-		CLC
-		ADC		#7
-		CMP		#$20
-		BCC		loc_136E68
-		SBC		#$20
-loc_136E68:
-		CLC
-		ADC		byte_7A
-		STA		byte_7A
-		AND		#$1F
-		CMP		#$17
-		BCC		loc_136E81
-		SBC		#$16
-		STA		byte_7F
-		LDA		#$A
-		SEC
-		SBC		byte_7F
-		STA		byte_7E
-		JMP		loc_136E89
-loc_136E81:
-		LDA		#$A
-		STA		byte_7E
-		LDA		#0
-		STA		byte_7F
-loc_136E89:
-		LDA		_ptr0
-		CMP		#$11
-		BCC		loc_136EA0
-		CMP		#$14
-		BCS		loc_136EA0
-		SEC
-		SBC		#$10
-		STA		byte_7D
-		LDA		#4
-		SEC
-		SBC		byte_7D
-		STA		byte_7C
-		RTS
-loc_136EA0:
-		LDA		#4
-		STA		byte_7C
-		LDA		#0
-		STA		byte_7D
-		RTS
+;_unref_0:
+;		LDA		_cur_screen_tile._Y
+;		LSR
+;		STA		_ptr0
+;		CLC
+;		ADC		#$A
+;		CMP		#$1E
+;		BCC		loc_136E44
+;		SBC		#$1E
+;loc_136E44:
+;		LDX		#$20
+;		STX		_MMC5_MUL1
+;		STA		_MMC5_MUL0
+;		LDA		_MMC5_MUL0
+;		LDX		_MMC5_MUL1
+;		STA		byte_7A
+;		TXA
+;		CLC
+;		ADC		#$20
+;		STA		byte_7B
+;		LDA		_cur_screen_tile._X
+;		LSR
+;		STA		_ptr0+1
+;		CLC
+;		ADC		#7
+;		CMP		#$20
+;		BCC		loc_136E68
+;		SBC		#$20
+;loc_136E68:
+;		CLC
+;		ADC		byte_7A
+;		STA		byte_7A
+;		AND		#$1F
+;		CMP		#$17
+;		BCC		loc_136E81
+;		SBC		#$16
+;		STA		byte_7F
+;		LDA		#$A
+;		SEC
+;		SBC		byte_7F
+;		STA		byte_7E
+;		JMP		loc_136E89
+;loc_136E81:
+;		LDA		#$A
+;		STA		byte_7E
+;		LDA		#0
+;		STA		byte_7F
+;loc_136E89:
+;		LDA		_ptr0
+;		CMP		#$11
+;		BCC		loc_136EA0
+;		CMP		#$14
+;		BCS		loc_136EA0
+;		SEC
+;		SBC		#$10
+;		STA		byte_7D
+;		LDA		#4
+;		SEC
+;		SBC		byte_7D
+;		STA		byte_7C
+;		RTS
+;loc_136EA0:
+;		LDA		#4
+;		STA		byte_7C
+;		LDA		#0
+;		STA		byte_7D
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_1:
-		LDA		byte_7A
-		PHA
-		LDA		byte_7B
-		PHA
-		LDX		_ptr0
-		LDY		#0
-		LDA		byte_7C
-		STA		_tmp2
-		LDA		byte_7D
-		STA		_tmp3
-loc_136EBB:
-		LDA		byte_7E
-		STA		_tmp4
-		LDA		byte_7F
-		STA		_tmp5
-		LDA		byte_7A
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
-loc_136ED5:
-		LDA		byte_136FB3,Y
-		STA		_ppu_queue_buf,X
-		INX
-		INY
-		DEC		_tmp4
-		BNE		loc_136ED5
-		LDA		_tmp5
-		BEQ		loc_136F02
-		STA		_tmp4
-		LDA		#0
-		STA		_tmp5
-		LDA		byte_7A
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
-		JMP		loc_136ED5
-loc_136F02:
-		LDA		byte_7A
-		CLC
-		ADC		#$20
-		STA		byte_7A
-		LDA		byte_7B
-		ADC		#0
-		STA		byte_7B
-		DEC		_tmp2
-		BNE		loc_136EBB
-		LDA		_tmp3
-		BEQ		loc_136F29
-		STA		_tmp2
-		LDA		#0
-		STA		_tmp3
-		LDA		byte_7A
-		AND		#$1F
-		STA		byte_7A
-		LDA		#$20
-		STA		byte_7B
-		BNE		loc_136EBB
-loc_136F29:
-		STX		_ptr0
-		PLA
-		STA		byte_7B
-		PLA
-		STA		byte_7A
-		RTS
+;_unref_1:
+;		LDA		byte_7A
+;		PHA
+;		LDA		byte_7B
+;		PHA
+;		LDX		_ptr0
+;		LDY		#0
+;		LDA		byte_7C
+;		STA		_tmp2
+;		LDA		byte_7D
+;		STA		_tmp3
+;loc_136EBB:
+;		LDA		byte_7E
+;		STA		_tmp4
+;		LDA		byte_7F
+;		STA		_tmp5
+;		LDA		byte_7A
+;		STA		_ppu_queue_buf,X
+;		INX
+;		LDA		byte_7B
+;		STA		_ppu_queue_buf,X
+;		INX
+;		LDA		_tmp4
+;		STA		_ppu_queue_buf,X
+;		INX
+;loc_136ED5:
+;		LDA		byte_136FB3,Y
+;		STA		_ppu_queue_buf,X
+;		INX
+;		INY
+;		DEC		_tmp4
+;		BNE		loc_136ED5
+;		LDA		_tmp5
+;		BEQ		loc_136F02
+;		STA		_tmp4
+;		LDA		#0
+;		STA		_tmp5
+;		LDA		byte_7A
+;		AND		#$E0
+;		STA		_ppu_queue_buf,X
+;		INX
+;		LDA		byte_7B
+;		STA		_ppu_queue_buf,X
+;		INX
+;		LDA		_tmp4
+;		STA		_ppu_queue_buf,X
+;		INX
+;		JMP		loc_136ED5
+;loc_136F02:
+;		LDA		byte_7A
+;		CLC
+;		ADC		#$20
+;		STA		byte_7A
+;		LDA		byte_7B
+;		ADC		#0
+;		STA		byte_7B
+;		DEC		_tmp2
+;		BNE		loc_136EBB
+;		LDA		_tmp3
+;		BEQ		loc_136F29
+;		STA		_tmp2
+;		LDA		#0
+;		STA		_tmp3
+;		LDA		byte_7A
+;		AND		#$1F
+;		STA		byte_7A
+;		LDA		#$20
+;		STA		byte_7B
+;		BNE		loc_136EBB
+;loc_136F29:
+;		STX		_ptr0
+;		PLA
+;		STA		byte_7B
+;		PLA
+;		STA		byte_7A
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136F32:

@@ -656,12 +656,12 @@ loc_244EE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_19:
-		INC		_ptr0
-		BNE		locret_244F7
-		INC		_ptr0+1
-locret_244F7:
-		RTS
+;_unref_19:
+;		INC		_ptr0
+;		BNE		locret_244F7
+;		INC		_ptr0+1
+;locret_244F7:
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup01_name_input_init:
@@ -2151,16 +2151,5 @@ _pak_tlm_game_play_level0:
 		.BYTE	$00,$89,$F0,$2E,$05,$B6,$36,$CA,$E5,$43,$86,$28,$00,$02,$FF,$FF
 		.BYTE	$FF,$2B,$00,$87,$03,$D8,$2B,$00,$03,$FF,$FF,$FF,$FF,$8F,$07,$E0
 		.BYTE	$FF
-		.BYTE	$02,$00,$FF,$FF,$FF,$FF,$FF,$FE,$BF,$FF,$FF,$BF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$80,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$04,$00,$00,$00,$20,$00,$08,$00,$00,$02
-		.BYTE	$00,$00,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$BF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$0C,$00,$00,$00,$40,$00,$00,$00,$00,$00
-		.BYTE	$40,$60,$FF,$FF,$FF,$FF,$FF,$7F,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$7F,$FF,$FF
-		.BYTE	$FF,$FF
 
 		BANK_END 1,$C000

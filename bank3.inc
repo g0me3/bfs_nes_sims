@@ -323,7 +323,7 @@ loc_58262:
 		STY		_apu_mus_idx_req
 		RTS
 _game_msg_apu_types_list:
-		.BYTE	 $01,$01, $01,$01, $01,$01, $02,$02, $02,$02, $02,$01, $01,$01, $01,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$02,$01
 		.BYTE	$02,$02,$02,$02
 byte_58289:
@@ -1979,44 +1979,44 @@ loc_58F09:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_2:
-		LDX		_extnt_queue_pos_head
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-loc_58F22:
-		LDA		#2
-		STA		_extnt_queue_buf,X
-		INX
-		DEC		_tmp2
-		BNE		loc_58F22
-		LDA		_tmp3
-		BEQ		loc_58F4F
-		STA		_tmp2
-		LDA		#0
-		STA		_tmp3
-		LDA		_ptr0
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		JMP		loc_58F22
-loc_58F4F:
-		STX		_extnt_queue_pos_head
-		RTS
+;_unref_2:
+;		LDX		_extnt_queue_pos_head
+;		LDA		_ptr0
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_ptr0+1
+;		ORA		#>[_MMC5_EXRAM]
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_tmp2
+;		STA		_extnt_queue_buf,X
+;		INX
+;loc_58F22:
+;		LDA		#2
+;		STA		_extnt_queue_buf,X
+;		INX
+;		DEC		_tmp2
+;		BNE		loc_58F22
+;		LDA		_tmp3
+;		BEQ		loc_58F4F
+;		STA		_tmp2
+;		LDA		#0
+;		STA		_tmp3
+;		LDA		_ptr0
+;		AND		#$E0
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_ptr0+1
+;		ORA		#>[_MMC5_EXRAM]
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_tmp2
+;		STA		_extnt_queue_buf,X
+;		INX
+;		JMP		loc_58F22
+;loc_58F4F:
+;		STX		_extnt_queue_pos_head
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_menu_exec:
@@ -3920,13 +3920,5 @@ _scroll_txt17_brownouts:
 _scroll_txt18_heavy_traffic_repotrted:
 		.BYTE	$11,$0E,$0A,$1F,$22,$DF,$1D,$1B,$0A,$0F,$0F,$12,$0C,$DF,$1B,$0E
 		.BYTE	$19,$18,$1B,$1D,$0E,$0D,$FF
-_unused_trash:
-		.BYTE	$1B,$0E,$19,$18,$1B,$1D,$0E,$0D,$FF,$00,$04,$08,$00,$00,$14,$C0
-		.BYTE	$00,$00,$44,$0D,$00,$00,$AC,$97,$20,$08,$77,$7A,$00,$00,$E3,$6C
-		.BYTE	$04,$00,$4D,$5E,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$7F,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$DF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$21,$CC,$00,$00,$20,$B4,$00,$20,$2F,$09
-		.BYTE	$04,$00,$81,$20,$4B,$80,$2A,$76,$98,$50,$27,$E0,$15,$B5,$26,$B1
-		.BYTE	$BA,$EC,$D2,$49
 
 		BANK_END 3,$C000

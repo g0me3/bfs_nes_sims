@@ -2672,8 +2672,8 @@ loc_11F350:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_6:
-		JMP		_unused_11
+;_unref_6:
+;		JMP		_unused_11
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11F362:
@@ -3514,37 +3514,37 @@ loc_11F8BB:
 		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
-_unused_11:
-		LDA		_cur_population_dencity
-		SEC
-		SBC		_tmp_map_pos._X
-		BCS		loc_11F8D5
-		EOR		#$FF
-		CLC
-		ADC		#1
-loc_11F8D5:
-		LSR
-		LSR
-		LSR
-		STA		_tmpE6
-		LDA		_cur_population_dencity+1
-		SEC
-		SBC		_tmp_map_pos._Y
-		BCS		loc_11F8E8
-		EOR		#$FF
-		CLC
-		ADC		#1
-loc_11F8E8:
-		LSR
-		LSR
-		LSR
-		CLC
-		ADC		_tmpE6
-		CMP		#$F
-		BCC		locret_11F8F4
-		LDA		#$F
-locret_11F8F4:
-		RTS
+;_unused_11:
+;		LDA		_cur_population_dencity
+;		SEC
+;		SBC		_tmp_map_pos._X
+;		BCS		loc_11F8D5
+;		EOR		#$FF
+;		CLC
+;		ADC		#1
+;loc_11F8D5:
+;		LSR
+;		LSR
+;		LSR
+;		STA		_tmpE6
+;		LDA		_cur_population_dencity+1
+;		SEC
+;		SBC		_tmp_map_pos._Y
+;		BCS		loc_11F8E8
+;		EOR		#$FF
+;		CLC
+;		ADC		#1
+;loc_11F8E8:
+;		LSR
+;		LSR
+;		LSR
+;		CLC
+;		ADC		_tmpE6
+;		CMP		#$F
+;		BCC		locret_11F8F4
+;		LDA		#$F
+;locret_11F8F4:
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_area_pos_to_tmp_map_pos_calc:
@@ -3738,9 +3738,9 @@ locret_11FB47:
 
 ; =============== S U B	R O U T	I N E =======================================
 ; UNUSED
-_fire_disaster_small_start_unred:
-		LDY		#$14
-		BNE		_fire_disaster_start_common
+;_fire_disaster_small_start_unref:
+;		LDY		#$14
+;		BNE		_fire_disaster_start_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _fire_disaster_start:
@@ -4388,6 +4388,5 @@ loc_11FFBB:
 		STA		_traffic_level_value+1
 		PLA
 		RTS
-		.BYTE	$00,$00,$A0,$28
 
 		BANK_END B,$C000

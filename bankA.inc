@@ -2819,22 +2819,30 @@ _pak_tlm_name_init0:
 		.BYTE	$CA,$9B,$06,$9C,$03,$CA,$CA,$CA,$CA,$9C,$05,$FC,$04,$06,$06,$06
 		.BYTE	$06,$06,$F0,$23,$05,$DE,$E4,$7D,$86,$27,$00,$07,$FF,$FF,$FF,$FF
 		.BYTE	$00,$00,$00,$00,$8F,$07,$C0,$93,$07,$CC,$8B,$07,$C0,$FF
-_unused_6:
-		.BYTE	$00,$04,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FE
-		.BYTE	$FF,$EF,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$7F,$FF,$00,$01,$00,$00
-		.BYTE	$00,$88,$02,$01,$40,$00,$80,$00,$00,$00,$20,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 
 		BANK_END A,$B800
 
 		ORG		$B800
 		RORG	$9800
 
-		SECTION_START	01
+		BANK_START $AA
 
 		INCLUDE "..\bankA_.inc"
 
-		SECTION_END  	01
-
+_bankAA_free	SET	[$A000-.]
+		#if $AA==$0
+_total_free	SET	_bankAA_free
+		#else
+_total_free SET _total_free+_bankAA_free
+		#endif
+		#if .>$A000
+		ECHO	"]","exceeded by=",[0-_bankAA_free]
+		#else
+		ECHO	"]","free =",_bankAA_free
+		#endif
+		#if .<$A000-1
+		RORG	$A000-1
+		ORG		$C000-1
+		.BYTE	$FF
+		#endif
 

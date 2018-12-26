@@ -3,7 +3,7 @@
 
 		BANK_START $F
 
-;		INCBIN "..\copyrights.txt"
+		INCBIN "..\copyrights.txt"
 
 ; =============== S U B	R O U T	I N E =======================================
 RESET:
@@ -84,7 +84,7 @@ loc_18A053:
 		STA		byte_4084+$F8C
 		JSR		_farcall_argsAXY_safe
 		.BYTE	$00,$F0
-		.WORD	_j_apu_init
+		.WORD	_apu_init
 		LDA		#$80
 		STA		_apu_mus_idx_req
 		LDX		#$1F
@@ -693,12 +693,12 @@ _wait_for_mmc5_irq:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_3:
-		LDA		byte_13
-		BEQ		_unref_3
-		LDA		#0
-		STA		byte_13
-		RTS
+;_unref_3:
+;		LDA		byte_13
+;		BEQ		_unref_3
+;		LDA		#0
+;		STA		byte_13
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_input:
@@ -3367,15 +3367,16 @@ locret_18BBEC:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_adc_tmp2_unref:
-		TYA
-		CLC
-		ADC		_tmp2
-		STA		_tmp2
-		BCC		locret_18BBF7
-		INC		_tmp3
-locret_18BBF7:
-		RTS
+;_adc_tmp2_unref:
+;		TYA
+;		CLC
+;		ADC		_tmp2
+;		STA		_tmp2
+;		BCC		locret_18BBF7
+;		INC		_tmp3
+;locret_18BBF7:
+;		RTS
+
 _pal_bg_lib:
 		.BYTE	$0F,$36,$10,$12,$0F,$30,$10,$27,$0F,$36,$00,$16,$0F,$12,$28,$2A
 		.BYTE	$0F,$3C,$21,$12,$0F,$30,$10,$37,$0F,$36,$10,$16,$0F,$26,$39,$2B
@@ -3602,13 +3603,6 @@ _mmc5_mul16to16:
 		STA		$106,X
 		LDX		_backup_var
 		RTS
-
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF
-		.BYTE	$FF,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00
-		.BYTE	$49,$08,$00,$00,$00,$06,$00,$00,$8D,$21,$00,$00,$D0,$88,$00,$00
-		.BYTE	$0B,$A4,$00,$00,$DD,$AE,$00,$00
 
 		LAST_BANK_END F,$10000
 

@@ -87,9 +87,9 @@ _apu_se0_load:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_20:
-		STA		_apu_mus_idx_req
-		RTS
+;_unref_20:
+;		STA		_apu_mus_idx_req
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se1_load:
@@ -2463,14 +2463,16 @@ sub_15104E:
 		RTS
 loc_151054:
 		LSR
-		BCS		loc_151061
+		BCS		sub_151061
 		LSR
 		BCS		sub_1510B2
 		LSR
 		BCS		sub_1510D9
 		LSR
 		JMP		sub_1510F5
-loc_151061:
+
+; =============== S U B	R O U T	I N E =======================================
+sub_151061:
 		LDA		byte_535
 		AND		#1
 		BEQ		nullsub_7
@@ -2483,39 +2485,51 @@ loc_151061:
 		STA		word_6C
 		LDA		#2
 		STA		word_6C+1
+nullsub_7:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref:
-		LDA		word_6C+1
-		AND		#$F
-		BNE		loc_1510A7
-		LDA		word_6C
-		CMP		#$CE
-		BCC		loc_151091
-		CMP		#$D0
-		BCC		loc_15109C
-		CMP		#$DE
-		BCS		loc_15109C
-loc_151091:
-		LDA		byte_151125,X
-		STA		word_6C+1
-		LDA		byte_151129,X
-		STA		word_6C
-nullsub_7:
-		RTS
-loc_15109C:
-		LDA		byte_15112D,X
-		STA		word_6C+1
-		LDA		byte_151136,X
-		STA		word_6C
-		RTS
-loc_1510A7:
-		LDA		byte_15113F,X
-		STA		word_6C+1
-		LDA		byte_15114F,X
-		STA		word_6C
-		RTS
+;_unref:
+;		LDA		word_6C+1
+;		AND		#$F
+;		BNE		loc_1510A7
+;		LDA		word_6C
+;		CMP		#$CE
+;		BCC		loc_151091
+;		CMP		#$D0
+;		BCC		loc_15109C
+;		CMP		#$DE
+;		BCS		loc_15109C
+;loc_151091:
+;		LDA		byte_151125,X
+;		STA		word_6C+1
+;		LDA		byte_151129,X
+;		STA		word_6C
+;		RTS
+;loc_15109C:
+;		LDA		byte_15112D,X
+;		STA		word_6C+1
+;		LDA		byte_151136,X
+;		STA		word_6C
+;		RTS
+;loc_1510A7:
+;		LDA		byte_15113F,X
+;		STA		word_6C+1
+;		LDA		byte_15114F,X
+;		STA		word_6C
+;		RTS
+;byte_151125:
+;		.BYTE	$86,$86,$86,$86
+;byte_151129:
+;		.BYTE	$61,$63,$64,$62
+;byte_15112D:
+;		.BYTE	$86,$86,$86,$86,$86,$86,$86,$86,$86
+;byte_151136:
+;		.BYTE	$60,$66,$67,$65,$60,$69,$60,$68,$60
+;byte_15113F:
+;		.BYTE	$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86
+;byte_15114F:
+;		.BYTE	$60,$60,$61,$60,$60,$63,$64,$62,$60,$60,$60,$60,$60,$60,$60,$60
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1510B2:
@@ -2590,18 +2604,6 @@ loc_151115:
 		LDA		byte_15128F,X
 		STA		word_6C
 		RTS
-byte_151125:
-		.BYTE	$86,$86,$86,$86
-byte_151129:
-		.BYTE	$61,$63,$64,$62
-byte_15112D:
-		.BYTE	$86,$86,$86,$86,$86,$86,$86,$86,$86
-byte_151136:
-		.BYTE	$60,$66,$67,$65,$60,$69,$60,$68,$60
-byte_15113F:
-		.BYTE	$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86,$86
-byte_15114F:
-		.BYTE	$60,$60,$61,$60,$60,$63,$64,$62,$60,$60,$60,$60,$60,$60,$60,$60
 byte_15115F:
 		.BYTE	$41,$E2
 		.BYTE	$42,$E2
@@ -2865,12 +2867,12 @@ byte_15132F:
 		.BYTE	$F0,$0F
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_4:
-		LDA		#0
-		JSR		_pal_load_lib
-		LDA		#$80
-		JSR		_pal_load_lib
-		RTS
+;_unref_4:
+;		LDA		#0
+;		JSR		_pal_load_lib
+;		LDA		#$80
+;		JSR		_pal_load_lib
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _regular_constr_palette_redraw_req_set:
@@ -4246,11 +4248,5 @@ _far_heavy_traffic_report_test:
 		.WORD	_heavy_traffic_report_test
 locret_151FA1:
 		RTS
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$40,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$F7,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 
 		BANK_END D,$C000

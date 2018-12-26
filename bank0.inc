@@ -6,9 +6,7 @@
 
 		BANK_START $00
 
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_init:
-		JMP		_apu_init
+		SECTION_START	0
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_play:
@@ -149,9 +147,9 @@ loc_A0E1:
 		LDA		_apu_mus_res_lib-1,Y
 		STA		_apu_mus_chnl_flags
 		LDA		_apu_mus_res_lib,Y
-		STA.W		_apu_ptr
+		STA		_apu_ptr
 		LDA		_apu_mus_res_lib+1,Y
-		STA.W		_apu_ptr+1
+		STA		_apu_ptr+1
 		LDA		_apu_mus_res_lib+2,Y
 		STA		_apu_mus_v07
 		LDA		_apu_mus_res_lib+3,Y
@@ -587,9 +585,9 @@ locret_A41E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unref_7:
-		LDY		#$7F
-		STY		_APU_PULSE1_SWEEP
+;_unref_7:
+;		LDY		#$7F
+;		STY		_APU_PULSE1_SWEEP
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_pulse0_note_load:
@@ -850,12 +848,7 @@ locret_A5A2:
 		RTS
 byte_A5A3:
 		.BYTE	$30,$32,$30,$2E
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
 _apu_mus_res_ofs_list:
 		.BYTE	$0F,$12,$16,$19,$1C,$24,$1F,$28,$2C,$32,$34,$3A,$3C,$3E,$40
 		.BYTE	$01,$08,$FE
@@ -873,10 +866,7 @@ _apu_mus_res_ofs_list:
 		.BYTE	$E1,$FF
 		.BYTE	$E8,$FE
 		.BYTE	$EF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
 
-_unused_5:
-		.BYTE	1
 _apu_mus_res_lib:
 		_tapu _mus00,$1B,byte_A746,$52,$A5,$D3,$00
 		_tapu _mus01,$1B,byte_A821,$3A,$75,$D3,$A2
@@ -1282,12 +1272,10 @@ byte_BABC:
 		.BYTE	$02,$22,$02,$3A,$3C,$02,$02,$24,$02,$3C,$3E,$02,$02,$26,$02,$3E
 		.BYTE	$3C,$02,$02,$24,$02,$3C,$38,$02,$3C,$3E,$02,$42,$02,$02,$38,$42
 		.BYTE	$02,$02
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF
+
+		SECTION_END		0
+
+		SECTION_START	1
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_draw:
@@ -1742,5 +1730,7 @@ byte_BF12:
 		.BYTE	$81,$A9,$B2,$81,$A3,$B2,$A1,$B3,$A8
 byte_BF1B:
 		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
+
+		SECTION_END	1
 
 		BANK_END 0,$C000

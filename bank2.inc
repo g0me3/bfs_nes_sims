@@ -1106,57 +1106,35 @@ byte_3FD60:
 		.BYTE	$18,$CF,$00,$28
 		.BYTE	$80
 byte_3FDA1:
-		.BYTE	$00,$F0,$00,$08,$00,$F1,$00,$10,$08,$F2,$00,$08,$08,$F3,$00,$10
-		.BYTE	$08,$F4,$00,$18,$10,$F8,$00,$00,$10,$F9,$00,$08,$18,$FE,$00,$10
+		.BYTE	$00,$F0,$00,$08
+		.BYTE	$00,$F1,$00,$10
+		.BYTE	$08,$F2,$00,$08
+		.BYTE	$08,$F3,$00,$10
+		.BYTE	$08,$F4,$00,$18
+		.BYTE	$10,$F8,$00,$00
+		.BYTE	$10,$F9,$00,$08
+		.BYTE	$18,$FE,$00,$10
 		.BYTE	$80
 byte_3FDC2:
-		.BYTE	$F3,$FD,$00,$F4,$80
-byte_3FDC7:
-		.BYTE	$F0,$FC,$00,$F0,$F2,$FD,$00,$F3,$80
-byte_3FDD0:
-		.BYTE	$EB,$FB,$00,$EB,$EF,$FC,$00,$EF,$80
-byte_3FDD9:
-		.BYTE	$E5,$FA,$00,$E8,$EB,$FB,$00,$EB,$80
-byte_3FDE2:
-		.BYTE	$E2,$FA,$00,$E6,$80
-byte_3FDE7:
-		.BYTE	$E4,$EF
-		.BYTE	$00,$E8
+		.BYTE	$F3,$FD,$00,$F4
 		.BYTE	$80
-_unused:
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00
-		.BYTE	$01,$00,$00,$00,$FF,$FF,$FF,$FF,$EB,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FB,$FF,$FF,$FF,$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$04,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$01,$48,$00,$04,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$02,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$06,$00,$00,$02,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$02,$00,$02,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$02,$08,$00,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FB,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$40,$00,$00,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$02,$00,$00,$00,$00,$00
-		.BYTE	$08,$00,$00,$00,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$00,$00,$02,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$80,$10,$00,$00,$00,$04,$00,$00,$04
-		.BYTE	$00,$02,$88,$00
+byte_3FDC7:
+		.BYTE	$F0,$FC,$00,$F0
+		.BYTE	$F2,$FD,$00,$F3
+		.BYTE	$80
+byte_3FDD0:
+		.BYTE	$EB,$FB,$00,$EB
+		.BYTE	$EF,$FC,$00,$EF
+		.BYTE	$80
+byte_3FDD9:
+		.BYTE	$E5,$FA,$00,$E8
+		.BYTE	$EB,$FB,$00,$EB
+		.BYTE	$80
+byte_3FDE2:
+		.BYTE	$E2,$FA,$00,$E6
+		.BYTE	$80
+byte_3FDE7:
+		.BYTE	$E4,$EF,$00,$E8
+		.BYTE	$80
 
 		BANK_END 2,$C000

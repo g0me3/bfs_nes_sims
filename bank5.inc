@@ -3327,20 +3327,6 @@ byte_89ED6:
 		.BYTE	$FF,$FF,$FF,$01,$01,$01,$00,$FF
 		.BYTE	$FF,$FF,$FF,$FF,$01,$01,$01,$00
 		.BYTE	$00,$FF,$FF,$01,$01,$00,$FF,$FF
-		.BYTE	$01,$01,$00,$FF,$FF,$01,$01,$00
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FE,$FD,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$02,$00,$10,$80
-		.BYTE	$00,$00,$00,$00,$40,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$01
-		.BYTE	$80,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$01,$40,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$10,$00,$00,$00,$08,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00,$94,$00,$40
-		.BYTE	$00,$00,$00,$00,$40,$00,$00,$00,$80,$00,$00,$00,$00,$00,$01,$00
-		.BYTE	$20,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FD,$FF,$FF,$FF,$FF
-		.BYTE	$FF,$FF,$FE,$FF,$FF,$FF,$7F,$FF,$FF,$FF
+		.BYTE	$01,$01,$00,$FF,$FF,$01,$01,$00,$FF
 
 		BANK_END 5,$A000
