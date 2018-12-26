@@ -169,7 +169,7 @@ I_AREA_WIDX	EQU 4
 	; bit0 - bank built, wait for loan message
 	; bit6 - money loaned, wait for end of period
 	; bit7 - loan message enabled, may loan now
-{1}._tax_year_rate:						.WORD	0
+{1}._tax_year_sum:						.WORD	0
 {1}._loan_period:						.BYTE	0
 {1}._unused:							.BYTE	0	; *unused*
 	ENDM

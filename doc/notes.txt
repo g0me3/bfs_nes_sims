@@ -1,9 +1,12 @@
 	TODO
 
-- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar to above ones. Merge.
+- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar, merge.
 - Graphs data interpolations for all values.
 - Graphs data scale based on previously unused values.
 - Convert all _mmc5_mul8to8 calls to MULAI calls, should be faster.
+- Finish mini-map re and rename.
+- Finish events animation code re and rename.
+- Recalibrate triggers for new crime recalibrated values
 
 	NEW BUGS
 
@@ -17,14 +20,15 @@
 - Macrofication of the code for much more readable listing.
 - Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
 - Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
+- Rescale and rebalance some values after fixing some calculation bugs. This may also change the overall game mechanics and difficulty, probably more adjusting needed.
 - Fixed BUGS#1
 - Fixed BUGS#2.1, put the nmi wait calls to force buffers flush after any ppu queue. This also makes the turbo button work slower, but no more buffers overflows there.
 - TODO BUGS#2.2
 - Fixed BUGS#3
-- TODO BUGS#4
+- Fixed BUGS#4
 - Fixed BUGS#5, also removed redundant CPU cycles at Scenario select screen due to RAM address mistake there.
 - Fixed BUGS#6
-- TODO BUGS#7
+- Fixed BUGS#7
 - Fixed BUGS#8
 - Fixed BUGS#9, for square channels.
 - Fixed BUGS#10
@@ -176,6 +180,7 @@ BUGS#25. City score calculations are broken too. The main problem here is becaus
 	BUGS#25.4 RCI growth levels (RCI meters to the borrom-left) never lowers the score. They should do that when negative. But tests are incorrect and never passed.
 	BUGS#25.5 Result of score adjustment with net migration proportion stored in wrong value, so the actual result is never used, instead used one of the multiplication arguments (exactly the proportion value).
 BUGS#26. Overal calculations of average values mostly broken. Somehow they balanced with random bugs or bugs on purpose, and somehow rescaled when needed. The main problem here, the original source has a wide range averages for base values. Pollution average, Crime level average are sums of all area levels divided by number of such areas. The average mathematically can't be greather than max value of the single area. In the NES code, values for all areas are in range from $00 to $0F. So average shouldn't be higher than $0F. However, due to some data formats mangling and misunderstanding, the averages calculated as a result of division of two fixed points values. And if we may logically assume, that area values in range $00 to $0F is a small fixed point values, we shouldn't treat the divider the same. Divider is an integer value. If you treat it as fixed point, where low nibble is FRAC, and high nibble is INT, then you will get anything, but average value. For example. Sum of crime area levels is $0653, total areas collected is $00F1. Then if divide as fixed point we divide 6.324 to 0.941 ($00F1=0.241/256). But since we divide to value <1, the result will be HIGHER than overall sum. And this value is used for all other calculations! So we literally using not the average levels, but weighted sums. Other side effect here is when we have more than 256 areas to calc overage, so higher nibble of 16-bit counter won't be zero, we will have a little scaling down of average velues, but still not so much high how it should be. Even if we will calc the max number of areas lite 38*38=1444, result will be only 5 times smaller. The only way to avoid it in current version is to keep all overages at ZERO. Which is mostly impossible for pollution, but highly possible for crime rate for example.
+BUGS#27. Save/Load option in the game has a special game mode index 0. At the same time, you may save and load any mode of the game! And when restored, game mode turns to 0. All special scenario or practice events are not functional anymore! So literally you just couldn't continue any game properly. The scenario special parameters are reset unless console is not rebooted.
 
 	MISC
 

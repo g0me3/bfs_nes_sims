@@ -3,6 +3,10 @@
 
 		BANK_START $F4
 
+; ---------------------------------------------------------------------------
+; -------------G-A-M-E--S-E-T-U-P--A-N-D--I-N-I-T--S-T-U-F-F-----------------
+; ---------------------------------------------------------------------------
+
 		SECTION_START 301
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -358,6 +362,10 @@ _tlm_extnt_game_msg_presentss_icons_lib:
 		.BYTE	$12,$12,$12
 
 		SECTION_END 301
+
+; ---------------------------------------------------------------------------
+; ----------------G-A-M-E--E-V-E-N-T-S--A-N-I-M--D-A-T-A---------------------
+; ---------------------------------------------------------------------------
 
 		SECTION_START 302
 
@@ -919,7 +927,11 @@ _anim_dataA_12:
 _anim_dataB_12:
 		.BYTE	$46,$10,$E0,$E0,$E0,$48,$FE,$06,$00
 
-		SECTION_END 302
+		SECTION_ENDS 302, "PRG3 EVENTS ANIM DATA"
+
+; ---------------------------------------------------------------------------
+; ------------G-A-M-E--E-V-E-N-T-S--M-E-S-S-A-G-E-S--D-A-T-A-----------------
+; ---------------------------------------------------------------------------
 
 		SECTION_START 303
 
@@ -1734,6 +1746,6 @@ aYouCanDoIsWait:		.BYTE	"you can do is wait",$F
 aWhileItDestroysEvery:	.BYTE	"while it destroys every"
 aThingInItSPath_:		.BYTE	"thing in it*s path.",$F
 
-		SECTION_END 303
+		SECTION_ENDS 303, "PRG3 EVENTS MESSAGES DATA"
 
 		BANK_END F4,$A000

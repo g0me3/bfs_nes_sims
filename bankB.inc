@@ -4,159 +4,167 @@
 		BANK_START $FB
 
 ; =============== S U B	R O U T	I N E =======================================
+; Here is the main loop for city engine. Performs continuously calculations
+; on a different city areas and updating statuses.
+;
+; at the beginning we do initial calcs without entering critical section,
+; so at the beginning of the game we may see a black screen sometime longer
+; than usual. However, you still have a priority with controls, so this may
+; be fixed by pressing buttons oc controller.
+;
 _THREAD1_MAIN:
-		FJSR	_RCI_meters_recalc,SRAM,PRGA
-		JSR		_overall_stats_clear
-		JSR		_overall_stats_recalc
-		JSR		_interpolate_police_fire_maps
-		FJSR	_power_grid_recalc,SRAM,PRGA
-		JSR		_land_val_avr_pollution_recalc
-		JSR		_crime_lvl_avr_recalc
-		JSR		_population_dencity_recalc
+		FJSR	_RCI_meters_recalc,SRAM,PRGA	; probably should be after clearing values here?
+		JSR		_overall_stats_clear			; clear statistic counters and average values
+		JSR		_overall_stats_recalc			; collect statistic for current map
+		JSR		_interpolate_police_fire_maps	; police and fire maps are initially updated in prev routine
+		FJSR	_power_grid_recalc,SRAM,PRGA	; power connections and consumption recalc
+		JSR		_land_value_recalc				; land map and average recalc
+		JSR		_crime_lvl_avr_recalc			; crime map and average recalc
+		JSR		_population_dencity_recalc		; population dencity and with migration point
 		LDA		#$FF
-		STA		_thread1_flags
-		STA		_thread1_flags+1
-		FJSR	_city_stats_recalc,SRAM,PRGA
-		LDA		#$00
+		STA		_thread1_flags					; disable all ctitical sections, now all priorities are
+		STA		_thread1_flags+1				; reset
+		FJSR	_city_stats_recalc,SRAM,PRGA	; must be the city evaluation recalc but at this point
+		LDA		#$00							; but most time levels here are zero, so calc not performed
 		STA		_city._cur_week
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD1_LOOP:
-		JSR		_wait_for_hud_redraw			; priority as usual in THREAD0
+		JSR		_screen_invalidate				; priority as usual in THREAD0
 		INC		_city._cur_week					; one loop - one week here
 		LDA		_city._cur_week
 		LSR
-		BCC		loc_11E047
+		BCC		_rci_meters_calc_skip
 		FJSR	_RCI_meters_recalc,SRAM,PRGA	; recalc RCI once in two weeks
-loc_11E047:
-		JSR		_map_corruption_tiles_animate	; animate map tiles that bulldozed
-		LDA		_frames_counter					; adjust random seed
-		STA		_rand_seed
-		ADDWB	_city._tax_year_rate,_city._tax_rate	; summing tax rates every week
+_rci_meters_calc_skip:
+		JSR		_map_corruption_tiles_animate	; animate destroyed map tiles
+		LDA		_frames_counter					; reseed RNG, so we have different behaviour
+		STA		_rand_seed						; on a different starts
+		ADDWB	_city._tax_year_sum,_city._tax_rate	; summing tax rates every week
 		MOVWI	_power_nodes_cnt,0				; reset power grid nodes list
 		LDA		#$07
 		STA		_thread0_flags+1				; take some priority
-		JSR		_overall_stats_clear
-		JSR		_overall_stats_recalc
+		JSR		_overall_stats_clear			; clear stats again
+		JSR		_overall_stats_recalc			; collect stats one more time
 		LDA		#$03
 		STA		_thread0_flags+1
-		JSR		_interpolate_police_fire_maps
-		LDA		#$00
+		JSR		_interpolate_police_fire_maps	; do the same as on start, but with some
+		LDA		#$00							; priority masking
 		STA		_thread0_flags+1
-		JSR		_map_corruption_tiles_animate
+		JSR		_map_corruption_tiles_animate	; animate map again. a lot of them here
 		LDA		_city._cur_week
 		AND		#$03
-		BNE		loc_11E0E1
+		BNE		.default_city_calcs				; one month = 4 weeks, do additional calcs
 		LDA		#$03
 		STA		_thread1_flags+1
-		INC		_city._cur_month
+		INC		_city._cur_month				; yep, increase months
 		LDA		_city._cur_month
 		CMP		#$0C
-		BNE		loc_11E0DB
+		BNE		.default_month_work				; year = 12 months
 		LDA		#$00
-		STA		_city._cur_month
-		LDA		_city._cur_year+1
+		STA		_city._cur_month				; reset monts, increase years
+		LDA		_city._cur_year+1				; unless it not 9999, or...
 		CMP		#$27
-		BNE		loc_11E0A9
+		BNE		.do_year_increase
 		LDA		_city._cur_year
 		CMP		#$0F
-		BEQ		loc_11E0B1
-loc_11E0A9:
+		BEQ		.skip_year_increase				; ...the end of the time
+.do_year_increase:
 		INCW	_city._cur_year
-loc_11E0B1:
-		FJSR	_graphs_10_year_data_update,SRAM,PRGA
-		FJSR	_fiscal_year_results_calc,SRAM,PRGA
-		FJSR	_city_stats_recalc,SRAM,PRGA
-		JSR		_map_corruption_tiles_animate
-		FJSR	_test_for_new_decade,SRAM,PRGA
-		LDA		_tmpE6
-		BNE		loc_11E0DB
-		FJSR	_graphs_100_year_data_update,SRAM,PRGA
-loc_11E0DB:
-		JSR		_population_growth_map_recalc
-		JSR		_map_corruption_tiles_animate
-loc_11E0E1:
-		JSR		_traffic_dencity_smooth
-		JSR		_map_corruption_tiles_animate
-		FJSR	_events_manager,SRAM,PRGA
-_game_stop_loop:
-		LDY		_city._game_speed
-		CPY		#$03
-		BNE		_game_core_calc
-		JSR		_wait_for_hud_redraw
-		JMP		_game_stop_loop
-_game_core_calc:
-		LDA		_game_core_recalcA_delay_list,Y
-		AND		_city._cur_week
-		BNE		loc_11E117
-		LDA		#$02
-		JSR		_critical_section_enter
+.skip_year_increase:
+		FJSR	_graphs_10_year_data_update,SRAM,PRGA	; update graphs per year
+		FJSR	_fiscal_year_results_calc,SRAM,PRGA		; recalc taxes and display budget screen
+		FJSR	_city_stats_recalc,SRAM,PRGA	; update city evaluation stats and traffic map!
+		JSR		_map_corruption_tiles_animate	; animate again, to much time takes this loop
+		FJSR	_test_for_new_decade,SRAM,PRGA	; test for the last decimal nibble of year
+		LDA		_tmpE6							; if 0, then upadte 100 year graphs as well
+		BNE		.default_month_work
+		FJSR	_graphs_100_year_data_update,SRAM,PRGA	; currently just copy last 10year stats
+.default_month_work:
+		JSR		_population_growth_recalc		; we have pop growth recalc here for the first time
+		JSR		_map_corruption_tiles_animate	; and animate again. if not animate it will stay forever
+.default_city_calcs:
+		JSR		_traffic_dencity_smooth			; soften traffic dencity map, TODO: test me, maybe too soft?
+		JSR		_map_corruption_tiles_animate	; ANIMATE AGAIN!!!
+		FJSR	_events_selector,SRAM,PRGA		; now chek if the events messages need to be displayed
+.game_stop_loop:
+		LDY		_city._game_speed				; when city is in pause mode, we will stop here
+		CPY		#$03							; and loop forever. means no other calcs on town anymore
+		BNE		.game_core_calc
+		JSR		_screen_invalidate
+		JMP		.game_stop_loop
+.game_core_calc:
+		LDA		_power_grid_recalc_delay_mask,Y	; another speed limit option goes here
+		AND		_city._cur_week					; for fast mode power connection and consumption
+		BNE		.skip_power_grid_calc			; performed only once per month, very time spending
+		LDA		#$02							; procedure. slow and normal speeds are takes
+		JSR		_critical_section_enter			; full power scan every week
 		FJSR	_power_grid_recalc,SRAM,PRGA
 		LDA		#$02
 		JSR		_critical_section_leave
-		JSR		_map_corruption_tiles_animate
-loc_11E117:
-		LDY		_city._game_speed
-		LDA		_game_core_recalc0_delay_mask_list,Y
-		AND		_city._cur_week
-		CMP		_game_core_recalcB_delay_list,Y
-		BNE		loc_11E135
-		LDA		#$A0
-		JSR		_critical_section_enter
-		JSR		_land_val_avr_pollution_recalc
-		LDA		#$A0
+		JSR		_map_corruption_tiles_animate	; also animate tiles too
+.skip_power_grid_calc:
+		LDY		_city._game_speed				; for the rest of recalculations we have three
+		LDA		_game_core_speed_mask_list,Y	; three speed options. all recalcs for fast mode go
+		AND		_city._cur_week					; every 16 weeks, normal - every 8, slow - every 4.
+;		CMP		_land_value_recalc_delay_list,Y	; land values calculated first within each delay
+		BNE		loc_11E135						; period, at counter 0
+		LDA		#$A0							; all these recalcs are time consuming, so time for
+		JSR		_critical_section_enter			; complete this loop increased with a number of
+		JSR		_land_value_recalc				; calcs performes, so for fast modes they just skip
+		LDA		#$A0							; all except main evaluations
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
 loc_11E135:
-		LDY		_city._game_speed
-		LDA		_game_core_recalc0_delay_mask_list,Y
-		AND		_city._cur_week
-		CMP		_game_core_recalcC_delay_list,Y
-		BNE		loc_11E153
-		LDA		#$40
-		JSR		_critical_section_enter
-		JSR		_crime_lvl_avr_recalc
+		LDY		_city._game_speed				; crime level calculations performed at 2/4
+		LDA		_game_core_speed_mask_list,Y	; of the delay period
+		AND		_city._cur_week					; NOTE, when you select pause mode after
+		CMP		_crime_recalc_delay_list,Y		; the stop loop above, you select fourth
+		BNE		loc_11E153						; set of delay counters and masks, which
+		LDA		#$40							; are always 0, so when you get here and change
+		JSR		_critical_section_enter			; speed, at least two other calculations will
+		JSR		_crime_lvl_avr_recalc			; be forced
 		LDA		#$40
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
 loc_11E153:
-		LDY		_city._game_speed
-		LDA		_game_core_recalc0_delay_mask_list,Y
-		AND		_city._cur_week
-		CMP		_game_core_recalcD_delay_list,Y
-		BNE		loc_11E171
+		LDY		_city._game_speed				; and finally, population recalcs performed
+		LDA		_game_core_speed_mask_list,Y	; at 3/4 of the delay period.
+		AND		_city._cur_week					; so all three recalcs performed once per loop
+		CMP		_game_core_recalcD_delay_list,Y	; at a different weeks, never calculated
+		BNE		loc_11E171						; at once
 		LDA		#$04
 		JSR		_critical_section_enter
 		JSR		_population_dencity_recalc
 		LDA		#$04
-		JSR		_critical_section_leave
-		JSR		_map_corruption_tiles_animate
+		JSR		_critical_section_leave			; animate map corruptions every time we exit the
+		JSR		_map_corruption_tiles_animate	; long routine.
 loc_11E171:
-		JSR		_disasters_handlers_select
-		JSR		_map_corruption_tiles_animate
+		JSR		_disasters_handlers_select		; and finally at the end of the week we select the
+		JSR		_map_corruption_tiles_animate	; desister if enabled manually or for scenario
 		JMP		_THREAD1_LOOP
 
-_game_core_recalcA_delay_list:
+_power_grid_recalc_delay_mask:
 		.BYTE	$03,$00,$00,$00
-_game_core_recalc0_delay_mask_list:
+_game_core_speed_mask_list:
 		.BYTE	$0F,$07,$03,$00
-_game_core_recalcB_delay_list:
-		.BYTE	$00,$00,$00,$00
-_game_core_recalcC_delay_list:
+;_land_value_recalc_delay_list:
+;		.BYTE	$00,$00,$00,$00					; REDUNDAT, actually this not needed, because all zeroes
+_crime_recalc_delay_list:
 		.BYTE	$04,$02,$01,$00
 _game_core_recalcD_delay_list:
 		.BYTE	$08,$04,$02,$00
 
 ; =============== S U B	R O U T	I N E =======================================
-_wait_for_hud_redraw:
-		LDA		#$FF
-		STA		_hud_redraw_req
+_screen_invalidate:
+		LDA		#$FF							; set flag to the chain of redraw function for THREAD0
+		STA		_hud_redraw_req					; redraws upper hud, tool palette, and game screen
 		LDA		#$01
-		STA		_game_core_state
+		STA		_game_core_state				; switch to the THREAD0 on next nmi
 loc_11E198:
-		LDA		_hud_redraw_req
+		LDA		_hud_redraw_req					; wait for request is accepted
 		BNE		loc_11E198
 		RTS
 
@@ -1437,7 +1445,7 @@ _4x4_building_surrond_tiles_ofsY_list:
 		.BYTE	$00,$01,$FF,$02,$FF,$02,$00,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-_land_val_avr_pollution_recalc:
+_land_value_recalc:
 		JSR		_clear_tmp_map_B5
 		LDA		#$00
 		STA		_tmp6CC
@@ -1547,12 +1555,10 @@ loc_11EB9A:
 		MOVW	_tmpE7,_tmp6CC
 ; -
 ; FIX, rescale average
-		LDA		_tmp6CE							; fast divide to 16 in FIXED POINT!
+		LDA		_tmp6CE							; fast divide to 8 in FIXED POINT!
 		ASL										; you may think i multiply, NO!
 		ROL		_tmp6CE+1						; result is fp8_8
 		ASL										; so we cam have results in more wider range
-		ROL		_tmp6CE+1
-		ASL
 		ROL		_tmp6CE+1
 		ASL
 		ROL		_tmp6CE+1
@@ -1606,12 +1612,10 @@ loc_11EBFE:
 		MOVW	_tmpE7,_tmp6D2
 ; -
 ; FIX, rescale average
-		LDA		_tmp6D0							; fast divide to 16 in FIXED POINT!
+		LDA		_tmp6D0							; fast divide to 8 in FIXED POINT!
 		ASL										; you may think i multiply, NO!
 		ROL		_tmp6D0+1						; result is fp8_8
 		ASL										; so we cam have results in more wider range
-		ROL		_tmp6D0+1
-		ASL
 		ROL		_tmp6D0+1
 		ASL
 		ROL		_tmp6D0+1
@@ -1848,12 +1852,10 @@ loc_11EE02:
 		MOVW	_tmpE7,_tmp6CC					; now load divident
 ; -
 ; FIX, rescale average
-		LDA		_tmp6D0							; fast divide to 16 in FIXED POINT!
+		LDA		_tmp6D0							; fast divide to 8 in FIXED POINT!
 		ASL										; you may think i multiply, NO!
 		ROL		_tmp6D0+1						; result is fp8_8
 		ASL										; so we cam have results in more wider range
-		ROL		_tmp6D0+1
-		ASL
 		ROL		_tmp6D0+1
 		ASL
 		ROL		_tmp6D0+1
@@ -2385,9 +2387,9 @@ _overall_stats_clear:
 		LDX		#$00
 		TXA
 loc_11F242:
-		STA		_total_RCI_counts,X
-		INX
-		CPX		#$2C
+		STA		_total_RCI_counts,X				; TODO: make sure when RAM vars are
+		INX										; moved, all these vars whould be here
+		CPX		#$2C							; maybe we should make a structure here
 		BNE		loc_11F242
 		STA		_city._level._R.FRAC
 		STA		_city._level._R.INT
@@ -2410,7 +2412,7 @@ loc_11F26A:
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
-_population_growth_map_recalc:
+_population_growth_recalc:
 		LDA		#$00
 loc_11F27A:
 		STA		_tmp_map_pos._ROW
@@ -2480,51 +2482,51 @@ loc_11F2CD:
 
 ; =============== S U B	R O U T	I N E =======================================
 _critical_section_leave:
-		PHA
+		PHA										; clear thread 0 mask
 		EOR		#$FF
 		AND		_thread0_flags
 		STA		_thread0_flags
 		PLA
-		ORA		_thread1_flags
+		ORA		_thread1_flags					; set thread 1 mask
 		STA		_thread1_flags
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _critical_section_enter:
-		ORA		_thread0_flags
+		ORA		_thread0_flags					; set thread 0 mask
 		STA		_thread0_flags
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_corruption_tiles_animate:
-		LDA		_corruption_anim_flag
-		BEQ		loc_11F33A
-		JSR		_sram_write_enable
-		MOVWO	_tmpE6,_city_map
+		LDA		_corruption_anim_flag			; end of loopp signal, if equal
+		BEQ		loc_11F33A						; then no tiles to animate left
+		JSR		_sram_write_enable				; enable access to sram
+		MOVWO	_tmpE6,_city_map				; pointer to the beginning
 		LDY		#$00
 		STY		_corruption_anim_flag
 loc_11F310:
-		LDA		(_tmpE6),Y
+		LDA		(_tmpE6),Y						; scan, look for corrupt tiles
 		SEC
-		SBC		#$E7
-		BCC		loc_11F324
+		SBC		#_MAP_CORRUPT0					; start with _MAP_CORRUPT0
+		BCC		loc_11F324						; skip if less than index
 		CMP		#$04
-		BCS		loc_11F324
-		TAX
-		LDA		_corrupt_ground_tiles_list,X
+		BCS		loc_11F324						; there are 4 total anim tiles tile
+		TAX										; and one common corrupted ground
+		LDA		_corrupt_ground_tiles_list,X	; then change to the next in list
 		STA		(_tmpE6),Y
-		STA		_corruption_anim_flag
+		STA		_corruption_anim_flag			; set flag
 loc_11F324:
 		INCW	_tmpE6
-		CMPWI	_tmpE6,_city_map_end
+		CMPWI	_tmpE6,_city_map_end			; test for end of buffer
 		BNE		loc_11F310
-		JSR		_wait_for_hud_redraw
+		JSR		_screen_invalidate				; update the screen
 		JMP		_map_corruption_tiles_animate
 loc_11F33A:
-		JMP		_sram_write_disable
+		JMP		_sram_write_disable				; disable writes back
 
 _corrupt_ground_tiles_list:
-		.BYTE	$E8,$E9,$EA,$B4
+		.BYTE	_MAP_CORRUPT1,_MAP_CORRUPT2,_MAP_CORRUPT3,_MAP_CORRUPTED
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11F341:
@@ -3506,7 +3508,7 @@ loc_11FB73:
 		STA		_game_msg_idx
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JMP		_wait_for_hud_redraw			; if goto icon is used
+		JMP		_screen_invalidate				; if goto icon is used
 
 ; =============== S U B	R O U T	I N E =======================================
 _flood_disaster_start:
@@ -3576,7 +3578,7 @@ loc_11FC0E:
 		STA		_game_msg_idx
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JSR		_wait_for_hud_redraw
+		JSR		_screen_invalidate
 		JMP		_goto_alert_start
 byte_11FC26:
 		.BYTE	$00,$01,$00,$FF
@@ -3618,7 +3620,7 @@ loc_11FC69:
 		DEC		_tmp6CE
 		BNE		loc_11FC3E
 loc_11FC6E:
-		JSR		_wait_for_hud_redraw
+		JSR		_screen_invalidate
 		LDA		_earthquake_shake_req
 		BNE		loc_11FC6E
 		LDY		#$0A
@@ -3675,7 +3677,7 @@ _tornado_disaster_start:
 		STA		_game_msg_idx					; draw message
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JSR		_wait_for_hud_redraw
+		JSR		_screen_invalidate
 		APUA_SE	_SE_IDX_TORNADO
 		JMP		_goto_alert_start
 locret_11FCFC:
@@ -3746,7 +3748,7 @@ _monster_disaster_start_ex:
 		STA		_game_msg_idx					; game message display
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JSR		_wait_for_hud_redraw
+		JSR		_screen_invalidate
 		JMP		_goto_alert_start
 locret_11FD73:
 		RTS

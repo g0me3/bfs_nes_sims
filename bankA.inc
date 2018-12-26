@@ -3,6 +3,10 @@
 
 		BANK_START $FA
 
+; ---------------------------------------------------------------------------
+; ------C-I-T-Y--C-O-R-E--R-E-C-A-L-C--E-X-T-E-R-N-A-L--R-O-U-T-I-N-E-S------
+; ---------------------------------------------------------------------------
+
 		SECTION_START B01
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -900,8 +904,8 @@ _fiscal_year_results_calc:
 ; FIX, for some reason, here were zeroed only lower nibble of value, let them zero completely
 		MOVDI	_taxes_income, 0
 ; -
-		MOVW	_tmp6CC,_city._tax_year_rate	; get sum of year taxes
-		MOVWI	_city._tax_year_rate,0			; reset global value then
+		MOVW	_tmp6CC,_city._tax_year_sum	; get sum of year taxes
+		MOVWI	_city._tax_year_sum,0			; reset global value then
 		LDA		_budget_scr_draw_req			; if we already on the budget screen when end of the year
 		BEQ		loc_1046EB						; happens, skip this
 		RTS
@@ -966,9 +970,9 @@ loc_1046EB:
 		PUSHB	#$B6							; final scale coeff common for all difficulties = 0.71
 		JSR		_mmc5_mul16to8					; multiply fp8_8 to fp0_8
 		PLA
-		PUSHW	_tmp6CC							; result already in stack, just push _tax_year_rate
+		PUSHW	_tmp6CC							; result already in stack, just push _tax_year_sum
 		JSR		_mmc5_mul16to16					; full equation is
-		PLA										; _city_taxes_collected=(L_R+L_C+L_I)*_land_val_avr*diff[1.4/1.2/0.8]*0.71*_tax_year_rate
+		PLA										; _city_taxes_collected=(L_R+L_C+L_I)*_land_val_avr*diff[1.4/1.2/0.8]*0.71*_tax_year_sum
 		POPD	_city_taxes_collected			; result is 24-bit
 		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings at all, then skip budget screen
 		ORA		_cur_RCI_levels_sum.INT
@@ -1281,7 +1285,7 @@ _city_net_migration_relalc:
 ;		STY		_city._city_type
 ; -
 ; OPTIMIZED
-		LDX		#$04
+		LDX		#$04							; start from MEGAPOLIS value and down
 loc_104AF0:
 		JSR		_popul_compare					; existing routine used
 		BCS		loc_104AF1
@@ -1473,7 +1477,7 @@ loc_104BD1:
 		STA		_tmpEB
 loc_104BE1:
 		PUSHWI	$0190							; fp8_8 = 1.56 or int = 400
-		JSR		_rand
+		JSR		_rand							; (300 in original Micropolis source)
 		PHA
 		JSR		_mmc5_mul16to8					; E6/E7 = 400 * rand(256) integer or
 		PLA										; or in fp8_8 1.56*[0-0.999]
@@ -1566,9 +1570,9 @@ loc_104C8E:
 		ADC		_tmpE7							; FIX, rebalance
 		STA		_tmpE7
 		LDA		_problem_data+1,Y
-; BUG, for some reasons we store values
-; one nibble lower, than for usual divs
-; this lead the result will be always too small
+; BUG, for some reasons they stored values
+; one nibble lower than for usual dividends
+; this lead the result be always too small
 ;		ADC		_tmpE7
 ;		STA		_tmpE7
 		ADC		_tmpE8							; FIX, rebalance
@@ -1602,17 +1606,17 @@ loc_104CB1:
 		STA		_tmpE7
 		LDA		_tmpE6							; E6 = (0.999-E6)*4, reverse value
 ; WARNING, case with 0 will calculated incorrectly here
-; probably we need to use other method of negating this calue
+; probably we need to use other method of negating this value
 ;		NEGA									; more problems, less score
 ; -
-; TRYME,
+; TRY ME,
 		EOR		#$FF
 ; -
 		ASL
 		ROL		_tmpE7
 		ASL
 		ROL		_tmpE7
-; BUG! does not saved low nibble ore multiply result here! means
+; BUG! low nibble or multiplication not saved! means
 ; we compare _tmpE6 as a frankenstain combined from not-xored
 ; low nibble of _tmpE6 and high nibble of multiply result
 ; so we will have here wrong reversed value!
@@ -1651,8 +1655,8 @@ loc_104CEC:
 		BCS		loc_104D0A
 		DEC		_tmpE7
 loc_104D0A:
-		LDA		_fund_rate_police				; luck of police and fire funding will lower
-		CMP		#$0F							; scores to E6 = (E6 * (0.95 + funding))
+		LDA		_fund_rate_police				; lack of police and fire funding lowers
+		CMP		#$0F							; the scores to E6 = (E6 * (0.95 + funding))
 		BCS		loc_104D14
 		JSR		_mul_a_add_fp0_95
 loc_104D14:
@@ -1665,8 +1669,8 @@ loc_104D1E:
 ; false here, because CMP opcode does not set the V
 ; overflow flag! also, the original Micropolis code
 ; lowers the score here only if delta is negative.
-; values for negative here FF-80, so we must test
-; the higher S bit instead!
+; values for negative here are FF-80, so we must test
+; the S bit instead!
 		LDA		_city._delta._R
 ;		CMP		#$40							; BUG
 ;		BVC		loc_104D28
@@ -1695,7 +1699,7 @@ loc_104D3C:
 		BEQ		.j_sity_score_finish
 		LDA		_popul_cur
 		CMP		_popul_net_migration			; also if _popul_net_migration = _popul_cur
-		BNE		.net_migration_sum				; which will be the case after very first year
+		BNE		.net_migration_sum				; which will be the case after first year
 		LDA		_popul_cur+1					; of your city.
 		CMP		_popul_net_migration+1
 		BNE		.net_migration_sum
@@ -1776,8 +1780,8 @@ loc_104E17:
 		LDA		_city._score					; interpolate with previous value
 		CLC
 		ADC		_tmpE6							; annual change = (new score + old score)/2 - old score
-		STA		_city._score
-		LDA		_city._score+1
+		STA		_city._score					; so every time we got completely zero score, the
+		LDA		_city._score+1					; annual change is half of previous value.
 		ADC		_tmpE7
 		LSR
 		STA		_city._score+1
@@ -1817,7 +1821,7 @@ _mul_a_add_fp0_95:
 ; !FGALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_mul_stack_a_popw_tmpE6:
+_mul_stack_a_popw_tmpE6:						; OPTIMIZED, merged same parts
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1826,26 +1830,23 @@ _mul_stack_a_popw_tmpE6:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_votes_recalc:
-		LDA		#$00
+		LDA		#$00							; very simple votes calculation
 		STA		_doing_a_good_job_votes
 		STA		_doing_a_bad_job_votes
-		LDY		#$64
+		LDY		#100							; 100 iterations to get all votes
 loc_104E75:
-		PUSHWI	$03E8
+		PUSHWI	1000							; random value from 0 to 1000...
 		JSR		_rand
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
 		POPW	_tmpE6
-		LDA		_tmpE6
-		CMP		_city._score
-		LDA		_tmpE7
-		SBC		_city._score+1
-		BCS		loc_104E9A
-		INC		_doing_a_good_job_votes
-		BNE		loc_104E9D
+		CMPW	_tmpE6,_city._score				; ...compared with city score
+		BCS		loc_104E9A						; if random number less than score
+		INC		_doing_a_good_job_votes			; increase good job counter
+		BNE		loc_104E9D						; if higher, then bad job increased
 loc_104E9A:
-		INC		_doing_a_bad_job_votes
+		INC		_doing_a_bad_job_votes			; so, the higher scores, less bad votes
 loc_104E9D:
 		DEY
 		BNE		loc_104E75
@@ -1853,30 +1854,39 @@ loc_104E9D:
 
 		SECTION_ENDS B02, "PRGB GRAPHS FISCAL YEAR CITY EVAL RECALCS"
 
+; ---------------------------------------------------------------------------
+; ----------------------E-V-E-N-T-S--S-E-L-E-C-T-O-R-------------------------
+; ---------------------------------------------------------------------------
+
+		SECTION_START B03
+
 ; =============== S U B	R O U T	I N E =======================================
-_events_manager:
-		JSR		_scenario_result_test
-		JSR		_practice_mode_events_handler
-		JSR		_scroll_msg_manager
+; selector run one cycle for all possible events and test unmasked ones
+; if they need to be displayed.
+;
+_events_selector:
+		JSR		_scenario_result_test			; here we test for scenarios completion
+		JSR		_practive_events_test			; practice has additional hint events
+		JSR		_scroll_msg_selector			; select scroll warning messages
 		LDA		_game_msg_awaits_flag
-		BNE		locret_104ED8
+		BNE		locret_104ED8					; skip not if we already selected any messages
 		LDA		_game_msg_idx
-		STA		_prev_game_msg_idx
-		LDX		#$00
+		STA		_prev_game_msg_idx				; save currently selected message to prevent
+		LDX		#$00							; double triggering by accident
 		LDY		#$00
-loc_104EB7:
-		LDA		_city._events_used_flags,X
+.next_byte_loop:
+		LDA		_city._events_used_flags,X		; first fetch event triggers
 		STA		_tmpE6
-loc_104EBC:
-		LSR		_tmpE6
-		BCS		loc_104ECB
-		TXA
+.bits_loop:
+		LSR		_tmpE6							; exctract bit
+		BCS		loc_104ECB						; if already set, skip check
+		TXA										; backup X and Y counters
 		PHA
 		TYA
 		PHA
-		JSR		_presents_events_check
-		PLA
-		TAY
+		JSR		_presents_events_check			; execute test for first $1B special
+		PLA										; items, the rest $1B to $23 are
+		TAY										; called from special handlers
 		PLA
 		TAX
 loc_104ECB:
@@ -1885,21 +1895,21 @@ loc_104ECB:
 		BEQ		locret_104ED8
 		TYA
 		AND		#$07
-		BNE		loc_104EBC
+		BNE		.bits_loop						; every 8 bits, get new one from array
 		INX
-		BNE		loc_104EB7
+		BNE		.next_byte_loop
 locret_104ED8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _presents_events_check:
-		LDA		_presents_events_lib_lo,Y
+		LDA		_presents_events_lib_lo,Y		; fast switch, _switch is unsafe for _ptr0 anyway
 		STA		_tmpE7
 		LDA		_presents_events_lib_hi,Y
 		STA		_tmpE8
 		JMP		(_tmpE7)
 _presents_events_lib_lo:
-		.BYTE	<[nullsub_1]
+		.BYTE	<[nullsub_1]					; default hint event have no conditions to test
 		.BYTE	<[_event01_city_growt]
 		.BYTE	<[_event01_city_growt]
 		.BYTE	<[_event01_city_growt]
@@ -1908,8 +1918,8 @@ _presents_events_lib_lo:
 		.BYTE	<[_event06_total_jam]
 		.BYTE	<[_event07_traffic]
 		.BYTE	<[_event08_crime]
-		.BYTE	<[nullsub_3]
-		.BYTE	<[nullsub_3]
+		.BYTE	<[nullsub_1]					; as well as MONSTER and QUAKE events, then forced
+		.BYTE	<[nullsub_1]					; at a custom handler
 		.BYTE	<[_event0B_bank]
 		.BYTE	<[_event0C_relationships]
 		.BYTE	<[_event0D_amusement]
@@ -1936,8 +1946,8 @@ _presents_events_lib_hi:
 		.BYTE	>[_event06_total_jam]
 		.BYTE	>[_event07_traffic]
 		.BYTE	>[_event08_crime]
-		.BYTE	>[nullsub_3]
-		.BYTE	>[nullsub_3]
+		.BYTE	>[nullsub_1]
+		.BYTE	>[nullsub_1]
 		.BYTE	>[_event0B_bank]
 		.BYTE	>[_event0C_relationships]
 		.BYTE	>[_event0D_amusement]
@@ -1961,52 +1971,53 @@ nullsub_1:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event01_city_growt:
-		TYA
-		TAX
+		TYA										; common handler for all city growth messages
+		TAX										; Y here 1 to 5, message indexes = Y-1
 		DEX
-		JSR		_popul_compare
-		BCC		nullsub_4
+		JSR		_popul_compare					; compare population with library value
+		BCC		nullsub_4						; if less, then skip
 		TYA
 		PHA
-		STY		_city._city_type
-		JSR		_city_history_write
+		STY		_city._city_type				; store new city type
+		JSR		_city_history_write				; write history record
 		PLA
 		TAY
-		JMP		_new_event_register_flag
+		JMP		_register_new_event				; use this only once even if your is small again
 
 ; =============== S U B	R O U T	I N E =======================================
 _event06_total_jam:
-		LDA		_traf_lvl_avr.INT
-		BMI		nullsub_4
+		LDA		_traf_lvl_avr.INT				; very high traffic value above $700
+		BMI		nullsub_4						; test if already displayed for current loop
 		CMP		#$07
-		BCC		nullsub_4
+		BCC		nullsub_4						; to trigger this event needed
 		ORA		#$80
-		STA		_traf_lvl_avr.INT
-		JMP		_new_event_set
+		STA		_traf_lvl_avr.INT				; set flag to avoid triggering before next loop
+		JMP		_force_new_event				; can't be masked, always active
 
 ; =============== S U B	R O U T	I N E =======================================
 _event07_traffic:
-		LDA		_traf_lvl_avr.INT
+		LDA		_traf_lvl_avr.INT				; the same for low traffic alert
 		BMI		nullsub_4
 		CMP		#$02
-		BCC		nullsub_4
+		BCC		nullsub_4						; trigger value $200
 		ORA		#$80
-		STA		_traf_lvl_avr.INT
-		JMP		_new_event_set
+		STA		_traf_lvl_avr.INT				; this flag clears only at the end of the year
+		JMP		_force_new_event				; when city problems are recalculated
 
 ; =============== S U B	R O U T	I N E =======================================
 _event08_crime:
-		LDA		_city._crime_lvl_avr.INT
+		LDA		_city._crime_lvl_avr.INT		; crime above $700 average
 		BMI		nullsub_4
-		CMP		#$07
+		CMP		#$07							; TODO, recalibrate me!
 		BCC		nullsub_4
 		ORA		#$80
 		STA		_city._crime_lvl_avr.INT
-		JMP		_new_event_set
+		JMP		_force_new_event
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-nullsub_3:
-		RTS
+;nullsub_3:
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0B_bank:
@@ -2017,7 +2028,7 @@ _event0B_bank:
 		LDA		_city._cur_year+1
 		SBC		_city._year_to_build_bank+1
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_4:
@@ -2028,7 +2039,7 @@ _event0C_relationships:
 		LDX		#$05
 		JSR		_popul_compare
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0D_amusement:
@@ -2037,7 +2048,7 @@ _event0D_amusement:
 		LDX		#$06
 		JSR		_popul_compare
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0E_zoo:
@@ -2046,7 +2057,7 @@ _event0E_zoo:
 		LDX		#$07
 		JSR		_popul_compare
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0F_casino:
@@ -2055,7 +2066,7 @@ _event0F_casino:
 		LDX		#$08
 		JSR		_popul_compare
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event10_extra_land:
@@ -2064,7 +2075,7 @@ _event10_extra_land:
 		LDA		_sea_ports_count
 		CMP		#$02
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event11_new_police:
@@ -2073,7 +2084,7 @@ _event11_new_police:
 		LDA		_police_stations_count
 		CMP		#$0A
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event12_new_fire:
@@ -2082,7 +2093,7 @@ _event12_new_fire:
 		LDA		_fire_stations_count
 		CMP		#$0A
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event13_10th_monument:
@@ -2093,7 +2104,7 @@ _event13_10th_monument:
 		LDA		_city._cur_year+1
 		SBC		#$07
 		BCC		nullsub_4
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event14_100th_monument:
@@ -2104,7 +2115,7 @@ _event14_100th_monument:
 		LDA		_city._cur_year+1
 		SBC		#$07
 		BCC		nullsub_2
-		JMP		_new_event_register_flag
+		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event15_expo:
@@ -2114,7 +2125,7 @@ _event15_expo:
 		LDA		_city._cur_year+1
 		CMP		#$07
 		BNE		nullsub_2
-		BEQ		_new_event_register_flag
+		BEQ		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event16_expo_monument:
@@ -2125,7 +2136,7 @@ _event16_expo_monument:
 		LDA		_city._cur_year+1
 		SBC		_city._year_to_expo+1
 		BCC		nullsub_2
-		BCS		_new_event_register_flag
+		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event17_liberty:
@@ -2136,7 +2147,7 @@ _event17_liberty:
 		LDA		_city._cur_year+1
 		SBC		_city._year_to_liberty+1
 		BCC		nullsub_2
-		BCS		_new_event_register_flag
+		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event18_library:
@@ -2145,7 +2156,7 @@ _event18_library:
 		LDX		#$09
 		JSR		_popul_compare
 		BCC		nullsub_2
-		BCS		_new_event_register_flag
+		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 ; 200 parks needed
@@ -2155,7 +2166,7 @@ _event19_park:
 		LDA		_parks_counter
 		CMP		#$C8
 		BCC		nullsub_2
-		BCS		_new_event_register_flag
+		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 ; 150 railroars	needed
@@ -2165,14 +2176,14 @@ _event1A_railroad:
 		LDA		_rails_count
 		CMP		#$96
 		BCC		nullsub_2
-		BCS		_new_event_register_flag
+		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_2:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_new_event_register_flag:
+_register_new_event:
 		STY		_game_msg_idx
 		TYA
 		LSR
@@ -2184,26 +2195,27 @@ _new_event_register_flag:
 		TAY
 		LDA		_city._events_used_flags,X
 		ORA		_bitmasks,Y
-		STA		_city._events_used_flags,X
-		BNE		_new_event_break
+		STA		_city._events_used_flags,X		; _game_msg_idx already set, Y missnig
+		BNE		_new_event_break				; unconditional jump
 
 ; =============== S U B	R O U T	I N E =======================================
-_new_event_set:
+_force_new_event:
 		STY		_game_msg_idx
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_event_break:
-; BUG! Y here is not the same after _new_event_register_flag branch, than
+; BUG! Y here is not the same after _register_new_event branch, than
 ; from previous !FALLTHROUGH! entry lol, will fail always, whey event idx
 ; is pow of 2^3, so it will be 0 and test with 0, then never appear
 ; automatically
-;
-		CPY		_prev_game_msg_idx
-		BEQ		loc_105059
+; FIX, not sure why we should test if it can be double triggered, this
+; seems impossible currently, so just disable this code to fix it
+;		CPY		_prev_game_msg_idx
+;		BEQ		loc_105059
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-loc_105059:
-		PLA
+;loc_105059:
+		PLA										; break two JSRs up
 		PLA
 		PLA
 		PLA
@@ -2217,12 +2229,15 @@ _check_for_free_present_slot:
 		BEQ		loc_105069						; if no, only 3 slots are available
 		LDX		#$03
 loc_105069:
-		LDA		_city._presents_list,X			; technically calc here is correct
-; BUG! loop not needed.
-		BEQ		locret_105071					; it'll always get last slot
-		DEY										; but then DEY loop not needed here then
-		BPL		loc_105069
-locret_105071:
+		LDA		_city._presents_list,X			; empty slot always zero
+; BUG! it'll always get the last slot, there can't by holes
+; in presents list, they are always sorted after item removed from them
+; so we don't need to loop here. anyway, this loop does worse thing
+; it may loop for 256 redundant cycles if all slots are filled already
+;		BEQ		locret_105071					; FIX, just remove it
+;		DEY
+;		BPL		loc_105069
+;locret_105071:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2270,11 +2285,11 @@ _popul_vals_lib0:
 		.BYTE	$50	; 50000		; CAPITAL
 		.BYTE	$A0	; 100000	; METROPOLIS
 		.BYTE	$20 ; 500000	; MEGAPOLIS
-		.BYTE	$F0 ; 150000
-		.BYTE	$C0 ; 120000
-		.BYTE	$90 ; 250000
-		.BYTE	$40 ; 200000
-		.BYTE	$70 ; 70000
+		.BYTE	$F0 ; 150000	; relationship requirement
+		.BYTE	$C0 ; 120000	; amusement park requirement
+		.BYTE	$90 ; 250000	; zoo requirement
+		.BYTE	$40 ; 200000	; casino requirement
+		.BYTE	$70 ; 70000		; library requirement
 _popul_vals_lib1:
 		.BYTE	$07 ; 2000
 		.BYTE	$27 ; 10000
@@ -2316,8 +2331,8 @@ loc_105142:
 		DEX
 		BNE		loc_105153
 		LDA		_traf_lvl_avr.INT				; SCENARIO 1 "BERN"
-		BNE		.scenario_failed
-		LDA		_traf_lvl_avr.FRAC
+		BNE		.scenario_failed				; traffic level should be less than 0.50fp
+		LDA		_traf_lvl_avr.FRAC				; actually, it always IS there
 		CMP		#$50
 		BCS		.scenario_failed
 		BCC		.scenario_won
@@ -2326,7 +2341,7 @@ loc_105153:
 		BNE		loc_105164
 		LDA		_city._crime_lvl_avr.INT		; SCENARIO 2 "DETROIT"
 		BNE		.scenario_failed
-		LDA		_city._crime_lvl_avr.FRAC
+		LDA		_city._crime_lvl_avr.FRAC		; crime level need to be less than 0.3C
 		CMP		#$3C
 		BCS		.scenario_failed
 		BCC		.scenario_won
@@ -2334,7 +2349,7 @@ loc_105164:
 		DEX
 		BNE		loc_105175
 		CMPWI	_city._score,500				; SCENARIO 3 "TOKYO"
-		BCC		.scenario_failed
+		BCC		.scenario_failed				; the overall sicy score tested above 500
 		BCS		.scenario_won
 loc_105175:
 		DEX
@@ -2349,7 +2364,7 @@ loc_105186:
 		BCC		.scenario_failed
 		BCS		.scenario_won
 locret_105197:
-		RTS										; no more options, extra scenarios cannot be completed
+		RTS										; TODO: no more options, extra scenarios cannot be completed
 .scenario_won:
 		LDA		#$01
 		BNE		loc_10519E
@@ -2359,11 +2374,11 @@ loc_10519E:
 		STA		_scenario_result_idx			; set additional scenario result flag
 		LDA		#$0B
 		STA		_game_setup_sub_idx				; special case for scenario over mode
-		DEC		_main_sub_idx
+		DEC		_main_sub_idx					; exit from the game to the game setup mode
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_practice_mode_events_handler:
+_practive_events_test:
 		LDA		_cur_game_mode					; practice game mode
 		CMP		#$03
 		BNE		_exit
@@ -2383,10 +2398,10 @@ _practice_mode_events_handler:
 		BNE		.set_game_msg
 loc_1051D1:
 		CMP		#<[1901]						; low nibble for 1901 year
-;		BNE		_exit							; REDUNDANT
+;		BNE		_exit							; BUG, prevents from result display for practice
 		BNE		loc_1051F3						; FIX
 		LDX		#$1C							; second practice hint message
-		BNE		.set_game_msg
+		BNE		.set_game_msg					; unconditional branch
 ; BUG! never executed
 ; -
 ;		LDA		_city._cur_year					; REDUNDANT
@@ -2400,18 +2415,26 @@ loc_1051F3:
 		INX										; if less, use fail practice message
 ; -
 .set_game_msg:
-		STX		_game_msg_idx
+		STX		_game_msg_idx					; trigger the special event msg
 		LDA		#$01
 		STA		_game_msg_awaits_flag
 _exit:
 		RTS
+
+		SECTION_ENDS B03, "PRGB EVENTS AND DISASTERS SELECTORS"
+
+; ---------------------------------------------------------------------------
+; -----------------S-C-R-O-L-L--M-E-S-S-A-G-E-S--M-A-N-A-G-R-----------------
+; ---------------------------------------------------------------------------
+
+		SECTION_START B04
 
 ; =============== S U B	R O U T	I N E =======================================
 ; scroll messages slector
 ; always select random starting point, then test all handlers
 ; RND -> F, 0 -> RND-1
 ;
-_scroll_msg_manager:
+_scroll_msg_selector:
 		LDA		#$10							; get RND in range 00-0F
 		JSR		_rand_clamp_A
 		STA		_tmpEB
@@ -2666,6 +2689,8 @@ _scroll_msg_force_start:
 		STY		_scroll_msg_active_flag			; of the previous scroller on the screen
 locret_105124:									; but due to long duration period between tests
 		RTS										; this won't happen most of the time
+
+		SECTION_ENDS B04, "PRGB SCROLL MESSAGES SELECTOR"
 
 		SECTION_START	100
 

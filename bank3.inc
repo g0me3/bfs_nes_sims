@@ -3300,7 +3300,7 @@ loc_59A11:
 		LSR										; $AE + $18 to $1F -> $C6 to $CD (_MAP_SHORE8-_MAP_SHOREF)
 		PLA
 		BCS		loc_59A2E						; if fails, put tile as is
-		ADC		#$08							;
+		ADC		#$08
 loc_59A2E:
 		STA		(_ptr0),Y
 .end_of_fill_test:
