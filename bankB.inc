@@ -1984,7 +1984,7 @@ _heavy_traffic_report_test:
 		JSR		_read_traffic_map
 		CMP		#$0A
 		BCC		loc_11F93E
-		LDA		#$18
+		LDA		#$18							; force scroller msg
 		STA		_scroll_msg_idx
 		LDY		#$00
 		STY		_scroll_msg_start_pos
@@ -3728,7 +3728,8 @@ loc_11FC6E:
 		LDA		_disasters_flags
 		AND		#$EF
 		STA		_disasters_flags
-		JMP		_goto_alert_start
+;		JMP		_goto_alert_start				; BUG, points to the last burnt tile
+		RTS										; FIX, already set goto when burn any building
 
 ; =============== S U B	R O U T	I N E =======================================
 _airplane_disaster_request:
@@ -3901,25 +3902,26 @@ _corrupt_cur_map_tile:
 		TAY
 		LDA		_map_tiles_flags_tbl,Y			; test if water
 		AND		#_FL_WATER						; exit with C=1
-		BNE		.corrupt_water
+		BNE		.cant_destroy_water
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_FLAMMABLE
-		BEQ		.cant_corrupt
+		BEQ		.cant_destroy_inflammable
 		LDA		_tmp6CD							; reload tile we want to put
 		CMP		#_MAP_FLOOD						; flood is a special case, will pollute
-		BEQ		.do_corrupt						; even the raw grounds
+		BEQ		.lets_destroy_it				; even the raw grounds
+; TODO, why not? especially for pollution
 		CPY		#_MAP_GROUND					; the rest of disasters can't harm grounds
-		BNE		.do_corrupt						; TODO, why not? especially for pollution
-.cant_corrupt:
+		BNE		.lets_destroy_it
+.cant_destroy_inflammable:
 		CLC
 		RTS
-.corrupt_water:
+.cant_destroy_water:
 		SEC
 		RTS
-.do_corrupt:
+.lets_destroy_it:
 		TYA										; NOTE, very unoptimal when we already
-		AND		#$F0							; already get it in _get_cur_building_tile
-		CMP		#$80							; beforehead, but not save it there.
+		AND		#$F0							; calc it in _get_cur_building_tile
+		CMP		#$80							; beforehead, but it used not in all cases
 		BNE		.skip_build_tile_adjust			; now we must set building real tile position
 		TYA
 		AND		#$0F
@@ -3934,7 +3936,7 @@ _corrupt_cur_map_tile:
 ;		SBC		_internal_building_tile_deltaY_list,Y
 ;		STA		_tmp_map_pos._ROW
 ; -
-; OPTIMIZED
+; OPTIMIZED, recalc ptr to building tile
 		LDA		_ptrEC							; reuse already calculated offset
 		SEC										; to the map tile
 		SBC		_special_tiles_ofs_list,Y		; also we know relative offset of
@@ -3942,37 +3944,37 @@ _corrupt_cur_map_tile:
 		LDA		_ptrEC+1						; no need to recalc this a lot more times
 		SBC		#$00
 		STA		_ptrEC+1						; store ptr to temp var
-.skip_build_tile_adjust:
 ; REDUNDANT
 ;		JSR		_map_tile_read					; read it
 ; -
-; OPTIMIZED
+; OPTIMIZED, already have ptr calculated
 		LDY		#$00
-		LDA		(_ptrEC),Y						; and now we could read the tile
-; -
+		LDA		(_ptrEC),Y						; and now we could re-read the actual tile
 		TAY
+; -
+.skip_build_tile_adjust:
+		JSR		_sram_write_enable
 		LDA		_map_tiles_flags_tbl,Y			; if not a building, burn it raw
 		AND		#_FL_BUILDING
-		BEQ		.do_destroy
+		BEQ		.destroy_tile
 		CPY		#_MAP_AIR_PORT					; calculate size of the building
 		BNE		loc_11FE2E
 		LDX		#$0E							; airport 4x4 biggest building
-		BNE		.destroy_building_loop
+		BNE		.destroy_building
 loc_11FE2E:
 		CPY		#_MAP_COAL_POWER				; power stations and all presents are
 		BCC		loc_11FE3A						; 3x3 large
 		CPY		#_MAP_INTERNAL_BUILD0
 		BCS		loc_11FE3A
 		LDX		#$07
-		BNE		.destroy_building_loop
+		BNE		.destroy_building
 loc_11FE3A:
 		LDX		#$02							; the rest of buildings are 2x2
 ; NOTE, similar code can be found in map unpack routines but
 ; better optimized. here we have very briefly nailed unoptimal
 ; copy of the high-level language routines.
 ;
-		JSR		_sram_write_enable				; OPTIMIZED
-.destroy_building_loop:
+.destroy_building:
 ;		TXA										; now we will destroy all tiles one by one
 ;		PHA										; X is a counter, count backwards
 ; REDUNDANT
@@ -4004,17 +4006,25 @@ loc_11FE3A:
 		STA		(_ptrEE),Y
 ; -
 		DEX
-		BPL		.destroy_building_loop
-		JSR		_sram_write_disable				; OPTIMIZED
+		BPL		.destroy_building
 		APUA_SE	_SE_IDX_DESTROY					; when done, set alert position and enable button
+; NEW, let's have fun with more messages re-enabled
+		LDA		#$16
+		STA		_scroll_msg_idx
+		LDY		#$00
+		STY		_scroll_msg_start_pos
+		DEY
+		STY		_scroll_msg_active_flag
+; -
 		JSR		_goto_alert_start				; also play sound for destroying building
 		LDA		_tmp6CD							; destroy the last base tile
 		LDY		#$00
 		STA		(_ptrEC),Y						; OPTIMIZED, already has ptr calculated
-;		JSR		_map_tile_write					; REDUNDANT,
+;		JSR		_map_tile_write					; REDUNDANT
+		JSR		_sram_write_disable				; OPTIMIZED
 		CLC										; also don't need to check for water, because
 		RTS										; building can't be on water anyway
-.do_destroy:
+.destroy_tile:
 		LDA		_tmp6CD							; get the destroy tile in left hand
 		CPY		#_MAP_WATER_ROAD_LR				; compare ground tile type in right hand
 		BCC		loc_11FE83						; for bridges on water will
@@ -4022,7 +4032,12 @@ loc_11FE3A:
 		BCS		loc_11FE83
 		LDA		#_MAP_WATER
 loc_11FE83:
-		JSR		_map_tile_write					; finally destroy our tile.
+;		JSR		_map_tile_write					; REDUNDANT, finally destroy our tile.
+; OPTIMIZED, wram already disabled before this branch
+		LDY		#$00
+		STA		(_ptrEC),Y
+		JSR		_sram_write_disable
+; -
 ; BUG, little logic flaw here, we set C=1 if on water, we test for water before, but
 ; here may be all other tiles, not water. So we always signal here we in water and
 ; only the reason this has no any effect, the monster used this flag does tile

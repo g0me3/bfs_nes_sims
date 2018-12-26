@@ -28,6 +28,7 @@ MISC#13.TODO Note, that Monster appearance logic (see BUGS#15) doesn't use high 
 MISC#14. As I see in the Micropolis sources, the Drive test for traffic calculation tries to drive from R to C and I, from I back to R, but for some reason from C either to R, C and I. The same behaviour ported to the NES version. So most of the C areas does not generate any traffic unless they are in a particular position near the other areas and as a side effect this not preventing of developement of C areas.
 MISC#15. Surprisingly, the trees of the park tiles are animated just like the fire. However, all 4 animation tiles are the same so you couldn't see a difference.
 MISC#16. The real ingame taxes rates are calculated once at the end of the fiscal year. This means if you want to change funding at the budget screen, you must then wait for the next year to apply settings. The effect does not work immediately.
+MISC#17.FIXED(BFS) The PPU data transfer for regular and extendex name tables are separated long enough in the NMI handler for some reason which causes random garbage on the screen when one ppu data already set but the rest is not. Why they separated them, don't know.
 
 	WHAT'S UNFINISHED IN THE GAME
 
@@ -69,7 +70,7 @@ UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably int
 	UNFINISHED#10.2 BANK1D, TILES 29, 2A, 2B, 1C 3x3, BANK1F 29, 2A, 2B (a set of tiles for open bridges)
 	UNFINISHED#10.3 BANK1E, TILES 0C 4x4 (Airport Terminal 2), an airport terminal does not change in the SNES version
 	UNFINISHED#10.4.ADDED(BFS) BANK23, TILES 00 9x4 (two more frames for high traffic anim), TILES 0A 6x4 (traffic for water roads and bridges)
-	UNFINISHED#10.5 BANK27, TILES 00 2x2 (Unused config icon)
+	UNFINISHED#10.5 BANK27, TILES 00 2x2 (Unused config icon, seems for UNFINISHED#6, also there is a small description letters for it)
 	UNFINISHED#10.6 BANK2E, TILES 00 2x2 (Part of stadium from BANK56)
 	UNFINISHED#10.7 BANK1F, TILES 0C 4x4 (Airport Terminal 3)
 	UNFINISHED#10.8 BANK48, TILES 14 2x2 (Extra Park 2)
@@ -303,6 +304,7 @@ FF		-							-		-
 - Macrofication of the code for much more readable listing.
 - Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
 - Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
+- Better screen refresh while ppu data dequeue process (see MISC#17), now has less visible garbage and cause less wrong CHR data logging. However, still not ideal.
 - While fixing BUG#27 by rearranging the RAM variables which also need to be saved with the City map and data, also rearranged the Difficult setting variable which properly fixed BUGS#20 too, also the configuration window positions saved with the city as well.
 - Fixed issue in MISC#14 section, now drive from C to C areas are forbidden.
 - Swapped the correct values for corresponding buttons in Graphs screen, also Tax Income value used instead of Money higher nibbles for "Cash Flow" button.
@@ -332,3 +334,5 @@ So this is restored and fixed the original bug at the same time.
 - Ship object goes completely invisible when stuck on the edge of the map on in the ponds.
 - The train object goes invisible on the Water/Rails tiles and never comes back in some cases.
 - During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
+- broken in 180208_0_checkpoint, problems with destroying objects (try earthquake), partially not destroyed buildings or garbage instead of them.
+- Return back corner test for building surrounding in PRGC/PRGD

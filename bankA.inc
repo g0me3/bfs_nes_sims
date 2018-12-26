@@ -2644,7 +2644,7 @@ _scroll_msg08_test:
 		CMPWI	_city._level._C,$0096			; C_L>0.59
 		BCC		nullsub_10
 		LDA		_airports_count
-		BNE		nullsub_5
+		BNE		nullsub_10
 		INC		_required._airport				; stops C growth
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start

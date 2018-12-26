@@ -337,6 +337,14 @@ loc_18A1F3:
 		STA		_MMC5_CHR_BANKSA+3
 loc_18A213:
 		JSR		_mmc5_scrolls_reload			; do scrolls
+; FIX, better screen refres sinc, less visible transition between nt and extnt
+		LDA		_ppu_mask_shadow
+		AND		#$18
+		BEQ		loc_18A356
+		JSR		_wait_for_mmc5_irq
+loc_18A356:
+		JSR		_extnt_dequeue
+; -
 		TSX
 		LDY		_cur_thread_idx					; now the thread stuff starting
 		TXA										; get the index of current executing thread.
@@ -498,12 +506,14 @@ loc_18A32E:
 		STA		_MMC5_PRG_PAGES+2
 		LDX		_thread_stack,Y
 		TXS
-		LDA		_ppu_mask_shadow
-		AND		#$18
-		BEQ		loc_18A356
-		JSR		_wait_for_mmc5_irq
-loc_18A356:
-		JSR		_extnt_dequeue
+; BUG, too much time between dequeue processess, visible garbage on the screen
+;		LDA		_ppu_mask_shadow
+;		AND		#$18
+;		BEQ		loc_18A356
+;		JSR		_wait_for_mmc5_irq
+;loc_18A356:
+;		JSR		_extnt_dequeue
+; -
 .nmi_finish:
 		DEC		_nmi_busy_flag
 .nmi_busy:

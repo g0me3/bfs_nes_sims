@@ -11,23 +11,23 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_start:
-		JSR		_game_scr_init
+		JSR		_game_scr_init					; here we get after start new game
 
 ; =============== S U B	R O U T	I N E =======================================
 _MAIN_LOOP:
-		LDA		_main_sub_idx
-		CMP		#$02
+		LDA		_main_sub_idx					; main game GUI/control loop
+		CMP		#$02							; works only during the game
 		BEQ		loc_13600B
 		RTS
 loc_13600B:
-		JSR		_wait_for_nmi
-		JSR		_game_states_select
-		LDA		_obj_active_flags
+		JSR		_wait_for_nmi					; once per frame
+		JSR		_game_states_select				; selector of current GUI state
+		LDA		_obj_active_flags				; according to requests of engine
 		AND		#$01
 		BEQ		loc_13601B
-		JSR		_far_heavy_traffic_report_test
+		JSR		_far_heavy_traffic_report_test	; if heli in flight, test traffic as well
 loc_13601B:
-		LDA		_game_state_idx
+		LDA		_game_state_idx					; execute selected state
 		JSR		_switch
 		.WORD	_game_state00_hud_static_redraw
 		.WORD	_game_state01_constr_palette_redraw
@@ -55,57 +55,19 @@ loc_13601B:
 		.WORD	_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state_common:
-		JSR		_game_cursor_input_control		; do common background work
-		JSR		_spr_finish
-		JSR		_auto_goto_test
-		FJSRA	_constr_palette_state_update,PRG7,PRG3
-		LDA		_ppu_queue_pos_tail				; calc ppu queues buffers fill
-		SEC										; then use it in overall test for
-		SBC		_ppu_queue_pos_head				; idle state
-		STA		_ptr0
-		LDA		_extnt_queue_pos_tail
-		SEC
-		SBC		_extnt_queue_pos_head
-		STA		_ptr0+1
-		LDA		_gui_active_controls_flags		; test for idle state, checking if
-		EOR		#$03							; any of critical state flags arent
-		ORA		_ptr0							; clear, so mean there is some pending
-		ORA		_ptr0+1							; requests still
-		ORA		_hud_static_redraw_req
-		ORA		_constr_palette_redraw_req
-;		ORA		byte_3B							; REDUNDANT, never written
-		ORA		_constr_palette_update_req
-		ORA		_hud_present_name_draw_req
-		ORA		_RCI_meter_redraw_req
-		ORA		_hud_date_redraw_req
-		ORA		_hud_popul_redraw_req
-		ORA		_hud_city_name_redraw_req
-		ORA		_game_core_stop_flag
-		ORA		_hud_money_redraw_req
-		ORA		_scroll_msg_active_flag
-;		STA		byte_37							; REDUNDANT, never read!
-		ORA		byte_5C
-		ORA		_hud_redraw_req
-		ORA		_game_msg_wnd_active_flag
-		ORA		_budget_scr_draw_req
-		STA		_game_core_state				; any of these flags gives priority to this thread
-		JMP		_MAIN_LOOP
-
-; =============== S U B	R O U T	I N E =======================================
 _game_state00_hud_static_redraw:
 		JSR		_hud_static_redraw				; redraw static part of the HUD (buttons, extnts)
-		BCS		loc_1360DD
-		LDA		_gui_active_controls_flags		; set one of flags for top side of HUD redraw complete
+		BCS		loc_1360DD						; C=1 if ppu buffers aren't empty yet
+		LDA		_gui_active_controls_flags		; set flag for top side of HUD redraw complete signal
 		ORA		#$01
 		STA		_gui_active_controls_flags
 		LDA		#$FF
-		STA		_hud_date_redraw_req			; set dinamic parts of the HUD redraw requests
-		STA		_hud_money_redraw_req
+		STA		_hud_date_redraw_req			; set dynamic parts of the HUD redraw requests
+		STA		_hud_money_redraw_req			; chanining the drawing process
 		STA		_hud_popul_redraw_req
 		STA		_hud_city_name_redraw_req
 loc_1360DD:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; FIX: moved here from bankD to collect free space in one place
 ;
@@ -123,7 +85,7 @@ _game_state01_constr_palette_redraw:
 		LDA		#$FF
 		STA		_RCI_meter_redraw_req
 loc_150019:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state02_map_scroll:
@@ -133,19 +95,19 @@ _game_state02_map_scroll:
 		LSR
 		BCC		.mini_map_hor_queue				; or check which one still displayed
 		JSR		_map_scroll_top_redraw			; top side of map ppu data queue
-		BCS		.j_game_state_common
+		BCS		.j_game_state17_common
 		LDA		_gui_active_controls_flags
 		AND		#$FE
 		STA		_gui_active_controls_flags
-		JMP		_game_state_common
+		JMP		_game_state17_common
 .mini_map_hor_queue:
 		JSR		_map_scroll_left_redraw			; left side of map ppu data queue
-		BCS		.j_game_state_common
+		BCS		.j_game_state17_common
 		LDA		_gui_active_controls_flags
 		AND		#$FD
 		STA		_gui_active_controls_flags
-.j_game_state_common:
-		JMP		_game_state_common
+.j_game_state17_common:
+		JMP		_game_state17_common
 .mini_map_wait_for_scrolls:
 		LDA		#$36
 		STA		_MMC5_CHR_BANKSA+2
@@ -161,7 +123,7 @@ _game_state02_map_scroll:
 		LDA		#$00
 		STA		_scr_mode_idx					; exit mini-map mode, when B released
 		JSR		_scroll_msg_reset
-		JMP		_game_state_common
+		JMP		_game_state17_common
 .mini_map_continue_scroll:
 		LDA		_tmp70
 		AND		#$03
@@ -202,7 +164,7 @@ _game_state02_map_scroll:
 .mini_map_scroll_done:
 		LDA		#$00
 		STA		_tmp70
-		JMP		_game_state_common
+		JMP		_game_state17_common
 .button_B_held:
 		LDA		_pad0_held
 		AND		#$0F
@@ -212,7 +174,7 @@ _game_state02_map_scroll:
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BEQ		loc_13617F
 loc_13617C:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_13617F:
 		LDA		_pad0_held
 		AND		#$0F
@@ -248,7 +210,7 @@ loc_1361A4:
 		LDA		#$3F
 		STA		_cur_screen_tile._COL
 loc_1361BD:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1361C0:
 		LDA		_cur_map_wnd_pos._COL
 		CMP		#$35
@@ -271,7 +233,7 @@ loc_1361D4:
 		INC		_cur_map_wnd_pos._COL
 		INC		_cur_screen_tile._COL
 loc_1361E7:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1361EA:
 		LDA		_pad0_held
 		AND		#$0C
@@ -307,7 +269,7 @@ loc_13620D:
 		LDA		#$3B
 		STA		_cur_screen_tile._ROW
 loc_136226:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_136229:
 		LDA		_cur_map_wnd_pos._ROW
 		CMP		#$37
@@ -330,15 +292,15 @@ loc_13623D:
 		INC		_cur_map_wnd_pos._ROW
 		INC		_cur_screen_tile._ROW
 loc_136250:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_136253:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state03_map_scroll_mode_set:
 		LDA		#$01
 		STA		_scr_mode_idx
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state07:
@@ -348,7 +310,7 @@ _game_state07:
 		LDA		_pad0_autorep_press
 		AND		#$80
 		STA		_game_msg_wnd_active_flag
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_13626D:
 		PUSHB	_constr_palette_press_idx
 		JSR		_is_constr_palette_item_active
@@ -372,18 +334,18 @@ loc_13626D:
 		CPX		#$0B
 		BNE		loc_13629F
 		STA		_power_build_menu_req
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_13629F:
 		CPX		#$0C
 		BNE		loc_1362A9
 		STA		_airport_build_menu_req
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1362A9:
 		CPX		#$0D
-		BNE		_j_game_state_common
+		BNE		_j_game_state17_common
 		STA		_presents_build_menu_req
 		FJSRA	_presents_wnd_generate,PRGC,PRG2
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _j_apu_se_error:
@@ -391,8 +353,8 @@ _j_apu_se_error:
 		APUA_SE	_SE_IDX_ERROR
 
 ; =============== S U B	R O U T	I N E =======================================
-_j_game_state_common:
-		JMP		_game_state_common
+_j_game_state17_common:
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1362C0:
@@ -401,14 +363,14 @@ sub_1362C0:
 		LDA		#$FF
 		STA		_hud_present_name_draw_req
 		STA		_power_build_menu_req
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1362CE:
 		CMP		#$0C
 		BNE		loc_1362DC
 		LDA		#$FF
 		STA		_hud_present_name_draw_req
 		STA		_airport_build_menu_req
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1362DC:
 		CMP		#$0D
 		BNE		_j_apu_se_error
@@ -416,7 +378,7 @@ loc_1362DC:
 		STA		_hud_present_name_draw_req
 		STA		_presents_build_menu_req
 		FJSRA	_presents_wnd_generate,PRGC,PRG2
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _is_constr_palette_item_active:
@@ -451,7 +413,7 @@ _palette_activity_flags:
 _game_state08_build:
 		LDA		byte_5C
 		BEQ		loc_136325
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_136325:
 		LDA		_constr_palette_selected_idx
 		BNE		.other_builds
@@ -488,7 +450,7 @@ loc_136358:
 		APUA_SE	_SE_IDX_SBUILD
 .no_changes:
 		JSR		_save_constr_cursor_pos
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _build_garden_area:
@@ -514,7 +476,7 @@ loc_136389:
 ;		JSR		_apu_se_small_build
 		APUA_SE	_SE_IDX_SBUILD
 		JSR		_save_constr_cursor_pos
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _bulid_large_buildings:
@@ -551,7 +513,7 @@ loc_1363BE:
 ;		JSR		_apu_se_error
 		APUA_SE	_SE_IDX_ERROR
 loc_1363F5:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _bulldoze_area:
@@ -571,18 +533,18 @@ _bulldoze_area:
 		INC		_corruption_anim_flag
 ;		JSR		_apu_se_destroy
 		APUA_SE	_SE_IDX_DESTROY
-		JMP		_game_state_common
+		JMP		_game_state17_common
 .ok:
 ;		JSR		_apu_se_bulldozer
 		APUA_SE	_SE_IDX_BULLDOZE
-		JMP		_game_state_common
+		JMP		_game_state17_common
 .fail:
 		LDA		byte_CD
 		BNE		.skip							; with error sound or without
 ;		JSR		_apu_se_error
 		APUA_SE	_SE_IDX_ERROR
 .skip:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _save_constr_cursor_pos:
@@ -595,12 +557,12 @@ _save_constr_cursor_pos:
 ; =============== S U B	R O U T	I N E =======================================
 _game_state04_constr_area_redraw:
 		JSR		_constr_area_redraw
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state05_constr_palette_update:
 		JSR		_constr_palette_update
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state06_game_hud_redraw:
@@ -630,7 +592,7 @@ _game_state06_game_hud_redraw:
 		STA		_hud_money_redraw_req
 		JSR		_seasonal_pal_load
 loc_136472:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0A_power_build_menu:
@@ -642,7 +604,7 @@ _game_state0A_power_build_menu:
 		LDA		#$00
 		STA		_power_build_menu_req
 loc_136482:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0B_gui_ctrl_menu:
@@ -658,7 +620,7 @@ _game_state0B_gui_ctrl_menu:
 		JSR		_goto_start
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1364A3:
 		ASL
 		TAX
@@ -675,7 +637,7 @@ loc_1364A3:
 		JSR		_gui_ctrl_menu_icon_release_draw
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1364C9:
 		LDX		_wnd_idx
 		CPX		#$03
@@ -683,7 +645,7 @@ loc_1364C9:
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JSR		_game_chr_common_reload
-		JMP		_game_state_common
+		JMP		_game_state17_common
 loc_1364DA:
 		STA		_scr_res_idx
 		LDA		#$02
@@ -700,7 +662,7 @@ loc_1364DA:
 		STA		_screen_pal_cur_spr_idx
 		JSR		_seasonal_pal_load
 		JSR		_pal_fade_in
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state13_msg_wnd_display:
@@ -724,7 +686,7 @@ loc_136530:
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		STA		_game_msg_awaits_flag
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_pos_calc:
@@ -767,7 +729,7 @@ _game_state0C_RCI_meter_redraw:
 		LDA		#$00
 		STA		_RCI_meter_redraw_req
 loc_136548:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0D_hud_date_redraw:
@@ -780,7 +742,7 @@ _game_state0D_hud_date_redraw:
 		LDA		#$00
 		STA		_hud_date_redraw_req
 loc_13655C:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0E:
@@ -804,7 +766,7 @@ _game_state0E:
 		LDA		#$00
 		STA		_game_core_stop_flag
 loc_136582:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0F_hud_money_redraw:
@@ -817,7 +779,7 @@ _game_state0F_hud_money_redraw:
 		LDA		#$00
 		STA		_hud_money_redraw_req
 loc_136595:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state10_fiscal_year_draw:
@@ -841,7 +803,7 @@ _game_state10_fiscal_year_draw:
 		STA		_budget_scr_draw_req
 		STA		_cur_game_cursor_area
 loc_1365C8:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state11_hud_popul_redraw:
@@ -854,7 +816,7 @@ _game_state11_hud_popul_redraw:
 		LDA		#$00
 		STA		_hud_popul_redraw_req
 loc_1365DC:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state12_airport_build_menu:
@@ -866,7 +828,7 @@ _game_state12_airport_build_menu:
 		LDA		#$00
 		STA		_airport_build_menu_req
 loc_1365EC:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state16_hud_city_name_redraw:
@@ -879,11 +841,47 @@ _game_state16_hud_city_name_redraw:
 		LDA		#$00
 		STA		_hud_city_name_redraw_req
 loc_136600:
-		JMP		_game_state_common
+;		JMP		_game_state17_common			; REDUNDANT
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state17_common:
-		JMP		_game_state_common
+		JSR		_game_cursor_input_control		; do common background work
+		JSR		_spr_finish
+		JSR		_auto_goto_test
+		FJSRA	_constr_palette_state_update,PRG7,PRG3
+		LDA		_ppu_queue_pos_tail				; calc ppu queues buffers fill
+		SEC										; then use it in overall test for
+		SBC		_ppu_queue_pos_head				; idle state
+		STA		_ptr0
+		LDA		_extnt_queue_pos_tail
+		SEC
+		SBC		_extnt_queue_pos_head
+		STA		_ptr0+1
+		LDA		_gui_active_controls_flags		; test for idle state, checking if
+		EOR		#$03							; any of critical state flags arent
+		ORA		_ptr0							; clear, so mean there is some pending
+		ORA		_ptr0+1							; requests still
+		ORA		_hud_static_redraw_req
+		ORA		_constr_palette_redraw_req
+;		ORA		byte_3B							; REDUNDANT, never written
+		ORA		_constr_palette_update_req
+		ORA		_hud_present_name_draw_req
+		ORA		_RCI_meter_redraw_req
+		ORA		_hud_date_redraw_req
+		ORA		_hud_popul_redraw_req
+		ORA		_hud_city_name_redraw_req
+		ORA		_game_core_stop_flag
+		ORA		_hud_money_redraw_req
+		ORA		_scroll_msg_active_flag
+;		STA		byte_37							; REDUNDANT, never read!
+		ORA		byte_5C
+		ORA		_hud_redraw_req
+		ORA		_game_msg_wnd_active_flag
+		ORA		_budget_scr_draw_req
+		STA		_game_core_state				; any of these flags gives priority to this thread
+		JMP		_MAIN_LOOP
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_states_select:
@@ -4296,7 +4294,7 @@ _game_state09_presents_building_name_and_cost_hud_draw:
 		LDA		#$00
 		STA		_hud_present_name_draw_req
 loc_150028:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state14_presents_build_menu:
@@ -4319,7 +4317,7 @@ _game_state14_presents_build_menu:
 		LDA		#$00
 		STA		_presents_build_menu_req
 loc_150055:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state15_game_cursor_area_switch:
@@ -4344,7 +4342,7 @@ loc_15006C:
 		LDA		#$00
 		STA		_cur_game_cursor_area
 loc_150084:
-		JMP		_game_state_common
+		JMP		_game_state17_common
 
 ; REDUNDANT, macrocified
 ; =============== S U B	R O U T	I N E =======================================
