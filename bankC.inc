@@ -28,7 +28,7 @@ loc_13601B:
 		.WORD	_game_state02_map_scroll
 		.WORD	_game_state03_map_scroll_mode_set
 		.WORD	_game_state04
-		.WORD	_game_state05_regular_building_name_and_cost_hud_draw
+		.WORD	_game_state05_constr_palette_redraw
 		.WORD	_game_state06_game_hud_redraw
 		.WORD	_game_state07
 		.WORD	_game_state08_build
@@ -69,7 +69,7 @@ _game_state_common:
 		ORA		byte_39
 		ORA		byte_3A
 		ORA		byte_3B
-		ORA		_regular_building_name_and_cost_hud_draw_req
+		ORA		_constr_palette_redraw_req
 		ORA		_presents_building_name_and_cost_hud_draw_req
 		ORA		_RCI_meter_redraw_req
 		ORA		_hud_date_redraw_req
@@ -448,7 +448,7 @@ loc_136325:
 		BCC		loc_136358
 		JMP		.cant_build_anything_beep
 loc_136358:
-		JSR		sub_15050A
+		JSR		_build_cur_constr_cursor_area
 		JSR		sub_15055A
 		JSR		sub_1509D5
 		LDA		#$FF
@@ -477,7 +477,7 @@ loc_136389:
 		JSR		_get_cur_constr_cursor_map_tile
 		FJSRA	sub_B83A7,PRG7,PRGD
 		BCS		.cant_build_anything_beep
-		JSR		sub_15050A
+		JSR		_build_cur_constr_cursor_area
 		JSR		sub_15055A
 		JSR		sub_1509D5
 		LDA		#$FF
@@ -499,7 +499,7 @@ loc_1363BE:
 		JSR		_get_cur_constr_cursor_map_tile
 		FJSRA	sub_B83A7,PRG7,PRGD
 		BCS		.cant_build_anything_beep
-		JSR		sub_15050A
+		JSR		_build_cur_constr_cursor_area
 		JSR		sub_15055A
 		JSR		sub_1509D5
 		LDA		#$FF
@@ -558,8 +558,8 @@ _game_state04:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state05_regular_building_name_and_cost_hud_draw:
-		JSR		_regular_constr_palette_draw
+_game_state05_constr_palette_redraw:
+		JSR		_constr_palette_redraw
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -874,7 +874,7 @@ loc_136654:
 		LDA		#$01
 		JMP		_set_game_state_idx
 loc_13665D:
-		LDA		_regular_building_name_and_cost_hud_draw_req
+		LDA		_constr_palette_redraw_req
 		BEQ		loc_136666
 		LDA		#$05
 		JMP		_set_game_state_idx
@@ -996,7 +996,7 @@ sub_13671F:
 		STA		byte_57
 		LDA		#$FF
 		STA		byte_53
-		JSR		_regular_building_name_and_cost_hud_draw_req_set
+		JSR		_constr_palette_redraw_req_set
 		CLC
 locret_136745:
 		RTS
@@ -3579,8 +3579,8 @@ loc_137B1D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_regular_constr_palette_draw:
-		LDA		_regular_building_name_and_cost_hud_draw_req
+_constr_palette_redraw:
+		LDA		_constr_palette_redraw_req
 		BEQ		locret_137B5D
 		JSR		_ppu_queue_empty_test_0
 		BCS		locret_137B5D
@@ -3610,7 +3610,7 @@ loc_137B55:
 		DEC		_tmp3
 		BPL		loc_137B3D
 		LDA		#$00
-		STA		_regular_building_name_and_cost_hud_draw_req
+		STA		_constr_palette_redraw_req
 locret_137B5D:
 		RTS
 
@@ -4212,7 +4212,7 @@ loc_137F8D:
 		STA		_cur_map_wnd_pos._COL
 		STA		_cur_map_wnd_pos._ROW
 loc_137F93:
-		JSR		_regular_building_name_and_cost_hud_draw_req_set
+		JSR		_constr_palette_redraw_req_set
 		LDA		#$00
 		STA		_MMC5_NT_MODE
 		STA		_game_wnd_spr_mode_flag

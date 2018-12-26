@@ -544,17 +544,17 @@ _get_cur_constr_cursor_map_tile:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_15050A:
+_build_cur_constr_cursor_area:
 		JSR		_sram_on
-		LDA		_cur_build_store_tile_idx
+		LDA		_cur_build_store_tile_idx		; previously calcularet duild tile idx
 		CMP		#$FF
-		BNE		loc_150549
-		JSR		sub_150A4A
+		BNE		.instant_build_single_tile		; if !=FF, then instant 1x1 tile here
+		JSR		_get_build_construc_data_ptr
 		LDY		#$00
 loc_150518:
-		LDA		(_tmp_ptrC3),Y
+		LDA		(_tmp_ptrC3),Y					; read actual build tile or special tiles
 		BMI		loc_150531
-		LDX		_const_palette_selected_idx
+		LDX		_const_palette_selected_idx		; actual goes here
 		CPX		#$0B
 		BNE		loc_150527
 		CLC
@@ -580,12 +580,10 @@ loc_150531:
 		BNE		loc_150518
 loc_150545:
 		JMP		_sram_off
-
-loc_150549:
+.instant_build_single_tile:
 		LDY		#$00
 		STA		(_tmp_ptrC1),Y
 		JMP		_sram_off
-
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_150551:
@@ -1302,42 +1300,42 @@ _get_cur_constr_cursor_map_ofs:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150A4A:
+_get_build_construc_data_ptr:
 		LDX		_const_palette_selected_idx
 		CPX		#$0D
 		BNE		loc_150A5C
-		LDX		_cur_present_select_idx
-		LDA		_city._presents_list,X
+		LDX		_cur_present_select_idx			; prize buildings idx to lib idx
+		LDA		_city._presents_list,X			; (0E - 1C)
 		CLC
 		ADC		_const_palette_selected_idx
 		TAX
 		BNE		loc_150A70
 loc_150A5C:
-		DEX
-		CPX		#$0C
+		DEX										; weird calcs...
+;		CPX		#$0C							; REDUNDANT, does nothing here
 		CPX		#$03
-		BNE		loc_150A66
-		JSR		sub_150A7B
+		BNE		loc_150A66						; garden constr idx to lib idx (03 or 0C)
+		JSR		_build_part_tile_select
 loc_150A66:
 		CPX		#$0B
 		BNE		loc_150A70
-		LDA		_cur_port_type_select_idx
+		LDA		_cur_port_type_select_idx		; sea/air ports to lib (0B, 0D)
 		BEQ		loc_150A70
 		LDX		#$0D
 loc_150A70:
-		LDA		off_150A8B,X
+		LDA		_build_constuct_data_lib_lo,X	; the rest are the same (constr idx - 1)
 		STA		_tmp_ptrC3
-		LDA		off_150AA8,X
+		LDA		_build_constuct_data_lib_hi,X
 		STA		_tmp_ptrC3+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150A7B:
+_build_part_tile_select:
 		TXA
 		PHA
 		JSR		_rand
 		CMP		#$20
-		BCS		loc_150A88
+		BCS		loc_150A88						; random, grass tile or a tree
 		PLA
 		LDX		#$0C
 		RTS
@@ -1345,124 +1343,125 @@ loc_150A88:
 		PLA
 		TAX
 		RTS
-off_150A8B:
-		.BYTE	<[byte_150AC5]
-		.BYTE	<[byte_150AC7]
-		.BYTE	<[byte_150AC9]
-		.BYTE	<[byte_150ACB]
-		.BYTE	<[byte_150ACF]
-		.BYTE	<[byte_150AD4]
-		.BYTE	<[byte_150AD9]
-		.BYTE	<[byte_150ADE]
-		.BYTE	<[byte_150AE3]
-		.BYTE	<[byte_150AE8]
-		.BYTE	<[byte_150AF2]
-		.BYTE	<[byte_150AFC]
-		.BYTE	<[byte_150ACD]
-		.BYTE	<[byte_150B06]
-		.BYTE	<[byte_150B17]
-		.BYTE	<[byte_150B21]
-		.BYTE	<[byte_150B2B]
-		.BYTE	<[byte_150B35]
-		.BYTE	<[byte_150B3F]
-		.BYTE	<[byte_150B49]
-		.BYTE	<[byte_150B53]
-		.BYTE	<[byte_150B5D]
-		.BYTE	<[byte_150B67]
-		.BYTE	<[byte_150B71]
-		.BYTE	<[byte_150B7B]
-		.BYTE	<[byte_150B85]
-		.BYTE	<[byte_150B8F]
-		.BYTE	<[byte_150B99]
-		.BYTE	<[byte_150BA3]
-off_150AA8:
-		.BYTE	>[byte_150AC5]
-		.BYTE	>[byte_150AC7]
-		.BYTE	>[byte_150AC9]
-		.BYTE	>[byte_150ACB]
-		.BYTE	>[byte_150ACF]
-		.BYTE	>[byte_150AD4]
-		.BYTE	>[byte_150AD9]
-		.BYTE	>[byte_150ADE]
-		.BYTE	>[byte_150AE3]
-		.BYTE	>[byte_150AE8]
-		.BYTE	>[byte_150AF2]
-		.BYTE	>[byte_150AFC]
-		.BYTE	>[byte_150ACD]
-		.BYTE	>[byte_150B06]
-		.BYTE	>[byte_150B17]
-		.BYTE	>[byte_150B21]
-		.BYTE	>[byte_150B2B]
-		.BYTE	>[byte_150B35]
-		.BYTE	>[byte_150B3F]
-		.BYTE	>[byte_150B49]
-		.BYTE	>[byte_150B53]
-		.BYTE	>[byte_150B5D]
-		.BYTE	>[byte_150B67]
-		.BYTE	>[byte_150B71]
-		.BYTE	>[byte_150B7B]
-		.BYTE	>[byte_150B85]
-		.BYTE	>[byte_150B8F]
-		.BYTE	>[byte_150B99]
-		.BYTE	>[byte_150BA3]
-byte_150AC5:
+
+_build_constuct_data_lib_lo:
+		.BYTE	<[_build_constuct_data00]
+		.BYTE	<[_build_constuct_data01]
+		.BYTE	<[_build_constuct_data02]
+		.BYTE	<[_build_constuct_data03]
+		.BYTE	<[_build_constuct_data04]
+		.BYTE	<[_build_constuct_data05]
+		.BYTE	<[_build_constuct_data06]
+		.BYTE	<[_build_constuct_data07]
+		.BYTE	<[_build_constuct_data08]
+		.BYTE	<[_build_constuct_data09]
+		.BYTE	<[_build_constuct_data0A]
+		.BYTE	<[_build_constuct_data0B]
+		.BYTE	<[_build_constuct_data0C]
+		.BYTE	<[_build_constuct_data0D]
+		.BYTE	<[_build_constuct_data0E]
+		.BYTE	<[_build_constuct_data0F]
+		.BYTE	<[_build_constuct_data10]
+		.BYTE	<[_build_constuct_data11]
+		.BYTE	<[_build_constuct_data12]
+		.BYTE	<[_build_constuct_data13]
+		.BYTE	<[_build_constuct_data14]
+		.BYTE	<[_build_constuct_data15]
+		.BYTE	<[_build_constuct_data16]
+		.BYTE	<[_build_constuct_data17]
+		.BYTE	<[_build_constuct_data18]
+		.BYTE	<[_build_constuct_data19]
+		.BYTE	<[_build_constuct_data1A]
+		.BYTE	<[_build_constuct_data1B]
+		.BYTE	<[_build_constuct_data1C]
+_build_constuct_data_lib_hi:
+		.BYTE	>[_build_constuct_data00]
+		.BYTE	>[_build_constuct_data01]
+		.BYTE	>[_build_constuct_data02]
+		.BYTE	>[_build_constuct_data03]
+		.BYTE	>[_build_constuct_data04]
+		.BYTE	>[_build_constuct_data05]
+		.BYTE	>[_build_constuct_data06]
+		.BYTE	>[_build_constuct_data07]
+		.BYTE	>[_build_constuct_data08]
+		.BYTE	>[_build_constuct_data09]
+		.BYTE	>[_build_constuct_data0A]
+		.BYTE	>[_build_constuct_data0B]
+		.BYTE	>[_build_constuct_data0C]
+		.BYTE	>[_build_constuct_data0D]
+		.BYTE	>[_build_constuct_data0E]
+		.BYTE	>[_build_constuct_data0F]
+		.BYTE	>[_build_constuct_data10]
+		.BYTE	>[_build_constuct_data11]
+		.BYTE	>[_build_constuct_data12]
+		.BYTE	>[_build_constuct_data13]
+		.BYTE	>[_build_constuct_data14]
+		.BYTE	>[_build_constuct_data15]
+		.BYTE	>[_build_constuct_data16]
+		.BYTE	>[_build_constuct_data17]
+		.BYTE	>[_build_constuct_data18]
+		.BYTE	>[_build_constuct_data19]
+		.BYTE	>[_build_constuct_data1A]
+		.BYTE	>[_build_constuct_data1B]
+		.BYTE	>[_build_constuct_data1C]
+_build_constuct_data00:
 		.BYTE	$91,$DF
-byte_150AC7:
+_build_constuct_data01:
 		.BYTE	$A7,$DF
-byte_150AC9:
+_build_constuct_data02:
 		.BYTE	$9C,$DF
-byte_150ACB:
+_build_constuct_data03:
 		.BYTE	$B2,$DF
-byte_150ACD:
+_build_constuct_data0C:
 		.BYTE	$B3,$DF
-byte_150ACF:
+_build_constuct_data04:
 		.BYTE	$00,$80,$81,$82,$DF
-byte_150AD4:
+_build_constuct_data05:
 		.BYTE	$20,$80,$81,$82,$DF
-byte_150AD9:
+_build_constuct_data06:
 		.BYTE	$40,$80,$81,$82,$DF
-byte_150ADE:
+_build_constuct_data07:
 		.BYTE	$50,$80,$81,$82,$DF
-byte_150AE3:
+_build_constuct_data08:
 		.BYTE	$51,$80,$81,$82,$DF
-byte_150AE8:
+_build_constuct_data09:
 		.BYTE	$63,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150AF2:
+_build_constuct_data0A:
 		.BYTE	$60,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150AFC:
+_build_constuct_data0B:
 		.BYTE	$62,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B06:
+_build_constuct_data0D:
 		.BYTE	$64,$80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8A,$8B,$8C,$8D,$8E
 		.BYTE	$DF
-byte_150B17:
+_build_constuct_data0E:
 		.BYTE	$70,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B21:
+_build_constuct_data0F:
 		.BYTE	$71,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B2B:
+_build_constuct_data10:
 		.BYTE	$72,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B35:
+_build_constuct_data11:
 		.BYTE	$73,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B3F:
+_build_constuct_data12:
 		.BYTE	$90,$90,$90,$90,$90,$90,$90,$90,$90,$DF
-byte_150B49:
+_build_constuct_data13:
 		.BYTE	$75,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B53:
+_build_constuct_data14:
 		.BYTE	$76,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B5D:
+_build_constuct_data15:
 		.BYTE	$77,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B67:
+_build_constuct_data16:
 		.BYTE	$78,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B71:
+_build_constuct_data17:
 		.BYTE	$79,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B7B:
+_build_constuct_data18:
 		.BYTE	$7A,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B85:
+_build_constuct_data19:
 		.BYTE	$7B,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B8F:
+_build_constuct_data1A:
 		.BYTE	$7C,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150B99:
+_build_constuct_data1B:
 		.BYTE	$7D,$80,$81,$82,$83,$84,$85,$86,$87,$DF
-byte_150BA3:
+_build_constuct_data1C:
 		.BYTE	$7E,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2584,9 +2583,9 @@ byte_15132F:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_regular_building_name_and_cost_hud_draw_req_set:
+_constr_palette_redraw_req_set:
 		LDA		#$FF
-		STA		_regular_building_name_and_cost_hud_draw_req
+		STA		_constr_palette_redraw_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3890,8 +3889,8 @@ _game_hud_full_draw:
 		STA		byte_3C
 loc_151F3B:
 		JSR		_ppu_flush_wait
-		JSR		_regular_constr_palette_draw
-		LDA		_regular_building_name_and_cost_hud_draw_req
+		JSR		_constr_palette_redraw
+		LDA		_constr_palette_redraw_req
 		BNE		loc_151F3B
 		JSR		_ppu_flush_wait
 		JSR		_building_name_and_cost_hud_draw

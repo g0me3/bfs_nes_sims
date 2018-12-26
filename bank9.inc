@@ -3787,7 +3787,7 @@ _fund_reqest_ofs_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_taxes_alloc_hex_to_dec9999:					; REDUNDANT
-;		LDA		_budget_tax_cur_pos							; -
+;		LDA		_budget_tax_cur_pos				; -
 ;		AND		#$FE							; -
 ;		TAY										; -
 ;		LDA		_tax_alloc,Y					; -

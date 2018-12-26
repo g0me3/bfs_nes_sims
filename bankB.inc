@@ -233,7 +233,7 @@ loc_11E1F2:
 		LDA		_obj_active_flags				; no airports - no flying objects
 		AND		#$FC							; remove existing if airport destroyed
 		STA		_obj_active_flags
-; NEW: implement a ship starting procedures, not implemented here at all
+; NEW: re-implement another ship starting procedures, not intended to be used in original version
 ; -
 loc_11E23F:
 		LDA		_sea_ports_count
@@ -1047,15 +1047,15 @@ loc_11E879:
 		LDA		_obj_active_flags
 		AND		#$04
 		BNE		locret_11E8AC
+; UNFINISHED
 ; -
 ;		LDY		#>[_wram_map_buf]				; UNFINISHED very briefly written code
 ;		STY		_tmpE7							; to search a special symbol in the sea
-;		LDY		#<[_wram_map_buf]				; which probably should be placed near
-;		STY		_tmpE6							; port building in sea to start ship animations
-loc_11E888:
+;		LDY		#<[_wram_map_buf]				; which should be inserted on map to mark
+;		STY		_tmpE6							; a special ship routes, ship not intended
+;loc_11E888:									; to sail on free water here
 ;		LDA		(_tmpE6),Y
-;		CMP		#$FE							; UNUSED: special sea tile
-;		CMP		#$BD							; FIX: regular tile
+;		CMP		#$FE							; special sea tile
 ;		BEQ		loc_11E8A0
 ;		INC		_tmpE6
 ;		BNE		loc_11E894
@@ -1070,21 +1070,17 @@ loc_11E894:
 ;		BNE		loc_11E888
 ;		BEQ		locret_11E8AC
 ;loc_11E8A0:
-; -
-; MORE NOTES: the code above should look for at least one sea tile on the map
-; then code below just get the position of the sea port and set the
-; ship deploy offset on it. this is incorrect.
-; with no proper placement at the beginning, it may just stuck inside the
-; port
-; the code here should either search for nearest sea tile around the port
-; or use other saved data of any sea tile already found.
-;
-;		LDA		_tmp_map_pos._COL
-;		STA		_obj_pos._ship._COL
-;		LDA		_tmp_map_pos._ROW
-;		STA		_obj_pos._ship._ROW
+;		LDA		_tmp_map_pos._COL				; store the seaport location as a astarting position
+;		STA		_obj_pos._ship._COL				; for the ship which isn't quite correct, because
+;		LDA		_tmp_map_pos._ROW				; ship goes only on special tiles and without a special
+;		STA		_obj_pos._ship._ROW				; test, it can just stuck on the ground
 ;-
+; NEW
+; there should be a code to store the starting ship position on any FE tile instead
+; then whip will move on the fixed route. the only route exists on the DEtroit scenario map!
+; never used anything else.
 		MOVW	_obj_pos._ship,_last_water_tile_pos
+; -
 locret_11E8AC:
 		RTS
 loc_11E8AD:

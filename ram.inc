@@ -293,7 +293,7 @@ byte_AA:
 		.BYTE	0
 byte_AB:
 		.BYTE	0
-_regular_building_name_and_cost_hud_draw_req:
+_constr_palette_redraw_req:
 		.BYTE	0
 _constr_palette_flags:
 		.BYTE	0,0,0,0

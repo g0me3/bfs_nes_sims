@@ -76,7 +76,7 @@ loc_B8110:
 		LDA		_tmp3
 		STA		_constr_palette_flags+3
 		LDA		#$FF							; set flag to update
-		STA		_regular_building_name_and_cost_hud_draw_req
+		STA		_constr_palette_redraw_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -123,9 +123,10 @@ loc_B815F:
 ;		.WORD	3000
 ;		.WORD	3000
 ;		.WORD	5000
-;		.WORD	0								; here is some trick to be sure the prize
+;		.WORD	0								; <- here is some trick to be sure the prize
 ;		.WORD	5000							; button won't be disabled when no money
 ;		.WORD	10000							; now we disabled it because using the full table
+												; no money - no prizes, get off
 
 ; =============== S U B	R O U T	I N E =======================================
 ; input: _cur_build_sample_tile_idx - current tile "sample" under construction cursor.
@@ -138,18 +139,19 @@ _get_valid_1X1_building_tile:
 		CMP		#$90
 		BEQ		.do_money_sub				; regular buldozered ground at this point
 		CMP		#$BD
-		BEQ		.j_water_tile_build_select	; regular water tile
+		BEQ		.j_water_tile_build_select	; special case water, no need to bulldozer
 		CMP		#$FE
-		BEQ		.j_water_tile_build_select	; FIX
-;		BNE		loc_B8194					; special water tile HERE! still planned some
+		BNE		loc_B8194					; special water tile HERE!
 ;		SEC									; water roads! should be something special
 ;		BCS		.j_water_tile_build_select	; but C=1 means nothing currently there
 ; -
+.j_water_tile_build_select:
+		JMP		_water_tile_build_select
 loc_B8194:
 		LDA		_city._game_flags			; test autobuldozer flag
 		LSR
 		BCC		.no_auto_bulldoze
-		LDA		_cur_build_sample_tile_idx
+		LDA		_cur_build_sample_tile_idx	; check for what we can bulldoze
 		CMP		#$B2
 		BCC		.no_auto_bulldoze			; can't autobulldoze any normal buildings
 		CMP		#$B5
@@ -163,95 +165,123 @@ loc_B8194:
 		CMP		#$EB
 		BCS		.no_auto_bulldoze			; the rest of transport tiles
 .do_auto_bulldoze:
-		INCW	_cur_building_price			; yes, autobulldoze first
+		INCW	_cur_building_price			; yes, autobulldoze it
 .do_money_sub:
-		JSR		_money_subtract
+		JSR		_money_subtract				; charge money
 		BCS		locret_B81C4				; can't build something is low money
-		LDA		#$FF
-		STA		_cur_build_store_tile_idx	; common flag to signal to destroy something
-		CLC									; then build a tile of the new construction
+		LDA		#$FF						; common flag to signal to destroy something
+		STA		_cur_build_store_tile_idx	; then build a tile of the default type (horizontal)
+		CLC									; the actual bending/joints will be done later
 locret_B81C4:
 		RTS
-.j_water_tile_build_select:
-		JMP		_water_tile_build_select
 .no_auto_bulldoze:
-		LDA		_const_palette_selected_idx
-		CMP		#$01
+		LDA		_const_palette_selected_idx	; when no autobulldoze, we couldn't build anything
+		CMP		#$01						; except special cases of intersections, let's find any
 		BNE		loc_B81D1
-		JMP		.build_ground_road_tile
+		JMP		_select_road_intersection_tile
 loc_B81D1:
 		CMP		#$03
 		BNE		loc_B81D8
-		JMP		.build_ground_electro_tile
+		JMP		_select_rails_intersection_tile
 loc_B81D8:
-		JMP		.build_ground_rail_tile
-.build_ground_road_tile:
-		LDA		_cur_build_sample_tile_idx
+		JMP		_select_electro_intersection_tile
+
+; =============== S U B	R O U T	I N E =======================================
+_select_road_intersection_tile:
+		LDA		_cur_build_sample_tile_idx	; special intersection tiles select
 		CMP		#$9C
-		BNE		loc_B81E5
-		LDA		#$B8
-		BNE		loc_B8245
+		BEQ		.build_storeB8
+;		BNE		loc_B81E5					; REDUNDANT
+;		LDA		#$B8						; road+rail horizontal
+;		BNE		.build_store1
 loc_B81E5:
 		CMP		#$9D
-		BNE		loc_B81ED
-		LDA		#$B7
-		BNE		loc_B8245
+		BEQ		.build_storeB7				; OPTIMIZED
+;		BNE		loc_B81ED					; REDUNDANT
+;		LDA		#$B7						; road+rail vertical
+;		BNE		.build_store1
 loc_B81ED:
 		CMP		#$A7
-		BNE		loc_B81F5
-		LDA		#$B9
-		BNE		loc_B8245
+		BEQ		.build_storeB9				; OPTIMIZED
+;		BNE		loc_B81F5					; REDUNDANT
+;		LDA		#$B9						; road+electric horizontal
+;		BNE		.build_store1
 loc_B81F5:
 		CMP		#$A8
-		BEQ		loc_B81FC
-		JMP		.build_forbidden0
-loc_B81FC:
-		LDA		#$BA
-		BNE		loc_B8245
-.build_ground_electro_tile:
+		BEQ		.build_storeBA				; OPTIMIZED
+;		BEQ		loc_B81FC					; REDUNDANT
+		BNE		.build_forbidden0			; nothing to build
+;loc_B81FC:
+;		LDA		#$BA						; road+electric vertical
+;		BNE		.build_store1
+
+; =============== S U B	R O U T	I N E =======================================
+_select_rails_intersection_tile:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#$91
-		BNE		loc_B820A
-		LDA		#$B7
-		BNE		loc_B8245
+		BEQ		.build_storeB7				; OPTIMIZED
+;		BNE		loc_B820A					; REDUNDANT
+;		LDA		#$B7						; rail+road horizontal
+;		BNE		.build_store1
 loc_B820A:
 		CMP		#$92
-		BNE		loc_B8212
-		LDA		#$B8
-		BNE		loc_B8245
+		BEQ		.build_storeB8				; OPTIMIZED
+;		BNE		loc_B8212					; REDUNDANT
+;		LDA		#$B8						; rail+road vertical
+;		BNE		.build_store1
 loc_B8212:
 		CMP		#$A7
-		BNE		loc_B821A
-		LDA		#$BB
-		BNE		loc_B8245
+		BEQ		.build_storeBB				; OPTIMIZED
+;		BNE		loc_B821A					; REDUNDANT
+;		LDA		#$BB						; rail+electro horizontal
+;		BNE		.build_store1
 loc_B821A:
 		CMP		#$A8
-		BEQ		loc_B8221
-		JMP		.build_forbidden0
-loc_B8221:
-		LDA		#$BC
-		BNE		loc_B8245
-.build_ground_rail_tile:
+		BEQ		.build_storeBC
+		BNE		.build_forbidden0
+;		LDA		#$BC						; rail+electro vertical
+;		BNE		.build_store1
+
+; =============== S U B	R O U T	I N E =======================================
+_select_electro_intersection_tile:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#$91
-		BNE		loc_B822F
-		LDA		#$BA
-		BNE		loc_B8245
+		BEQ		.build_storeBA				; OPTIMIZED
+;		BNE		loc_B822F					; REDUNDANT
+;		LDA		#$BA						; electro+road horizontal
+;		BNE		.build_store1
 loc_B822F:
 		CMP		#$92
-		BNE		loc_B8237
-		LDA		#$B9
-		BNE		loc_B8245
+		BEQ		.build_storeB9				; OPTIMIZED
+;		BNE		loc_B8237					; REDUNDANT
+;		LDA		#$B9						; electro+road vertical
+;		BNE		.build_store1
 loc_B8237:
 		CMP		#$9C
-		BNE		loc_B823F
-		LDA		#$BC
-		BNE		loc_B8245
+		BEQ		.build_storeBC				; OPTIMIZED
+;		BNE		loc_B823F					; REDUNDANT
+;		LDA		#$BC						; electro+rail horizontal
+;		BNE		.build_store1
 loc_B823F:
 		CMP		#$9D
 		BNE		.build_forbidden0
-		LDA		#$BB
-loc_B8245:
+.build_storeBB:
+		LDA		#$BB						; electro+rail vertical
+		.BYTE	$2C
+.build_storeB7:
+		LDA		#$B7						; rail+road horizontal
+		.BYTE	$2C
+.build_storeB8:
+		LDA		#$B8						; rail+road vertical
+		.BYTE	$2C
+.build_storeB9:
+		LDA		#$B9						; road+electric horizontal
+		.BYTE	$2C
+.build_storeBA:
+		LDA		#$BA						; road+electric vertical
+		.BYTE	$2C
+.build_storeBC:
+		LDA		#$BC						; electro+rail horizontal
 		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
 
@@ -330,33 +360,28 @@ _water_tile_build_select:
 .valid_right_road_water_joint:
 		PLA
 		PLA
-; REDUNDANT: we have a lot of redundant code here because of
-; lack the actual sailable water tiles usage.
-; TODO: remove or implement it finally
-;
-;		LDA		_cur_build_sample_tile_idx		; special water no exists here,
-;		CMP		#$FE
-;		BNE		loc_B82CA
-;		LDA		#$EB
-;		BNE		loc_B82CC						; so we newer set the "bridge" roads as well
-;loc_B82CA:
+		LDA		_cur_build_sample_tile_idx		; special water tiles
+		CMP		#$FE
+		BNE		loc_B82CA
+		LDA		#$EB							; set the special "bridge" road tile
+		BNE		loc_B82CC
+loc_B82CA:
 		LDA		#$E0							; let's build a regular hor road
-;loc_B82CC:
+loc_B82CC:
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
 .valid_bottom_road_water_joint:
 		PLA
 .valid_upper_road_water_joint:
-; REDUNDANT, never used
-;		LDA		_cur_build_sample_tile_idx
-;		CMP		#$FE
-;		BNE		loc_B82DD
-;		LDA		#$EC
-;		BNE		loc_B82DF
-;loc_B82DD:
+		LDA		_cur_build_sample_tile_idx
+		CMP		#$FE
+		BNE		loc_B82DD
+		LDA		#$EC							; another bridge road
+		BNE		loc_B82DF
+loc_B82DD:
 		LDA		#$E1
-;loc_B82DF:
+loc_B82DF:
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
@@ -365,7 +390,7 @@ _water_tile_build_select:
 .valid_left_electro_water_joint:
 		PLA
 .valid_right_electro_water_joint:
-		PLA
+		PLA										; there is no special bridger nor for a electrics...
 		PLA
 		LDA		#$E2
 ;		STA		_cur_build_store_tile_idx
@@ -381,7 +406,7 @@ _water_tile_build_select:
 .valid_left_rail_water_joint:
 		PLA
 .valid_right_rail_water_joint:
-		PLA
+		PLA										; ...nor for a rail lines on the water
 		PLA
 		LDA		#$E4
 ;		STA		_cur_build_store_tile_idx

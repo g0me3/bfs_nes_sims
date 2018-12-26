@@ -523,8 +523,8 @@ _obj_ship_look_for_new_dir:
 loc_882FB:
 		LDA		(_tmp15),Y						; get the corresponding map tile
 loc_882FD:
-;		CMP		#$FE							; UNUSED: test if it is a special sea tile
-		CMP		#$BD							; FIX: let's use regular sea tile
+;		CMP		#$FE							; test if it is a special sea tile only
+		CMP		#$BD							; NEW: let's use regular sea tile
 		BNE		loc_8830B
 		JSR		_obj_ship_max_range_test
 		BCC		loc_8830B
