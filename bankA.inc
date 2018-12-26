@@ -15,15 +15,15 @@ _test_for_new_decade:
 		LDY		#$02
 loc_10400C:
 		LDA		_tmpE6
-		CMP		_hex_to_dec_999_tbl0,Y
+		CMP		_hex_to_dec_tbl0,Y
 		LDA		_tmpE7
-		SBC		_hex_to_dec_999_tbl1,Y
+		SBC		_hex_to_dec_tbl1,Y
 		BCC		loc_104028
 		LDA		_tmpE6
-		SBC		_hex_to_dec_999_tbl0,Y
+		SBC		_hex_to_dec_tbl0,Y
 		STA		_tmpE6
 		LDA		_tmpE7
-		SBC		_hex_to_dec_999_tbl1,Y
+		SBC		_hex_to_dec_tbl1,Y
 		STA		_tmpE7
 		BCS		loc_10400C
 loc_104028:
@@ -31,14 +31,15 @@ loc_104028:
 		BPL		loc_10400C
 		LDA		_tmpE6
 		RTS
-_hex_to_dec_999_tbl0:
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-_hex_to_dec_999_tbl1:
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
+
+;_hex_to_dec_999_tbl0:
+;		.BYTE	[[10 >> 0] & $FF]		; $0A
+;		.BYTE	[[100 >> 0] & $FF]		; $64
+;		.BYTE	[[1000 >> 0] & $FF]		; $E8
+;_hex_to_dec_999_tbl1:
+;		.BYTE	[[10 >> 8] & $FF]		; $00
+;		.BYTE	[[100 >> 8] & $FF]		; $00
+;		.BYTE	[[1000 >> 8] & $FF]		; $03
 
 		SECTION_END B01
 

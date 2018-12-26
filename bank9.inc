@@ -3618,21 +3618,21 @@ _hex_to_dec_ex:
 loc_EBA2D:
 		LDY		#$00
 loc_EBA2F:
-		LDA		_ptr0						; from 10m to 10 back count
-		CMP		_hex_to_dec_tbl2,X			; compare 24-bit value with table
-		LDA		_ptr0+1
+		LDA		_tmp0						; from 10m to 10 back count
+		CMP		_hex_to_dec_tbl0,X			; compare 24-bit value with table
+		LDA		_tmp1
 		SBC		_hex_to_dec_tbl1,X
 		LDA		_tmp2
-		SBC		_hex_to_dec_tbl0,X
-		BCC		loc_EBA58
-		LDA		_ptr0						; less than or equals, subtract
 		SBC		_hex_to_dec_tbl2,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
+		BCC		loc_EBA58
+		LDA		_tmp0						; less than or equals, subtract
 		SBC		_hex_to_dec_tbl0,X
+		STA		_tmp0
+		LDA		_tmp1
+		SBC		_hex_to_dec_tbl1,X
+		STA		_tmp1
+		LDA		_tmp2
+		SBC		_hex_to_dec_tbl2,X
 		STA		_tmp2
 		INY
 		BNE		loc_EBA2F
@@ -3643,7 +3643,7 @@ loc_EBA58:
 		LDX		#$00
 loc_EBA5F:
 		LDA		_tmp2,X
-		STA		_ptr0+1,X
+		STA		_tmp1,X
 		INX
 		CPX		#$06
 		BNE		loc_EBA5F
@@ -3652,7 +3652,7 @@ loc_EBA5F:
 ; REDUNDANT, merged to one common tables set
 ; in system bank
 ;
-;_hex_to_dec_tbl0:
+;_hex_to_dec_tbl2:
 ;		.BYTE	[[10 >> 16] & $FF]		; $00
 ;		.BYTE	[[100 >> 16] & $FF]		; $00
 ;		.BYTE	[[1000 >> 16] & $FF]	; $00
@@ -3668,7 +3668,7 @@ loc_EBA5F:
 ;		.BYTE	[[100000 >> 8] & $FF]	; $86
 ;		.BYTE	[[1000000 >> 8] & $FF]  ; $42
 ;		.BYTE	[[10000000 >> 8] & $FF] ; $96
-;_hex_to_dec_tbl2:
+;_hex_to_dec_tbl0:
 ;		.BYTE	[[10 >> 0] & $FF]		; $0A
 ;		.BYTE	[[100 >> 0] & $FF]		; $64
 ;		.BYTE	[[1000 >> 0] & $FF]		; $E8

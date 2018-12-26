@@ -3683,9 +3683,9 @@ _months_lib:
 _bg_music_list:
 		.BYTE	$08,$20,$41,$42,$44,$48
 
-_get_dec_digit_tbl0:
+_dec_digit_tbl0:
 		.BYTE	[[1 >> 0] & $FF]		; $01
-_hex_to_dec_tbl2:
+_hex_to_dec_tbl0:
 		.BYTE	[[10 >> 0] & $FF]		; $0A
 		.BYTE	[[100 >> 0] & $FF]		; $64
 		.BYTE	[[1000 >> 0] & $FF]		; $E8
@@ -3693,7 +3693,7 @@ _hex_to_dec_tbl2:
 		.BYTE	[[100000 >> 0] & $FF]	; $A0
 		.BYTE	[[1000000 >> 0] & $FF]	; $40
 		.BYTE	[[10000000 >> 0] & $FF] ; $80
-_get_dec_digit_tbl1:
+_dec_digit_tbl1:
 		.BYTE	[[1 >> 8] & $FF]		; $00
 _hex_to_dec_tbl1:
 		.BYTE	[[10 >> 8] & $FF]		; $00
@@ -3703,9 +3703,9 @@ _hex_to_dec_tbl1:
 		.BYTE	[[100000 >> 8] & $FF]	; $86
 		.BYTE	[[1000000 >> 8] & $FF]	; $42
 		.BYTE	[[10000000 >> 8] & $FF] ; $96
-_get_dec_digit_tbl2:
+_dec_digit_tbl2:
 		.BYTE	[[1 >> 16] & $FF]		; $00
-_hex_to_dec_tbl0:
+_hex_to_dec_tbl2:
 		.BYTE	[[10 >> 16] & $FF]		; $00
 		.BYTE	[[100 >> 16] & $FF]		; $00
 		.BYTE	[[1000 >> 16] & $FF]	; $00

@@ -1368,20 +1368,28 @@ byte_BABC:
 ; ---------------------------------------------------------------------------
 
 ; =============== S U B	R O U T	I N E =======================================
-_wnd_header_draw:
+_wnd_header_txt_draw:
 		LDA		#$02
-		STA		_ptr0+1
+		STA		_tmp1
 loc_BB84:
 		LDX		_game_msg_idx
-		LDA		_wnd_pos_ofs_X,X
+		LDA		_wnd_header_txt_len,X
+		STA		_tmp3							; FIX: replace table with auto calc
+		LDA		#23
+		SEC
+		SBC		_tmp3
+		LSR
+		CLC
+		ADC		#8
 		STA		_tmp2
-		LDA		_wnd_pos_ofs_Y,X
-		STA		_tmp3
-		JSR		_wnd_header_pos_calc
+;		LDA		_wnd_header_txt_pos,X			; OPTIMIZED
+;		STA		_tmp2
+
+		JSR		_wnd_header_txt_pos_calc
 ;		LDA		_game_msg_idx					; REDUNDANT no need to calculate
 ;		ASL										; idx * 3 value, there is only single
 ;		CLC										; byte array left
-;		ADC		_ptr0+1							; -
+;		ADC		_tmp1							; -
 ;		ADC		_game_msg_idx					; -
 ;		TAX										; -
 		LDX		_game_msg_idx
@@ -1389,24 +1397,27 @@ loc_BB84:
 		STA		_tmp2
 		LDA		_wnd_header_tlm_hi,X
 		STA		_tmp3
-		LDX		_ptr0+1							; OPTIMIZED read special symbols
+		LDX		_tmp1							; OPTIMIZED read special symbols
 		LDA		_wnd_header_char_delta,X		; table and space symbol for a line
 		STA		_ptr0							; -
 		LDA		_wnd_header_space_table,X		; -
 		STA		_tmp8							; -
 		JSR		_wnd_header_queue
-		DEC		_ptr0+1
+		DEC		_tmp1
 		BPL		loc_BB84
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; screenY = ((scrollY / 2) + _tmp1 + 1) % 30
-; screenX = ((scrollX / 2) + _tmp2 + 0) % 32
-; lineLen = (32 - screenX) >= _tmp3 ? _tmp3 : (32 - screenX)
-; wrapLen = _tmp3 - lineLen
-; ppuOfs  = (screenY * 32) + screenX
+; args:
+;		_tmp1 - Y offset,
+;		_tmp2 - X offset,
+;		_tmp3 - width
+; return:
+;		_ptr4 - ppu offset
+;		_tmp6 - line len
+;		_tmp7 - wrap len
 ;
-_wnd_header_pos_calc:
+_wnd_header_txt_pos_calc:
 		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
 		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
 		WRAPB	_tmp6,_tmp7,_tmp5,_tmp3,#32
@@ -1448,14 +1459,56 @@ loc_BC49:
 		PPUQEND
 		RTS
 
-_wnd_pos_ofs_X:
-		.BYTE	$10,$11,$11,$10,$0E,$0E,$0E,$0E,$11,$0C,$0E,$10,$0E,$10,$10,$10
-		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$0F,$0F,$0F,$0F,$0E
-		.BYTE	$11,$11,$0F,$10
-_wnd_pos_ofs_Y:
-		.BYTE	$08,$04,$04,$07,$0A,$0B,$0B,$0B,$05,$0E,$0A,$07,$0B,$07,$07,$07
-		.BYTE	$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$08,$08,$08,$08,$0B
-		.BYTE	$04,$05,$09,$07
+; REDUNDANT, the autocalculated lengths are the same as in the original
+; list, but except the very first line, which is mover one tile
+; forward for some reasons... no now it fixed
+;
+;_wnd_header_txt_pos:
+;		.BYTE	$10,$11,$11,$10,$0E,$0E,$0E,$0E,$11,$0C,$0E,$10,$0E,$10,$10,$10
+;		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$0F,$0F,$0F,$0F,$0E
+;		.BYTE	$11,$11,$0F,$10
+
+	MAC	LEN
+		.BYTE	{1}_len
+	ENDM
+
+_wnd_header_txt_len:
+		LEN		aGoodjob
+		LEN		aTown
+		LEN		aCity
+		LEN		aCapital
+		LEN		aMetropolis
+		LEN		aMegaropolis
+		LEN		aTrafficjam
+		LEN		aTrafficjam
+		LEN		aCrime
+		LEN		aMonsterattack
+		LEN		aEarthquake
+		LEN		aPresent
+		LEN		aSistercity
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPractice
+		LEN		aPractice
+		LEN		aPractice
+		LEN		aPractice
+		LEN		aHowtoloan
+		LEN		aFire
+		LEN		aFlood
+		LEN		aAircrash
+		LEN		aTornade
 
 ; OPTIMIZE: instead of keep all dupes for three different encodings of one
 ; header name line, we can just keep the difference between characters
@@ -1660,42 +1713,32 @@ _wnd_header_tlm_hi:
 ;		.BYTE	$01,$29,$32,$00,$23,$32,$21,$33,$28
 ;byte_BDF7:
 ;		.BYTE	$14,$2F,$32,$2E,$21,$24,$25
-aGoodjob:
-		.BYTE	"Good job"
-aTown:
-		.BYTE	"Town"
-aCity:
-		.BYTE	"City"
-aCapital:
-		.BYTE	"Capital"
-aMetropolis:
-		.BYTE	"Metropolis"
-aMegaropolis:
-		.BYTE	"Megaropolis"
-aTrafficjam:
-		.BYTE	"Traffic jam"
-aCrime:
-		.BYTE	"Crime"
-aMonsterattack:
-		.BYTE	"Monster attack"
-aEarthquake:
-		.BYTE	"Earthquake"
-aPresent:
-		.BYTE	"Present"
-aSistercity:
-		.BYTE	"Sister City"
-aPractice:
-		.BYTE	"Practice"
-aHowtoloan:
-		.BYTE	"How To Loan"
-aFire:
-		.BYTE	"Fire"
-aFlood:
-		.BYTE	"Flood"
-aAircrash:
-		.BYTE	"Air crash"
-aTornade:
-		.BYTE	"Tornade"
+
+	MAC	STR
+{1}		EQU	.
+		.BYTE	{2}
+{1}_len	EQU	.-{1}
+	ENDM
+
+		STR		aGoodjob,		"Good job"
+		STR		aTown,			"Town"
+		STR		aCity,			"City"
+		STR		aCapital,		"Capital"
+		STR		aMetropolis,	"Metropolis"
+		STR		aMegaropolis,	"Megaropolis"
+		STR		aTrafficjam,	"Traffic jam"
+		STR		aCrime,			"Crime"
+		STR		aMonsterattack,	"Monster attack"
+		STR		aEarthquake,	"Earthquake"
+		STR		aPresent,		"Present"
+		STR		aSistercity,	"Sister City"
+		STR		aPractice,		"Practice"
+		STR		aHowtoloan,		"How To Loan"
+		STR		aFire,			"Fire"
+		STR		aFlood,			"Flood"
+		STR		aAircrash,		"Air crash"
+		STR		aTornade,		"Tornade"
+
 ;byte_BE90:
 ;		.BYTE	$87,$AF,$AF,$A4,$81,$AA,$AF,$A2
 ;byte_BE98:

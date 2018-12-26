@@ -521,16 +521,16 @@ loc_2442D:
 		SEC										; every scenario has a DICT of 2x1 tiles, 15 each
 		SBC		#$80							; extract DICT entry idx
 		ASL
-		PHA
+		PHA										; OPTIMIZE
 		TAY
 		LDA		(_tmp2),Y
 		JSR		_scenario_map_put_block
-;		LDA		_tmp6							; REDUNDANT
+;		LDA		_tmp6							; REDUNDANT, save in stack instead
 ;		SEC										; -
 ;		SBC		#$80							; -
 ;		ASL										; -
 ;		TAY										; -
-		PLA										; OPTIMIZE
+		PLA										; OPTIMIZE, pop from stack
 		TAY										; -
 		INY
 		LDA		(_tmp2),Y
@@ -571,7 +571,7 @@ loc_2446F:
 ;		LDA		#$8E							; xxxxxx8D (4F)
 ;		STA		(_tmp4),Y						; xxxxxx8C (9B)
 ;		LDY		#$4F							; 88898A8B
-;		LDA		#$8D							; E4E5E6E7
+;		LDA		#$8D							;(E4E5E6E7)
 ;		STA		(_tmp4),Y
 ;		LDY		#$9B
 ;		LDA		#$8C
@@ -590,7 +590,7 @@ loc_2446F:
 ;		STA		(_tmp4),Y
 loc_2449E:
 		LDX		#$03							; OPTIMIZE
-		CMP		#$60
+		CMP		#$60							; default draw 2x2 tiles
 		BCC		loc_244D6						; draw 3x3 buildings tiles
 		LDX		#$08							; OPTIMIZE
 ; REDUNDANT
@@ -651,10 +651,22 @@ loc_244EE:
 		LDA		_tmp6+1
 		RTS
 
+; +0 +1 +2 +3
+; 00 82 87 8E +00
+; 80 81 86 8D +4C
+; 83 84 85 8C +98
+; 88 89 8A 8B +E4
+
 _special_tiles_ofs_list:
-		.BYTE	$00,$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
+		.BYTE	$00
+		.BYTE	$4C,$4D,$01
+		.BYTE	$98,$99,$9A,$4E,$02
+		.BYTE	$E4,$E5,$E6,$E7,$9B,$4F,$03
 _special_tiles_list:
-		.BYTE	$00,$80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8A,$8B,$8C,$8D,$8E
+		.BYTE	$00
+		.BYTE	$80,$81,$82
+		.BYTE	$83,$84,$85,$86,$87
+		.BYTE	$88,$89,$8A,$8B,$8C,$8D,$8E
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_unref_19:
@@ -1545,7 +1557,7 @@ _game_setup0F_all_complete_init:
 		STA		_MMC5_NT_MODE
 		JSR		_spr_clear
 		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
-		MOVWO	_ptr0,_tlm_all_complete_
+		MOVWO	_ptr0,_tlm_all_complete
 		JSR		_tlm_transfer
 		MOVWO	_tmp6D6,_all_scenarios_clear_msg
 		LDY		#$00
@@ -1641,18 +1653,34 @@ _rle_tlm_extnt_input_word:
 		.BYTE	$01,$00,$00,$01,$CA,$E2,$5C,$1C,$CA,$80,$80,$80,$01,$96,$80,$05
 		.BYTE	$CA,$02,$5D,$1C,$CA,$9A,$06,$05,$CA,$22,$5D,$1C,$CA,$9A,$06,$04
 		.BYTE	$CA,$42,$5D,$1C,$9C,$CA,$00
+
+		MAC		CNAME
+{1}		EQU		[.-_scenario_town_names_list]
+		.BYTE	{2},$FF
+		ENDM
+
 _scenario_titles_ofs_lib:
-		.BYTE	$00,$06,$0B,$13,$19,$20,$24,$2E,$36
+		.BYTE	_name_cisc
+		.BYTE	_name_bern
+		.BYTE	_name_detr
+		.BYTE	_name_toky
+		.BYTE	_name_bost
+		.BYTE	_name_rio
+		.BYTE	_name_vegs
+		.BYTE	_name_free
+		.BYTE	_name_sims
+
 _scenario_town_names_list:
-		.BYTE	"CISCO",$FF
-		.BYTE	"BERN",$FF
-		.BYTE	"DETROIT",$FF
-		.BYTE	"TOKYO",$FF
-		.BYTE	"BOSTON",$FF
-		.BYTE	"RIO",$FF
-		.BYTE	"LAS VEGAS",$FF
-		.BYTE	"FREEDOM",$FF
-		.BYTE	"SIMCITY",$FF
+		CNAME	_name_cisc,	"CISCO"
+		CNAME	_name_bern,	"BERN"
+		CNAME	_name_detr,	"DETROIT"
+		CNAME	_name_toky,	"TOKYO"
+		CNAME	_name_bost,	"BOSTON"
+		CNAME	_name_rio,	"RIO"
+		CNAME	_name_vegs,	"LAS VEGAS"
+		CNAME	_name_free,	"FREEDOM"
+		CNAME	_name_sims,	"SIMCITY"
+
 _scenario_intro_header_lib_lo:
 		.BYTE	<[_tlm_scenario_header0]
 		.BYTE	<[_tlm_scenario_header1]
@@ -1771,7 +1799,7 @@ _tlm_practice_wnd_header:
 		.WORD	$AD24
 		.BYTE	$47,$00
 		.BYTE	0
-_tlm_all_complete_:
+_tlm_all_complete:
 		.WORD	$8320
 		.BYTE	$5A,$DF
 		.WORD	$A320
@@ -1937,10 +1965,12 @@ _msg_dictionary:
 		MSG_DIC	_your,	"your"
 		MSG_DIC	_you,	"you"
 		MSG_DIC	_con,	"con"
+
 _scenario_msg6:
 		.BYTE	_eof
 _scenario_msg7:
 		.BYTE	_eof
+
 _scenario_msg0:
 		.BYTE	" Damage from ",_the," earth-",$A
 		.BYTE	"quake was m",_in,"or compared",$A

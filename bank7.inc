@@ -2596,20 +2596,20 @@ loc_B97A7:
 		LDY		#$00
 loc_B97A9:
 		LDA		_tmp0
-		CMP		_hex_to_dec_tbl2,X
+		CMP		_hex_to_dec_tbl0,X
 		LDA		_tmp1
 		SBC		_hex_to_dec_tbl1,X
 		LDA		_tmp2
-		SBC		_hex_to_dec_tbl0,X
+		SBC		_hex_to_dec_tbl2,X
 		BCC		loc_B97D2
 		LDA		_tmp0
-		SBC		_hex_to_dec_tbl2,X
+		SBC		_hex_to_dec_tbl0,X
 		STA		_tmp0
 		LDA		_tmp1
 		SBC		_hex_to_dec_tbl1,X
 		STA		_tmp1
 		LDA		_tmp2
-		SBC		_hex_to_dec_tbl0,X
+		SBC		_hex_to_dec_tbl2,X
 		STA		_tmp2
 		INY
 		BNE		loc_B97A9
@@ -2628,7 +2628,7 @@ loc_B97D9:
 
 ; REDUNDANT, merged in system bank
 ;
-;_hex_to_dec_tbl0:
+;_hex_to_dec_tbl2:
 ;		.BYTE	[[10 >> 16] & $FF]		; $00
 ;		.BYTE	[[100 >> 16] & $FF]		; $00
 ;		.BYTE	[[1000 >> 16] & $FF]	; $00
@@ -2644,7 +2644,7 @@ loc_B97D9:
 ;		.BYTE	[[100000 >> 8] & $FF]	; $86
 ;		.BYTE	[[1000000 >> 8] & $FF]  ; $42
 ;		.BYTE	[[10000000 >> 8] & $FF] ; $96
-;_hex_to_dec_tbl2:
+;_hex_to_dec_tbl0:
 ;		.BYTE	[[10 >> 0] & $FF]		; $0A
 ;		.BYTE	[[100 >> 0] & $FF]		; $64
 ;		.BYTE	[[1000 >> 0] & $FF]		; $E8
@@ -2673,20 +2673,20 @@ loc_B97D9:
 ;		LDY		#$00
 ;loc_B9181:
 ;		LDA		_ptr0
-;		CMP		_hex_to_dec_tbl2,X
+;		CMP		_hex_to_dec_tbl0,X
 ;		LDA		_ptr0+1
 ;		SBC		_hex_to_dec_tbl1,X
 ;		LDA		_tmp2
-;		SBC		_hex_to_dec_tbl0,X
+;		SBC		_hex_to_dec_tbl2,X
 ;		BCC		loc_B91AA
 ;		LDA		_ptr0
-;		SBC		_hex_to_dec_tbl2,X
+;		SBC		_hex_to_dec_tbl0,X
 ;		STA		_ptr0
 ;		LDA		_ptr0+1
 ;		SBC		_hex_to_dec_tbl1,X
 ;		STA		_ptr0+1
 ;		LDA		_tmp2
-;		SBC		_hex_to_dec_tbl0,X
+;		SBC		_hex_to_dec_tbl2,X
 ;		STA		_tmp2
 ;		INY
 ;		BNE		loc_B9181
@@ -2703,7 +2703,7 @@ loc_B97D9:
 ;		BNE		loc_B91B1
 ;		RTS
 ;
-;_hex_to_dec_tbl0:
+;_hex_to_dec_tbl2:
 ;		.BYTE	[[10 >> 16] & $FF]		; $00
 ;		.BYTE	[[100 >> 16] & $FF]		; $00
 ;		.BYTE	[[1000 >> 16] & $FF]	; $00
@@ -2719,7 +2719,7 @@ loc_B97D9:
 ;		.BYTE	[[100000 >> 8] & $FF]	; $86
 ;		.BYTE	[[1000000 >> 8] & $FF]  ; $42
 ;		.BYTE	[[10000000 >> 8] & $FF] ; $96
-;_hex_to_dec_tbl2:
+;_hex_to_dec_tbl0:
 ;		.BYTE	[[10 >> 0] & $FF]		; $0A
 ;		.BYTE	[[100 >> 0] & $FF]		; $64
 ;		.BYTE	[[1000 >> 0] & $FF]		; $E8

@@ -2003,6 +2003,7 @@ loc_136F43:
 		LDA		byte_7F
 		STA		_tmp5
 		EXTQMOVB	byte_7A,OP_NOP,0
+loc_136F5C:
 		EXTQMOVB	byte_7B,OP_NOP,0
 		EXTQMOVB	_tmp4,OP_NOP,0
 loc_136F5D:
@@ -2016,9 +2017,10 @@ loc_136F5D:
 		LDA		#$00
 		STA		_tmp5
 		EXTQMOVB	byte_7A,OP_AND,#$E0
-		EXTQMOVB	byte_7B,OP_NOP,0
-		EXTQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_136F5D
+;		EXTQMOVB	byte_7B,OP_NOP,0
+;		EXTQMOVB	_tmp4,OP_NOP,0
+;		JMP		loc_136F5D
+		JMP		loc_136F5C
 loc_136F89:
 		LDA		byte_7A
 		CLC

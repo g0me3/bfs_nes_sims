@@ -408,7 +408,7 @@ OP_ADD	EQU	3
 	; \t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t(.*)\n\t\tCMP\t\t(.*)\n\t\tBCS\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\3\n\t\tSEC\n\t\tSBC\t\t\5\n\t\tSTA\t\t(.*)\n\t\tBNE\t\t(.*)\n\4\:\n\t\tLDA\t\t\3\n\t\tSTA\t\t\5\n\t\tLDA\t\t\#\$00\n\t\tSTA\t\t\6\n\7\:\n
 	; \t\tWRAPB\t\5\,\6\,\2\,\3\,\1\n
 	;
-	; usage: WRAPB LINELEN,WRAPLEN,POS,MAXLEN,BUFLEN
+	; usage: WRAPB LINELEN,WRAPLEN,POS,WIDTH,BUFLEN
 	; 				 \5		 \6		\2	 \3     \1
 	;			     {1}     {2}    {3}  {4}    {5}
 	;

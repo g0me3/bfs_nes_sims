@@ -902,100 +902,102 @@ _game_msg_screens_count_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$03,$02,$01,$01,$01
 		.BYTE	$01,$01,$01,$01
-off_70E22:
-		.BYTE	<[byte_70E6E]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6B]
-		.BYTE	<[byte_70E6C]
-		.BYTE	<[byte_70E6E]
-		.BYTE	<[byte_70E6B]
-		.BYTE	<[byte_70E6E]
-		.BYTE	<[byte_70E6E]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6C]
-		.BYTE	<[byte_70E70]
-		.BYTE	<[byte_70E6B]
-		.BYTE	<[byte_70E6F]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6C]
-		.BYTE	<[byte_70E6C]
-		.BYTE	<[byte_70E6C]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6F]
-		.BYTE	<[byte_70E6B]
-		.BYTE	<[byte_70E6B]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E72]
-		.BYTE	<[byte_70E75]
-		.BYTE	<[byte_70E71]
-		.BYTE	<[byte_70E71]
-		.BYTE	<[byte_70E6A]
-		.BYTE	<[byte_70E6E]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6D]
-		.BYTE	<[byte_70E6F]
-off_70E46:
-		.BYTE	>[byte_70E6E]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6B]
-		.BYTE	>[byte_70E6C]
-		.BYTE	>[byte_70E6E]
-		.BYTE	>[byte_70E6B]
-		.BYTE	>[byte_70E6E]
-		.BYTE	>[byte_70E6E]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6C]
-		.BYTE	>[byte_70E70]
-		.BYTE	>[byte_70E6B]
-		.BYTE	>[byte_70E6F]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6C]
-		.BYTE	>[byte_70E6C]
-		.BYTE	>[byte_70E6C]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6F]
-		.BYTE	>[byte_70E6B]
-		.BYTE	>[byte_70E6B]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E72]
-		.BYTE	>[byte_70E75]
-		.BYTE	>[byte_70E71]
-		.BYTE	>[byte_70E71]
-		.BYTE	>[byte_70E6A]
-		.BYTE	>[byte_70E6E]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6D]
-		.BYTE	>[byte_70E6F]
-byte_70E6A:
+_game_msg_lines_cnt_lib_lo:
+		.BYTE	<[_game_msg_lines6]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines3]
+		.BYTE	<[_game_msg_lines4]
+		.BYTE	<[_game_msg_lines6]
+		.BYTE	<[_game_msg_lines3]
+		.BYTE	<[_game_msg_lines6]
+		.BYTE	<[_game_msg_lines6]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines4]
+		.BYTE	<[_game_msg_lines8]
+		.BYTE	<[_game_msg_lines3]
+		.BYTE	<[_game_msg_lines7]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines4]
+		.BYTE	<[_game_msg_lines4]
+		.BYTE	<[_game_msg_lines4]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines7]
+		.BYTE	<[_game_msg_lines3]
+		.BYTE	<[_game_msg_lines3]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines989]
+		.BYTE	<[_game_msg_lines99]
+		.BYTE	<[_game_msg_lines9]
+		.BYTE	<[_game_msg_lines9]
+		.BYTE	<[_game_msg_lines2]
+		.BYTE	<[_game_msg_lines6]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines5]
+		.BYTE	<[_game_msg_lines7]
+_game_msg_lines_cnt_lib_hi:
+		.BYTE	>[_game_msg_lines6]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines3]
+		.BYTE	>[_game_msg_lines4]
+		.BYTE	>[_game_msg_lines6]
+		.BYTE	>[_game_msg_lines3]
+		.BYTE	>[_game_msg_lines6]
+		.BYTE	>[_game_msg_lines6]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines4]
+		.BYTE	>[_game_msg_lines8]
+		.BYTE	>[_game_msg_lines3]
+		.BYTE	>[_game_msg_lines7]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines4]
+		.BYTE	>[_game_msg_lines4]
+		.BYTE	>[_game_msg_lines4]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines7]
+		.BYTE	>[_game_msg_lines3]
+		.BYTE	>[_game_msg_lines3]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines989]
+		.BYTE	>[_game_msg_lines99]
+		.BYTE	>[_game_msg_lines9]
+		.BYTE	>[_game_msg_lines9]
+		.BYTE	>[_game_msg_lines2]
+		.BYTE	>[_game_msg_lines6]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines5]
+		.BYTE	>[_game_msg_lines7]
+
+_game_msg_lines2:
 		.BYTE	$02
-byte_70E6B:
+_game_msg_lines3:
 		.BYTE	$03
-byte_70E6C:
+_game_msg_lines4:
 		.BYTE	$04
-byte_70E6D:
+_game_msg_lines5:
 		.BYTE	$05
-byte_70E6E:
+_game_msg_lines6:
 		.BYTE	$06
-byte_70E6F:
+_game_msg_lines7:
 		.BYTE	$07
-byte_70E70:
+_game_msg_lines8:
 		.BYTE	$08
-byte_70E71:
+_game_msg_lines9:
 		.BYTE	$09
-byte_70E72:
+_game_msg_lines989:
 		.BYTE	$09,$08,$09
-byte_70E75:
+_game_msg_lines99:
 		.BYTE	$09,$09
+
 _game_msg_lisb_lo:
 		.BYTE	<[_msg00]
 		.BYTE	<[_msg01_town]

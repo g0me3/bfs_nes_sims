@@ -64,7 +64,7 @@ _cur_money_str_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
 		WRAPA	_tmp2,_tmp3,#$08,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; FIX: regular macros takes less bytes
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20		; FIX: regular macros takes less bytes
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -116,17 +116,19 @@ _cur_date_str_calc:
 _cur_year_str_queue:
 		LDA		_city._cur_year
 		LDY		_city._cur_year+1
-		STA		_ptr0
-		STY		_ptr0+1
+		STA		_tmp0
+		STY		_tmp1
 		LDA		#$04
 		STA		_tmp2
-		LDY		#$00
+;		LDY		#$00						; FIX similar to the rest of the code
+		LDY		#$03						; -
 loc_58DE7:
 		JSR		_get_dec_digit16
 		STA		_pre_ppu_buf,X
 		INX
-		INY
-		INY
+;		INY									; FIX
+;		INY									; -
+		DEY									; -
 		DEC		_tmp2
 		BNE		loc_58DE7
 		RTS
@@ -136,32 +138,43 @@ _get_dec_digit16:
 		LDA		#$00
 		STA		_tmp3
 loc_58DF9:
-		LDA		_ptr0
-		SEC
-		SBC		_dec_digit16_tbl,Y
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_dec_digit16_tbl+1,Y
-		STA		_ptr0+1
+;		LDA		_tmp0						; FIX
+;		SEC
+;		SBC		_dec_digit16_tbl,Y
+;		STA		_tmp0
+;		LDA		_tmp1
+;		SBC		_dec_digit16_tbl+1,Y
+;		STA		_tmp1
+;		BCC		loc_58E0E
+		LDA		_tmp0						; OPTIMIZE
+		CMP		_dec_digit_tbl0,Y			; -
+		LDA		_tmp1						; -
+		SBC		_dec_digit_tbl1,Y			; -
 		BCC		loc_58E0E
+		LDA		_tmp0						; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,Y			; also C already set as well
+		STA		_tmp0
+		LDA		_tmp1
+		SBC		_dec_digit_tbl1,Y
+		STA		_tmp1
 		INC		_tmp3
 		BNE		loc_58DF9
 loc_58E0E:
-		LDA		_ptr0
-		CLC
-		ADC		_dec_digit16_tbl,Y
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		_dec_digit16_tbl+1,Y
-		STA		_ptr0+1
+;		LDA		_tmp0						; REDUNDANT
+;		CLC
+;		ADC		_dec_digit16_tbl,Y
+;		STA		_tmp0
+;		LDA		_tmp1
+;		ADC		_dec_digit16_tbl+1,Y
+;		STA		_tmp1
 		LDA		_tmp3
 		RTS
 
-_dec_digit16_tbl:
-		.WORD	1000
-		.WORD	100
-		.WORD	10
-		.WORD	1
+;_dec_digit16_tbl:							; REDUNDANT
+;		.WORD	1000
+;		.WORD	100
+;		.WORD	10
+;		.WORD	1
 
 ; =============== S U B	R O U T	I N E =======================================
 ; TODO: bank 9 different type of month display lib
@@ -329,37 +342,52 @@ _get_dec_digit24:
 		LDA		#$00
 		STA		_tmp4
 loc_5805A:
-		SEC
-		LDA		_ptr0
-		SBC		_get_dec_digit_tbl0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_get_dec_digit_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		_get_dec_digit_tbl2,X
-		STA		_tmp2
+;		SEC									; FIX, lets use less opcodes
+;		LDA		_tmp0
+;		SBC		_dec_digit_tbl0,X
+;		STA		_tmp0
+;		LDA		_tmp1
+;		SBC		_dec_digit_tbl1,X
+;		STA		_tmp1
+;		LDA		_tmp2
+;		SBC		_dec_digit_tbl2,X
+;		STA		_tmp2
+		LDA		_tmp0						; OPTIMIZE
+		CMP		_dec_digit_tbl0,X			; -
+		LDA		_tmp1						; -
+		SBC		_dec_digit_tbl1,X			; -
+		LDA		_tmp2						; -
+		SBC		_dec_digit_tbl2,X			; -
 		BCC		loc_58076
+		LDA		_tmp0						; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,X			; also C already set as well
+		STA		_tmp0
+		LDA		_tmp1
+		SBC		_dec_digit_tbl1,X
+		STA		_tmp1
+		LDA		_tmp2
+		SBC		_dec_digit_tbl2,X
+		STA		_tmp2
 		INC		_tmp4
 		BNE		loc_5805A
 loc_58076:
-		CLC
-		LDA		_ptr0
-		ADC		_get_dec_digit_tbl0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		_get_dec_digit_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		ADC		_get_dec_digit_tbl2,X
-		STA		_tmp2
+;		CLC									; REDUNDANT
+;		LDA		_tmp0
+;		ADC		_dec_digit_tbl0,X
+;		STA		_tmp0
+;		LDA		_tmp1
+;		ADC		_dec_digit_tbl1,X
+;		STA		_tmp1
+;		LDA		_tmp2
+;		ADC		_dec_digit_tbl2,X
+;		STA		_tmp2
 		LDA		_tmp4
 		RTS
 
 ; REDUNDANT, merged to one common tables set
 ; in system bank
 ;
-;_get_dec_digit_tbl0:
+;_dec_digit_tbl0:
 ;		.BYTE	[[1 >> 0] & $FF]		; $01
 ;		.BYTE	[[10 >> 0] & $FF]		; $0A
 ;		.BYTE	[[100 >> 0] & $FF]		; $64
@@ -367,7 +395,7 @@ loc_58076:
 ;		.BYTE	[[10000 >> 0] & $FF]	; $10
 ;		.BYTE	[[100000 >> 0] & $FF]	; $A0
 ;		.BYTE	[[1000000 >> 0] & $FF]	; $40
-;_get_dec_digit_tbl1:
+;_dec_digit_tbl1:
 ;		.BYTE	[[1 >> 8] & $FF]		; $00
 ;		.BYTE	[[10 >> 8] & $FF]		; $00
 ;		.BYTE	[[100 >> 8] & $FF]		; $00
@@ -375,7 +403,7 @@ loc_58076:
 ;		.BYTE	[[10000 >> 8] & $FF]	; $27
 ;		.BYTE	[[100000 >> 8] & $FF]	; $86
 ;		.BYTE	[[1000000 >> 8] & $FF]	; $42
-;_get_dec_digit_tbl2:
+;_dec_digit_tbl2:
 ;		.BYTE	[[1 >> 16] & $FF]		; $00
 ;		.BYTE	[[10 >> 16] & $FF]		; $00
 ;		.BYTE	[[100 >> 16] & $FF]		; $00
@@ -466,7 +494,7 @@ loc_58144:
 		JSR		_game_msg_chr_setup					; FIX: local sub now
 		LDA		#$00
 		STA		_ptr0
-		JSR		_game_msg_display
+		JSR		_game_msg_txt_draw
 		LDA		#$00
 		STA		byte_525
 		STA		byte_524
@@ -495,7 +523,7 @@ loc_581A4:
 		CMP		_game_msg_screens_count_list,X
 		BCS		loc_581EC
 		STA		_ptr0
-		JSR		_game_msg_display
+		JSR		_game_msg_txt_draw
 		LDA		#$00
 		STA		byte_525
 		STA		byte_524
@@ -608,10 +636,10 @@ _game_msg_apu_types_list:
 		.BYTE	$02,$02,$02,$02
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_display:
+_game_msg_txt_draw:
 		PUSHB	_ptr0
-		FJSRA	_wnd_header_draw,PRG0,PRG0			; FIX: direct call here
-;		JSR		_far_wnd_header_draw				; OPTIMIZE
+;		JSR		_far_wnd_header_txt_draw				; FIX: direct call here
+		FJSRA	_wnd_header_txt_draw,PRG0,PRG0			; -
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -625,9 +653,9 @@ loc_5829C:
 		JSR		_game_msg_line_display
 		INC		_ptr0+1
 		LDX		_game_msg_idx
-		LDA		off_70E22,X
+		LDA		_game_msg_lines_cnt_lib_lo,X
 		STA		_tmp2
-		LDA		off_70E46,X
+		LDA		_game_msg_lines_cnt_lib_hi,X
 		STA		_tmp3
 		LDY		_ptr0
 		LDA		_ptr0+1
@@ -640,8 +668,8 @@ loc_5829C:
 ; =============== S U B	R O U T	I N E =======================================
 ; REDUNDANT now
 ;
-;_far_wnd_header_draw:
-;		FJSRA	_wnd_header_draw,PRG0,PRG0
+;_far_wnd_header_txt_draw:
+;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -649,7 +677,7 @@ _game_msg_line_pos_calc:
 		CIADDB	_tmp2,_cur_screen_tile._Y,#$04,_tmp1,#$1E
 		CIADDB	_tmp3,_cur_screen_tile._X,#$08, NONE,#$20
 		WRAPB	_tmp4,_tmp5,_tmp3,#$17,#$20
-		BUFPOS	_tmp2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
+		BUFPOS	_ptr2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -677,32 +705,37 @@ _game_msg_line_display:
 		LDA		(_tmp6),Y
 		STA		_tmp6+1
 		POPB	_tmp6
-		PUSHB	_tmp4
-		PUSHB	_tmp5
-		EXTQSTART
-		EXTQMOVB	_tmp2,OP_NOP,0
-		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_tmp4,OP_NOP,0
-loc_58371:
-		EXTQMOVB	#$0B,OP_NOP,0
-		DEC		_tmp4
-		BNE		loc_58371
-		LDA		_tmp5
-		BEQ		loc_5839E
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-		EXTQMOVB	_tmp2,OP_AND,#$E0
-		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_58371
-loc_5839E:
-		EXTQEND
-		POPB	_tmp5
-		POPB	_tmp4
+; REDUNDANT: here is the code for extnt data queue for message lines
+; as you can see, it's always 0B, the same as drawn by the windows
+; drawing routine, so they already 0B always, and never changes
+; so we may remove it completely from here without harm
+;		PUSHB	_tmp4
+;		PUSHB	_tmp5
+;
+;		EXTQSTART
+;		EXTQMOVB	_tmp2,OP_NOP,0
+;loc_58370:
+;		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+;		EXTQMOVB	_tmp4,OP_NOP,0
+;loc_58371:
+;		EXTQMOVB	#$0B,OP_NOP,0
+;		DEC		_tmp4
+;		BNE		loc_58371
+;		LDA		_tmp5
+;		BEQ		loc_5839E
+;		STA		_tmp4
+;		LDA		#$00
+;		STA		_tmp5
+;		EXTQMOVB	_tmp2,OP_AND,#$E0
+;		JMP		loc_58370
+;loc_5839E:
+;		EXTQEND
+;		POPB	_tmp5
+;		POPB	_tmp4
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp2,OP_NOP,0
+loc_583BD:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_583BE:
@@ -724,9 +757,10 @@ loc_583CC:
 		LDA		#$00
 		STA		_tmp5
 		PPUQMOVB	_tmp2,OP_AND,#$E0
-		PPUQMOVB	_tmp3,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_583BE
+;		PPUQMOVB	_tmp3,OP_ORA,#$20
+;		PPUQMOVB	_tmp4,OP_NOP,0
+;		JMP		loc_583BE
+		JMP		loc_583BD
 loc_583F7:
 		PPUQEND
 		RTS
@@ -1404,33 +1438,48 @@ loc_589CC:
 		LDA		#$00
 		STA		_tmp_popul_decimal_buf,Y
 loc_589D1:
-		SEC
-		LDA		_tmp_popul_hex
-		SBC		_get_dec_digit_tbl0,Y
+;		SEC
+;		LDA		_tmp_popul_hex
+;		SBC		_dec_digit_tbl0,Y
+;		STA		_tmp_popul_hex
+;		LDA		_tmp_popul_hex+1
+;		SBC		_dec_digit_tbl1,Y
+;		STA		_tmp_popul_hex+1
+;		LDA		_tmp_popul_hex+2
+;		SBC		_dec_digit_tbl2,Y
+;		STA		_tmp_popul_hex+2
+		LDA		_tmp_popul_hex				; OPTIMIZE
+		CMP		_dec_digit_tbl0,Y			; -
+		LDA		_tmp_popul_hex+1			; -
+		SBC		_dec_digit_tbl1,Y			; -
+		LDA		_tmp_popul_hex+2			; -
+		SBC		_dec_digit_tbl2,Y			; -
+		BCC		loc_589FA
+		LDA		_tmp_popul_hex				; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,Y			; also C already set as well
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		SBC		_get_dec_digit_tbl1,Y
+		SBC		_dec_digit_tbl1,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		SBC		_get_dec_digit_tbl2,Y
+		SBC		_dec_digit_tbl2,Y
 		STA		_tmp_popul_hex+2
-		BCC		loc_589FA
 		LDA		_tmp_popul_decimal_buf,Y
 		CLC
 		ADC		#$01
 		STA		_tmp_popul_decimal_buf,Y
 		BNE		loc_589D1
 loc_589FA:
-		CLC
-		LDA		_tmp_popul_hex
-		ADC		_get_dec_digit_tbl0,Y
-		STA		_tmp_popul_hex
-		LDA		_tmp_popul_hex+1
-		ADC		_get_dec_digit_tbl1,Y
-		STA		_tmp_popul_hex+1
-		LDA		_tmp_popul_hex+2
-		ADC		_get_dec_digit_tbl2,Y
-		STA		_tmp_popul_hex+2
+;		CLC									; REDUNDANT
+;		LDA		_tmp_popul_hex
+;		ADC		_dec_digit_tbl0,Y
+;		STA		_tmp_popul_hex
+;		LDA		_tmp_popul_hex+1
+;		ADC		_dec_digit_tbl1,Y
+;		STA		_tmp_popul_hex+1
+;		LDA		_tmp_popul_hex+2
+;		ADC		_dec_digit_tbl2,Y
+;		STA		_tmp_popul_hex+2
 		LDA		_tmp_popul_decimal_buf,Y
 		CLC
 		ADC		#$30
@@ -1569,7 +1618,7 @@ _game_msg_wnd_line_pos_calc:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_draw:
 		LDX		_ptr0
-		LDY		byte_58BB7,X
+		LDY		_game_msg_wnd_nt_ofs_list,X
 		STY		_tmp6+1
 		PPUQSTART
 		LDA		_tmp3
@@ -1580,7 +1629,7 @@ _game_msg_wnd_line_draw:
 		PPUQMOVB	_tmp2,OP_ORA,#$20
 		PPUQMOVB	_tmp5,OP_NOP,0
 loc_58B38:
-		LDA		byte_58C49,Y
+		LDA		_game_msg_wnd_extnt_frame_data,Y
 		INY
 		PPUQMOVA
 		DEC		_tmp5
@@ -1602,7 +1651,7 @@ loc_58B67:
 		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp3,OP_NOP,0
 loc_58B81:
-		LDA		byte_58BCC,Y
+		LDA		_game_msg_wnd_nt_frame_data,Y
 		INY
 		EXTQMOVA
 		DEC		_tmp3
@@ -1622,28 +1671,20 @@ loc_58BB0:
 		EXTQEND
 		RTS
 
-byte_58BB7:
-		.BYTE	$00,$19,$19,$32,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B
-		.BYTE	$4B,$4B,$4B,$4B,$64
-byte_58BCC:
-		.BYTE	$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58
-		.BYTE	$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$98,$98,$98,$98
-		.BYTE	$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98
-		.BYTE	$98,$98,$98,$98,$58,$58,$98,$98,$98,$98,$98,$98,$98,$98,$98
-		.BYTE	$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$58
-		.BYTE	$58,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B
-		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$58,$58,$58,$58,$58,$58
-		.BYTE	$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58
-		.BYTE	$58,$58,$58,$58,$58
-byte_58C49:
-		.BYTE	$C0,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1
-		.BYTE	$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C2,$D0,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$00,$D2,$D0,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
-		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$D2,$D0,$20,$20,$20,$20
-		.BYTE	$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20
-		.BYTE	$20,$20,$20,$D2,$E0,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1
-		.BYTE	$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E2
+_game_msg_wnd_nt_ofs_list:
+		.BYTE	$00,$19,$19,$32,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$64
+_game_msg_wnd_nt_frame_data:
+		.BYTE	$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58
+		.BYTE	$58,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$58
+		.BYTE	$58,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$58
+		.BYTE	$58,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$58
+		.BYTE	$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58,$58
+_game_msg_wnd_extnt_frame_data:
+		.BYTE	$C0,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C1,$C2
+		.BYTE	$D0,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$D2
+		.BYTE	$D0,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$D2
+		.BYTE	$D0,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$20,$D2
+		.BYTE	$E0,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E2
 
 ; =============== S U B	R O U T	I N E =======================================
 _msg_wnd_cheat_test:
