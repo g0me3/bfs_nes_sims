@@ -1878,7 +1878,7 @@ _events_selector:
 		LDX		#$00							; double triggering by accident
 		LDY		#$00
 .next_byte_loop:
-		LDA		_city._events_used_flags,X		; first fetch event triggers
+		LDA		_city._events_flags,X		; first fetch event triggers
 		STA		_tmpE6
 .bits_loop:
 		LSR		_tmpE6							; exctract bit
@@ -2175,9 +2175,9 @@ _register_new_event:
 		TYA
 		AND		#$07
 		TAY
-		LDA		_city._events_used_flags,X		; read flags, set corresponding one
+		LDA		_city._events_flags,X		; read flags, set corresponding one
 		ORA		_bitmasks,Y
-		STA		_city._events_used_flags,X		; _game_msg_idx already set, Y missnig
+		STA		_city._events_flags,X		; _game_msg_idx already set, Y missnig
 		BNE		_new_event_break				; unconditional jump
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2208,7 +2208,7 @@ _new_event_break:
 ; =============== S U B	R O U T	I N E =======================================
 _check_for_free_present_slot:
 		LDX		#$02
-		LDA		_city._events_used_flags		; WEIRD, test if city status acquired, but why?
+		LDA		_city._events_flags		; WEIRD, test if city status acquired, but why?
 		AND		#$04
 		BEQ		loc_105069						; if no, only 3 slots are available
 		LDX		#$03
@@ -2304,7 +2304,7 @@ _scenario_result_test:
 		LDA		_cur_game_mode
 		CMP		#$02
 		BNE		locret_105197					; only for scenario mode
-		LDA		_scenario_disaster_end_year
+		LDA		_city._disaster_end
 		CMP		_city._cur_year
 		BNE		locret_105197					; test for scenario end year
 		LDX		_scenario_idx

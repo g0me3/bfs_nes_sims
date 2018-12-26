@@ -1732,13 +1732,23 @@ loc_1043D1:
 		STA		_city._year_to_expo+1
 		STA		_city._year_to_liberty
 		STA		_city._year_to_liberty+1
+; FIX, initialize correctly to hide 0 percents from the list at the beginning
+		STA		_worst_problem_percents
+		STA		_worst_problem_percents+1
+		STA		_worst_problem_percents+2
+		STA		_worst_problem_percents+3
+		STA		_worst_problem_list
+		STA		_worst_problem_list+1
+		STA		_worst_problem_list+2
+		STA		_worst_problem_list+3
+; -
 ; FIX, moved here from PRGF to allow to save this values as a
 ; save state as well. init them here by default for all new game
 ; modes, but will load them from save state if needed
 		LDX		#$0B
 loc_18ABB5:
 		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
-		STA		_gui_ctrl_menu_pos_list,X		; game configure windows
+		STA		_city._menu_pos,X		; game configure windows
 		DEX
 		BPL		loc_18ABB5
 ; -
@@ -1785,11 +1795,11 @@ loc_104428:
 		LDA		_scenario_start_year_lo,Y		; init special disasters parameters
 		STA		_city._cur_year					; starting year for first disaster,
 		CLC										; and disasters treshold after that
-		ADC		_scenario_disaster_end_years_list,Y
-		STA		_scenario_disaster_end_year		; low nibble of the last year of scenario
+		ADC		_city._disaster_ends_list,Y
+		STA		_city._disaster_end				; low nibble of the last year of scenario
 		LDA		_scenario_disasters_count_list,Y
-		STA		_scenario_disaster_delay
-		LDA		_bg_music_for_scenario_start_list,Y
+		STA		_city._didaster_delay
+		LDA		_scenario_city_type_list,Y
 		STA		_city._city_type
 		TYA
 		ASL
@@ -1798,7 +1808,7 @@ loc_104428:
 		LDX		#$00
 loc_10445D:
 		LDA		_scenario_presents_flags_lib,Y	; disable already accepted present
-		STA		_city._events_used_flags,X		; buildings to stop it's appearance
+		STA		_city._events_flags,X		; buildings to stop it's appearance
 		INY
 		INX
 		CPX		#$04
@@ -1926,7 +1936,7 @@ _scenario_start_year_hi:
 		.BYTE	>[2100]	; $08
 _scenario_disasters_count_list:
 		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
-_scenario_disaster_end_years_list:
+_city._disaster_ends_list:
 		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
 
 ; NOTE, here is the default flags for scenarios, most of usual alerts are
@@ -1944,7 +1954,7 @@ _scenario_presents_flags_lib:					; 7654 3210 FEDC BA98
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
-_bg_music_for_scenario_start_list:
+_scenario_city_type_list:
 		.BYTE	$03,$03,$03,$04,$03,$03,$03
 
 		SECTION_ENDS F0F, "PRGF GAME VARS INIT"

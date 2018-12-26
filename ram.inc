@@ -54,8 +54,8 @@ _nmi_busy_flag:
 		.BYTE	0
 _nmi_flag:
 		.BYTE	0
-byte_13_unused:
-		.BYTE	0
+;byte_13_unused:
+;		.BYTE	0
 _irq_sub_idx:
 		.BYTE	0
 _ptr15:
@@ -78,8 +78,8 @@ _mmc5_sp_scroll_shadow:
 		.BYTE	0
 _mmc5_chr_mode_shadow:
 		.BYTE	0
-_unref_18:
-		.BYTE	0,0,0,0
+;_unref_18:
+;		.BYTE	0,0,0,0
 _cur_thread_idx:
 		.BYTE	0
 _thread_stack:
@@ -102,22 +102,22 @@ _cur_building_price:
 		.BYTE	0,0
 _hud_money_redraw_req:
 		.BYTE	0
-byte_37:
-		.BYTE	0								; REDUNDANT, unused var
+;byte_37:
+;		.BYTE	0								; REDUNDANT, unused var
 _game_state_idx:
 		.BYTE	0
 _hud_static_redraw_req:
 		.BYTE	0
 _constr_palette_redraw_req:
 		.BYTE	0
-byte_3B:
-		.BYTE	0								; another REDUNDANT var
+;byte_3B:
+;		.BYTE	0								; another REDUNDANT var
 _gui_active_controls_flags:
 		.BYTE	0
 
 		_tpos	_cur_screen_tile
 
-		.BYTE	0								; unused var
+;		.BYTE	0								; unused var
 
 _scr_mode_idx:
 		.BYTE	0
@@ -142,7 +142,7 @@ _pad1_prev_held:
 
 		_tsprargraw	_spr_insert_raw_args
 
-		_tpos	_cur_map_wnd_pos
+		_tpos		_cur_map_wnd_pos
 
 _constr_area_update_req:
 		.BYTE	0
@@ -329,8 +329,8 @@ _cur_game_cursor_area:
 
 _pal_anim_counter:
 		.BYTE	0
-_unref_10:
-		.BYTE	0
+;_unref_10:
+;		.BYTE	0
 _cur_selected_buildings_size:
 		.BYTE	0
 _tmp_ptrC1:
@@ -377,8 +377,8 @@ word_DA:
 		.BYTE	0,0
 _ptrDC:
 		.BYTE	0,0
-_unref_11:
-		.BYTE	0,0,0,0,0,0,0
+;_unref_11:
+;		.BYTE	0,0,0,0,0,0,0
 byte_E5:
 		.BYTE	0
 
@@ -790,11 +790,8 @@ _mmc5_chr_banks_shadow:
 		_tcity _city
 
 ; FIX of SAVE/LOAD, also aliases to not to rename a lot again
-_cur_game_mode					EQU	_city._cur_game_mode
-_scenario_idx					EQU	_city._scenario_idx
-_scenario_disaster_delay		EQU	_city._scenario_disaster_delay
-_scenario_disaster_end_year		EQU	_city._scenario_disaster_end_year
-_gui_ctrl_menu_pos_list			EQU _city._gui_ctrl_menu_pos_list
+_cur_game_mode	EQU	_city._cur_game_mode
+_scenario_idx	EQU	_city._scenario_idx
 ;
 
 _goto_alert_req:
@@ -962,8 +959,8 @@ _cur_R_area_develop_state:
 
 		_tfix8_8	_prev_RCI_levels_sum
 
-		.BYTE	0		; *unused*
-		.BYTE	0		; *unused*
+;		.BYTE	0		; *unused*
+;		.BYTE	0		; *unused*
 _popul_last_year:
 		.BYTE	0,0,0
 _tmp_map_pos_backup_buf_Y:

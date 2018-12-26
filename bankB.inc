@@ -3972,18 +3972,18 @@ _disasters_trigger_for_scenario_mode:
 		LDA		_cur_game_mode					; only for scenario mode
 		CMP		#$02
 		BNE		locret_11FF87
-		LDA		_scenario_disaster_delay		; all disasters are stopped, exit now
+		LDA		_city._didaster_delay		; all disasters are stopped, exit now
 		BEQ		locret_11FF87
-		DEC		_scenario_disaster_delay		; decrease
+		DEC		_city._didaster_delay		; decrease
 		LDX		_scenario_idx					; X = _scenario_idx
 		CPX		#$05
 		BNE		loc_11FF34
-		LDA		_scenario_disaster_delay		; scenario 5 - "RIO", flood occurs 15 times
+		LDA		_city._didaster_delay		; scenario 5 - "RIO", flood occurs 15 times
 		AND		#$0F							; until it stop
 		BNE		locret_11FF87
 		JMP		_flood_disaster_start
 loc_11FF34:
-		LDA		_scenario_disaster_delay		; one another scenarios we need here extra test
+		LDA		_city._didaster_delay		; one another scenarios we need here extra test
 		BNE		locret_11FF87					; if delay still not 0, skip
 		CPX		#$00
 		BNE		loc_11FF40						; finally test for disaster start by scenario idx

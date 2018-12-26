@@ -741,8 +741,8 @@ loc_B9607:
 		STY		_city._bank_name
 ;		STY		_city._unused_name3
 ;		STY		_city._unused_name4
-;		DEY										; REDUNDANT, unused
-;		STY		_tmp6DC+2
+;		DEY										; REDUNDANT, init another place
+;		STY		_tmp6DC+2						; tmp counter for name input screen
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

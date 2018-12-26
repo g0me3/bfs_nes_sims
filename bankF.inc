@@ -69,7 +69,7 @@ loc_18A053:
 		CMP		#$F0
 		BEQ		loc_18A053
 ; REDUNDANT, moved to common init code
-;		JSR		_gui_ctrl_menu_pos_list_init	; initialize window positions
+;		JSR		_city._menu_pos_init	; initialize window positions
 		LDA		#$03
 		STA		_MMC5_PRG_SIZE
 		LDA		#$04
@@ -1754,11 +1754,11 @@ loc_18AB8C:
 ; REDUNDANT, moved to common init code to be able to save it in save states
 ; as well!
 ; =============== S U B	R O U T	I N E =======================================
-;_gui_ctrl_menu_pos_list_init:
+;_city._menu_pos_init:
 ;		LDX		#$0B
 ;loc_18ABB5:
 ;		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
-;		STA		_gui_ctrl_menu_pos_list,X		; game configure windows
+;		STA		_city._menu_pos,X		; game configure windows
 ;		DEX
 ;		BPL		loc_18ABB5
 ;		RTS

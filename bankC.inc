@@ -656,10 +656,10 @@ _game_state0B_gui_ctrl_menu:
 loc_1364A3:
 		ASL
 		TAX
-		LDA		_gui_ctrl_menu_pos_list,X
+		LDA		_city._menu_pos,X
 		STA		_wnd_left_tile
 		INX
-		LDA		_gui_ctrl_menu_pos_list,X
+		LDA		_city._menu_pos,X
 		STA		_wnd_top_tile
 		JSR		_gui_ctrl_menu_icon_push_draw
 		JSR		_wnd_draw
@@ -2489,7 +2489,7 @@ loc_137262:
 		LSR
 		LSR
 		LSR
-		STA		_gui_ctrl_menu_pos_list,X
+		STA		_city._menu_pos,X
 		STA		_wnd_left_tile
 		INX
 		LDA		_cur_wnd_pos._ROW
@@ -2498,7 +2498,7 @@ loc_137262:
 		LSR
 		LSR
 		LSR
-		STA		_gui_ctrl_menu_pos_list,X
+		STA		_city._menu_pos,X
 		STA		_wnd_top_tile
 		JSR		_wnd_draw
 		JSR		_wnd_rect_calc

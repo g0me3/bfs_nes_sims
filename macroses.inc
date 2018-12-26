@@ -166,7 +166,7 @@ I_AREA_WIDX	EQU 4
 	; bit3 - music on/off
 	; bit4 - debug mode (free construction)
 {1}._game_speed:						.BYTE	0
-{1}._events_used_flags:					.BYTE	0,0,0,0
+{1}._events_flags:						.BYTE	0,0,0,0
 {1}._year_to_bank:						.WORD	0
 {1}._year_to_expo:						.WORD	0
 {1}._year_to_liberty:					.WORD	0
@@ -179,10 +179,10 @@ I_AREA_WIDX	EQU 4
 {1}._tax_year_sum:						.WORD	0
 {1}._loan_period:						.BYTE	0
 ; FIX, reinitialized before game, or erased or loadable now
-{1}._scenario_disaster_delay:			.BYTE	0
-{1}._scenario_disaster_end_year:		.BYTE	0
+{1}._didaster_delay:					.BYTE	0
+{1}._disaster_end:						.BYTE	0
 										_tpos	{1}._wnd_pos
-{1}._gui_ctrl_menu_pos_list				.BYTE	0,0,0,0,0,0,0,0,0,0,0,0
+{1}._menu_pos							.BYTE	0,0,0,0,0,0,0,0,0,0,0,0
 {1}_size								SET	[.-{1}]
 	ENDM
 
