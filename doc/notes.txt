@@ -4,7 +4,7 @@
 - Graphs data interpolations for all values.
 - Graphs data scale based on previously unused values.
 - Scroll message about Air Plain crash is more fit to the system than Windows message. On some scenarios, Alert Message Windows about Air plane crush forcefully displayed too often along with GOTO icon. The crash may occurs in a several different ways. So let the Crash Alert be as a disaster alert, but for the rest of the crashes just report with scroll message (when plane and hely collide, for example)... also we may sometimes crash the hely as well.
-- _city_mapfer offset calculations uses full 16-bit offset, however, this buffer sit at the beginning of the page, so BUFPOS macros can be used unstead. Also, MULAI macros used mostly in THREAD1 and thread-safe, so using BUFPOS may be even faster, because uses non-thread safe MULXA. Carefullt check if there are no code using X register also.
+- _city_map offset calculations uses full 16-bit offset, however, this buffer sit at the beginning of the page, so BUFPOS macros can be used unstead. Also, MULAI macros used mostly in THREAD1 and thread-safe, so using BUFPOS may be even faster, because uses non-thread safe MULXA. Carefullt check if there are no code using X register also.
 - Speedup by using table lookups instead of multiply all the time.
 
 	NEW BUGS
@@ -179,7 +179,7 @@ MISC#4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test.
 MISC#5. All music tracks are used in the game. Most of tracks used to highlight the town population value. some tracks are "paired" and consists of two conjuncted parts. An intro and looped main track (01/02 title, 08/10 practice, 48/50, 60/40 information).
 MISC#6. One of the tables in the Sound engine used for calculating note lengths is the same as in Nintendo games Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All of them has similar way to play SE by setting flag bits and so on. However, as against the Sound Engine for Wrecking Crew for example, this one written highly briefly, and heavily modified. There is no channel data and code unification, a different set of commands, lack the loop commands at all, so music data and code incompatible and not optimal.
 MISC#7. With the Micropolis source codes it is easier to understand some odd things in the NES code, most of this described in the comments in the current sources. The main Micropolis engine were taken mostly exactly the same with some small insifnificant changes due to optimizations or rough fixed point rounding errors.
-MISC#8. Map generation routines for New City mode taken from Micropolis sources exactly line by line.
+MISC#8. Map generation routines for New City mode taken from Micropolis sources mostly exactly, with some additional oprimizations and little changes.
 
 	APPEND. A - EVENTS/PRESENTS
 

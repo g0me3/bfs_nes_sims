@@ -1791,7 +1791,7 @@ _mini_map_building_types_list:
 		.BYTE	_MAP_I_AREA_DEF					; ...C
 		.BYTE	_MAP_POLICE_STATION				; ...I
 		.BYTE	_MAP_INTERNAL_BUILD0			; for all other buildings
-		.BYTE	_MAP_GROUND0
+		.BYTE	_MAP_GROUND
 		.BYTE	_MAP_ROAD_LR
 		.BYTE	_MAP_ELECTRO_LR
 		.BYTE	_MAP_GRASS
@@ -1800,7 +1800,7 @@ _mini_map_building_types_list:
 		.BYTE	_MAP_POLLUTION
 		.BYTE	_MAP_ELECTRO_ROAD_LR
 		.BYTE	_MAP_WATER
-		.BYTE	_MAP_GROUND01
+		.BYTE	_MAP_WOODS0
 		.BYTE	_MAP_WATER_ROAD_LR
 		.BYTE	_MAP_WATER_RAIL_LR
 		.BYTE	_MAP_FIRE

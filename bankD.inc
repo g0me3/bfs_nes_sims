@@ -1262,7 +1262,7 @@ loc_150899:
 
 ; =============== S U B	R O U T	I N E =======================================
 _is_tile_a_electro:
-		CMP		#_MAP_GROUND0
+		CMP		#_MAP_GROUND
 		BCC		loc_1508B8
 		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_1508BA
@@ -1309,7 +1309,7 @@ _get_price_to_bulldoze_a_building:
 		LDY		#$00
 		LDA		(_tmp_ptrC1),Y					; read map tile sample
 		BPL		.do_instant_bulldoze
-		CMP		#_MAP_GROUND0
+		CMP		#_MAP_GROUND
 		BCS		.do_instant_bulldoze			; anything but the buildings no need to additional work here
 		SEC										; get inside the building special tiles
 		SBC		#_MAP_INTERNAL_BUILD0
@@ -1366,7 +1366,7 @@ _test_valid_buildings_to_bulldoze:
 		LDA		_city._game_flags				; cheat for forced bulldozing a sigle tile
 		AND		#$10
 		BEQ		.no_bulldoze_cheat
-		LDX		#_MAP_GROUND0
+		LDX		#_MAP_GROUND
 		BNE		.large_bulldoze_area_test		; force to bulldoze anything
 .no_bulldoze_cheat:
 		LDX		#_MAP_CORRUPT0					; start corruption animation with this tile
@@ -1387,11 +1387,11 @@ _test_valid_buildings_to_bulldoze:
 loc_150997:
 		CMP		#_MAP_WATER_ROUTE
 		BEQ		.cant_bulldoze_that1
-		CMP		#_MAP_GROUND0
+		CMP		#_MAP_GROUND
 		BEQ		.cant_bulldoze_that1
 		CMP		#_MAP_WATER
 		BEQ		.cant_bulldoze_that1
-		LDX		#_MAP_GROUND0
+		LDX		#_MAP_GROUND
 		CMP		#_MAP_WATER_ROAD_LR
 		BCC		.large_bulldoze_area_test
 		CMP		#_MAP_CORRUPT0

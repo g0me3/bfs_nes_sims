@@ -729,7 +729,7 @@ loc_583FA:
 		JMP		loc_583BE
 
 ; =============== S U B	R O U T	I N E =======================================
-;_game_msg_chr1_load:							; REDUNDANT, but WHY?!
+;_game_msg_chr1_load:							; REDUNDANT
 ;		LDA		_mmc5_chr_banks_shadow+1
 ;		STA		_MMC5_CHR_BANKSA+1
 ;		RTS
@@ -1772,16 +1772,13 @@ _sram_data_load:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_write_enable
 		MOVWO	_ptr0,_sram_city_map
-		MOVWO	_tmp2,_city_map
+		MOVWO	_ptr2,_city_map
 		LDY		#$00
 loc_5915A:
 		LDA		(_ptr0),Y
-		STA		(_tmp2),Y
+		STA		(_ptr2),Y
 		INCW	_ptr0
-		INC		_tmp2
-		BNE		loc_5916A
-		INC		_tmp3
-loc_5916A:
+		INCW	_ptr2
 		LDA		_tmp2
 		CMP		#<[_city_map_end]
 		BNE		loc_5915A
@@ -1811,16 +1808,13 @@ _sram_data_save:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_write_enable
 		MOVWO	_ptr0,_city_map
-		MOVWO	_tmp2,_sram_city_map
+		MOVWO	_ptr2,_sram_city_map
 		LDY		#$00
 loc_58FD3:
 		LDA		(_ptr0),Y
-		STA		(_tmp2),Y
+		STA		(_ptr2),Y
 		INCW	_ptr0
-		INC		_tmp2
-		BNE		loc_58FE3
-		INC		_tmp3
-loc_58FE3:
+		INCW	_ptr2
 		LDA		_ptr0
 		CMP		#<[_city_map_end]
 		BNE		loc_58FD3
@@ -2528,18 +2522,18 @@ _generate_new_map:
 		JSR		_rand
 		JSR		_rand
 		CMP		#$2B							; 43 from 256 to decide
-		BCS		loc_59354						; to generate island map
-		JSR		_generate_isle_map
+		BCS		.generate_land					; to generate island map
+		JSR		_generate_island
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		RTS
-loc_59354:
+.generate_land:
 		JSR		_city_map_clear
-		JSR		_generate_map_start
-		JSR		_generate_rivers
-		JSR		_generate_new_mapC
-		JSR		_generate_new_mapD
-		JSR		_generate_new_mapE
+		JSR		_rand_map_start_pos				; base point for river generation
+		JSR		_generate_rivers				; draw rivers with two brushes
+		JSR		_generate_lakes					; draw small lakes
+		JSR		_generate_shores				; fill shores pixels
+		JSR		_fill_water_tiles				; fill actual map tiles for water and shores
 		JSR		_generate_new_mapF
 		JSR		_generate_new_mapG
 		LDA		#$00
@@ -2547,42 +2541,42 @@ loc_59354:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_isle_map:
+_generate_island:
 		LDA		#$4B
-		STA		_map_start._COL
-		STA		_map_start._ROW
+		STA		_map_start_pos._COL
+		STA		_map_start_pos._ROW
 loc_59379:
 		LDA		#$02
-		LDX		_map_start._COL
+		LDX		_map_start_pos._COL
 		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
-		LDX		_map_start._ROW
+		LDX		_map_start_pos._ROW
 		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
 		LDA		#$00
 loc_59393:
-		JSR		_map_start_write
-		DEC		_map_start._ROW
+		JSR		_map_start_pos_write
+		DEC		_map_start_pos._ROW
 		BPL		loc_59379
-		DEC		_map_start._COL
+		DEC		_map_start_pos._COL
 		BMI		loc_593A8
 		LDA		#$4B
-		STA		_map_start._ROW
+		STA		_map_start_pos._ROW
 		JMP		loc_59379
 loc_593A8:
 		LDA		#$00
-		STA		_map_start._COL
+		STA		_map_start_pos._COL
 loc_593AD:
 		LDX		#$09
 		JSR		_rand_clamp_X
 		STA		_map_pos._ROW
-		LDA		_map_start._COL
+		LDA		_map_start_pos._COL
 		STA		_map_pos._COL
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush
 		LDX		#$09
 		JSR		_rand_clamp_X
 		STA		_ptr0
@@ -2590,28 +2584,28 @@ loc_593AD:
 		SEC
 		SBC		_ptr0
 		STA		_map_pos._ROW
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush
 		LDA		#$00
 		STA		_map_pos._ROW
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush
 		LDA		#$48
 		STA		_map_pos._ROW
-		JSR		_generate_new_map_sub3
-		LDX		_map_start._COL
+		JSR		_put_small_brush
+		LDX		_map_start_pos._COL
 		INX
 		INX
-		STX		_map_start._COL
+		STX		_map_start_pos._COL
 		CPX		#$4C
 		BCC		loc_593AD
 		LDA		#$00
-		STA		_map_start._ROW
+		STA		_map_start_pos._ROW
 loc_593F1:
 		LDX		#$09
 		JSR		_rand_clamp_X
 		STA		_map_pos._COL
-		LDA		_map_start._ROW
+		LDA		_map_start_pos._ROW
 		STA		_map_pos._ROW
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush
 		LDX		#$09
 		JSR		_rand_clamp_X
 		STA		_ptr0
@@ -2619,29 +2613,28 @@ loc_593F1:
 		SEC
 		SBC		_ptr0
 		STA		_map_pos._COL
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush
 		LDA		#$00
 		STA		_map_pos._COL
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush
 		LDA		#$48
 		STA		_map_pos._COL
-		JSR		_generate_new_map_sub3
-		LDX		_map_start._ROW
+		JSR		_put_small_brush
+		LDX		_map_start_pos._ROW
 		INX
 		INX
-		STX		_map_start._ROW
+		STX		_map_start_pos._ROW
 		CPX		#$4C
 		BCC		loc_593F1
-		JSR		_generate_new_mapD
-		JSR		_generate_new_mapE
+		JSR		_generate_shores
+		JSR		_fill_water_tiles
 		JSR		_generate_new_mapF
 		JMP		_generate_new_mapG
 
-
 ; =============== S U B	R O U T	I N E =======================================
-_map_start_write:
+_map_start_pos_write:
 		PHA
-		BUFPOS	_ptr0,_map_start._COL,_map_start._ROW,#$4C,#>[_city_map]	; DST=(_map_start._ROW*#$4C+_map_start._COL)+#>[_city_map]00
+		BUFPOS	_ptr0,_map_start_pos._COL,_map_start_pos._ROW,#$4C,#>[_city_map]	; DST=(_map_start_pos._ROW*#$4C+_map_start_pos._COL)+#>[_city_map]00
 		LDY		#$00
 		PLA
 		STA		(_ptr0),Y
@@ -2650,8 +2643,8 @@ _map_start_write:
 ; OPTIMIZED: optimized function used more than once here
 ;
 ; =============== S U B	R O U T	I N E =======================================
-_isle_map_tile_read577_0:
-		BUFPOS	_ptr0,_tmp577,_tmp578,#$4C,#>[_city_map]	; DST=(_tmp578*#$4C+_tmp577)+#>[_city_map]00
+_map_tmp_pos_read_ptr0:
+		BUFPOS	_ptr0,_map_tmp_pos._COL,_map_tmp_pos._ROW,#$4C,#>[_city_map]	; DST=(_map_tmp_pos._ROW*#$4C+_map_tmp_pos._COL)+#>[_city_map]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		RTS
@@ -2659,16 +2652,16 @@ _isle_map_tile_read577_0:
 ; OPTIMIZED: optimized function used more than once here
 ;
 ; =============== S U B	R O U T	I N E =======================================
-_isle_map_tile_read572_2:
-		BUFPOS	_tmp2,_tmp577,_tmp578,#$4C,#>[_city_map]	; DST=(_tmp578*#$4C+_tmp577)+#>[_city_map]00
+_map_tmp_pos_read_ptr2:
+		BUFPOS	_ptr2,_map_tmp_pos._COL,_map_tmp_pos._ROW,#$4C,#>[_city_map]	; DST=(_map_tmp_pos._ROW*#$4C+_map_tmp_pos._COL)+#>[_city_map]00
 		LDY		#$00
-		LDA		(_tmp2),Y
+		LDA		(_ptr2),Y
 		RTS
 
 ; OPTIMIZED: optimized function used more than once here
 ;
 ; =============== S U B	R O U T	I N E =======================================
-_isle_map_tile_read575:
+_map_pos_read:
 		BUFPOS	_ptr0,_map_pos._COL,_map_pos._ROW,#$4C,#>[_city_map]	; DST=(_map_pos._ROW*#$4C+_map_pos._COL)+#>[_city_map]00
 		LDY		#$00
 		LDA		(_ptr0),Y
@@ -2691,47 +2684,53 @@ loc_5946A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_map_start:
+_rand_map_start_pos:
 		LDX		#$19
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$1A
-		STA		_map_start._COL
+		STA		_map_start_pos._COL
 		STA		_map_pos._COL
 		LDX		#$19
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$1A
-		STA		_map_start._ROW
+		STA		_map_start_pos._ROW
 		STA		_map_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_rivers:
 		LDX		#$04
-		JSR		_rand_clamp_X
+		JSR		_rand_clamp_X					; select main direction
 		STA		_map_last_dir
 		STA		_map_dir
-		JSR		_generate_b_river
-		MOVW	_map_pos,_map_start
-		LDA		_map_last_dir
+		JSR		_generate_b_river				; draw flow to the edge of the screen
+		MOVW	_map_pos,_map_start_pos			; return to start pos
+		LDA		_map_last_dir					; insert direction
 		EOR		#$04
 		STA		_map_last_dir
 		STA		_map_dir
-		JSR		_generate_b_river
-		MOVW	_map_pos,_map_start
+		JSR		_generate_b_river				; draw opposite flow
+		MOVW	_map_pos,_map_start_pos
 		LDX		#$04
 		JSR		_rand_clamp_X
 		STA		_map_last_dir
-		JMP		_generate_s_river
+		JMP		_generate_s_river				; generate small branch
 
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_b_river:
-		JSR		_generate_test_bounds
+		JSR		_map_pos_test_bounds			; stop if we reach the map bounds
 		BCS		locret_5950D
-		JSR		_generate_new_map_sub0
-		JSR		_rand
+		JSR		_put_big_brush					; draw round brush of river
+; NOTE, the original code does increment or decrement _map_dir only if this
+; test fails, and if passed does _map_dir=_map_last_dir only instead.
+; here we see the same result, but redundant call of all three _rand
+; test one by one..
+; However, if we change the order, we change all maps here, because of
+; differnt RNG flow from now...
+		JSR		_rand							; test for change direction
 		AND		#$01
 		BEQ		loc_594F0
 		INC		_map_dir
@@ -2743,20 +2742,20 @@ loc_594F0:
 loc_594FA:
 		JSR		_rand
 		CMP		#$18
-		BCS		loc_59507
+		BCS		loc_59507						; test for follow direction
 		LDA		_map_last_dir
 		STA		_map_dir
 loc_59507:
-		JSR		_generate_b_riverA
+		JSR		_map_pos_move					; move current pos to selected direction
 		JMP		_generate_b_river
 locret_5950D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_s_river:
-		JSR		_generate_test_bounds
+		JSR		_map_pos_test_bounds			; the same method as for b river
 		BCS		locret_5953D
-		JSR		_generate_new_map_sub3
+		JSR		_put_small_brush				; but woth small brush
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_59520
@@ -2773,7 +2772,7 @@ loc_5952A:
 		LDA		_map_last_dir
 		STA		_map_dir
 loc_59537:
-		JSR		_generate_b_riverA
+		JSR		_map_pos_move
 		JMP		_generate_s_river
 locret_5953D:
 		RTS
@@ -2807,17 +2806,17 @@ _generate_new_mapF_0:
 		ADC		#$17
 		STA		_tmp57D
 		LDA		_map_pos._COL
-		STA		_tmp577
+		STA		_map_tmp_pos._COL
 		LDA		_map_pos._ROW
-		STA		_tmp578
+		STA		_map_tmp_pos._ROW
 loc_5957F:
 		LDX		#$08
 		JSR		_rand_clamp_X
 		STA		_map_dir
-		JSR		_generate_new_mapF_0A
-		JSR		_generate_city_map_end_test
+		JSR		_map_tmp_pos_move
+		JSR		_map_tmp_pos_bounds_test
 		BCS		locret_595BA
-		JSR		_isle_map_tile_read577_0		; OPTIMIZED: size
+		JSR		_map_tmp_pos_read_ptr0			; OPTIMIZED: size
 		BNE		loc_595B5
 		LDA		#$05
 		STA		(_ptr0),Y
@@ -2828,16 +2827,16 @@ locret_595BA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapC:
-		LDX		#$05
+_generate_lakes:
+		LDX		#$05							; rand position and type of lakes
 		JSR		_rand_clamp_X
 		TAX
 		INX
-		STX		_tmp580
+		STX		_tmp580							; nimber of lakes
 loc_595C5:
 		LDX		#$3E
-		JSR		_rand_clamp_X
-		CLC
+		JSR		_rand_clamp_X					; position on the map
+		CLC										; inside map except edges
 		ADC		#$03
 		STA		_map_pos._COL
 		LDX		#$3E
@@ -2848,100 +2847,99 @@ loc_595C5:
 		LDX		#$06
 		JSR		_rand_clamp_X
 		ADC		#$01
-		STA		_tmp581
+		STA		_tmp581							; number of brushes to draw
 loc_595E5:
 		LDX		#$07
-		JSR		_rand_clamp_X
-		SEC
+		JSR		_rand_clamp_X					; now randomly select relative
+		SEC										; position of brush to put
 		SBC		#$03
 		CLC
 		ADC		_map_pos._COL
-		STA		_tmp577
+		STA		_map_tmp_pos._COL
 		LDX		#$07
 		JSR		_rand_clamp_X
 		SEC
 		SBC		#$03
 		CLC
 		ADC		_map_pos._ROW
-		STA		_tmp578
+		STA		_map_tmp_pos._ROW
 		JSR		_rand
 		CMP		#$34
-		BCC		loc_59610
-		JSR		_generate_new_map_sub3
+		BCC		loc_59610						; and finally select what brush
+		JSR		_put_small_brush				; to put
 		JMP		loc_59613
 loc_59610:
-		JSR		_generate_new_map_sub0
+		JSR		_put_big_brush
 loc_59613:
-		DEC		_tmp581
+		DEC		_tmp581							; do brushes loop
 		BNE		loc_595E5
 		DEC		_tmp580
-		BNE		loc_595C5
+		BNE		loc_595C5						; do lakes loop
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapF_0A:
+_map_tmp_pos_move:
 		LDA		_map_dir
 		AND		#$07
 		STA		_map_dir
 		LDX		_map_dir
-		LDA		_tmp577
+		LDA		_map_tmp_pos._COL
 		CLC
-		ADC		_map_gen_data0,X
-		STA		_tmp577
-		LDA		_tmp578
+		ADC		_move_dir_list0,X
+		STA		_map_tmp_pos._COL
+		LDA		_map_tmp_pos._ROW
 		CLC
-		ADC		_map_gen_data1,X
-		STA		_tmp578
+		ADC		_move_dir_list1,X
+		STA		_map_tmp_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_b_riverA:
+_map_pos_move:
 		LDA		_map_dir
 		AND		#$07
 		STA		_map_dir
 		LDX		_map_dir
 		LDA		_map_pos._COL
 		CLC
-		ADC		_map_gen_data0,X
+		ADC		_move_dir_list0,X
 		STA		_map_pos._COL
 		LDA		_map_pos._ROW
 		CLC
-		ADC		_map_gen_data1,X
+		ADC		_move_dir_list1,X
 		STA		_map_pos._ROW
 		RTS
-_map_gen_data0:
-		.BYTE	$00,$01,$01,$01
-		.BYTE	$00,$FF,$FF,$FF
-_map_gen_data1:
-		.BYTE	$FF,$FF,$00,$01
-		.BYTE	$01,$01,$00,$FF
+
+_move_dir_list0:
+		.BYTE	$00,$01,$01,$01,$00,$FF,$FF,$FF
+_move_dir_list1:
+		.BYTE	$FF,$FF,$00,$01,$01,$01,$00,$FF
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_map_sub0:
-		LDA		#$00
-		STA		_tmp579
+_put_big_brush:
+		LDX		#$00							; fast single counter
+		STX		_tmp579							; instead of using i,j for matix
 loc_59673:
-		LDX		_tmp579
-		LDA		_map_pos._COL
+;		LDX		_tmp579							; REDUNDANT
+		LDA		_map_pos._COL					; fast matrix positions calculate
 		CLC
-		ADC		_map_gen_data3,X
-		STA		_tmp577
+		ADC		_big_brush_matrix_col_tbl,X		; table of columns
+		STA		_map_tmp_pos._COL
 		LDA		_map_pos._ROW
 		CLC
-		ADC		_map_gen_data4,X
-		STA		_tmp578
-		LDA		_map_b_river_matrix,X
+		ADC		_big_brush_matrix_row_tbl,X		; table of rows
+		STA		_map_tmp_pos._ROW
+		LDA		_big_brush_matrix,X				; then fetch matrix value
 		BEQ		loc_59692
-		JSR		_generate_new_map_sub1
+		JSR		_put_map_pixel					; draw only non-zero pixels
 loc_59692:
+		INC		_tmp579
+;		INX										; REDUNDANT
 		LDX		_tmp579
-		INX
-		STX		_tmp579
 		CPX		#$31
 		BCC		loc_59673
 		RTS
 
-_map_b_river_matrix:
+_big_brush_matrix:
 		.BYTE	$00,$00,$03,$03,$03,$00,$00
 		.BYTE	$00,$03,$02,$02,$02,$03,$00
 		.BYTE	$03,$02,$02,$02,$02,$02,$03
@@ -2949,7 +2947,7 @@ _map_b_river_matrix:
 		.BYTE	$03,$02,$02,$02,$02,$02,$03
 		.BYTE	$00,$03,$02,$02,$02,$03,$00
 		.BYTE	$00,$00,$03,$03,$03,$00,$00
-_map_gen_data3:
+_big_brush_matrix_col_tbl:
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
@@ -2957,7 +2955,7 @@ _map_gen_data3:
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
-_map_gen_data4:
+_big_brush_matrix_row_tbl:
 		.BYTE	$00,$00,$00,$00,$00,$00,$00
 		.BYTE	$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$02,$02,$02,$02,$02,$02,$02
@@ -2967,22 +2965,22 @@ _map_gen_data4:
 		.BYTE	$06,$06,$06,$06,$06,$06,$06
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_map_sub3:
-		LDA		#$00
-		STA		_tmp57A
+_put_small_brush:
+		LDA		#$00							; the same as for bbig brush
+		STA		_tmp57A							; but less pixels in brush
 loc_59736:
 		LDX		_tmp57A
 		LDA		_map_pos._COL
 		CLC
-		ADC		_map_gen_data6,X
-		STA		_tmp577
+		ADC		_small_brush_matrix_col_tbl,X
+		STA		_map_tmp_pos._COL
 		LDA		_map_pos._ROW
 		CLC
-		ADC		_map_gen_data7,X
-		STA		_tmp578
-		LDA		_map_gen_data5,X
+		ADC		_small_brush_matrix_row_tbl,X
+		STA		_map_tmp_pos._ROW
+		LDA		_small_brush_matrix,X			; NOTE, there is no ship routes
 		BEQ		loc_59755
-		JSR		_generate_new_map_sub1
+		JSR		_put_map_pixel
 loc_59755:
 		LDX		_tmp57A
 		INX
@@ -2991,52 +2989,52 @@ loc_59755:
 		BCC		loc_59736
 		RTS
 
-_map_gen_data5:
+_small_brush_matrix:
 		.BYTE	$00,$03,$03,$00
 		.BYTE	$03,$02,$02,$03
 		.BYTE	$03,$02,$02,$03
 		.BYTE	$00,$03,$03,$00
-_map_gen_data6:
+_small_brush_matrix_col_tbl:
 		.BYTE	$00,$01,$02,$03
 		.BYTE	$00,$01,$02,$03
 		.BYTE	$00,$01,$02,$03
 		.BYTE	$00,$01,$02,$03
-_map_gen_data7:
+_small_brush_matrix_row_tbl:
 		.BYTE	$00,$00,$00,$00
 		.BYTE	$01,$01,$01,$01
 		.BYTE	$02,$02,$02,$02
 		.BYTE	$03,$03,$03,$03
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_map_sub1:
-		PHA
-		JSR		_generate_city_map_end_test
-		BCS		loc_597C7
-		JSR		_isle_map_tile_read577_0		; OPTIMIZED: size
-		BEQ		loc_597C9
+_put_map_pixel:
+		PHA										; store brush pixel for now
+		JSR		_map_tmp_pos_bounds_test		; test if we not run out of map
+		BCS		.map_tile_skip
+		JSR		_map_tmp_pos_read_ptr0			; OPTIMIZED: size
+		BEQ		.put_map_tile					; read current tile from map
 		CMP		#$04
-		BEQ		loc_597C7
+		BEQ		.map_tile_skip					; if 4 (ship route), don't touch it
 		CMP		#$02
-		BNE		loc_597C9
+		BNE		.put_map_tile					; if 3 (ground), replace it
 		PLA
-		CMP		#$04
-		BEQ		loc_597CA
+		CMP		#$04							; if 2 (river), then write only ship
+		BEQ		.put_ship_route_pixel			; routes and skip the rest
 		RTS
-loc_597C7:
+.map_tile_skip:
 		PLA
 		RTS
-loc_597C9:
+.put_map_tile:
 		PLA
-loc_597CA:
-		STA		(_ptr0),Y
+.put_ship_route_pixel:
+		STA		(_ptr0),Y						; _ptr0 already points to current tile, refresh
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_city_map_end_test:
-		LDA		_tmp577
+_map_tmp_pos_bounds_test:
+		LDA		_map_tmp_pos._COL
 		CMP		#$4C
 		BCS		loc_597DD
-		LDA		_tmp578
+		LDA		_map_tmp_pos._ROW
 		CMP		#$4C
 		BCS		loc_597DD
 		CLC
@@ -3046,24 +3044,24 @@ loc_597DD:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_test_bounds:
+_map_pos_test_bounds:
 		LDA		_map_pos._COL
 		BPL		loc_597EA
-		CMP		#$FC
+		CMP		#$FC							; test map bounds -4 to the left
 		BCC		loc_59800
 		BCS		loc_597EE
 loc_597EA:
-		CMP		#$4A
+		CMP		#$4A							; test map bounds -2 to the right
 		BCS		loc_59800
 loc_597EE:
 		LDA		_map_pos._ROW
 		BPL		loc_597F9
-		CMP		#$FC
+		CMP		#$FC							; test map bounds -4 to the top
 		BCC		loc_59800
 		CLC
 		RTS
 loc_597F9:
-		CMP		#$4A
+		CMP		#$4A							; test map bounds -2 to the bottom
 		BCS		loc_59800
 		BCS		loc_59800
 		RTS
@@ -3077,7 +3075,7 @@ _generate_new_map_sub5:
 		STA		_map_pos._COL
 		STA		_map_pos._ROW
 loc_5980A:
-		JSR		_isle_map_tile_read575			; OPTIMIZED size
+		JSR		_map_pos_read					; OPTIMIZED size
 		BMI		loc_5988D
 		BEQ		loc_5988D
 		LDA		#$00
@@ -3089,15 +3087,15 @@ loc_59835:
 		BCS		loc_59883
 		LDA		_map_pos._COL
 		CLC
-		ADC		_map_gen_data8,Y
-		STA		_tmp577
+		ADC		_shores_delta_col,Y
+		STA		_map_tmp_pos._COL
 		LDA		_map_pos._ROW
 		CLC
-		ADC		_map_gen_data9,Y
-		STA		_tmp578
-		JSR		_generate_city_map_end_test
+		ADC		_shores_delta_row,Y
+		STA		_map_tmp_pos._ROW
+		JSR		_map_tmp_pos_bounds_test
 		BCS		loc_5987B
-		JSR		_isle_map_tile_read572_2		; OPTIMIZED size
+		JSR		_map_tmp_pos_read_ptr2			; OPTIMIZED size
 		BMI		loc_5987B
 		BEQ		loc_5987B
 		SEC
@@ -3110,7 +3108,7 @@ loc_5987C:
 		BNE		loc_59835
 loc_59883:
 		LDX		_tmp57B
-		LDA		_cur_graphs_button_press_idxAD,X
+		LDA		byte_598AD,X
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_5988D:
@@ -3130,93 +3128,86 @@ loc_5989A:
 locret_598AC:
 		RTS
 
-_cur_graphs_button_press_idxAD:
+byte_598AD:
 		.BYTE	$00,$00,$00,$00
 		.BYTE	$00,$16,$10,$13
 		.BYTE	$00,$18,$12,$15
 		.BYTE	$00,$17,$11,$14
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapD:
+_generate_shores:
 		LDA		#$00
-		STA		_map_pos._COL
+		STA		_map_pos._COL					; scan full map
 		STA		_map_pos._ROW
-loc_598C5:
-		JSR		_isle_map_tile_read575			; OPTIMIZED size
-		CMP		#$03
-		BEQ		loc_598EC
-		JMP		loc_59991
-loc_598EC:
-		LDA		#$00
-		STA		_tmp57B
-		STY		_tmp4
-loc_598F3:
-		LDY		_tmp4
-		CPY		#$04
-		BCC		loc_598FC
-		JMP		loc_59987
-loc_598FC:
-		LDA		_map_pos._COL
+.shores_map_loop:
+		JSR		_map_pos_read					; OPTIMIZED size
+		CMP		#$03							; here we read the map pixel, _tmp0
+		BEQ		.water_shore_found				; points to current pixel
+		JMP		.shores_next_pixel
+.water_shore_found:
+		LDY		#$00							; FIX, now 0 for sure
+		STY		_tmp57B
+.shores_area_loop:
+		STY		_tmp4							; FIX, here we always have current Y to store
+;		CPY		#$04							; REDUNDANT, moved to the loop end
+;		BCC		.do_shores_area
+;		JMP		.put_shores_pixel
+;.do_shores_area:
+		LDA		_map_pos._COL					; select area position
 		CLC
-		ADC		_map_gen_data8,Y
-		STA		_tmp577
+		ADC		_shores_delta_col,Y
+		STA		_map_tmp_pos._COL
 		LDA		_map_pos._ROW
 		CLC
-		ADC		_map_gen_data9,Y
-		STA		_tmp578
-		JSR		_generate_city_map_end_test
-		BCC		loc_59957
-		LDY		_tmp4
-		LDA		_map_gen_data8,Y
-		EOR		#$FF
-		CLC
-		ADC		#$01
-		CLC
-		ADC		_map_pos._COL
-		STA		_tmp577
-		LDA		_map_gen_data9,Y
-		EOR		#$FF
-		CLC
-		ADC		#$01
+		ADC		_shores_delta_row,Y
+		STA		_map_tmp_pos._ROW
+		JSR		_map_tmp_pos_bounds_test		; test for bounds
+		BCC		loc_59957						; if ok then read the tile
+		LDY		_tmp4							; otherwize, use altrnate direction
+		LDA		_shores_delta_col,Y				; NOTE, this is a different behaviour
+		NEGA									; from the Micropolis code. they don't
+		CLC										; bounce in negative direction, but
+		ADC		_map_pos._COL					; just skip the tile
+		STA		_map_tmp_pos._COL
+		LDA		_shores_delta_row,Y
+		NEGA
 		CLC
 		ADC		_map_pos._ROW
-		STA		_tmp578
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		_tmp577
-		STA		_tmp2
-		TXA
-		ADC		#>[_city_map]
-		STA		_tmp3
-		LDY		#$00
-		LDA		(_tmp2),Y
-		BNE		loc_5997C
-		SEC
+		STA		_map_tmp_pos._ROW
+		JSR		_map_tmp_pos_read_ptr2			; OPTIMIZED size
+		BNE		loc_5997C						; now read nearest tile and
+		SEC										; and check is it ground or not
 		BCS		loc_5997D
 loc_59957:
-		JSR		_isle_map_tile_read572_2		; OPTIMIZED size
+		JSR		_map_tmp_pos_read_ptr2			; OPTIMIZED size
 		BEQ		loc_5997C
 		SEC
 		BCS		loc_5997D
 loc_5997C:
 		CLC
 loc_5997D:
-		ROL		_tmp57B
-		INC		_tmp4
-		BEQ		loc_59987
-		JMP		loc_598F3
-loc_59987:
+		ROL		_tmp57B							; put bit into smother tile selection
+; FIX,
+		LDY		_tmp4
+		INY
+		CPY		#$04
+; -
+; BUG, this fix alone were redundant here seems they put counter test to the loop start
+; but forgot to remove this jump... now we have test here, and remove it from top of
+; the loop, and let this branch stay here
+		BEQ		.put_shores_pixel
+		JMP		.shores_area_loop
+.put_shores_pixel:
 		LDX		_tmp57B
-		LDA		_map_gen_dataA,X
+		LDA		_shores_matrix,X			; now read smooth table by index we calculated
 		LDY		#$00
 		STA		(_ptr0),Y
-loc_59991:
+.shores_next_pixel:
 		INC		_map_pos._COL
 		LDA		_map_pos._COL
 		CMP		#$4C
 		BCS		loc_5999E
-		JMP		loc_598C5
+		JMP		.shores_map_loop
 loc_5999E:
 		INC		_map_pos._ROW
 		LDA		_map_pos._ROW
@@ -3224,19 +3215,22 @@ loc_5999E:
 		BCS		locret_599B0
 		LDA		#$00
 		STA		_map_pos._COL
-		JMP		loc_598C5
+		JMP		.shores_map_loop
 locret_599B0:
 		RTS
-
-_map_gen_data8:
-		.BYTE	$FF,$01,$00,$00
-_map_gen_data9:
-		.BYTE	$00,$00,$01,$FF
-_map_gen_dataA:
-		.BYTE	$00,$00,$00,$07
-		.BYTE	$00,$15,$10,$13
-		.BYTE	$00,$17,$12,$14
-		.BYTE	$07,$16,$11,$07
+; 3
+;0*1
+; 2
+_shores_delta_col:					; 0   1   2   3   4   5   6   7
+		.BYTE	$FF,$01,$00,$00		; G   G   G   G   G   G   G   G
+_shores_delta_row:					;G*G N*G G*N N*N G*G N*G G*N N*N
+		.BYTE	$00,$00,$01,$FF		; G   G   G   G   N   N   N   N
+_shores_matrix:						;00  00  00  07  00  15  10  13
+		.BYTE	$00,$00,$00,$07		; 0   1   2   3   4   5   6   7
+		.BYTE	$00,$15,$10,$13		; N   N   N   N   N   N   N   N
+		.BYTE	$00,$17,$12,$14		;G*G N*G G*N N*N G*G N*G G*N N*N
+		.BYTE	$07,$16,$11,$07		; G   G   G   G   N   N   N   N
+									;00  17  12  14  07  17  11  07
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapG:
@@ -3266,39 +3260,40 @@ loc_599E8:
 		BCC		loc_599D3
 		RTS
 loc_599FB:
-		LDA		#_MAP_GROUND0
+		LDA		#_MAP_GROUND
 		STA		(_ptr0),Y
 		BNE		loc_599E8
 ; REDUNDANT, never executes, the previous BNE is unconditional branch
 ;
-;		LDA		#_MAP_GROUND05
+;		LDA		#_MAP_WOODS4
 ;		STA		(_ptr0),Y
 ;		BNE		loc_599E8
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapE:
-		MOVWO	_ptr0,_city_map
+_fill_water_tiles:
+		MOVWO	_ptr0,_city_map					; for all pixels, replace them with actual tiles
 		LDY		#$00
 loc_59A11:
 		LDA		(_ptr0),Y
-		BEQ		loc_59A43
+;		BEQ		.put_clean_ground				; REDUNDANT
+		BEQ		.end_of_fill_test				; OPTIMIZED
 		CMP		#$02
-		BEQ		loc_59A47
+		BEQ		.put_water
 		CMP		#$07
-		BEQ		loc_59A47
+		BEQ		.put_water
 		CMP		#$04
-		BEQ		loc_59A4D
+		BEQ		.put_ship_route_tile
 		CLC
-		ADC		#$AE
-		PHA
-		JSR		_rand
-		LSR
+		ADC		#[_MAP_SHORE0-$10]				; for the sea shores, select one of
+		PHA										; two different types randomly
+		JSR		_rand							; $AE + $10 to $17 -> $BE to $C5 (_MAP_SHORE0-_MAP_SHORE7)
+		LSR										; $AE + $18 to $1F -> $C6 to $CD (_MAP_SHORE8-_MAP_SHOREF)
 		PLA
-		BCS		loc_59A2E
-		ADC		#$08
+		BCS		loc_59A2E						; if fails, put tile as is
+		ADC		#$08							;
 loc_59A2E:
 		STA		(_ptr0),Y
-loc_59A30:
+.end_of_fill_test:
 		INCW	_ptr0
 		LDA		_ptr0+1
 		CMP		#>[_city_map_end]
@@ -3307,17 +3302,17 @@ loc_59A30:
 		CMP		#<[_city_map_end]
 		BCC		loc_59A11
 		RTS
-loc_59A43:
-		LDA		#_MAP_GROUND0
-		BNE		loc_59A30
-loc_59A47:
+;.put_clean_ground:
+;		LDA		#_MAP_GROUND					; REDUNDANT, zero pixels does not fill here!
+;		BNE		.end_of_fill_test				; this load is redundant.
+.put_water:
 		LDA		#_MAP_WATER
 		STA		(_ptr0),Y
-		BNE		loc_59A30
-loc_59A4D:
+		BNE		.end_of_fill_test
+.put_ship_route_tile:
 		LDA		#_MAP_WATER_ROUTE
 		STA		(_ptr0),Y
-		BNE		loc_59A30
+		BNE		.end_of_fill_test
 
 ; =============== S U B	R O U T	I N E =======================================
 _rand_clamp_X:

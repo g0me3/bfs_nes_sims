@@ -698,14 +698,12 @@ _train_hide_mode:
 _train_turns_counter:
 		.BYTE	0
 
-		_tpos	_map_start
+		_tpos	_map_start_pos
 
 		_tpos	_map_pos
 
-_tmp577:
-		.BYTE	0
-_tmp578:
-		.BYTE	0
+		_tpos	_map_tmp_pos
+
 _tmp579:
 		.BYTE	0
 _tmp57A:

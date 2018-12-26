@@ -140,7 +140,7 @@ loc_B815F:
 ;
 _get_valid_1X1_building_tile:
 		LDA		_cur_build_sample_tile_idx
-		CMP		#_MAP_GROUND0
+		CMP		#_MAP_GROUND
 		BEQ		.do_money_sub					; regular buldozered ground at this point
 		CMP		#_MAP_WATER
 		BEQ		.j_water_tile_build_select		; special case water, no need to bulldozer
@@ -498,7 +498,7 @@ _test_for_valid_vert_rail_water_joint:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_electric_water_joint:
-		CMP		#_MAP_GROUND0					; electric is a special case, can be
+		CMP		#_MAP_GROUND					; electric is a special case, can be
 		BCC		.valid_electric_water_joint		; built near any building in the shore
 		CMP		#_MAP_ELECTRO_LR
 		BCC		.invalid_electric_water_joint	; the rest as usual, no roads/rails
@@ -519,7 +519,7 @@ _test_for_valid_hor_electric_water_joint:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_vert_electric_water_joint:
-		CMP		#_MAP_GROUND0
+		CMP		#_MAP_GROUND
 		BCC		.valid_electric_water_joint		; same for the rest of rotated wires
 		CMP		#_MAP_ELECTRO_LR
 		BCC		.invalid_electric_water_joint
@@ -575,9 +575,9 @@ _test_build_available_tile:
 		BEQ		.water_claim_test
 .regular_test:
 		PLA
-		CMP		#_MAP_GROUND0					; not grounds, forbid alwaya
+		CMP		#_MAP_GROUND					; not grounds, forbid alwaya
 		BCC		.forbid							; can't autobulldoze buildings
-		CMP		#_MAP_GROUND0
+		CMP		#_MAP_GROUND
 		BEQ		.allow
 		PHA
 		LDA		_city._game_flags				; test for autobuldoze flag
@@ -636,7 +636,7 @@ loc_B842E:
 		PLA
 		CMP		#_MAP_WATER						; water claims only full watered area including shores
 		BCC		.full_bulldoze_test				; with no charge for bulldozing the shores
-		CMP		#_MAP_GROUND01
+		CMP		#_MAP_WOODS0
 		BCC		.allow
 		CMP		#_MAP_WATER_ROUTE				; also special water route
 		BNE		.full_bulldoze_test
