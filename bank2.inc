@@ -22,7 +22,7 @@ _presents_wnd_generate:
 		LDX		#$F0
 loc_3E0B0:
 		LDA		_tlm_nt_presents_menu-1,X		; copy empty window data
-		STA		_nt_backup_buf0+$F0-1,X
+		STA		_nt_backup0+$F0-1,X
 		LDA		_tlm_extnt_presents_menu-1,X
 		STA		_extnt_backup0+$F0-1,X
 		DEX
@@ -155,15 +155,15 @@ _present_icon_nt_lib_hi:
 		.BYTE	>[_present_icon_tlmD]
 		.BYTE	>[_present_icon_tlmE]
 _present_icon_nt_dst_lo:
-		.BYTE	<[_nt_backup_buf1+$12]
-		.BYTE	<[_nt_backup_buf1+$6C]
-		.BYTE	<[_nt_backup_buf1+$17]
-		.BYTE	<[_nt_backup_buf1+$71]
+		.BYTE	<[_nt_backup1+$12]
+		.BYTE	<[_nt_backup1+$6C]
+		.BYTE	<[_nt_backup1+$17]
+		.BYTE	<[_nt_backup1+$71]
 _present_icon_nt_dst_hi:
-		.BYTE	>[_nt_backup_buf1+$12]
-		.BYTE	>[_nt_backup_buf1+$6C]
-		.BYTE	>[_nt_backup_buf1+$17]
-		.BYTE	>[_nt_backup_buf1+$71]
+		.BYTE	>[_nt_backup1+$12]
+		.BYTE	>[_nt_backup1+$6C]
+		.BYTE	>[_nt_backup1+$17]
+		.BYTE	>[_nt_backup1+$71]
 _present_icon_extnt_lib_hi:
 		.BYTE	<[_present_icon_extnt_tlm0]
 		.BYTE	<[_present_icon_extnt_tlm1]
@@ -553,10 +553,10 @@ _wnd_nt_lib_lo:
 		.BYTE	<[_wnd_nt09_city_map]
 		.BYTE	<[_wnd_nt0A_port_menu]
 		.BYTE	<[_wnd_nt0B_do_you_want_to_save]
-		.BYTE	<[_nt_backup_buf0+$F0]						; special entry for presents
-		.BYTE	<[_nt_backup_buf0+$F0]						; menu, which is constructed
-		.BYTE	<[_nt_backup_buf0+$F0]						; manually in ram buf
-		.BYTE	<[_nt_backup_buf0+$F0]
+		.BYTE	<[_nt_backup0+$F0]						; special entry for presents
+		.BYTE	<[_nt_backup0+$F0]						; menu, which is constructed
+		.BYTE	<[_nt_backup0+$F0]						; manually in ram buf
+		.BYTE	<[_nt_backup0+$F0]
 		.BYTE	<[_wnd_nt10_do_you_want_to_load]
 ;		.BYTE	<[_wnd_nt11_do_you_quit_without_saving]		; REDUNDANT *unused*
 ;		.BYTE	<[_wnd_nt12_do_you_want_to_start_new_city]	; -
@@ -573,10 +573,10 @@ _wnd_nt_lib_hi:
 		.BYTE	>[_wnd_nt09_city_map]
 		.BYTE	>[_wnd_nt0A_port_menu]
 		.BYTE	>[_wnd_nt0B_do_you_want_to_save]
-		.BYTE	>[_nt_backup_buf0+$F0]
-		.BYTE	>[_nt_backup_buf0+$F0]
-		.BYTE	>[_nt_backup_buf0+$F0]
-		.BYTE	>[_nt_backup_buf0+$F0]
+		.BYTE	>[_nt_backup0+$F0]
+		.BYTE	>[_nt_backup0+$F0]
+		.BYTE	>[_nt_backup0+$F0]
+		.BYTE	>[_nt_backup0+$F0]
 		.BYTE	>[_wnd_nt10_do_you_want_to_load]
 ;		.BYTE	>[_wnd_nt11_do_you_quit_without_saving]		; REDUNDANT *unused*
 ;		.BYTE	>[_wnd_nt12_do_you_want_to_start_new_city]	; -

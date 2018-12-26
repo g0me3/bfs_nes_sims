@@ -259,20 +259,20 @@ _power_grid_recalc:
 ;		LDA		#$00
 ;		TAY
 ;loc_104203:
-;		STA		_power_grid_map_buf,Y			; clear power grid map
-;		STA		_power_grid_map_buf+$100,Y		; TODO: merge clear code in one proc
+;		STA		_power_map,Y			; clear power grid map
+;		STA		_power_map+$100,Y		; TODO: merge clear code in one proc
 ;		INY
 ;		BNE		loc_104203
 ;		LDA		#$00
 ;		TAY
 ;loc_10420F:
-;		STA		_power_grid_map_buf+$200,Y
+;		STA		_power_map+$200,Y
 ;		INY
 ;		CPY		#$D2
 ;		BNE		loc_10420F
 ; -
 ; OPTIMIZED
-		MOVWO	_tmpE6,_power_grid_map_buf		; clear power grid map
+		MOVWO	_tmpE6,_power_map		; clear power grid map
 		LDX		#$02							; 76*76/8 = 722
 		LDY		#$D2
 		JSR		_clear_buf
@@ -310,12 +310,12 @@ loc_10426E:
 		LDY		_power_nodes_cnt				; load counter
 		LDA		_power_nodes_cnt+1				; to start with list0 or list1 test higher counter byte
 		BEQ		loc_10427F
-		LDX		_tmp_recalc_bufs,Y				; list 1 read
-		LDA		_tmp_recalc_bufs+$300,Y
+		LDX		_tmp_buf,Y				; list 1 read
+		LDA		_tmp_buf+$300,Y
 		JMP		loc_104285
 loc_10427F:
-		LDX		_tmp_recalc_bufs+$100,Y			; list 0 read
-		LDA		_tmp_recalc_bufs+$200,Y
+		LDX		_tmp_buf+$100,Y			; list 0 read
+		LDA		_tmp_buf+$200,Y
 loc_104285:
 		STX		_tmp_map_pos._COL				; fetch last power station position on map
 		STA		_tmp_map_pos._ROW
@@ -434,15 +434,15 @@ _power_node_insert:
 		BEQ		loc_104368						; maximum entries in list 512
 ; -
 		LDA		_tmp_map_pos._COL				; other entries stored in list 1
-		STA		_tmp_recalc_bufs,Y
+		STA		_tmp_buf,Y
 		LDA		_tmp_map_pos._ROW
-		STA		_tmp_recalc_bufs+$300,Y
+		STA		_tmp_buf+$300,Y
 		JMP		loc_104368						; optimize me
 .power_grid_list0_store:
 		LDA		_tmp_map_pos._COL
-		STA		_tmp_recalc_bufs+$100,Y
+		STA		_tmp_buf+$100,Y
 		LDA		_tmp_map_pos._ROW
-		STA		_tmp_recalc_bufs+$200,Y
+		STA		_tmp_buf+$200,Y
 loc_104368:
 		JMP		_sram_write_disable
 
@@ -496,10 +496,10 @@ _power_grid_test:
 ;		STA		_tmpE7
 ;		LDA		_tmpE6
 ;		CLC
-;		ADC		#<[_power_grid_map_buf]
+;		ADC		#<[_power_map]
 ;		STA		_tmpE6
 ;		LDA		_tmpE7
-;		ADC		#>[_power_grid_map_buf]
+;		ADC		#>[_power_map]
 ;		STA		_tmpE7
 ;		PLA
 ;		AND		#$07
@@ -522,18 +522,16 @@ _power_grid_test:
 ; =============== S U B	R O U T	I N E =======================================
 ; TODO: when space is enough, merge me with my copy
 ; copy of _map_tile_read in PRGB
-; NOTE: also, this is similar to BUFPOS macros, but not exactly the same
-; however, _wram_map_buf starting from the beginning of the page, so
-; may be clearly converted to it!
+; TODO: optimize, drop lower bits of _city_map which is zero anyway
 ;
 _map_tile_read_0:
 		LDA		_tmp_map_pos._ROW
 		MULAI	#$4C
-		LDA		#<[_wram_map_buf]
+		LDA		#<[_city_map]
 		CLC
 		ADC		_MMC5_MUL0
 		STA		word_EC
-		LDA		#>[_wram_map_buf]
+		LDA		#>[_city_map]
 		ADC		_MMC5_MUL1
 		STA		word_EC+1
 		LDY		_tmp_map_pos._COL
@@ -560,10 +558,10 @@ _power_grid_set:
 ;		STA		_tmpE7							; store shifted high nibble
 ;		LDA		_tmpE6							; lower already shifted, load
 ;		CLC
-;		ADC		#<[_power_grid_map_buf]			; add buffer offset to get full ptr
+;		ADC		#<[_power_map]			; add buffer offset to get full ptr
 ;		STA		_tmpE6
 ;		LDA		_tmpE7
-;		ADC		#>[_power_grid_map_buf]
+;		ADC		#>[_power_map]
 ;		STA		_tmpE7
 ;		PLA
 ;		AND		#$07							; extract lower 3 bits for number of
@@ -601,10 +599,10 @@ _power_grid_read:
 		STA		_tmpE7							; store shifted high nibble
 		LDA		_tmpE6							; lower already shifted, load
 		CLC
-		ADC		#<[_power_grid_map_buf]			; add buffer offset to get full ptr
+		ADC		#<[_power_map]			; add buffer offset to get full ptr
 		STA		_tmpE6
 		LDA		_tmpE7
-		ADC		#>[_power_grid_map_buf]
+		ADC		#>[_power_map]
 		STA		_tmpE7
 		TYA
 		AND		#$07							; extract lower 3 bits for number of
@@ -632,30 +630,30 @@ _graphs_10_year_data_update:
 		JSR		_sram_write_enable				; prepape sram
 		LDX		#$00
 loc_104559:
-		LDA		_wram_graphs._10y._R+1,X		; shift graphs data to the left
-		STA		_wram_graphs._10y._R,X			; collect R/C/I max value
+		LDA		_graphs._10y._R+1,X		; shift graphs data to the left
+		STA		_graphs._10y._R,X			; collect R/C/I max value
 		CMP		_tmpE6
 		BCC		loc_104565
 		STA		_tmpE6
 loc_104565:
-		LDA		_wram_graphs._10y._C+1,X
-		STA		_wram_graphs._10y._C,X
+		LDA		_graphs._10y._C+1,X
+		STA		_graphs._10y._C,X
 		CMP		_tmpE6
 		BCC		loc_104571
 		STA		_tmpE6
 loc_104571:
-		LDA		_wram_graphs._10y._I+1,X
-		STA		_wram_graphs._10y._I,X
+		LDA		_graphs._10y._I+1,X
+		STA		_graphs._10y._I,X
 		CMP		_tmpE6
 		BCC		loc_10457D
 		STA		_tmpE6
 loc_10457D:
-		LDA		_wram_graphs._10y._pollution+1,X	; the rest does not need to save min max
-		STA		_wram_graphs._10y._pollution,X
-		LDA		_wram_graphs._10y._money+1,X
-		STA		_wram_graphs._10y._money,X
-		LDA		_wram_graphs._10y._crime+1,X
-		STA		_wram_graphs._10y._crime,X
+		LDA		_graphs._10y._pollution+1,X	; the rest does not need to save min max
+		STA		_graphs._10y._pollution,X
+		LDA		_graphs._10y._money+1,X
+		STA		_graphs._10y._money,X
+		LDA		_graphs._10y._crime+1,X
+		STA		_graphs._10y._crime,X
 		INX
 		CPX		#$09
 		BNE		loc_104559
@@ -671,7 +669,7 @@ loc_10457D:
 ;		STA		_tmpE6
 		ASL		_tmpE6
 		ROL
-		STA		_wram_graphs._10y._R+9			; graph data = [L_R * 2]
+		STA		_graphs._10y._R+9			; graph data = [L_R * 2]
 		LDA		_city._level._C.INT				; little bit ticky here, we divide frac by 16
 		STA		_tmpE6							; but then get the result as an integer. this
 		LDA		_city._level._C.FRAC			; equivalent of * 256 of the fixed point result
@@ -683,7 +681,7 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_wram_graphs._10y._C+9			; graph data = [L_C * 16]
+		STA		_graphs._10y._C+9			; graph data = [L_C * 16]
 		LDA		_city._level._I.INT				; same as previous
 		STA		_tmpE6
 		LDA		_city._level._I.FRAC
@@ -695,7 +693,7 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_wram_graphs._10y._I+9			; graph data = [L_I * 16]
+		STA		_graphs._10y._I+9			; graph data = [L_I * 16]
 ; BUG! "crime" button is the last one, this is a pollution button.
 ; use pollution value instead!
 ;		LDA		_city._crime_level.INT
@@ -706,14 +704,14 @@ loc_10457D:
 ;
 		AND		#$7F
 		SEC
-		SBC		_wram_graphs._10y._pollution+8	; interpolate with previous value
+		SBC		_graphs._10y._pollution+8	; interpolate with previous value
 		LSR
 		LSR
-		ADC		_wram_graphs._10y._pollution+8
+		ADC		_graphs._10y._pollution+8
 		BCC		loc_1045E9
 		LDA		#$FF							; clamp to 255 max
 loc_1045E9:
-		STA		_wram_graphs._10y._pollution+9
+		STA		_graphs._10y._pollution+9
 ; BUG, it seems they copy=pasted code above and just put the money var here
 ; all this thing looks wrong then.
 ;
@@ -721,17 +719,17 @@ loc_1045E9:
 		LDA		_city._crime_level.INT			; FIX, correct values here
 		AND		#$7F							; lol
 		SEC
-;		SBC		_wram_graphs._10y._money+8		; BUG
-		SBC		_wram_graphs._10y._crime+8		; FIX
+;		SBC		_graphs._10y._money+8		; BUG
+		SBC		_graphs._10y._crime+8		; FIX
 		LSR
 		LSR
-;		ADC		_wram_graphs._10y._money+8		; BUG
-		ADC		_wram_graphs._10y._crime+8		; FIX
+;		ADC		_graphs._10y._money+8		; BUG
+		ADC		_graphs._10y._crime+8		; FIX
 		BCC		loc_1045FE
 		LDA		#$FF							; clamp to 255 max
 loc_1045FE:
-;		STA		_wram_graphs._10y._money+9		; BUG
-		STA		_wram_graphs._10y._crime+9		; FIX
+;		STA		_graphs._10y._money+9		; BUG
+		STA		_graphs._10y._crime+9		; FIX
 ; BUG, Also odd calculation, _taxes_income never gets higher nibble calculated before now in the original code
 ; also _taxes_income may be negative, so further calculations may be incorrect and clamp negative values to
 ; max on the graph instead...
@@ -819,8 +817,8 @@ loc_1045FE:
 		LDA		#$00
 ; -
 .money_store:
-;		STA		_wram_graphs._10y._crime+9		; BUG
-		STA		_wram_graphs._10y._money+9		; FIX
+;		STA		_graphs._10y._crime+9		; BUG
+		STA		_graphs._10y._money+9		; FIX
 		JSR		_sram_write_disable
 		LDX		#$00							; the final calculation for schools and hospitals
 		LDA		_city._level._R.INT				; based on integer part of R level value
@@ -857,47 +855,47 @@ _graphs_100_year_data_update:
 		JSR		_sram_write_enable				; an interpolation of all 10years graphs instead?
 		LDX		#$00
 loc_104665:
-		LDA		_wram_graphs._100y._R+1,X
-		STA		_wram_graphs._100y._R,X
+		LDA		_graphs._100y._R+1,X
+		STA		_graphs._100y._R,X
 		CMP		_tmpE6
 		BCC		loc_104671
 		STA		_tmpE6
 loc_104671:
-		LDA		_wram_graphs._100y._C+1,X
-		STA		_wram_graphs._100y._C,X
+		LDA		_graphs._100y._C+1,X
+		STA		_graphs._100y._C,X
 		CMP		_tmpE6
 		BCC		loc_10467D
 		STA		_tmpE6
 loc_10467D:
-		LDA		_wram_graphs._100y._I+1,X
-		STA		_wram_graphs._100y._I,X
+		LDA		_graphs._100y._I+1,X
+		STA		_graphs._100y._I,X
 		CMP		_tmpE6
 		BCC		loc_104689
 		STA		_tmpE6
 loc_104689:
-		LDA		_wram_graphs._100y._pollution+1,X
-		STA		_wram_graphs._100y._pollution,X
-		LDA		_wram_graphs._100y._money+1,X
-		STA		_wram_graphs._100y._money,X
-		LDA		_wram_graphs._100y._crime+1,X
-		STA		_wram_graphs._100y._crime,X
+		LDA		_graphs._100y._pollution+1,X
+		STA		_graphs._100y._pollution,X
+		LDA		_graphs._100y._money+1,X
+		STA		_graphs._100y._money,X
+		LDA		_graphs._100y._crime+1,X
+		STA		_graphs._100y._crime,X
 		INX
 		CPX		#$09
 		BNE		loc_104665
 		LDA		_tmpE6
 		STA		_RCI_max_range_100_years		; TODO: fixme, the same unused max value
-		LDA		_wram_graphs._10y._R+9
-		STA		_wram_graphs._100y._R+9
-		LDA		_wram_graphs._10y._C+9
-		STA		_wram_graphs._100y._C+9
-		LDA		_wram_graphs._10y._I+9
-		STA		_wram_graphs._100y._I+9
-		LDA		_wram_graphs._10y._pollution+9
-		STA		_wram_graphs._100y._pollution+9
-		LDA		_wram_graphs._10y._money+9
-		STA		_wram_graphs._100y._money+9
-		LDA		_wram_graphs._10y._crime+9
-		STA		_wram_graphs._100y._crime+9
+		LDA		_graphs._10y._R+9
+		STA		_graphs._100y._R+9
+		LDA		_graphs._10y._C+9
+		STA		_graphs._100y._C+9
+		LDA		_graphs._10y._I+9
+		STA		_graphs._100y._I+9
+		LDA		_graphs._10y._pollution+9
+		STA		_graphs._100y._pollution+9
+		LDA		_graphs._10y._money+9
+		STA		_graphs._100y._money+9
+		LDA		_graphs._10y._crime+9
+		STA		_graphs._100y._crime+9
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================

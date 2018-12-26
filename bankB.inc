@@ -1052,9 +1052,9 @@ loc_11E879:
 		BNE		locret_11E8AC
 ; UNFINISHED
 ; -
-;		LDY		#>[_wram_map_buf]				; UNFINISHED very briefly written code
+;		LDY		#>[_city_map]					; UNFINISHED very briefly written code
 ;		STY		_tmpE7							; to search a special symbol in the sea
-;		LDY		#<[_wram_map_buf]				; which should be inserted on map to mark
+;		LDY		#<[_city_map]					; which should be inserted on map to mark
 ;		STY		_tmpE6							; a special ship routes, ship not intended
 ;loc_11E888:									; to sail on free water here
 ;		LDA		(_tmpE6),Y
@@ -1066,10 +1066,10 @@ loc_11E879:
 loc_11E894:
 ;		LDA		_tmpE6
 ;		CMP		#$90							; BUG: here test value not the end of the buffer ptr
-;		CMP		#<[_power_grid_map_buf]			; FIX: correct
+;		CMP		#<[_power_map]				; FIX: correct
 ;		LDA		_tmpE7							; BUG: but buffer size
 ;		SBC		#$16							; FIX: correct
-;		CMP		#>[_power_grid_map_buf]
+;		CMP		#>[_power_map]
 ;		BNE		loc_11E888
 ;		BEQ		locret_11E8AC
 ;loc_11E8A0:
@@ -1161,10 +1161,10 @@ _test_power_grid_map_bit:
 		STA		_tmpE7
 		LDA		_tmpE6
 		CLC
-		ADC		#<[_power_grid_map_buf]
+		ADC		#<[_power_map]
 		STA		_tmpE6
 		LDA		_tmpE7
-		ADC		#>[_power_grid_map_buf]
+		ADC		#>[_power_map]
 		STA		_tmpE7
 		TYA
 		AND		#$07
@@ -1306,18 +1306,18 @@ sub_11E9EF:
 		LDY		_tmp6D2
 		INY
 		LDA		_tmp_map_pos._COL
-		STA		_fire_radius_map_buf+$31,Y
+		STA		_fire_map+$31,Y
 		LDA		_tmp_map_pos._ROW
-		STA		_tmp_recalc_bufs+$1B,Y
+		STA		_tmp_buf+$1B,Y
 		STY		_tmp6D2
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11EA08:
 		LDY		_tmp6D2
-		LDA		_fire_radius_map_buf+$31,Y
+		LDA		_fire_map+$31,Y
 		STA		_tmp_map_pos._COL
-		LDA		_tmp_recalc_bufs+$1B,Y
+		LDA		_tmp_buf+$1B,Y
 		STA		_tmp_map_pos._ROW
 		DEY
 		STY		_tmp6D2
@@ -2184,7 +2184,7 @@ _clear_tmp_recalc_bufB5:
 		LDY		#$00
 		TYA
 loc_11F0D3:
-		STA		_tmp_recalc_bufs,Y
+		STA		_tmp_buf,Y
 		INY
 		CPY		#$B5
 		BNE		loc_11F0D3
@@ -2302,20 +2302,20 @@ _map_tile_read:
 ;		JSR		_mmc5_mul8to8
 ;		PLA
 ;		CLC
-;		ADC		#<[_wram_map_buf]
+;		ADC		#<[_city_map]
 ;		STA		word_EC
 ;		PLA
-;		ADC		#>[_wram_map_buf]
+;		ADC		#>[_city_map]
 ;		STA		word_EC+1
 ; -
 ; OPTIMIZED, FASTER!
 		LDA		_tmp_map_pos._ROW
 		MULAI	#$4C
-		LDA		#<[_wram_map_buf]
+		LDA		#<[_city_map]
 		CLC
 		ADC		_MMC5_MUL0
 		STA		word_EC
-		LDA		#>[_wram_map_buf]
+		LDA		#>[_city_map]
 		ADC		_MMC5_MUL1
 		STA		word_EC+1
 ; -
@@ -2332,20 +2332,20 @@ _map_tile_write:
 ;		JSR		_mmc5_mul8to8
 ;		PLA
 ;		CLC
-;		ADC		#<[_wram_map_buf]
+;		ADC		#<[_city_map]
 ;		STA		word_EC
 ;		PLA
-;		ADC		#>[_wram_map_buf]
+;		ADC		#>[_city_map]
 ;		STA		word_EC+1
 ; -
 ; OPTIMIZED, FASTER!
 		LDA		_tmp_map_pos._ROW
 		MULAI	#$4C
-		LDA		#<[_wram_map_buf]
+		LDA		#<[_city_map]
 		CLC
 		ADC		_MMC5_MUL0
 		STA		word_EC
-		LDA		#>[_wram_map_buf]
+		LDA		#>[_city_map]
 		ADC		_MMC5_MUL1
 		STA		word_EC+1
 ; -
@@ -2393,8 +2393,8 @@ loc_11F242:
 		LDY		#$00
 		TYA
 loc_11F26A:
-		STA		_fire_radius_map_buf,Y
-		STA		_police_radius_map_buf,Y
+		STA		_fire_map,Y
+		STA		_police_map,Y
 		INY
 		CPY		#$32
 		BNE		loc_11F26A
@@ -2491,7 +2491,7 @@ _map_corruption_tiles_animate:
 		LDA		_corruption_anim_flag
 		BEQ		loc_11F33A
 		JSR		_sram_write_enable
-		MOVWO	_tmpE6,_wram_map_buf
+		MOVWO	_tmpE6,_city_map
 		LDY		#$00
 		STY		_corruption_anim_flag
 loc_11F310:
@@ -2507,7 +2507,7 @@ loc_11F310:
 		STA		_corruption_anim_flag
 loc_11F324:
 		INCW	_tmpE6
-		CMPWI	_tmpE6,_power_grid_map_buf
+		CMPWI	_tmpE6,_power_map
 		BNE		loc_11F310
 		JSR		_wait_for_hud_redraw
 		JMP		_map_corruption_tiles_animate
@@ -2988,32 +2988,32 @@ _read_select_pol_popg_popd_crime_land_recalc_maps_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pollution_map_nibble:
-		LDXY	_pollution_map_buf
+		LDXY	_pollution_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pop_growth_map_nibble:
-		LDXY	_pop_growth_map_buf
+		LDXY	_pop_growth_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pop_dencity_map_nibble:
-		LDXY	_pop_dencity_map_buf
+		LDXY	_pop_dencity_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_crime_level_map_nibble:
-		LDXY	_crime_level_map_buf
+		LDXY	_crime_level_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_land_value_map_nibble:
-		LDXY	_land_value_map_buf
+		LDXY	_land_value_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_tmp_recalc_div4_mul13_map_nibble:
-		LDXY	_tmp_recalc_bufs
+		LDXY	_tmp_buf
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_buf_pos_div4_mul13_4bit_nibble:
@@ -3032,7 +3032,7 @@ _read_buf_pos_div4_mul13_4bit_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_traffic_dencity_map_nibble:
-		LDXY	_traffic_density_map_buf
+		LDXY	_traffic_map
 		TYA
 		PHA
 		TXA
@@ -3053,17 +3053,17 @@ _read_select_police_fire_recalc_map_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_tmp_recalc_div8_mulA_nibble:
-		LDXY	_tmp_recalc_bufs
+		LDXY	_tmp_buf
 		BNE		_read_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_police_radius_map_nibble:
-		LDXY	_police_radius_map_buf
+		LDXY	_police_map
 		BNE		_read_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_fire_radius_map_nibble:
-		LDXY	_fire_radius_map_buf
+		LDXY	_fire_map
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_buf_pos_div8_mulA_4bit_nibble:
@@ -3191,32 +3191,32 @@ _write_select_poll_popg_popd_crime_land_recalc_maps_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pollution_map_nibble:
-		LDXY	_pollution_map_buf
+		LDXY	_pollution_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pop_growth_map_nibble:
-		LDXY	_pop_growth_map_buf
+		LDXY	_pop_growth_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pop_dencity_map_nibble:
-		LDXY	_pop_dencity_map_buf
+		LDXY	_pop_dencity_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_crime_level_map_nibble:
-		LDXY	_crime_level_map_buf
+		LDXY	_crime_level_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_land_value_map_nibble:
-		LDXY	_land_value_map_buf
+		LDXY	_land_value_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_tmp_recalc_div4_mul13_map_nibble:
-		LDXY	_tmp_recalc_bufs
+		LDXY	_tmp_buf
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_buf_pos_div4_mul13_4bit_nibble:
@@ -3245,7 +3245,7 @@ loc_11F801:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_traffic_dencity_map_nibble:
-		LDXY	_traffic_density_map_buf
+		LDXY	_traffic_map
 		CMP		#$10
 		BCC		loc_11F82C
 		LDA		#$0F
@@ -3271,17 +3271,17 @@ _write_select_police_fire_recalc_maps_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_tmp_recalc_div8_mulA_map_nibble:
-		LDXY	_tmp_recalc_bufs
+		LDXY	_tmp_buf
 		BNE		_write_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_police_radius_map_nibble:
-		LDXY	_police_radius_map_buf
+		LDXY	_police_map
 		BNE		_write_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_fire_radius_map_nibble:
-		LDXY	_fire_radius_map_buf
+		LDXY	_fire_map
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_buf_pos_div8_mulA_4bit_nibble:

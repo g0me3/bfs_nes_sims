@@ -312,7 +312,7 @@ loc_15037E:
 sub_150383:
 		LDA		_cur_game_cursor_area
 		BEQ		loc_1503D2
-		LDY		_const_palette_selected_idx
+		LDY		_constr_palette_selected_idx
 		LDX		_building_sizes_list,Y
 		CPY		#$0C
 		BNE		loc_150395
@@ -441,7 +441,7 @@ loc_150425:
 		LSR
 		LSR
 		ORA		_ptr0
-		STA		_const_palette_press_idx
+		STA		_constr_palette_press_idx
 		CLC
 		RTS
 loc_150450:
@@ -450,7 +450,7 @@ loc_150450:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_build_year_init:
-		LDA		_const_palette_selected_idx
+		LDA		_constr_palette_selected_idx
 		CMP		#$0D
 		BNE		locret_150474
 		LDX		_cur_present_select_idx
@@ -478,7 +478,7 @@ locret_150474:
 ; another one), so we will have broken building here.
 ;
 _present_remove_from_list:
-		LDA		_const_palette_selected_idx		; check if we selected a present button
+		LDA		_constr_palette_selected_idx		; check if we selected a present button
 		CMP		#$0D
 		BEQ		loc_15047C
 		RTS
@@ -503,7 +503,7 @@ loc_150492:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_building_price:
-		LDA		_const_palette_selected_idx		; power station choosen?
+		LDA		_constr_palette_selected_idx		; power station choosen?
 		CMP		#$0B
 		BNE		loc_1504A6
 		LDX		_cur_power_type_select_idx		; test additionally for its type
@@ -564,7 +564,7 @@ _build_cur_constr_cursor_area:
 loc_150518:
 		LDA		(_tmp_ptrC3),Y					; read building data tiles from lib
 		BMI		loc_150531
-		LDX		_const_palette_selected_idx		; top-left corner of the building starts here
+		LDX		_constr_palette_selected_idx		; top-left corner of the building starts here
 		CPX		#$0B
 		BNE		loc_150527						; additional test for power station type
 		CLC
@@ -754,18 +754,18 @@ _get_building_tile_map_ptr:
 		STA		word_D2+1
 		LDA		word_D2
 		CLC
-		ADC		#<[_wram_map_buf]
+		ADC		#<[_city_map]
 		STA		word_D2
 		LDA		word_D2+1
-		ADC		#>[_wram_map_buf]
+		ADC		#>[_city_map]
 		STA		word_D2+1
-		CMP		#>[_wram_map_buf]				; OUT UF BOUNDS TEST 2!!
+		CMP		#>[_city_map]				; OUT UF BOUNDS TEST 2!!
 		BCC		.out_of_bounds
-		CMP		#>[_power_grid_map_buf]			; out of bounds test 3
+		CMP		#>[_power_map]			; out of bounds test 3
 		BCC		.calc_ok
 		BNE		.out_of_bounds
 		LDA		word_D2
-		CMP		#<[_power_grid_map_buf]			; out of bounds test 4
+		CMP		#<[_power_map]			; out of bounds test 4
 		BCS		.out_of_bounds
 .calc_ok:
 		CLC
@@ -1153,7 +1153,7 @@ _get_tile_above:
 		DEC		_tmp6+1
 		DEC		word_D2+1						; test one tile above surronding ones
 		LDA		word_D2+1
-		CMP		#>[_wram_map_buf]
+		CMP		#>[_city_map]
 		BCC		loc_150828						; rough out of bounds test again
 loc_150821:
 		LDY		#$B4
@@ -1173,7 +1173,7 @@ _get_tile_leftmost:
 		DEC		_tmp6+1
 		DEC		word_D2+1
 		LDA		word_D2+1
-		CMP		#>[_wram_map_buf]
+		CMP		#>[_city_map]
 		BCC		loc_150844
 loc_15083D:
 		LDY		#$FF
@@ -1489,19 +1489,19 @@ _get_cur_constr_cursor_map_ofs:
 		ADC		_cur_constr_cursor_map_pos._COL
 		STA		_tmp_ptrC1
 		TXA
-		ADC		#>[_wram_map_buf]				; map ofs + map buf start = map ptr
+		ADC		#>[_city_map]				; map ofs + map buf start = map ptr
 		STA		_tmp_ptrC1+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_build_construc_data_ptr:
-		LDX		_const_palette_selected_idx
+		LDX		_constr_palette_selected_idx
 		CPX		#$0D
 		BNE		loc_150A5C
 		LDX		_cur_present_select_idx			; prize buildings idx to lib idx
 		LDA		_city._presents_list,X			; (0E - 1C)
 		CLC
-		ADC		_const_palette_selected_idx
+		ADC		_constr_palette_selected_idx
 		TAX
 		BNE		loc_150A70
 loc_150A5C:
@@ -1666,7 +1666,7 @@ _get_building_scheme_ex:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_building_scheme_ptr:
-		LDX		_const_palette_selected_idx
+		LDX		_constr_palette_selected_idx
 		LDY		_building_sizes_list,X
 		DEY
 		CPX		#$0C
@@ -2684,7 +2684,7 @@ _special_power_grid_bit_test:
 		STA		_ptr0
 		LDA		_tmp6E+1
 		SEC
-		SBC		#>[_wram_map_buf]
+		SBC		#>[_city_map]
 		STA		_ptr0+1
 		LDY		#$03
 loc_1512B3:
@@ -2701,10 +2701,10 @@ loc_1512B3:
 		TAX
 		CLC
 		LDA		_ptr0
-		ADC		#<[_power_grid_map_buf]
+		ADC		#<[_power_map]
 		STA		_ptr0
 		LDA		_ptr0+1
-		ADC		#>[_power_grid_map_buf]
+		ADC		#>[_power_map]
 		STA		_ptr0+1
 		LDY		#$00
 		LDA		(_ptr0),Y
@@ -2738,10 +2738,10 @@ loc_1512FF:
 		INY
 loc_151307:
 		CLC
-		ADC		#<[_traffic_density_map_buf]
+		ADC		#<[_traffic_map]
 		STA		_ptr0
 		TYA
-		ADC		#>[_traffic_density_map_buf]
+		ADC		#>[_traffic_map]
 		STA		_ptr0+1
 		LDY		#$00
 		LDA		(_ptr0),Y

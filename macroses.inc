@@ -266,6 +266,12 @@ OTHER_WIDX			EQU 4
 		_tyear {1}._100y
 	ENDM
 
+	MAC	_tarray
+{1}		SET	.
+		DS	{2}
+{1}_end	SET	.
+	ENDM
+
 ;---------G-A-M-E--S-P-E-C-I-F-I-C--------------
 
 	; \t\tSTX\t\t_MMC5_MUL1\n\t\tSTA\t\t_MMC5_MUL0\n\t\tLDA\t\t_MMC5_MUL0\n\t\tLDX\t\t_MMC5_MUL1\n

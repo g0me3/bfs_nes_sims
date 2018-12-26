@@ -29,7 +29,7 @@ _constr_palette_state_update:
 		CLC
 		BCC		.push_activity_flag
 .pal_enabled:
-		CPX		_cur_const_palette_selected_idx	; if current icon isn't pressed
+		CPX		_cur_constr_palette_selected_idx	; if current icon isn't pressed
 		BNE		.push_no_active					; then push second bit 0
 		SEC
 		BCS		.push_activity_flag				; push 1 otherwise
@@ -179,7 +179,7 @@ loc_B8194:
 locret_B81C4:
 		RTS
 .no_auto_bulldoze:
-		LDA		_const_palette_selected_idx	; when no autobulldoze, we couldn't build anything
+		LDA		_constr_palette_selected_idx	; when no autobulldoze, we couldn't build anything
 		CMP		#$01						; except special cases of intersections, let's find any
 		BNE		loc_B81D1
 		JMP		_select_road_intersection_tile
@@ -311,7 +311,7 @@ _water_tile_build_select:
 		LDY		#$01
 		LDA		(_tmp_ptrC1),Y
 		PHA										; push right
-		LDA		_const_palette_selected_idx
+		LDA		_constr_palette_selected_idx
 		CMP		#$01
 		BNE		.no_roads_on_water				; here we build roads on water
 		PLA										; pop surrounding tiles in reverse order
@@ -566,7 +566,7 @@ loc_B83CA:
 ; =============== S U B	R O U T	I N E =======================================
 _test_build_available_tile:
 		PHA
-		LDA		_const_palette_selected_idx		; present buildings?
+		LDA		_constr_palette_selected_idx		; present buildings?
 		CMP		#$0D
 		BNE		.regular_test
 		LDY		_cur_present_select_idx			; yes, try specual case of
@@ -583,7 +583,7 @@ _test_build_available_tile:
 		LDA		_city._game_flags				; test for autobuldoze flag
 		LSR
 		BCC		.no_auto_bulldoze_here
-		LDA		_const_palette_selected_idx		; special case for train station present
+		LDA		_constr_palette_selected_idx		; special case for train station present
 		CMP		#$0D
 		BNE		loc_B8401
 		LDY		_cur_present_select_idx
@@ -593,7 +593,7 @@ _test_build_available_tile:
 loc_B8401:
 		PLA
 .full_bulldoze_test:
-		LDY		_const_palette_selected_idx
+		LDY		_constr_palette_selected_idx
 		CPY		#$04
 		BEQ		.common_bulldoze_test			; skip additional check for parks
 		CMP		#_MAP_ELECTRO_LR				; buildings can be build above electic wires
@@ -618,12 +618,12 @@ loc_B8401:
 		CLC
 		RTS
 loc_B842E:
-		LDA		_const_palette_selected_idx		; can bulldoze parks as well, but can't rebulldoze it
+		LDA		_constr_palette_selected_idx		; can bulldoze parks as well, but can't rebulldoze it
 		CMP		#$04
 		BNE		.allow_with_bulldoze
 		BEQ		.forbid
 .electo_wires_bulldoze:
-		LDA		_const_palette_selected_idx		; the same here for electrics
+		LDA		_constr_palette_selected_idx		; the same here for electrics
 		CMP		#$02
 		BNE		.allow_with_bulldoze
 		BEQ		.forbid
@@ -1649,7 +1649,7 @@ loc_B8F3E:
 		STA		_ptr0
 		LDX		#$0A
 loc_B8F5A:
-		LDA		[[_wram_graphs&$1FFF]|$6000],Y	; retarget _wram_graphs to $6000 bank
+		LDA		[[_graphs&$1FFF]|$6000],Y	; retarget _graphs to $6000 bank
 		CMP		_ptr0							; calc max value for current graph
 		BCC		loc_B8F63
 		STA		_ptr0							; calc scale ratio
@@ -1670,7 +1670,7 @@ loc_B8F75:
 		CLC
 		ADC		_tmp2
 		TAY
-		LDA		[[_wram_graphs&$1FFF]|$6000],Y	; retarget _wram_graphs to $6000 bank
+		LDA		[[_graphs&$1FFF]|$6000],Y	; retarget _graphs to $6000 bank
 loc_B8F7D:
 		LSR
 		DEX

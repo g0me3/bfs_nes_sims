@@ -38,7 +38,7 @@ loc_18A00B:
 ;		INX
 ;		BNE		loc_18A023
 ;loc_18A030:
-;		JSR		_map_buf_init					; so actually this check does nothing here
+;		JSR		_city_map_init					; so actually this check does nothing here
 ;loc_18A033:
 ; -
 		LDY		#$07							; now clar ram area $0000-$07FF
@@ -585,7 +585,7 @@ loc_18A41F:
 		BNE		loc_18A44B
 		LDX		_earthquake_shake_req
 		BEQ		loc_18A44B
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_frames_counter
 		AND		#$03
 		BNE		loc_18A438
@@ -594,7 +594,7 @@ loc_18A438:
 		LDA		_frames_counter
 		AND		#$0F
 		CMP		#$08
-		LDA		_tmp15
+		LDA		_ptr15
 		BCS		loc_18A448
 		SEC
 		SBC		#$02
@@ -788,21 +788,21 @@ loc_18A557:
 loc_18A560:
 		LDX		#$01
 		JSR		_read_pad
-		STA		_tmp15
+		STA		_ptr15
 		JSR		_read_pad
-		CMP		_tmp15
+		CMP		_ptr15
 		BNE		loc_18A560
 		STA		_pad1_prev_held
 		LDX		#$00
 		LDA		_pad0_held
 		STA		_pad0_prev_held
 		JSR		_read_pad
-		STA		_tmp15
+		STA		_ptr15
 loc_18A57B:
 		JSR		_read_pad
-		CMP		_tmp15
+		CMP		_ptr15
 		BEQ		loc_18A587
-		STA		_tmp15
+		STA		_ptr15
 		JMP		loc_18A57B
 loc_18A587:
 		TAX
@@ -818,7 +818,7 @@ loc_18A590:
 		CMP		_pad0_held
 		BEQ		loc_18A5AE
 		EOR		_pad0_held
-		AND		_tmp15
+		AND		_ptr15
 		STA		_pad0_autorep_press
 		STA		_pad0_autorep_release
 		CMP		#$00
@@ -833,7 +833,7 @@ loc_18A5AE:
 		BNE		loc_18A5BD
 		LDA		_pad0_autorep_delay
 		STA		_pad0_autorep_timer
-		LDA		_tmp15
+		LDA		_ptr15
 loc_18A5BD:
 		STA		_pad0_autorep_release
 		JMP		loc_18A5C8
@@ -842,7 +842,7 @@ loc_18A5C2:
 		STA		_pad0_autorep_press
 		STA		_pad0_autorep_release
 loc_18A5C8:
-		LDA		_tmp15
+		LDA		_ptr15
 		STA		_pad0_held
 		RTS
 
@@ -884,11 +884,11 @@ _ppu_dequeue:
 loc_18A6C1:
 		LDX		_ppu_queue_pos_tail
 		LDA		#$02
-		STA		_tmp15
+		STA		_ptr15
 loc_18A6C7:
 		CPX		_ppu_queue_pos_head
 		BEQ		loc_18A6FB
-		DEC		_tmp15
+		DEC		_ptr15
 		BMI		loc_18A6FB
 		LDA		_ppu_queue_buf,X
 		INX
@@ -941,8 +941,8 @@ loc_18A71A:
 		INX
 		LDY		_extnt_queue_buf,X
 		INX
-		STA		_tmp15
-		STY		_tmp15+1
+		STA		_ptr15
+		STY		_ptr15+1
 		LDY		#$00
 		LDA		_extnt_queue_buf,X
 		BPL		loc_18A739
@@ -956,7 +956,7 @@ loc_18A739:
 loc_18A740:
 		LDA		_extnt_queue_buf,X
 		INX
-		STA		(_tmp15),Y
+		STA		(_ptr15),Y
 		JSR		_inc_word15_v_h
 		DEC		_ptr18
 		BNE		loc_18A740
@@ -969,16 +969,16 @@ loc_18A74F:
 _inc_word15_v_h:
 		LDA		_ptr18+1
 		BNE		loc_18A866
-		INCW	_tmp15
+		INCW	_ptr15
 		RTS
 loc_18A866:
-		LDA		_tmp15
+		LDA		_ptr15
 		CLC
 		ADC		#$20
-		STA		_tmp15
-		LDA		_tmp15+1
+		STA		_ptr15
+		LDA		_ptr15+1
 		ADC		#$00
-		STA		_tmp15+1
+		STA		_ptr15+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1539,10 +1539,10 @@ _ppu_set_vert_increment:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_buf_init:
+_city_map_init:
 		JSR		_sram_write_enable
 		LDX		#$00
-		MOVWO	_ptr0,_wram_map_buf				; map buf ptr
+		MOVWO	_ptr0,_city_map				; map buf ptr
 		MOVWI	_tmp2,$1690						; map buf size
 ;		LDA		#$90
 ;		LDX		#$16
@@ -1604,11 +1604,11 @@ loc_18AA6D:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_18AA7A
 		LDA		_PPU_DATA
-		STA		_nt_backup_buf1,X
+		STA		_nt_backup1,X
 		JMP		loc_18AA80
 loc_18AA7A:
 		LDA		_PPU_DATA
-		STA		_nt_backup_buf0,X
+		STA		_nt_backup0,X
 loc_18AA80:
 		INX
 		DEC		byte_9F
@@ -1652,11 +1652,11 @@ loc_18AAD2:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_18AADF
 		LDA		_PPU_DATA
-		STA		_nt_backup_buf1,X
+		STA		_nt_backup1,X
 		JMP		loc_18AAE5
 loc_18AADF:
 		LDA		_PPU_DATA
-		STA		_nt_backup_buf0,X
+		STA		_nt_backup0,X
 loc_18AAE5:
 		INX
 		DEC		byte_9F

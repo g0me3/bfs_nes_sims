@@ -1696,9 +1696,9 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		JMP		_sram_write_disable
 loc_59C0E:
-		LDA		#>[_land_value_map_buf]			; CAUTION: low nibble is zero
+		LDA		#>[_land_value_map]			; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
-		LDA		#<[_land_value_map_buf]
+		LDA		#<[_land_value_map]
 		STA		_ptr0
 		STA		_has_saved_city_data_flag		; zero goes here as well
 		TAY
@@ -1771,8 +1771,8 @@ loc_59C76:
 _sram_data_load:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_write_enable
-		MOVWO	_ptr0,_sram_map_buf
-		MOVWO	_tmp2,_wram_map_buf
+		MOVWO	_ptr0,_sram_city_map
+		MOVWO	_tmp2,_city_map
 		LDY		#$00
 loc_5915A:
 		LDA		(_ptr0),Y
@@ -1783,15 +1783,15 @@ loc_5915A:
 		INC		_tmp3
 loc_5916A:
 		LDA		_tmp2
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BNE		loc_5915A
 		LDA		_tmp3
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BNE		loc_5915A
 		LDX		#$00
 loc_59178:
 		LDA		_sram_graphs,X
-		STA		_wram_graphs,X
+		STA		_graphs,X
 		INX
 		CPX		#$78
 		BNE		loc_59178
@@ -1810,8 +1810,8 @@ loc_59185:
 _sram_data_save:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_write_enable
-		MOVWO	_ptr0,_wram_map_buf
-		MOVWO	_tmp2,_sram_map_buf
+		MOVWO	_ptr0,_city_map
+		MOVWO	_tmp2,_sram_city_map
 		LDY		#$00
 loc_58FD3:
 		LDA		(_ptr0),Y
@@ -1822,14 +1822,14 @@ loc_58FD3:
 		INC		_tmp3
 loc_58FE3:
 		LDA		_ptr0
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BNE		loc_58FD3
 		LDA		_ptr0+1
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BNE		loc_58FD3
 		LDX		#$00
 loc_58FF1:
-		LDA		_wram_graphs,X
+		LDA		_graphs,X
 		STA		_sram_graphs,X
 		INX
 		CPX		#$78
@@ -1901,17 +1901,17 @@ loc_58D21:
 ;		LDX		#>[_scroll_txt_debug_off]
 		LDA		#$1A
 loc_58D25:
-;		STA		_tmp15							; REDUNDANT actualy, the message size here is not
-;		STX		_tmp15+1						; identical to scroll_msg_idx == 1, but
+;		STA		_ptr15							; REDUNDANT actualy, the message size here is not
+;		STX		_ptr15+1						; identical to scroll_msg_idx == 1, but
 ;		LDA		#$01							; it's not really important, since the rest
 		STA		_scroll_msg_idx					; of line filled with spaces in any case
 ;		BNE		loc_58D3D
 loc_58D30:
 		LDX		_scroll_msg_idx
 		LDA		_scroll_msg_lib_lo,X
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_scroll_msg_lib_hi,X
-		STA		_tmp15+1
+		STA		_ptr15+1
 loc_58D3D:
 		LDA		_cur_screen_tile._ROW
 		LSR
@@ -1943,7 +1943,7 @@ loc_58D49:
 		PPUQMOVB	_tmp17,OP_NOP,0				; draw one char at a time,
 		PPUQMOVB	_ptr18,OP_NOP,0				; the rest is up to scroll
 		PPUQMOVB	#$01,OP_NOP,0
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		CMP		#$FF
 		BNE		loc_58D93
 		LDA		#$DF
@@ -2641,7 +2641,7 @@ loc_593F1:
 ; =============== S U B	R O U T	I N E =======================================
 _map_start_write:
 		PHA
-		BUFPOS	_ptr0,_map_start._COL,_map_start._ROW,#$4C,#>[_wram_map_buf]	; DST=(_map_start._ROW*#$4C+_map_start._COL)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_map_start._COL,_map_start._ROW,#$4C,#>[_city_map]	; DST=(_map_start._ROW*#$4C+_map_start._COL)+#>[_city_map]00
 		LDY		#$00
 		PLA
 		STA		(_ptr0),Y
@@ -2651,7 +2651,7 @@ _map_start_write:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read577_0:
-		BUFPOS	_ptr0,_tmp577,_tmp578,#$4C,#>[_wram_map_buf]	; DST=(_tmp578*#$4C+_tmp577)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_tmp577,_tmp578,#$4C,#>[_city_map]	; DST=(_tmp578*#$4C+_tmp577)+#>[_city_map]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		RTS
@@ -2660,7 +2660,7 @@ _isle_map_tile_read577_0:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read572_2:
-		BUFPOS	_tmp2,_tmp577,_tmp578,#$4C,#>[_wram_map_buf]	; DST=(_tmp578*#$4C+_tmp577)+#>[_wram_map_buf]00
+		BUFPOS	_tmp2,_tmp577,_tmp578,#$4C,#>[_city_map]	; DST=(_tmp578*#$4C+_tmp577)+#>[_city_map]00
 		LDY		#$00
 		LDA		(_tmp2),Y
 		RTS
@@ -2669,24 +2669,24 @@ _isle_map_tile_read572_2:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read575:
-		BUFPOS	_ptr0,_map_pos._COL,_map_pos._ROW,#$4C,#>[_wram_map_buf]	; DST=(_map_pos._ROW*#$4C+_map_pos._COL)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_map_pos._COL,_map_pos._ROW,#$4C,#>[_city_map]	; DST=(_map_pos._ROW*#$4C+_map_pos._COL)+#>[_city_map]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _wram_map_clear:
-		MOVWO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_city_map
 		LDY		#$00
 loc_5946A:
 		LDA		#$00
 		STA		(_ptr0),Y
 		INCW	_ptr0
 		LDA		_ptr0+1
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BCC		loc_5946A
 		LDA		_ptr0
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BCC		loc_5946A
 		RTS
 
@@ -2815,7 +2815,7 @@ loc_5957F:
 		JSR		_rand_clamp_X
 		STA		_map_dir
 		JSR		_generate_new_mapF_0A
-		JSR		_generate_map_buf_end_test
+		JSR		_generate_city_map_end_test
 		BCS		locret_595BA
 		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
 		BNE		loc_595B5
@@ -3010,7 +3010,7 @@ _map_gen_data7:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub1:
 		PHA
-		JSR		_generate_map_buf_end_test
+		JSR		_generate_city_map_end_test
 		BCS		loc_597C7
 		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
 		BEQ		loc_597C9
@@ -3032,7 +3032,7 @@ loc_597CA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_map_buf_end_test:
+_generate_city_map_end_test:
 		LDA		_tmp577
 		CMP		#$4C
 		BCS		loc_597DD
@@ -3095,7 +3095,7 @@ loc_59835:
 		CLC
 		ADC		_map_gen_data9,Y
 		STA		_tmp578
-		JSR		_generate_map_buf_end_test
+		JSR		_generate_city_map_end_test
 		BCS		loc_5987B
 		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
 		BMI		loc_5987B
@@ -3164,7 +3164,7 @@ loc_598FC:
 		CLC
 		ADC		_map_gen_data9,Y
 		STA		_tmp578
-		JSR		_generate_map_buf_end_test
+		JSR		_generate_city_map_end_test
 		BCC		loc_59957
 		LDY		_tmp4
 		LDA		_map_gen_data8,Y
@@ -3187,7 +3187,7 @@ loc_598FC:
 		ADC		_tmp577
 		STA		_tmp2
 		TXA
-		ADC		#>[_wram_map_buf]
+		ADC		#>[_city_map]
 		STA		_tmp3
 		LDY		#$00
 		LDA		(_tmp2),Y
@@ -3240,7 +3240,7 @@ _map_gen_dataA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapG:
-		MOVWO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_city_map
 		LDY		#$00
 loc_599D3:
 		LDA		(_ptr0),Y
@@ -3259,10 +3259,10 @@ loc_599E6:
 loc_599E8:
 		INCW	_ptr0
 		LDA		_ptr0+1							; TODO: rearrange to use macro
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BCC		loc_599D3
 		LDA		_ptr0
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BCC		loc_599D3
 		RTS
 loc_599FB:
@@ -3277,7 +3277,7 @@ loc_599FB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapE:
-		MOVWO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_city_map
 		LDY		#$00
 loc_59A11:
 		LDA		(_ptr0),Y
@@ -3301,10 +3301,10 @@ loc_59A2E:
 loc_59A30:
 		INCW	_ptr0
 		LDA		_ptr0+1
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BCC		loc_59A11
 		LDA		_ptr0
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BCC		loc_59A11
 		RTS
 loc_59A43:

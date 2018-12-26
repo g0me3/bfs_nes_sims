@@ -111,22 +111,22 @@ _obj_spr_bank_select:
 		LDA		_city._cur_year
 		SEC
 		SBC		#$9E
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_city._cur_year+1
 		SBC		#$07
-		STA		_tmp15+1
+		STA		_ptr15+1
 		BCC		loc_88D25						; all lower gets default sprites
 loc_88D11:
 		INX
 		CPX		#$03							; then subtract 50 from the rest
 		BCS		loc_88D25						; up to 3 times
-		LDA		_tmp15
+		LDA		_ptr15
 		SEC
 		SBC		#$32
-		STA		_tmp15
-		LDA		_tmp15+1
+		STA		_ptr15
+		LDA		_ptr15+1
 		SBC		#$00
-		STA		_tmp15+1
+		STA		_ptr15+1
 		BCS		loc_88D11
 loc_88D25:
 		LDA		byte_88D31,X					; we have 4 periods with different
@@ -291,7 +291,7 @@ _obj_flying_get_rand_pos:
 		BNE		loc_88BE9
 		LDA		#$24
 loc_88BE9:
-		STA		_tmp15
+		STA		_ptr15
 loc_88BEB:
 		ADC		_frames_counter
 		ADC		_frames_div8_counter
@@ -302,7 +302,7 @@ loc_88BF4:
 		CMP		#$48
 		BCC		locret_88BFE
 		SEC
-		SBC		_tmp15
+		SBC		_ptr15
 		JMP		loc_88BF4
 locret_88BFE:
 		RTS
@@ -440,7 +440,7 @@ loc_8828E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_ship_retarget:
-		JSR		_get_cur_obj_map_ptr			; _tmp15/_tmp15+1 = map_buf_pos ofs
+		JSR		_get_cur_obj_map_ptr			; _ptr15/_ptr15+1 = map_buf_pos ofs
 ;		LDA		#$00							; REDUNDANT, unused here
 ;		STA		_tmp17
 		LDA		_obj_cur_spr_idx._ship			; X = cur ship spr idx
@@ -516,12 +516,12 @@ _obj_ship_look_for_new_dir:
 		LDA		_obj_map_tile_dir_buf_ofs_list,X; map tile ofs for spr directions
 		TAY
 		BPL		loc_882FB
-		DEC		_tmp15+1						; adjust memory page for negative offsets
-		LDA		(_tmp15),Y
-		INC		_tmp15+1
+		DEC		_ptr15+1						; adjust memory page for negative offsets
+		LDA		(_ptr15),Y
+		INC		_ptr15+1
 		BNE		loc_882FD
 loc_882FB:
-		LDA		(_tmp15),Y						; get the corresponding map tile
+		LDA		(_ptr15),Y						; get the corresponding map tile
 loc_882FD:
 ;		CMP		#_MAP_WATER_ROUTE				; test if it is a special sea tile only
 		CMP		#_MAP_WATER						; NEW: let's use regular sea tile
@@ -644,7 +644,7 @@ locret_8836D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_train_retarget:
-		JSR		_get_cur_obj_map_ptr			; cur map tile under obj in _tmp15/_tmp16
+		JSR		_get_cur_obj_map_ptr			; cur map tile under obj in _ptr15/_tmp16
 ;		LDA		#$00							; REDUNDANT, seems unused here
 ;		STA		_tmp17
 		LDA		_obj_cur_spr_idx._train
@@ -655,7 +655,7 @@ _obj_train_retarget:
 		STA		_ptr18							; calc opposite direction
 		LDX		#$00
 		LDY		#$00
-		LDA		(_tmp15),Y						; check cur tile
+		LDA		(_ptr15),Y						; check cur tile
 loc_88386:
 		CMP		_rail_tiles_allowed,X			; search if tile is allowed to ride
 		BEQ		.path_decide
@@ -860,12 +860,12 @@ _train_dst_data_table:
 _obj_train_near_tile_test:
 		LDY		_obj_map_tile_dir_buf_ofs_list,X; tiles around special building are special
 		BPL		loc_884F3						; arranged. if you know tile index (0-E),
-		DEC		_tmp15+1						; you know for sure where the actual building
-		LDA		(_tmp15),Y						; tile is.
-		INC		_tmp15+1
+		DEC		_ptr15+1						; you know for sure where the actual building
+		LDA		(_ptr15),Y						; tile is.
+		INC		_ptr15+1
 		BNE		loc_884F5
 loc_884F3:
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 loc_884F5:
 		CMP		#_MAP_TRAIN_STATION				; lucky! run straigth into the rail station!
 		BNE		loc_884FC
@@ -911,29 +911,29 @@ loc_884FC:
 		PHA
 		CPY		#$80
 		BCC		loc_8855B
-		DEC		_tmp15+1
-		LDA		(_tmp15),Y
+		DEC		_ptr15+1
+		LDA		(_ptr15),Y
 		AND		#$0F
 		TAX
-		LDA		_tmp15
+		LDA		_ptr15
 		SEC
 		SBC		_special_tiles_ofs_list,X
 		STA		_ptr18
-		LDA		_tmp15+1
+		LDA		_ptr15+1
 		SBC		#$00
 		STA		_ptr18+1
-		INC		_tmp15+1
+		INC		_ptr15+1
 ;		LDA		(_ptr18),Y						; OPTIMIZE
 		JMP		loc_88570
 loc_8855B:
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		AND		#$0F
 		TAX
-		LDA		_tmp15
+		LDA		_ptr15
 		SEC
 		SBC		_special_tiles_ofs_list,X
 		STA		_ptr18
-		LDA		_tmp15+1
+		LDA		_ptr15+1
 		SBC		#$00
 		STA		_ptr18+1
 loc_88570:
@@ -1185,12 +1185,12 @@ loc_88657:
 		STA		_tmp17							; OPTIMIZED
 		TAX
 		LDA		_obj_monster_anim_lib0,X
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_obj_monster_anim_lib0+1,X
-		STA		_tmp15+1
+		STA		_ptr15+1
 		LDY		_obj_monster_anim_phase0
 loc_88665:
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		BNE		loc_886A2
 		LDY		#$00
 		STY		_obj_monster_anim_phase0
@@ -1220,11 +1220,11 @@ loc_886A2:
 		STA		_obj_monster_delay
 		LDX		_tmp17
 		LDA		_obj_monster_anim_lib1,X
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_obj_monster_anim_lib1+1,X
-		STA		_tmp15+1
+		STA		_ptr15+1
 		LDY		_obj_monster_anim_phase0
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		STA		_obj_monster_spr_idx
 		CMP		#$10
 		BCC		locret_886C5
@@ -1266,7 +1266,7 @@ locret_887B9:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_tornado_move:
 		LDX		#$00
-		STX		_tmp15
+		STX		_ptr15
 		LDA		_cur_obj_pos._COL
 		CMP		_cur_dst_pos._COL
 		BEQ		loc_887D8
@@ -1280,14 +1280,14 @@ loc_887CF:
 		SEC
 		SBC		_cur_obj_pos._COL
 loc_887D8:
-		STA		_tmp15
+		STA		_ptr15
 		LDY		#$00
 		LDA		_cur_obj_pos._ROW
 		CMP		_cur_dst_pos._ROW
 		BEQ		loc_88834
 		BCC		loc_887F1
 		SBC		_cur_dst_pos._ROW
-		CMP		_tmp15
+		CMP		_ptr15
 		BCC		loc_88806
 		LDY		#$FF
 		BMI		loc_887FE
@@ -1295,37 +1295,37 @@ loc_887F1:
 		LDA		_cur_dst_pos._ROW
 		SEC
 		SBC		_cur_obj_pos._ROW
-		CMP		_tmp15
+		CMP		_ptr15
 		BCC		loc_88806
 		LDY		#$01
 loc_887FE:
-		STY		_tmp15
+		STY		_ptr15
 		LDX		#$0B
 		LDY		#$01
 		BNE		loc_8880C
 loc_88806:
-		STX		_tmp15
+		STX		_ptr15
 		LDX		#$0A
 		LDY		#$00
 loc_8880C:
 		LDA		_obj_shift._tornado,Y
 		CLC
-		ADC		_tmp15
+		ADC		_ptr15
 		AND		#$07
 		STA		_obj_shift._tornado,Y
 		BNE		loc_8881F
-		LDA		_tmp15
+		LDA		_ptr15
 		BMI		locret_88833
 		BPL		loc_88827
 loc_8881F:
 		CMP		#$07
 		BNE		locret_88833
-		LDA		_tmp15
+		LDA		_ptr15
 		BPL		locret_88833
 loc_88827:
 		LDA		_obj_pos,X
 		CLC
-		ADC		_tmp15
+		ADC		_ptr15
 		STA		_obj_pos,X
 		STA		_cur_obj_pos,Y
 locret_88833:
@@ -1547,24 +1547,24 @@ loc_88A8C:
 		ASL
 		TAX
 		LDA		_obj_spr_tbl_lib,X
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_obj_spr_tbl_lib+1,X
-		STA		_tmp15+1
+		STA		_ptr15+1
 		LDA		_spr_insert_args._idx
 		ASL
 		TAY
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		TAX
 		INY
-		LDA		(_tmp15),Y
-		STA		_tmp15+1
-		STX		_tmp15
+		LDA		(_ptr15),Y
+		STA		_ptr15+1
+		STX		_ptr15
 		DEC		_spr_insert_args._pos._ROW
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_88AAC:
 		STX		_tmp17
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		CMP		#$80
 		BEQ		loc_88B09
 		INY
@@ -1597,15 +1597,15 @@ loc_88ACF:
 loc_88ADC:
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		INY
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		INY
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		INY
 		CLC
 		ADC		_spr_insert_args._pos._COL
@@ -1681,7 +1681,7 @@ _obj_spr_insert_ex:
 		LDA		#$20
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		CLC
 		ADC		_spr_insert_args._pos._COL
 		STA		_spr_buf,X
@@ -1712,21 +1712,21 @@ _obj_spr_clipC_insert:
 		PLA
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		CLC
 		ADC		_spr_insert_args._pos._ROW
 		STA		_spr_buf,X
 		INX
 		INY
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		STA		_spr_buf,X
 		INX
 		INY
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		STA		_spr_buf,X
 		INX
 		INY
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		CLC
 		ADC		_spr_insert_args._pos._COL
 		STA		_spr_buf,X
@@ -1898,14 +1898,14 @@ _get_cur_obj_map_ptr:
 ;		LDA		_wram_col_ofs_list_lo,Y
 ;		CLC
 ;		ADC		_cur_obj_pos._COL
-;		STA		_tmp15
+;		STA		_ptr15
 ;		LDA		_wram_col_ofs_list_hi,Y
 ;		ADC		#$00
-;		STA		_tmp15+1
-; FIX: WRANING, make sure wram_map_buf is at the beginning of the page, instead
+;		STA		_ptr15+1
+; FIX: WRANING, make sure wram_city_map is at the beginning of the page, instead
 ; use full 16-bit addition
 ;
-		BUFPOS	_tmp15,_cur_obj_pos._COL,_cur_obj_pos._ROW,#$4C,#>[_wram_map_buf]
+		BUFPOS	_ptr15,_cur_obj_pos._COL,_cur_obj_pos._ROW,#$4C,#>[_city_map]
 		RTS
 
 ; FIX: common dir delta list
@@ -1925,159 +1925,159 @@ _obj_dir_delta_list:
 ; hardware MUL usage, however, to speed up we may use similar tables
 ; to mul instead, need to check if it will be faster
 ;_wram_col_ofs_list_lo:
-;		.BYTE	<[_wram_map_buf]
-;		.BYTE	<[_wram_map_buf+$4C]
-;		.BYTE	<[_wram_map_buf+$98]
-;		.BYTE	<[_wram_map_buf+$E4]
-;		.BYTE	<[_wram_map_buf+$130]
-;		.BYTE	<[_wram_map_buf+$17C]
-;		.BYTE	<[_wram_map_buf+$1C8]
-;		.BYTE	<[_wram_map_buf+$214]
-;		.BYTE	<[_wram_map_buf+$260]
-;		.BYTE	<[_wram_map_buf+$2AC]
-;		.BYTE	<[_wram_map_buf+$2F8]
-;		.BYTE	<[_wram_map_buf+$344]
-;		.BYTE	<[_wram_map_buf+$390]
-;		.BYTE	<[_wram_map_buf+$3DC]
-;		.BYTE	<[_wram_map_buf+$428]
-;		.BYTE	<[_wram_map_buf+$474]
-;		.BYTE	<[_wram_map_buf+$4C0]
-;		.BYTE	<[_wram_map_buf+$50C]
-;		.BYTE	<[_wram_map_buf+$558]
-;		.BYTE	<[_wram_map_buf+$5A4]
-;		.BYTE	<[_wram_map_buf+$5F0]
-;		.BYTE	<[_wram_map_buf+$63C]
-;		.BYTE	<[_wram_map_buf+$688]
-;		.BYTE	<[_wram_map_buf+$6D4]
-;		.BYTE	<[_wram_map_buf+$720]
-;		.BYTE	<[_wram_map_buf+$76C]
-;		.BYTE	<[_wram_map_buf+$7B8]
-;		.BYTE	<[_wram_map_buf+$804]
-;		.BYTE	<[_wram_map_buf+$850]
-;		.BYTE	<[_wram_map_buf+$89C]
-;		.BYTE	<[_wram_map_buf+$8E8]
-;		.BYTE	<[_wram_map_buf+$934]
-;		.BYTE	<[_wram_map_buf+$980]
-;		.BYTE	<[_wram_map_buf+$9CC]
-;		.BYTE	<[_wram_map_buf+$A18]
-;		.BYTE	<[_wram_map_buf+$A64]
-;		.BYTE	<[_wram_map_buf+$AB0]
-;		.BYTE	<[_wram_map_buf+$AFC]
-;		.BYTE	<[_wram_map_buf+$B48]
-;		.BYTE	<[_wram_map_buf+$B94]
-;		.BYTE	<[_wram_map_buf+$BE0]
-;		.BYTE	<[_wram_map_buf+$C2C]
-;		.BYTE	<[_wram_map_buf+$C78]
-;		.BYTE	<[_wram_map_buf+$CC4]
-;		.BYTE	<[_wram_map_buf+$D10]
-;		.BYTE	<[_wram_map_buf+$D5C]
-;		.BYTE	<[_wram_map_buf+$DA8]
-;		.BYTE	<[_wram_map_buf+$DF4]
-;		.BYTE	<[_wram_map_buf+$E40]
-;		.BYTE	<[_wram_map_buf+$E8C]
-;		.BYTE	<[_wram_map_buf+$ED8]
-;		.BYTE	<[_wram_map_buf+$F24]
-;		.BYTE	<[_wram_map_buf+$F70]
-;		.BYTE	<[_wram_map_buf+$FBC]
-;		.BYTE	<[_wram_map_buf+$1008]
-;		.BYTE	<[_wram_map_buf+$1054]
-;		.BYTE	<[_wram_map_buf+$10A0]
-;		.BYTE	<[_wram_map_buf+$10EC]
-;		.BYTE	<[_wram_map_buf+$1138]
-;		.BYTE	<[_wram_map_buf+$1184]
-;		.BYTE	<[_wram_map_buf+$11D0]
-;		.BYTE	<[_wram_map_buf+$121C]
-;		.BYTE	<[_wram_map_buf+$1268]
-;		.BYTE	<[_wram_map_buf+$12B4]
-;		.BYTE	<[_wram_map_buf+$1300]
-;		.BYTE	<[_wram_map_buf+$134C]
-;		.BYTE	<[_wram_map_buf+$1398]
-;		.BYTE	<[_wram_map_buf+$13E4]
-;		.BYTE	<[_wram_map_buf+$1430]
-;		.BYTE	<[_wram_map_buf+$147C]
-;		.BYTE	<[_wram_map_buf+$14C8]
-;		.BYTE	<[_wram_map_buf+$1514]
-;		.BYTE	<[_wram_map_buf+$1560]
-;		.BYTE	<[_wram_map_buf+$15AC]
-;		.BYTE	<[_wram_map_buf+$15F8]
-;		.BYTE	<[_wram_map_buf+$1644]
+;		.BYTE	<[_city_map]
+;		.BYTE	<[_city_map+$4C]
+;		.BYTE	<[_city_map+$98]
+;		.BYTE	<[_city_map+$E4]
+;		.BYTE	<[_city_map+$130]
+;		.BYTE	<[_city_map+$17C]
+;		.BYTE	<[_city_map+$1C8]
+;		.BYTE	<[_city_map+$214]
+;		.BYTE	<[_city_map+$260]
+;		.BYTE	<[_city_map+$2AC]
+;		.BYTE	<[_city_map+$2F8]
+;		.BYTE	<[_city_map+$344]
+;		.BYTE	<[_city_map+$390]
+;		.BYTE	<[_city_map+$3DC]
+;		.BYTE	<[_city_map+$428]
+;		.BYTE	<[_city_map+$474]
+;		.BYTE	<[_city_map+$4C0]
+;		.BYTE	<[_city_map+$50C]
+;		.BYTE	<[_city_map+$558]
+;		.BYTE	<[_city_map+$5A4]
+;		.BYTE	<[_city_map+$5F0]
+;		.BYTE	<[_city_map+$63C]
+;		.BYTE	<[_city_map+$688]
+;		.BYTE	<[_city_map+$6D4]
+;		.BYTE	<[_city_map+$720]
+;		.BYTE	<[_city_map+$76C]
+;		.BYTE	<[_city_map+$7B8]
+;		.BYTE	<[_city_map+$804]
+;		.BYTE	<[_city_map+$850]
+;		.BYTE	<[_city_map+$89C]
+;		.BYTE	<[_city_map+$8E8]
+;		.BYTE	<[_city_map+$934]
+;		.BYTE	<[_city_map+$980]
+;		.BYTE	<[_city_map+$9CC]
+;		.BYTE	<[_city_map+$A18]
+;		.BYTE	<[_city_map+$A64]
+;		.BYTE	<[_city_map+$AB0]
+;		.BYTE	<[_city_map+$AFC]
+;		.BYTE	<[_city_map+$B48]
+;		.BYTE	<[_city_map+$B94]
+;		.BYTE	<[_city_map+$BE0]
+;		.BYTE	<[_city_map+$C2C]
+;		.BYTE	<[_city_map+$C78]
+;		.BYTE	<[_city_map+$CC4]
+;		.BYTE	<[_city_map+$D10]
+;		.BYTE	<[_city_map+$D5C]
+;		.BYTE	<[_city_map+$DA8]
+;		.BYTE	<[_city_map+$DF4]
+;		.BYTE	<[_city_map+$E40]
+;		.BYTE	<[_city_map+$E8C]
+;		.BYTE	<[_city_map+$ED8]
+;		.BYTE	<[_city_map+$F24]
+;		.BYTE	<[_city_map+$F70]
+;		.BYTE	<[_city_map+$FBC]
+;		.BYTE	<[_city_map+$1008]
+;		.BYTE	<[_city_map+$1054]
+;		.BYTE	<[_city_map+$10A0]
+;		.BYTE	<[_city_map+$10EC]
+;		.BYTE	<[_city_map+$1138]
+;		.BYTE	<[_city_map+$1184]
+;		.BYTE	<[_city_map+$11D0]
+;		.BYTE	<[_city_map+$121C]
+;		.BYTE	<[_city_map+$1268]
+;		.BYTE	<[_city_map+$12B4]
+;		.BYTE	<[_city_map+$1300]
+;		.BYTE	<[_city_map+$134C]
+;		.BYTE	<[_city_map+$1398]
+;		.BYTE	<[_city_map+$13E4]
+;		.BYTE	<[_city_map+$1430]
+;		.BYTE	<[_city_map+$147C]
+;		.BYTE	<[_city_map+$14C8]
+;		.BYTE	<[_city_map+$1514]
+;		.BYTE	<[_city_map+$1560]
+;		.BYTE	<[_city_map+$15AC]
+;		.BYTE	<[_city_map+$15F8]
+;		.BYTE	<[_city_map+$1644]
 ;_wram_col_ofs_list_hi:
-;		.BYTE	>[_wram_map_buf]
-;		.BYTE	>[_wram_map_buf+$4C]
-;		.BYTE	>[_wram_map_buf+$98]
-;		.BYTE	>[_wram_map_buf+$E4]
-;		.BYTE	>[_wram_map_buf+$130]
-;		.BYTE	>[_wram_map_buf+$17C]
-;		.BYTE	>[_wram_map_buf+$1C8]
-;		.BYTE	>[_wram_map_buf+$214]
-;		.BYTE	>[_wram_map_buf+$260]
-;		.BYTE	>[_wram_map_buf+$2AC]
-;		.BYTE	>[_wram_map_buf+$2F8]
-;		.BYTE	>[_wram_map_buf+$344]
-;		.BYTE	>[_wram_map_buf+$390]
-;		.BYTE	>[_wram_map_buf+$3DC]
-;		.BYTE	>[_wram_map_buf+$428]
-;		.BYTE	>[_wram_map_buf+$474]
-;		.BYTE	>[_wram_map_buf+$4C0]
-;		.BYTE	>[_wram_map_buf+$50C]
-;		.BYTE	>[_wram_map_buf+$558]
-;		.BYTE	>[_wram_map_buf+$5A4]
-;		.BYTE	>[_wram_map_buf+$5F0]
-;		.BYTE	>[_wram_map_buf+$63C]
-;		.BYTE	>[_wram_map_buf+$688]
-;		.BYTE	>[_wram_map_buf+$6D4]
-;		.BYTE	>[_wram_map_buf+$720]
-;		.BYTE	>[_wram_map_buf+$76C]
-;		.BYTE	>[_wram_map_buf+$7B8]
-;		.BYTE	>[_wram_map_buf+$804]
-;		.BYTE	>[_wram_map_buf+$850]
-;		.BYTE	>[_wram_map_buf+$89C]
-;		.BYTE	>[_wram_map_buf+$8E8]
-;		.BYTE	>[_wram_map_buf+$934]
-;		.BYTE	>[_wram_map_buf+$980]
-;		.BYTE	>[_wram_map_buf+$9CC]
-;		.BYTE	>[_wram_map_buf+$A18]
-;		.BYTE	>[_wram_map_buf+$A64]
-;		.BYTE	>[_wram_map_buf+$AB0]
-;		.BYTE	>[_wram_map_buf+$AFC]
-;		.BYTE	>[_wram_map_buf+$B48]
-;		.BYTE	>[_wram_map_buf+$B94]
-;		.BYTE	>[_wram_map_buf+$BE0]
-;		.BYTE	>[_wram_map_buf+$C2C]
-;		.BYTE	>[_wram_map_buf+$C78]
-;		.BYTE	>[_wram_map_buf+$CC4]
-;		.BYTE	>[_wram_map_buf+$D10]
-;		.BYTE	>[_wram_map_buf+$D5C]
-;		.BYTE	>[_wram_map_buf+$DA8]
-;		.BYTE	>[_wram_map_buf+$DF4]
-;		.BYTE	>[_wram_map_buf+$E40]
-;		.BYTE	>[_wram_map_buf+$E8C]
-;		.BYTE	>[_wram_map_buf+$ED8]
-;		.BYTE	>[_wram_map_buf+$F24]
-;		.BYTE	>[_wram_map_buf+$F70]
-;		.BYTE	>[_wram_map_buf+$FBC]
-;		.BYTE	>[_wram_map_buf+$1008]
-;		.BYTE	>[_wram_map_buf+$1054]
-;		.BYTE	>[_wram_map_buf+$10A0]
-;		.BYTE	>[_wram_map_buf+$10EC]
-;		.BYTE	>[_wram_map_buf+$1138]
-;		.BYTE	>[_wram_map_buf+$1184]
-;		.BYTE	>[_wram_map_buf+$11D0]
-;		.BYTE	>[_wram_map_buf+$121C]
-;		.BYTE	>[_wram_map_buf+$1268]
-;		.BYTE	>[_wram_map_buf+$12B4]
-;		.BYTE	>[_wram_map_buf+$1300]
-;		.BYTE	>[_wram_map_buf+$134C]
-;		.BYTE	>[_wram_map_buf+$1398]
-;		.BYTE	>[_wram_map_buf+$13E4]
-;		.BYTE	>[_wram_map_buf+$1430]
-;		.BYTE	>[_wram_map_buf+$147C]
-;		.BYTE	>[_wram_map_buf+$14C8]
-;		.BYTE	>[_wram_map_buf+$1514]
-;		.BYTE	>[_wram_map_buf+$1560]
-;		.BYTE	>[_wram_map_buf+$15AC]
-;		.BYTE	>[_wram_map_buf+$15F8]
-;		.BYTE	>[_wram_map_buf+$1644]
+;		.BYTE	>[_city_map]
+;		.BYTE	>[_city_map+$4C]
+;		.BYTE	>[_city_map+$98]
+;		.BYTE	>[_city_map+$E4]
+;		.BYTE	>[_city_map+$130]
+;		.BYTE	>[_city_map+$17C]
+;		.BYTE	>[_city_map+$1C8]
+;		.BYTE	>[_city_map+$214]
+;		.BYTE	>[_city_map+$260]
+;		.BYTE	>[_city_map+$2AC]
+;		.BYTE	>[_city_map+$2F8]
+;		.BYTE	>[_city_map+$344]
+;		.BYTE	>[_city_map+$390]
+;		.BYTE	>[_city_map+$3DC]
+;		.BYTE	>[_city_map+$428]
+;		.BYTE	>[_city_map+$474]
+;		.BYTE	>[_city_map+$4C0]
+;		.BYTE	>[_city_map+$50C]
+;		.BYTE	>[_city_map+$558]
+;		.BYTE	>[_city_map+$5A4]
+;		.BYTE	>[_city_map+$5F0]
+;		.BYTE	>[_city_map+$63C]
+;		.BYTE	>[_city_map+$688]
+;		.BYTE	>[_city_map+$6D4]
+;		.BYTE	>[_city_map+$720]
+;		.BYTE	>[_city_map+$76C]
+;		.BYTE	>[_city_map+$7B8]
+;		.BYTE	>[_city_map+$804]
+;		.BYTE	>[_city_map+$850]
+;		.BYTE	>[_city_map+$89C]
+;		.BYTE	>[_city_map+$8E8]
+;		.BYTE	>[_city_map+$934]
+;		.BYTE	>[_city_map+$980]
+;		.BYTE	>[_city_map+$9CC]
+;		.BYTE	>[_city_map+$A18]
+;		.BYTE	>[_city_map+$A64]
+;		.BYTE	>[_city_map+$AB0]
+;		.BYTE	>[_city_map+$AFC]
+;		.BYTE	>[_city_map+$B48]
+;		.BYTE	>[_city_map+$B94]
+;		.BYTE	>[_city_map+$BE0]
+;		.BYTE	>[_city_map+$C2C]
+;		.BYTE	>[_city_map+$C78]
+;		.BYTE	>[_city_map+$CC4]
+;		.BYTE	>[_city_map+$D10]
+;		.BYTE	>[_city_map+$D5C]
+;		.BYTE	>[_city_map+$DA8]
+;		.BYTE	>[_city_map+$DF4]
+;		.BYTE	>[_city_map+$E40]
+;		.BYTE	>[_city_map+$E8C]
+;		.BYTE	>[_city_map+$ED8]
+;		.BYTE	>[_city_map+$F24]
+;		.BYTE	>[_city_map+$F70]
+;		.BYTE	>[_city_map+$FBC]
+;		.BYTE	>[_city_map+$1008]
+;		.BYTE	>[_city_map+$1054]
+;		.BYTE	>[_city_map+$10A0]
+;		.BYTE	>[_city_map+$10EC]
+;		.BYTE	>[_city_map+$1138]
+;		.BYTE	>[_city_map+$1184]
+;		.BYTE	>[_city_map+$11D0]
+;		.BYTE	>[_city_map+$121C]
+;		.BYTE	>[_city_map+$1268]
+;		.BYTE	>[_city_map+$12B4]
+;		.BYTE	>[_city_map+$1300]
+;		.BYTE	>[_city_map+$134C]
+;		.BYTE	>[_city_map+$1398]
+;		.BYTE	>[_city_map+$13E4]
+;		.BYTE	>[_city_map+$1430]
+;		.BYTE	>[_city_map+$147C]
+;		.BYTE	>[_city_map+$14C8]
+;		.BYTE	>[_city_map+$1514]
+;		.BYTE	>[_city_map+$1560]
+;		.BYTE	>[_city_map+$15AC]
+;		.BYTE	>[_city_map+$15F8]
+;		.BYTE	>[_city_map+$1644]
 
 _obj_spr_tbl_lib:
 		.WORD	_obj0_spr_lib
@@ -3470,7 +3470,7 @@ loc_88CD1:
 		MOVW	_spr_insert_raw_args._pos,_cur_game_cursor_scr_pos
 		JMP		_spr_lib_raw_insert
 loc_88CE0:
-		LDX		_const_palette_selected_idx
+		LDX		_constr_palette_selected_idx
 		LDA		_constr_building_sizes_list,X
 		CPX		#$0C
 		BNE		loc_88CEC
@@ -3496,14 +3496,14 @@ loc_88CEC:
 _spr_lib_raw_insert:
 		LDX		_spr_insert_raw_args._idx
 		LDA		_spr_lib_lo,X
-		STA		_tmp15
+		STA		_ptr15
 		LDA		_spr_lib_hi,X
-		STA		_tmp15+1
+		STA		_ptr15+1
 		DEC		_spr_insert_raw_args._pos._ROW
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_88C9C:
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		CMP		#$80
 		BEQ		loc_88CC5
 		INY
@@ -3511,15 +3511,15 @@ loc_88C9C:
 		ADC		_spr_insert_raw_args._pos._ROW
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		INY
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		INY
 		STA		_spr_buf,X
 		INX
-		LDA		(_tmp15),Y
+		LDA		(_ptr15),Y
 		INY
 		CLC
 		ADC		_spr_insert_raw_args._pos._COL

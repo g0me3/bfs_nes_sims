@@ -543,7 +543,7 @@ _scenario_map_load:
 		JSR		_pal_fade_out					; to load a map, we need access to PPU ROM
 		JSR		_render_off						; shut down the screen then
 		DEC		_mmc5_operation_in_progress_flag
-		JSR		_map_buf_init					; init map buf with BULLDOZERED_GROUND
+		JSR		_city_map_init					; init map buf with BULLDOZERED_GROUND
 		LDA		#$01
 		STA		_MMC5_CHR_SIZE					; set CHR bank size 4K
 		JSR		_apu_dpcm_forbid				; somehow dpcm may interfer with process, disable it
@@ -563,10 +563,10 @@ _scenario_map_load:
 		STA		_tmp2							; of two-tile sctructures used as packing
 		LDA		_scenario_map_dicts_lib_hi,Y
 		STA		_tmp3
-		MOVWO	_tmp4,_wram_map_buf				; load wram map buf ptr as dst ptr
-		JSR		_sram_write_enable						; enable wram bank
+		MOVWO	_tmp4,_city_map				; load wram map buf ptr as dst ptr
+		JSR		_sram_write_enable				; enable wram bank
 		JSR		_scenario_map_unpack			; do unpack
-		JSR		_sram_write_disable						; disable back
+		JSR		_sram_write_disable				; disable back
 		LDA		#$03
 		STA		_MMC5_CHR_SIZE					; restore CHR bank size 1K
 		JSR		_apu_dpcm_allow					; allow dpcm back
@@ -650,10 +650,10 @@ _scenario_map_put_block:
 		BEQ		loc_2446F						; tile would be non _MAP_GROUND0, so skip it
 		INCW	_tmp4							; this way we don't need to store actual pos
 		LDA		_tmp4							; of the buildings in row.
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BNE		.map_tile_fetch
 		LDA		_tmp5
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BNE		.map_tile_fetch					; try again
 		BEQ		.break_unpack					; end of map, break unpack
 loc_2446F:
@@ -738,10 +738,10 @@ loc_244D9:
 ;loc_244DA:
 		INCW	_tmp4
 		LDA		_tmp4
-		CMP		#<[_power_grid_map_buf]
+		CMP		#<[_power_map]
 		BNE		.exit_map_tile_store
 		LDA		_tmp5
-		CMP		#>[_power_grid_map_buf]
+		CMP		#>[_power_map]
 		BNE		.exit_map_tile_store
 .break_unpack:
 		PLA
@@ -1720,7 +1720,7 @@ _game_vars_init:
 		LDX		#$00								; X=A=0
 		TXA
 loc_1043C4:
-		STA		_wram_graphs,X						; graphs data clear
+		STA		_graphs,X						; graphs data clear
 		INX
 		CPX		#$78
 		BNE		loc_1043C4
@@ -1843,7 +1843,7 @@ loc_1044A3:
 		STA		_max_population_dencity_pos._COL
 		STA		_max_population_dencity_pos._ROW
 		JSR		_sram_write_enable
-		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
+		MOVWO	_tmpE6,_power_map			; clear power grid + traffic maps
 ; REDUNDANT, for some reason they clear $570 instead of full $5A4
 ;		LDX		#$05
 ;		LDY		#$00
@@ -1865,7 +1865,7 @@ loc_1044A3:
 		LDX		#$05
 		LDY		#$A4
 		JSR		_clear_buf
-		MOVWO	_tmpE6,_land_value_map_buf			; clear the rest of the statistic maps
+		MOVWO	_tmpE6,_land_value_map			; clear the rest of the statistic maps
 ; -
 ; REDUNDANT
 ;		LDX		#$03

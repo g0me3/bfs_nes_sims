@@ -68,7 +68,7 @@ _game_state_common:
 		ORA		_ptr0+1							; requests still
 		ORA		_hud_static_redraw_req
 		ORA		_constr_palette_redraw_req
-		ORA		byte_3B
+;		ORA		byte_3B							; REDUNDANT, never written
 		ORA		_constr_palette_update_req
 		ORA		_hud_present_name_draw_req
 		ORA		_RCI_meter_redraw_req
@@ -344,14 +344,14 @@ _game_state07:
 		STA		_game_msg_wnd_active_flag
 		JMP		_game_state_common
 loc_13626D:
-		PUSHB	_const_palette_press_idx
+		PUSHB	_constr_palette_press_idx
 		JSR		_is_constr_palette_item_active
 		PLA
 		BCS		_j_apu_se_error
-		CMP		_const_palette_selected_idx
+		CMP		_constr_palette_selected_idx
 		BEQ		sub_1362C0
-		STA		_cur_const_palette_selected_idx
-		STA		_const_palette_selected_idx
+		STA		_cur_constr_palette_selected_idx
+		STA		_constr_palette_selected_idx
 		TAX
 ;		JSR		_apu_se_consrt_palette_click
 		APUA_SE	_SE_IDX_BCLICK
@@ -447,7 +447,7 @@ _game_state08_build:
 		BEQ		loc_136325
 		JMP		_game_state_common
 loc_136325:
-		LDA		_const_palette_selected_idx
+		LDA		_constr_palette_selected_idx
 		BNE		.other_builds
 		JMP		_bulldoze_area
 .other_builds:
@@ -514,7 +514,7 @@ loc_136389:
 _bulid_large_buildings:
 		LDA		_pad0_autorep_press
 		BPL		loc_1363F5
-		LDA		_const_palette_selected_idx
+		LDA		_constr_palette_selected_idx
 		CMP		#$0D
 		BNE		loc_1363BE
 		LDA		_constr_palette_flags
@@ -534,7 +534,7 @@ loc_1363BE:
 		APUA_SE	_SE_IDX_LBUILD
 		JSR		_bank_build_year_init
 		JSR		_present_remove_from_list
-		LDA		_const_palette_selected_idx
+		LDA		_constr_palette_selected_idx
 		CMP		#$0D
 		BNE		loc_1363F5
 		LDA		#$FF
@@ -1615,7 +1615,7 @@ _building_name_and_cost_hud_draw:
 		LDA		_extnt_queue_pos_head
 		STA		_ptr0+1
 		JSR		_building_name_and_cost_hud_pos_calc	; calc relative nt pos
-		LDA		_const_palette_selected_idx				; check for additional
+		LDA		_constr_palette_selected_idx				; check for additional
 		CMP		#$0B									; buildings
 		BNE		loc_136C1D
 		LDX		_cur_power_type_select_idx				; if power plant selected
@@ -3319,10 +3319,10 @@ loc_13781C:
 loc_13781D:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_137827
-		LDA		_nt_backup_buf1,Y
+		LDA		_nt_backup1,Y
 		JMP		loc_13782A
 loc_137827:
-		LDA		_nt_backup_buf0,Y
+		LDA		_nt_backup0,Y
 loc_13782A:
 		INY
 		PPUQMOVA
@@ -3355,10 +3355,10 @@ loc_137880:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_13788A
 loc_137884:
-		LDA		_nt_backup_buf1,Y
+		LDA		_nt_backup1,Y
 		JMP		loc_13788D
 loc_13788A:
-		LDA		_nt_backup_buf0,Y
+		LDA		_nt_backup0,Y
 loc_13788D:
 		INY
 		PPUQMOVA
@@ -4073,7 +4073,7 @@ loc_137E86:
 		MOVWI	word_6C,$01DF
 		RTS
 loc_137E93:
-		BUFPOS	_tmp6E,_tmp_tile_pos._COL,_tmp_tile_pos._ROW,#$4C,#>[_wram_map_buf]	; DST=(_tmp_tile_pos._ROW*#$4C+_tmp_tile_pos._COL)+#>[_wram_map_buf]00
+		BUFPOS	_tmp6E,_tmp_tile_pos._COL,_tmp_tile_pos._ROW,#$4C,#>[_city_map]	; DST=(_tmp_tile_pos._ROW*#$4C+_tmp_tile_pos._COL)+#>[_city_map]00
 		BNE		loc_137EB5
 loc_137EAF:
 		INCW	_tmp6E

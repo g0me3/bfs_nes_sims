@@ -1267,13 +1267,13 @@ loc_EA9AD:
 		CMP		#$FF
 		BNE		loc_EA9CA
 		JSR		sub_EA9D9
-		LDX		#<[_wram_map_buf+$D0]
+		LDX		#<[_city_map+$D0]
 		LDA		_ptr0
 		LDY		_cur_info_maps_button_idx
 		BEQ		loc_EA9C5
-		LDX		#<[_wram_map_buf+$50]
+		LDX		#<[_city_map+$50]
 		CLC
-		ADC		#>[_wram_map_buf+$50]
+		ADC		#>[_city_map+$50]
 loc_EA9C5:
 		STA		_tmp4
 		STX		_tmp5
@@ -1307,10 +1307,10 @@ loc_EA789:
 		ASL
 		TAY
 		CLC
-		LDA		#<[_power_grid_map_buf]
+		LDA		#<[_power_map]
 		ADC		word_EB57A,Y
 		STA		_ptr0
-		LDA		#>[_power_grid_map_buf]
+		LDA		#>[_power_map]
 		ADC		word_EB57A+1,Y
 		STA		_ptr0+1
 		LDA		_mini_map_cur_col
@@ -1410,10 +1410,10 @@ _mini_map4_draw:
 		ASL
 		TAY
 		CLC
-		LDA		#<[_traffic_density_map_buf]
+		LDA		#<[_traffic_map]
 		ADC		word_EB57A,Y
 		STA		_ptr0
-		LDA		#>[_traffic_density_map_buf]
+		LDA		#>[_traffic_map]
 		ADC		word_EB57A+1,Y
 		STA		_ptr0+1
 		LDA		_mini_map_cur_col
@@ -3421,16 +3421,16 @@ word_EB57A:
 		.WORD	$286
 		.WORD	$2AC
 off_EB5A0:
-		.WORD	_tmp_recalc_bufs
-		.WORD	_power_grid_map_buf
-		.WORD	_pop_dencity_map_buf
-		.WORD	_pop_growth_map_buf
-		.WORD	_traffic_density_map_buf
-		.WORD	_pollution_map_buf
-		.WORD	_crime_level_map_buf
-		.WORD	_land_value_map_buf
-		.WORD	_fire_radius_map_buf
-		.WORD	_police_radius_map_buf
+		.WORD	_tmp_buf
+		.WORD	_power_map
+		.WORD	_pop_dencity_map
+		.WORD	_pop_growth_map
+		.WORD	_traffic_map
+		.WORD	_pollution_map
+		.WORD	_crime_level_map
+		.WORD	_land_value_map
+		.WORD	_fire_map
+		.WORD	_police_map
 
 ; REDUNDANT, merged, moved to system bank
 ;_special_tiles_ofs_list:
@@ -3446,25 +3446,25 @@ byte_EB603:
 		.BYTE	$50,$50,$D0,$10,$50,$FF,$FF,$FF,$D0,$FF,$FF,$FF,$10,$FF,$FF,$FF
 		.BYTE	$50,$50,$50,$50,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF
 _mini_map_wram_ofs_list:
-		.WORD	_wram_map_buf
-		.WORD	_wram_map_buf+$130
-		.WORD	_wram_map_buf+$260
-		.WORD	_wram_map_buf+$390
-		.WORD	_wram_map_buf+$4C0
-		.WORD	_wram_map_buf+$5F0
-		.WORD	_wram_map_buf+$720
-		.WORD	_wram_map_buf+$850
-		.WORD	_wram_map_buf+$980
-		.WORD	_wram_map_buf+$AB0
-		.WORD	_wram_map_buf+$BE0
-		.WORD	_wram_map_buf+$D10
-		.WORD	_wram_map_buf+$E40
-		.WORD	_wram_map_buf+$F70
-		.WORD	_wram_map_buf+$10A0
-		.WORD	_wram_map_buf+$11D0
-		.WORD	_wram_map_buf+$1300
-		.WORD	_wram_map_buf+$1430
-		.WORD	_wram_map_buf+$1560
+		.WORD	_city_map
+		.WORD	_city_map+$130
+		.WORD	_city_map+$260
+		.WORD	_city_map+$390
+		.WORD	_city_map+$4C0
+		.WORD	_city_map+$5F0
+		.WORD	_city_map+$720
+		.WORD	_city_map+$850
+		.WORD	_city_map+$980
+		.WORD	_city_map+$AB0
+		.WORD	_city_map+$BE0
+		.WORD	_city_map+$D10
+		.WORD	_city_map+$E40
+		.WORD	_city_map+$F70
+		.WORD	_city_map+$10A0
+		.WORD	_city_map+$11D0
+		.WORD	_city_map+$1300
+		.WORD	_city_map+$1430
+		.WORD	_city_map+$1560
 _mini_map_ppu_col_ofs_list:
 		.BYTE	$09,$25
 		.BYTE	$29,$25
