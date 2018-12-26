@@ -1672,6 +1672,7 @@ _sram_sum_reinit:
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_init:
+		JSR		_sram_on
 		JSR		_sram_sum_calc
 		LDA		_sram_data_crc
 		CMP		_tmp2
@@ -1685,7 +1686,7 @@ _sram_init:
 		STA		_city._all_scenarios_are_clear_ram_flag
 		LDA		_sram_has_saved_city_data_flag
 		STA		_has_saved_city_data_flag
-		RTS
+		JMP		_sram_off
 loc_59C0E:
 		LDA		#>[_land_value_map_buf]			; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
@@ -1702,7 +1703,7 @@ loc_59C1A:
 		CPX		#$A0
 		BNE		loc_59C1A
 		INC		_sram_data_crc
-		RTS
+		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_sum_calc:

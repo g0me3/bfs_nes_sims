@@ -3,6 +3,8 @@
 
 		BANK_START $F6
 
+		SECTION_START 902
+
 ; =============== S U B	R O U T	I N E =======================================
 _scr_chr_vars_init:
 		LDA		_ppu_ctrl_shadow
@@ -131,6 +133,10 @@ _scr_res_wnd_close:
 		STA		_scr_res_window_opened_flag
 		RTS
 
+		SECTION_END 902
+
+		SECTION_START 903
+
 ; =============== S U B	R O U T	I N E =======================================
 _budget_scr_tax_adjust:
 		LDA		_tmp584
@@ -209,6 +215,23 @@ loc_A017A:
 		STA		_tax_alloc,Y
 		RTS
 
+_fund_reqest_vars_list:
+		.WORD	_fund_request_tax
+		.WORD	_fund_request_fire
+		.WORD	_fund_request_police
+		.WORD	_fund_request_trans
+		.WORD	_fund_request_education
+		.WORD	0
+_hex_to_dec_9999_simple_tbl:
+		.WORD	1
+		.WORD	10
+		.WORD	100
+		.WORD	1000
+
+		SECTION_END 903
+
+		SECTION_START 904
+
 ; =============== S U B	R O U T	I N E =======================================
 sub_A0183:
 		EXTQSTART
@@ -284,7 +307,7 @@ sub_A01DB:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_A01E9:
-		LDY		#<[byte_A03A5]					; TODO rearrange to use macro
+		LDY		#<[byte_A03A5]
 		STY		_ptr0
 		LDY		#>[byte_A03A5]
 		STY		_ptr0+1
@@ -402,7 +425,6 @@ loc_A0266:
 		EXTQEND
 		JMP		_flush_wait_0
 
-
 ; =============== S U B	R O U T	I N E =======================================
 _strcpy_lib_ex:
 		STA		_tmp4
@@ -512,18 +534,6 @@ byte_A0378:
 		.BYTE	$08,$18
 byte_A037A:
 		.BYTE	$E9,$D9
-_fund_reqest_vars_list:
-		.WORD	_fund_request_tax
-		.WORD	_fund_request_fire
-		.WORD	_fund_request_police
-		.WORD	_fund_request_trans
-		.WORD	_fund_request_education
-		.WORD	0
-_hex_to_dec_9999_simple_tbl:
-		.WORD	1
-		.WORD	10
-		.WORD	100
-		.WORD	1000
 byte_A03A5:
 		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43
 		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43
@@ -1172,5 +1182,7 @@ byte_A1A1A:
 		.BYTE	$04,$04,$04,$97,$06,$59,$93,$05,$91,$9C,$07,$05,$3C,$86,$F0,$21
 		.BYTE	$04,$9F,$3E,$58,$3F,$00,$02,$38,$44,$08,$83,$07,$DF,$28,$00,$87
 		.BYTE	$03,$F0,$27,$00,$FF
+
+		SECTION_END 904
 
 		BANK_END F6,$A000

@@ -516,29 +516,13 @@ loc_1504B2:
 loc_1504BF:
 		ASL
 		TAX
-		LDA		_buildings_cost_list,X
+		LDA		_buildings_prices_list,X
 		STA		_money_delta
 		INX
-		LDA		_buildings_cost_list,X
+		LDA		_buildings_prices_list,X
 		STA		_money_delta+1
 		RTS
-_buildings_cost_list:
-		.BYTE	$01,$00
-		.BYTE	$0A,$00
-		.BYTE	$05,$00
-		.BYTE	$14,$00
-		.BYTE	$0A,$00
-		.BYTE	$64,$00
-		.BYTE	$64,$00
-		.BYTE	$64,$00
-		.BYTE	$F4,$01
-		.BYTE	$F4,$01
-		.BYTE	$B8,$0B
-		.BYTE	$B8,$0B
-		.BYTE	$88,$13
-		.BYTE	$64,$00
-		.BYTE	$88,$13
-		.BYTE	$10,$27
+
 _presents_cost_idx_list:
 		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D
 
@@ -1219,7 +1203,7 @@ loc_1509B5:
 		LDX		#$BD
 loc_1509B7:
 		STX		byte_CB
-		FJSRA	_money_recalc,PRG7,PRG3
+		FJSRA	_money_subtract,PRG7,PRG3
 		BCS		loc_1509C3
 		RTS
 loc_1509C3:

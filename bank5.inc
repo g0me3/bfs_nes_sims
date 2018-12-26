@@ -309,11 +309,11 @@ locret_88BFE:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_flying_dst_test_adjust:
-		LDA		_cur_obj_pos._COL					; we have dst pos and
-		CMP		_cur_dst_pos._COL					; relative vector to it
+		LDA		_cur_obj_pos._COL				; we have dst pos and
+		CMP		_cur_dst_pos._COL				; relative vector to it
 		BEQ		.test_vert						; so we decide the direction
 		BCS		.fly_left_test_hor
-		LDA		_cur_obj_pos._ROW					; fly right, test hor
+		LDA		_cur_obj_pos._ROW				; fly right, test hor
 		CMP		_cur_dst_pos._ROW
 		BEQ		.fly_right
 		BCC		.fly_right_down
@@ -545,7 +545,7 @@ _obj_map_tile_dir_buf_ofs_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_ship_max_range_test:
-		LDA		_cur_obj_pos._COL					; here we should decide if we can
+		LDA		_cur_obj_pos._COL				; here we should decide if we can
 		BEQ		.ship_leftmost_pos				; go in the selected direction
 		CMP		#$4B
 		BEQ		.ship_rightmost_pos
@@ -629,7 +629,7 @@ _obj_train_dst_test:
 loc_88357:
 		CPX		#$04
 		BNE		locret_8836D					; if timers are max
-		LDA		_cur_obj_pos._COL					; test if we in dest point
+		LDA		_cur_obj_pos._COL				; test if we in dest point
 		CMP		_obj_dst_pos._train._COL
 		BNE		locret_8836D
 		LDA		_cur_obj_pos._ROW

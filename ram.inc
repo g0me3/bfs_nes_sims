@@ -48,7 +48,7 @@ _nmi_flag:
 		.BYTE	0
 byte_13_unused:
 		.BYTE	0
-_scroll_mode_idx:
+_irq_sub_idx:
 		.BYTE	0
 _tmp15:
 		.BYTE	0,0
@@ -95,7 +95,7 @@ _money_delta:
 _hud_money_redraw_req:
 		.BYTE	0
 byte_37:
-		.BYTE	0
+		.BYTE	0								; REDUNDANT, unused var
 _game_state_idx:
 		.BYTE	0
 byte_39:
@@ -1174,12 +1174,12 @@ _PAD0_REG:
 _PAD1_REG:
 		.BYTE 0
 
-		ORG $4083
-
-byte_4083:
-		.BYTE	0
-byte_4084:
-		.BYTE	0
+;		ORG $4083
+;
+;byte_4083:
+;		.BYTE	0
+;byte_4084:
+;		.BYTE	0
 
 		ORG	$5100
 

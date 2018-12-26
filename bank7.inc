@@ -102,23 +102,25 @@ loc_B815F:
 		SEC										; money not enough C=1
 		RTS
 
-_buildings_prices_list:
-		.WORD	1
-		.WORD	10
-		.WORD	5
-		.WORD	20
-		.WORD	10
-		.WORD	100
-		.WORD	100
-		.WORD	100
-		.WORD	500
-		.WORD	500
-		.WORD	3000
-		.WORD	3000
-		.WORD	5000
-		.WORD	0
-		.WORD	5000
-		.WORD	10000
+; REDUNDANT, duplicated list of building costs here
+;
+;_buildings_prices_list:
+;		.WORD	1
+;		.WORD	10
+;		.WORD	5
+;		.WORD	20
+;		.WORD	10
+;		.WORD	100
+;		.WORD	100
+;		.WORD	100
+;		.WORD	500
+;		.WORD	500
+;		.WORD	3000
+;		.WORD	3000
+;		.WORD	5000
+;		.WORD	0								; BUG? for some reason, Prize biulding here costs 0
+;		.WORD	5000							; maybe because to indicate that there are any in any case
+;		.WORD	10000
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B8183:
@@ -132,7 +134,7 @@ sub_B8183:
 		SEC
 		BCS		loc_B81C5
 loc_B8194:
-		LDA		_city._game_flags
+		LDA		_city._game_flags			; test autobuldozer flag
 		LSR
 		BCC		loc_B81C8
 		LDA		byte_C7
@@ -151,7 +153,7 @@ loc_B8194:
 loc_B81B4:
 		INCW	_money_delta
 loc_B81BA:
-		JSR		_money_recalc
+		JSR		_money_subtract
 		BCS		locret_B81C4
 		LDA		#$FF
 		STA		byte_CA
@@ -239,7 +241,7 @@ loc_B823F:
 		LDA		#$BB
 loc_B8245:
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 loc_B824B:
 		DEC		word_C1+1
@@ -320,7 +322,7 @@ loc_B82CA:
 		LDA		#$E0
 loc_B82CC:
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 loc_B82D2:
 		PLA
@@ -334,7 +336,7 @@ loc_B82DD:
 		LDA		#$E1
 loc_B82DF:
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 loc_B82E5:
 		PLA
@@ -343,14 +345,14 @@ loc_B82E6:
 		PLA
 		LDA		#$E2
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 loc_B82F0:
 		PLA
 loc_B82F1:
 		LDA		#$E3
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 loc_B82F9:
 		PLA
@@ -359,14 +361,14 @@ loc_B82FA:
 		PLA
 		LDA		#$E4
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 loc_B8304:
 		PLA
 loc_B8305:
 		LDA		#$E5
 		STA		byte_CA
-		JMP		_money_recalc
+		JMP		_money_subtract
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -501,7 +503,7 @@ loc_B83B6:
 locret_B83C9:
 		RTS
 loc_B83CA:
-		JSR		_money_recalc
+		JSR		_money_subtract
 		BCS		locret_B83C9
 		RTS
 
@@ -599,12 +601,15 @@ loc_B845E:
 		JMP		loc_B8402
 
 ; =============== S U B	R O U T	I N E =======================================
-_money_recalc:
-		LDA		_city._game_flags
+; subtracts the delta amount from money if possible, return C=0 if sucess
+; return subtracted back, return C=1 if money isn't enough
+;
+_money_subtract:
+		LDA		_city._game_flags			; debug cheat, free construction
 		AND		#$10
 		BNE		loc_B8483
+		LDA		_city._money				; subtract money with delta
 		SEC
-		LDA		_city._money
 		SBC		_money_delta
 		STA		_city._money
 		LDA		_city._money+1
@@ -618,7 +623,7 @@ loc_B8483:
 		CLC
 		RTS
 loc_B8485:
-		LDA		_city._money
+		LDA		_city._money				; if exceeded, add back
 		ADC		_money_delta
 		STA		_city._money
 		LDA		_city._money+1

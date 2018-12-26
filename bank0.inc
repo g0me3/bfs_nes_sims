@@ -33,12 +33,12 @@ loc_A014:
 _apu_init:
 		LDA		#$40
 		STA		_PAD1_REG
-		LDA		#$80
-		STA		byte_4083
+;		LDA		#$80							; debug leftovers
+;		STA		byte_4083
 		ASL
 		STA		_APU_DMC_FREQ
 		STA		_APU_DMC_LOAD
-		STA		byte_4083
+;		STA		byte_4083						; debug leftovers
 		STA		_apu_mus_tri_shadow+3
 		LDA		#$0F
 		STA		_APU_STATUS

@@ -78,7 +78,7 @@ _game_state_common:
 		ORA		_game_core_stop_flag
 		ORA		_hud_money_redraw_req
 		ORA		_scroll_msg_active_flag
-		STA		byte_37
+;		STA		byte_37							; REDUNDANT, never read!
 		ORA		byte_5C
 		ORA		_hud_redraw_req
 		ORA		_game_msg_wnd_active_flag
@@ -1702,8 +1702,8 @@ loc_136D4F:
 _airport_build_menu:
 		JSR		_spr_clear
 		JSR		_airport_build_wnd_draw
-		LDA		#$FF
-		STA		byte_37
+;		LDA		#$FF							; REDUNDANT, never read!
+;		STA		byte_37
 		JSR		_building_name_and_cost_hud_draw
 loc_136D5F:
 		JSR		_wait_for_nmi
@@ -1768,8 +1768,8 @@ _airport_build_wnd_draw:
 _power_build_menu:
 		JSR		_spr_clear
 		JSR		_power_build_wnd_draw
-		LDA		#$FF
-		STA		byte_37
+;		LDA		#$FF							; REDUNDANT, never read!
+;		STA		byte_37
 		JSR		_building_name_and_cost_hud_draw
 loc_136DD6:
 		JSR		_wait_for_nmi

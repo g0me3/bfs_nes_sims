@@ -393,8 +393,8 @@ _present_icon_extnt_tlmE:
 ; far routine for bank 0C
 ;
 _presents_build_menu:
-		LDA		#$FF
-		STA		byte_37
+;		LDA		#$FF							; REDUNDANT: never read!
+;		STA		byte_37
 		LDA		#$00
 		STA		_cur_present_select_idx
 		JSR		_building_name_and_cost_hud_draw

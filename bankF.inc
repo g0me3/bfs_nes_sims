@@ -3,6 +3,9 @@
 
 		BANK_START $FF
 
+aIshi:
+		.BYTE	"ISHI",$FF
+
 		INCBIN "..\copyrights.txt"
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -80,8 +83,8 @@ loc_18A053:
 		STA		_tmp9
 		LDA		#$C0
 		STA		_PAD1_REG
-		LDA		#$00
-		STA		byte_4084+$F8C					; unknown register, probably debug leftover
+;		LDA		#$00							; unknown register, probably debug leftover
+;		STA		byte_4084+$F8C
 		FJSRA	_apu_init,SRAM,PRG0
 		LDA		#$80
 		STA		_apu_mus_idx_req
@@ -91,29 +94,53 @@ loc_18A09D:
 		STA		_pal_bg_buf,X
 		DEX
 		BPL		loc_18A09D
-		LDA		#$03
-		STA		_MMC5_CHR_SIZE
-		LDA		#$00
-		STA		_MMC5_CHR_BANKSA+7
-		LDA		#$02
-		STA		_mmc5_chr_mode_shadow
-		STA		_MMC5_CHR_MODE
-		LDA		#$00
-		STA		_mmc5_sp_mode_shadow
-		STA		_MMC5_SP_MODE
-		LDA		#$00
-		STA		_mmc5_sp_scroll_shadow
-		STA		_MMC5_SP_SCROLL
-		STA		_MMC5_SP_PAGE
-		LDA		#$00
-		STA		_MMC5_NT_MODE
-		LDA		#$FF
-		STA		_MMC5_NT_FILL
-		LDA		#$00
-		STA		_MMC5_AT_FILL
-		LDA		#$00
-		STA		_MMC5_IRQ_ENABLE
-		STA		_title_sub_idx
+; OPTIMIZED
+; -
+		STX		_MMC5_NT_FILL					; X here already $FF!
+		INX
+		STX		_MMC5_IRQ_ENABLE
+		STX		_mmc5_sp_mode_shadow
+		STX		_MMC5_SP_MODE
+		STX		_mmc5_sp_scroll_shadow
+		STX		_MMC5_SP_SCROLL
+		STX		_MMC5_SP_PAGE
+		STX		_MMC5_NT_MODE
+		STX		_MMC5_AT_FILL
+		STX		_MMC5_CHR_BANKSA+7
+		STX		_title_sub_idx					; title sub = 0 by default
+		INX
+		INX
+		STX		_mmc5_chr_mode_shadow
+		STX		_MMC5_CHR_MODE
+		INX
+		STX		_MMC5_CHR_SIZE
+; -
+; REDUNDANT, need more space
+; -
+;		LDA		#$03
+;		STA		_MMC5_CHR_SIZE
+;		LDA		#$00
+;		STA		_MMC5_CHR_BANKSA+7
+;		LDA		#$02
+;		STA		_mmc5_chr_mode_shadow
+;		STA		_MMC5_CHR_MODE
+;		LDA		#$00
+;		STA		_mmc5_sp_mode_shadow
+;		STA		_MMC5_SP_MODE
+;		LDA		#$00
+;		STA		_mmc5_sp_scroll_shadow
+;		STA		_MMC5_SP_SCROLL
+;		STA		_MMC5_SP_PAGE
+;		LDA		#$00
+;		STA		_MMC5_NT_MODE
+;		LDA		#$FF
+;		STA		_MMC5_NT_FILL
+;		LDA		#$00
+;		STA		_MMC5_AT_FILL
+;		LDA		#$00
+;		STA		_MMC5_IRQ_ENABLE
+;		STA		_title_sub_idx
+; -
 		JSR		_spr_clear
 		LDY		#$01
 		STY		_rand_seed
@@ -121,19 +148,23 @@ loc_18A09D:
 		STY		_rand_seed+1
 		INY
 		STY		_rand_seed+2
-		JSR		_thread1_init
+;		JSR		_thread1_init					; REDUNDANT, initialized before game
+		JSR		_game_chr_common_reload			; OPTIMIZED, we only need CHR setup here
+		LDA		#$35
+		STA		_mmc5_chr_banks_shadow+1
+		STA		_MMC5_CHR_BANKSA+1
 		LDX		#$04
-		LDA		#$64
+		LDA		#100
 loc_18A0F0:
 		STA		_funding_level,X
 		DEX
 		BPL		loc_18A0F0
-		JSR		_sram_on
+;		JSR		_sram_on						; REDUNDANT
 		FJSRA	_sram_init,SRAM,PRG3
-		JSR		_sram_off
+;		JSR		_sram_off						; REDUNDANT
 		LDA		#$FF
 		STA		_game_core_state
-		STA		byte_37
+;		STA		byte_37							; REDUNDANT, never read!
 		LDA		#$01
 		STA		_mmc5_chr_mode_shadow
 		STA		_MMC5_CHR_MODE
@@ -170,8 +201,6 @@ _ingame_mode:
 		JSR		_thread1_init
 		FJSRA	_game_start,PRGC,PRGD
 		RTS
-aIshi:
-		.BYTE	"ISHI",$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 NMI:
@@ -181,17 +210,17 @@ NMI:
 		TYA
 		PHA
 		LDA		_nmi_busy_flag
-		BEQ		loc_18A178
+		BEQ		.nmi_normal
 		CLI
 		JSR		_ppu_regs_reload
 		JSR		_ppu_scrolls_reload
 		JSR		_mmc5_scrolls_reload
-		JMP		loc_18A35B
-loc_18A178:
-		INC		_nmi_busy_flag
-		LDA		_mmc5_operation_in_progress_flag
-		BEQ		loc_18A196
-		LDA		_ppu_mask_shadow
+		JMP		.nmi_busy
+.nmi_normal:
+		INC		_nmi_busy_flag					; raise nmi busy flag
+		LDA		_mmc5_operation_in_progress_flag; thread safe routine or mmc
+		BEQ		.nmi_start						; operation in progress, skip
+		LDA		_ppu_mask_shadow				; reload ppu params if render is on
 		AND		#$18
 		BEQ		loc_18A193
 		LDA		#$02
@@ -201,8 +230,8 @@ loc_18A178:
 		JSR		_ppu_scrolls_reload
 		JSR		_mmc5_scrolls_reload
 loc_18A193:
-		JMP		loc_18A359
-loc_18A196:
+		JMP		.nmi_finish
+.nmi_start:
 		LDA		#$02
 		STA		_PPU_OAM_DMA
 		CLI
@@ -414,9 +443,9 @@ loc_18A32E:
 		JSR		_wait_for_mmc5_irq
 loc_18A356:
 		JSR		_extnt_dequeue
-loc_18A359:
+.nmi_finish:
 		DEC		_nmi_busy_flag
-loc_18A35B:
+.nmi_busy:
 		LDA		#$FA
 		STA		_MMC5_PRG_PAGES+1
 		LDA		#$F0
@@ -426,10 +455,10 @@ loc_18A35B:
 		STA		_MMC5_PRG_PAGES+1
 		LDA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		LDA		_cur_thread_idx
-		BEQ		loc_18A382
-		LDA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
+		LDA		_cur_thread_idx					; reload MULs only when switch to THREAD1
+		BEQ		loc_18A382						; thread 0 should be MUL-safe, only using
+		LDA		_mmc5_mul1_shadow				; need to check carefully. the THREAD0 code
+		STA		_MMC5_MUL1						; definitely does not care about MUL params
 		LDA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 loc_18A382:
@@ -455,7 +484,7 @@ loc_18A3A6:
 		LDA		#$00
 		STA		_pal_anim_counter
 loc_18A3B2:
-		LDA		_pad0_held
+		LDA		_pad0_held						; soft-reset test
 		AND		#$F0
 		CMP		#$F0
 		BNE		loc_18A3BD
@@ -562,7 +591,7 @@ loc_18A478:
 		LDA		_scr_mode_idx
 		BNE		loc_18A48B
 		LDA		#$00
-		STA		_scroll_mode_idx
+		STA		_irq_sub_idx
 		LDA		#$1E
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
@@ -572,7 +601,7 @@ loc_18A48B:
 		CMP		#$03
 		BEQ		loc_18A49E
 		LDA		#$02
-		STA		_scroll_mode_idx
+		STA		_irq_sub_idx
 		LDA		#$DE
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
@@ -590,61 +619,64 @@ IRQ:
 		PHA
 		TYA
 		PHA
-		LDA		_MMC5_IRQ_ENABLE
-		LDA		_scroll_mode_idx
-		BEQ		loc_18A4BE
+		LDA		_MMC5_IRQ_ENABLE				; irq clear
+		LDA		_irq_sub_idx
+		BEQ		.irq_mode0
 		CMP		#$01
-		BEQ		sub_18A4E4
+		BEQ		.irq_mode1
 		CMP		#$02
-		BEQ		sub_18A4FB
-loc_18A4B8:
+		BEQ		.irq_mode2
+.irq_exit:
 		PLA
 		TAY
 		PLA
 		TAX
 		PLA
 		RTI
-loc_18A4BE:
-		JSR		_delay
-		JSR		_delay
-		LDA		_scroll_msg_shift_pos
+.irq_mode0:
+		JSR		_delay							; very precise timing here, need to be adjusted
+		JSR		_delay							; somehow if overall timing is changes
+		JSR		_delay							; FIX: need more delay here
+		LDA		_scroll_msg_shift_pos			; starting line of the scroller message
 		LDX		#$00
 		STA		_PPU_SCROLL
 		STX		_PPU_SCROLL
 		LDA		#$01
-		STA		_scroll_mode_idx
+		STA		_irq_sub_idx					; irq chaining
 		LDA		#$26
 		STA		_MMC5_SP_PAGE+1
 		LDA		#$80
-		STA		_MMC5_IRQ_ENABLE
-		JMP		loc_18A4B8
+		STA		_MMC5_IRQ_ENABLE				; irq enable
+		JMP		.irq_exit
 
 ; =============== S U B	R O U T	I N E =======================================
-; WTF?
+; just to skip some clocks...
+; enter/exit takes 6 CLK, JMP - 3 CLK total 15 CLKs
+;
 _delay:
 		JMP		locret_18A4E3
 locret_18A4E3:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_18A4E4:
-		JSR		_delay
+.irq_mode1:
+		JSR		_delay							; scrolling message ends here
 		JSR		_ppu_scrolls_reload
 		LDA		#$02
-		STA		_scroll_mode_idx
+		STA		_irq_sub_idx					; the rest of the screen
 		LDA		#$DE
-		STA		_MMC5_SP_PAGE+1
+		STA		_MMC5_SP_PAGE+1					; restore chr page
 		LDA		#$80
 		STA		_MMC5_IRQ_ENABLE
-		JMP		loc_18A4B8
+		JMP		.irq_exit
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_18A4FB:
-		LDA		#$00
+.irq_mode2:
+		LDA		#$00							; start the game screen
 		STA		_MMC5_IRQ_ENABLE
 		LDA		_APU_STATUS
 		AND		#$10
-		BNE		loc_18A50A
+		BNE		loc_18A50A						; dmc adjust
 		NOP
 		CMP		_ppu_ctrl_shadow
 loc_18A50A:
@@ -660,7 +692,7 @@ loc_18A50C:
 		BEQ		loc_18A51E
 		JSR		_ppu_extnt_data_backup
 loc_18A51E:
-		JMP		loc_18A4B8
+		JMP		.irq_exit
 
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_nmi:
@@ -1572,13 +1604,13 @@ _thread1_init:
 		STA		_game_core_state				; threads core init
 		LDA		#$80
 		STA		_ppu_ctrl_shadow				; initial game CHR banks
-		JSR		_game_chr_common_reload		; OPTIMIZED
+;		JSR		_game_chr_common_reload			; REDUNDANT here
 ;		LDA		#$34							; REDUNDANT, call routine above
 ;		STA		_mmc5_chr_banks_shadow
 ;		STA		_MMC5_CHR_BANKSA				; instead.
-		LDA		#$35
-		STA		_mmc5_chr_banks_shadow+1
-		STA		_MMC5_CHR_BANKSA+1
+;		LDA		#$35
+;		STA		_mmc5_chr_banks_shadow+1
+;		STA		_MMC5_CHR_BANKSA+1
 ;		LDA		#$3A							; REDUNDANT
 ;		STA		_mmc5_chr_banks_shadow+2
 ;		STA		_MMC5_CHR_BANKSA+2
@@ -2094,10 +2126,8 @@ _spr_lib_attr_insert:
 		LDA		#$F2
 		STA		_MMC5_PRG_PAGES+2
 		LDA		#$00							; clip no, attrs yes
-		STA		_tmp17
 		JSR		_spr_lib_insert_ex
-		POPB	_prg_prgA000_shadow
-		STA		_MMC5_PRG_PAGES+2
+		POPB	_MMC5_PRG_PAGES+2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2105,19 +2135,18 @@ _spr_lib_clip_insert:
 		PUSHB	_prg_prg8000_shadow
 		LDA		#$F8
 		STA		_MMC5_PRG_PAGES+1
-		LDA		#$80							; clip yes
-		STA		_tmp17
 		LDA		#$00							; attrs no
 		STA		_spr_insert_args._attr
+		LDA		#$80							; clip yes
 		JSR		_spr_lib_insert_ex
-		POPB	_prg_prg8000_shadow
-		STA		_MMC5_PRG_PAGES+1
+		POPB	_MMC5_PRG_PAGES+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; Common sprite insert routine for all different kind of sprites.
 ;
 _spr_lib_insert_ex:
+		STA		_tmp17
 		LDX		_spr_insert_args._idx
 		LDA		_spr_lib_lo,X
 		STA		_ptr0
@@ -3672,6 +3701,24 @@ _switch:
 		STA		_ptr0+1
 		POPB	_ptr0
 		JMP		(_ptr0)
+
+_buildings_prices_list:
+		.WORD	1
+		.WORD	10
+		.WORD	5
+		.WORD	20
+		.WORD	10
+		.WORD	100
+		.WORD	100
+		.WORD	100
+		.WORD	500
+		.WORD	500
+		.WORD	3000
+		.WORD	3000
+		.WORD	5000
+		.WORD	100
+		.WORD	5000
+		.WORD	10000
 
 _months_lib:
 		.BYTE	_J,_A,_N,$80
