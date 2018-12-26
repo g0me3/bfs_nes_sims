@@ -2452,9 +2452,9 @@ loc_EAFD5:
 		JSR		_budget_funds_alloc_sum_calc	; recalculate sum one more time as we changed allocations here
 		JSR		_budget_funds_rate_recalc		; also recalculate a new rates for funds
 loc_EAFF8:
+; -
 		LDY		#$00
 		STY		_budget_tax_cur_pos
-; -
 loc_EAFFD:
 		JSR		_budget_cur_fund_draw			; now draw calculated values
 		LDY		_budget_tax_cur_pos
@@ -2704,7 +2704,7 @@ _budget_funds_alloc_sum_test:
 		SEC
 loc_EB335:
 		LDA		_budget_money,Y
-		SBC		_budget_funds_alloc_sum,Y
+		SBC		_budget_funds_alloc_sum,Y		; if loan get, result may be negative
 		INY
 		DEX
 		BNE		loc_EB335
@@ -2748,13 +2748,13 @@ loc_EB357:
 		LDA		#$00
 		STA		_budget_fund_alloc,Y			; then zero it. drop that fund at all
 		STA		_budget_fund_alloc+1,Y
-		DEY
+		DEY										; can't be zero here, because last valid value here is 2
 		DEY
 		BNE		loc_EB357						; and go to the upper funding value to readjust
-loc_EB389:
-		BEQ		loc_EB389						; debug assert if we have no money at all, should be impossible
+;loc_EB389:
+;		BEQ		loc_EB389						; REDUNDANT, debug assert should be the case if no money at all
 loc_EB38B:
-		LDA		_budget_fund_alloc,Y					; when we reach positive value, adjust alloc to it so we will have
+		LDA		_budget_fund_alloc,Y			; when we reach positive value, adjust alloc to it so we will have
 		SEC										; allocation for exactly money we have not loess no more
 		SBC		_ptr0
 		STA		_budget_fund_alloc,Y
@@ -2794,7 +2794,6 @@ loc_EB3C4:
 		BPL		loc_EB3C4
 		BIT		_city._bank_flags				; special case if you have loaned
 		BVC		locret_EB3E7					; recalculate loaned sum
-; FIXME
 		LDX		#$03
 		LDY		#$00
 		CLC
@@ -2830,6 +2829,10 @@ _budget_overall_money_draw:
 		JSR		_hex_to_dec9999999				; now convert to decimal string
 		LDA		#$11
 		JSR		_printf_num_lib					; and display
+; ADD, fix negative money
+		LDA		#$DC							; sign "+" by default
+		STA		_tmp6
+; -
 		LDX		#$03
 		LDY		#$00
 		SEC
@@ -2841,10 +2844,31 @@ loc_EB414:
 		DEX
 		BNE		loc_EB414
 		LDA		_tmp2
-		BPL		loc_EB428
-		INC		byte_6CB
+; ADD, fix negative values
+		BPL		loc_EB427
+		INC		_city_gone_broke_flag
+		LDA		#$7F
+		STA		_tmp6							; negative money, set sign "-"
+		LDX		#$03
+		LDY		#$00
+		SEC
+loc_EB426:
+		LDA		_budget_funds_alloc_sum_loan,Y	; calc negative value
+		SBC		_budget_money,Y
+		STA		_ptr0,Y
+		INY
+		DEX
+		BNE		loc_EB426
+loc_EB427:
+		PPUQSTART								; send sign char into ppu queue
+		PPUQMOVB	#$0F,OP_NOP,0
+		PPUQMOVB	#$27,OP_NOP,0
+		PPUQMOVB	#$01,OP_NOP,0
+		PPUQMOVB	_tmp6,OP_NOP,0
+		PPUQEND
+; -
 loc_EB428:
-		JSR		_hex_to_dec9999999				; can't be negative, so just convert to decimal
+		JSR		_hex_to_dec9999999				; BUG: can be negative if loan set
 		LDA		#$13
 		JMP		_printf_num_lib					; and display
 

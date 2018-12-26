@@ -2393,120 +2393,210 @@ _traffic_anim_list:
 		.BYTE	$44,$E2
 		.BYTE	$41,$F1							; road00 high
 		.BYTE	$42,$F1
-		.BYTE	$41,$F1
-		.BYTE	$42,$F1
+; REDUNDANT
+;		.BYTE	$41,$F1
+;		.BYTE	$42,$F1
+; -
+; FIX
+		.BYTE	$48,$D1
+		.BYTE	$48,$D6
+; -
 		.BYTE	$41,$E5							; road01 low
 		.BYTE	$42,$E5
 		.BYTE	$43,$E5
 		.BYTE	$44,$E5
 		.BYTE	$41,$F4							; road01 high
 		.BYTE	$42,$F4
-		.BYTE	$41,$F4
-		.BYTE	$42,$F4
+; REDUNDANT
+;		.BYTE	$41,$F4
+;		.BYTE	$42,$F4
+; -
+; FIX
+		.BYTE	$48,$E0
+		.BYTE	$48,$E5
+; -
 		.BYTE	$41,$E1							; road02 low
 		.BYTE	$42,$E1
 		.BYTE	$43,$E1
 		.BYTE	$44,$E1
 		.BYTE	$41,$F0							; road02 high
 		.BYTE	$42,$F0
-		.BYTE	$41,$F0
-		.BYTE	$42,$F0
+; REDUNDANT
+;		.BYTE	$41,$F0
+;		.BYTE	$42,$F0
+; -
+; FIX
+		.BYTE	$48,$D0
+		.BYTE	$48,$D5
+; -
 		.BYTE	$41,$E4							; road03 low
 		.BYTE	$42,$E4
 		.BYTE	$43,$E4
 		.BYTE	$44,$E4
 		.BYTE	$41,$F3							; road03 high
 		.BYTE	$42,$F3
-		.BYTE	$41,$F3
-		.BYTE	$42,$F3
+; REDUNDANT
+;		.BYTE	$41,$F3
+;		.BYTE	$42,$F3
+; -
+; FIX
+		.BYTE	$48,$D3
+		.BYTE	$48,$D8
+; -
 		.BYTE	$41,$E9							; road04 low
 		.BYTE	$42,$E9
 		.BYTE	$43,$E9
 		.BYTE	$44,$E9
 		.BYTE	$41,$F8							; road04 high
 		.BYTE	$42,$F8
-		.BYTE	$41,$F8
-		.BYTE	$42,$F8
+; REDUNDANT
+;		.BYTE	$41,$F8
+;		.BYTE	$42,$F8
+; -
+; FIX
+		.BYTE	$48,$F0
+		.BYTE	$48,$F5
+; -
 		.BYTE	$41,$EC							; road05 low
 		.BYTE	$42,$EC
 		.BYTE	$43,$EC
 		.BYTE	$44,$EC
 		.BYTE	$41,$FB							; road05 high
 		.BYTE	$42,$FB
-		.BYTE	$41,$FB
-		.BYTE	$42,$FB
+; REDUNDANT
+;		.BYTE	$41,$FB
+;		.BYTE	$42,$FB
+; -
+; FIX
+		.BYTE	$48,$F3
+		.BYTE	$48,$F8
+; -
 		.BYTE	$41,$E6							; road06 low
 		.BYTE	$42,$E6
 		.BYTE	$43,$E6
 		.BYTE	$44,$E6
 		.BYTE	$41,$F5							; road06 high
 		.BYTE	$42,$F5
-		.BYTE	$41,$F5
-		.BYTE	$42,$F5
+; REDUNDANT
+;		.BYTE	$41,$F5
+;		.BYTE	$42,$F5
+; -
+; FIX
+		.BYTE	$48,$E3
+		.BYTE	$48,$E8
+; -
 		.BYTE	$41,$E8							; road07 low
 		.BYTE	$42,$E8
 		.BYTE	$43,$E8
 		.BYTE	$44,$E8
 		.BYTE	$41,$F7							; road07 high
 		.BYTE	$42,$F7
-		.BYTE	$41,$F7
-		.BYTE	$42,$F7
+; REDUNDANT
+;		.BYTE	$41,$F7
+;		.BYTE	$42,$F7
+; -
+; FIX
+		.BYTE	$48,$E1
+		.BYTE	$48,$E6
+; -
 		.BYTE	$41,$E3							; road08 low
 		.BYTE	$42,$E3
 		.BYTE	$43,$E3
 		.BYTE	$44,$E3
 		.BYTE	$41,$F2							; road08 high
 		.BYTE	$42,$F2
-		.BYTE	$41,$F2
-		.BYTE	$42,$F2
+; REDUNDANT
+;		.BYTE	$41,$F2
+;		.BYTE	$42,$F2
+; -
+; FIX
+		.BYTE	$48,$F2
+		.BYTE	$48,$F7
+; -
 		.BYTE	$41,$EB							; road09 low
 		.BYTE	$42,$EB
 		.BYTE	$43,$EB
 		.BYTE	$44,$EB
 		.BYTE	$41,$FA							; road09 high
 		.BYTE	$42,$FA
-		.BYTE	$41,$FA
-		.BYTE	$42,$FA
+; REDUNDANT
+;		.BYTE	$41,$FA
+;		.BYTE	$42,$FA
+; -
+; FIX
+		.BYTE	$48,$D2
+		.BYTE	$48,$D7
+; -
 		.BYTE	$41,$E7							; road0A low
 		.BYTE	$42,$E7
 		.BYTE	$43,$E7
 		.BYTE	$44,$E7
 		.BYTE	$41,$F6							; road0A high
 		.BYTE	$42,$F6
-		.BYTE	$41,$F6
-		.BYTE	$42,$F6
+; REDUNDANT
+;		.BYTE	$41,$F6
+;		.BYTE	$42,$F6
+; -
+; FIX
+		.BYTE	$48,$E2
+		.BYTE	$48,$E7
+; -
 		.BYTE	$41,$EA							; road0B low
 		.BYTE	$42,$EA
 		.BYTE	$43,$EA
 		.BYTE	$44,$EA
 		.BYTE	$41,$F9							; road0B high
 		.BYTE	$42,$F9
-		.BYTE	$41,$F9
-		.BYTE	$42,$F9
+; REDUNDANT
+;		.BYTE	$41,$F9
+;		.BYTE	$42,$F9
+; -
+; FIX
+		.BYTE	$48,$D4
+		.BYTE	$48,$D9
+; -
 		.BYTE	$41,$ED							; road0C low
 		.BYTE	$42,$ED
 		.BYTE	$43,$ED
 		.BYTE	$44,$ED
 		.BYTE	$41,$FC							; road0C high
 		.BYTE	$42,$FC
-		.BYTE	$41,$FC
-		.BYTE	$42,$FC
+; REDUNDANT
+;		.BYTE	$41,$FC
+;		.BYTE	$42,$FC
+; -
+; FIX
+		.BYTE	$48,$F1
+		.BYTE	$48,$F6
+; -
 		.BYTE	$41,$EE							; road0D low
 		.BYTE	$42,$EE
 		.BYTE	$43,$EE
 		.BYTE	$44,$EE
 		.BYTE	$41,$FD							; road0D high
 		.BYTE	$42,$FD
-		.BYTE	$41,$FD
-		.BYTE	$42,$FD
+; REDUNDANT
+;		.BYTE	$41,$FD
+;		.BYTE	$42,$FD
+; -
+; FIX
+		.BYTE	$48,$E4
+		.BYTE	$48,$E9
+; -
 		.BYTE	$41,$EF							; road0E low
 		.BYTE	$42,$EF
 		.BYTE	$43,$EF
 		.BYTE	$44,$EF
 		.BYTE	$41,$FE							; road0E high
 		.BYTE	$42,$FE
-		.BYTE	$41,$FE
-		.BYTE	$42,$FE
+; REDUNDANT
+;		.BYTE	$41,$FE
+;		.BYTE	$42,$FE
+; -
+; FIX
+		.BYTE	$48,$F4
+		.BYTE	$48,$F9
+; -
 ; NEW
 		.BYTE	$08,$EA							; road0F low (water lr)
 		.BYTE	$08,$EB

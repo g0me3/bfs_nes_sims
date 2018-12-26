@@ -992,6 +992,9 @@ loc_1046EB:
 		POPD	_city_taxes_collected			; result is 24-bit
 		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings at all, then skip budget screen
 		ORA		_cur_RCI_levels_sum.INT
+; NOTE, this is where we need to change path to avoid
+; budget screen display
+;
 		BNE		.do_budget_screen
 		LDA		#$0F
 		STA		_fund_rate_police				; default values preventing unnecessary alerts
@@ -1004,6 +1007,7 @@ loc_1046EB:
 loc_1047C7:
 		LDA		_budget_scr_draw_req			; wait for request is clear means that
 		BNE		loc_1047C7						; the budget screen were displayed, and
+; -
 ; REDUNDANT, all cals here are already has been done in budget screen calculations
 ; as against the budget screen, these cals are linear and non-onpimal at all
 ; also, most of these values are already calculated in budget screen
@@ -1030,8 +1034,14 @@ loc_1047E4:
 ;		SUBDW	_city._money,_fund_alloc_police
 ;		SUBDW	_city._money,_fund_alloc_education
 ; -
-; OPTIMIZED
+; OPTIMIZED, ADDED negative city money
+		LDA		_city_gone_broke_flag
+		BEQ		.no_broke
+		MOVD	_city._money,0
+		BEQ		.skip_broke
+.no_broke:
 		SUBD	_city._money,_budget_funds_alloc_sum_loan
+.skip_broke:
 ; -
 		LDA		_city._loan_period				; if loan period isn't zero
 		BEQ		loc_10486C
@@ -2445,7 +2455,8 @@ loc_105204:
 		JSR		_scroll_msg_test
 		LDY		_tmpEA							; keep cur loop counter
 		INY
-		CPY		#$10							; to 0F (max)
+;		CPY		#$10							; REDUNDANT, to 0F (max)
+		CPY		#$18							; ADDED, expanded to 17
 		BNE		loc_105212
 		LDY		#$00							; wrap to 0
 loc_105212:
@@ -2477,6 +2488,14 @@ _scroll_msg_test_lib_lo:
 		.BYTE	<[_scroll_msg0D_test]
 		.BYTE	<[_scroll_msg0E_test]
 		.BYTE	<[_scroll_msg0F_test]
+		.BYTE	<[nullsub_10]					; msg10
+		.BYTE	<[nullsub_10]					; msg11
+		.BYTE	<[nullsub_10]					; msg12
+		.BYTE	<[nullsub_10]					; msg13
+		.BYTE	<[nullsub_10]					; msg14
+		.BYTE	<[_scroll_msg15_test]			; msg15
+		.BYTE	<[nullsub_10]					; msg16
+		.BYTE	<[nullsub_10]					; msg17
 _scroll_msg_test_lib_hi:
 		.BYTE	>[_scroll_msg00_test]
 		.BYTE	>[_scroll_msg01_test]
@@ -2494,6 +2513,14 @@ _scroll_msg_test_lib_hi:
 		.BYTE	>[_scroll_msg0D_test]
 		.BYTE	>[_scroll_msg0E_test]
 		.BYTE	>[_scroll_msg0F_test]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[_scroll_msg15_test]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[nullsub_10]
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_RCI_counts_div4:							; OPTIMIZED, size reduced for c ommon calcs
@@ -2670,6 +2697,14 @@ _scroll_msg0F_test:
 		BCS		nullsub_5
 		CMPWI	_cur_RCI_levels_sum,$0014		; R_C+I_C+C_L>=0.08
 		BCC		nullsub_5
+		JMP		_scroll_msg_start
+
+; ADD, new message when money aren't enough
+; =============== S U B	R O U T	I N E =======================================
+_scroll_msg15_test:
+		LDA		_city_gone_broke_flag			; no money
+		BEQ		nullsub_5
+		DEC		_city_gone_broke_flag
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================

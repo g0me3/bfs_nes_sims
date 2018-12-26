@@ -1015,7 +1015,7 @@ _disaster_tiles_to_flood_count:
 		.BYTE	0
 _monster_in_water_flag:
 		.BYTE	0
-byte_6CB:
+_city_gone_broke_flag:
 		.BYTE	0
 
 ; END OF REINIT AREA
