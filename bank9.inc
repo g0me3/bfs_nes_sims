@@ -113,7 +113,7 @@ _screen_pal_extra_list:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
 		LDX		#$FF
-		STX		_constr_area_update_req			; map area redraw request
+		STX		_game_field_update_req			; map area redraw request
 		INX
 		STX		_gui_active_controls_flags		; clear gui flags, request to redraw
 ;		STX		_update_rect_left				; REDUNDANT, redraw top-leftmost area of map

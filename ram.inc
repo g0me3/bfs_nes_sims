@@ -144,7 +144,7 @@ _pad1_prev_held:
 
 		_tpos		_cur_map_wnd_pos
 
-_constr_area_update_req:
+_game_field_update_req:
 		.BYTE	0
 _update_rect_left:
 		.BYTE	0
@@ -163,7 +163,7 @@ byte_59:
 
 byte_5C:
 		.BYTE	0
-_constr_area_update_req_tmp:
+_game_field_update_req_tmp:
 		.BYTE	0
 _update_rect_left_tmp:
 		.BYTE	0

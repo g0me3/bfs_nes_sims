@@ -11,7 +11,7 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_start:
-		JSR		_game_scr_init					; here we get after start new game
+		JSR		_game_start_init				; here we get after start new game
 
 ; =============== S U B	R O U T	I N E =======================================
 _MAIN_LOOP:
@@ -36,14 +36,14 @@ loc_13601B:
 		.WORD	_game_state04_constr_area_redraw
 		.WORD	_game_state05_constr_palette_update
 		.WORD	_game_state06_game_hud_redraw
-		.WORD	_game_state07
+		.WORD	_game_state07_buttons_push
 		.WORD	_game_state08_build
 		.WORD	_game_state09_presents_building_name_and_cost_hud_draw
 		.WORD	_game_state0A_power_build_menu
 		.WORD	_game_state0B_gui_ctrl_menu
 		.WORD	_game_state0C_RCI_meter_redraw
 		.WORD	_game_state0D_hud_date_redraw
-		.WORD	_game_state0E
+		.WORD	_game_state0E_idle_state
 		.WORD	_game_state0F_hud_money_redraw
 		.WORD	_game_state10_fiscal_year_draw
 		.WORD	_game_state11_hud_popul_redraw
@@ -95,18 +95,18 @@ _game_state02_map_scroll:
 		LSR
 		BCC		.mini_map_hor_queue				; or check which one still displayed
 		JSR		_map_scroll_top_redraw			; top side of map ppu data queue
-		BCS		.j_game_state17_common
+		BCS		.j_game_state17_common0
 		LDA		_gui_active_controls_flags
 		AND		#$FE
 		STA		_gui_active_controls_flags
 		JMP		_game_state17_common
 .mini_map_hor_queue:
 		JSR		_map_scroll_left_redraw			; left side of map ppu data queue
-		BCS		.j_game_state17_common
+		BCS		.j_game_state17_common0
 		LDA		_gui_active_controls_flags
 		AND		#$FD
 		STA		_gui_active_controls_flags
-.j_game_state17_common:
+.j_game_state17_common0:
 		JMP		_game_state17_common
 .mini_map_wait_for_scrolls:
 		LDA		#$36
@@ -203,7 +203,7 @@ loc_1361A4:
 		STA		_anim_pos_col
 		LDA		#$1F
 		STA		byte_73
-		JSR		sub_150124
+		JSR		_map_scroll_line_draw
 		DEC		_cur_map_wnd_pos._COL
 		DEC		_cur_screen_tile._COL
 		BPL		loc_1361BD
@@ -229,7 +229,7 @@ loc_1361D4:
 		STA		_anim_pos_col
 		LDA		#$00
 		STA		byte_73
-		JSR		sub_150124
+		JSR		_map_scroll_line_draw
 		INC		_cur_map_wnd_pos._COL
 		INC		_cur_screen_tile._COL
 loc_1361E7:
@@ -237,7 +237,7 @@ loc_1361E7:
 loc_1361EA:
 		LDA		_pad0_held
 		AND		#$0C
-		BEQ		loc_136253
+		BEQ		loc_136250
 		LSR
 		LSR
 		LSR
@@ -262,7 +262,7 @@ loc_13620D:
 		STA		_anim_pos_col
 		LDA		#$16
 		STA		byte_73
-		JSR		sub_150124
+		JSR		_map_scroll_line_draw
 		DEC		_cur_map_wnd_pos._ROW
 		DEC		_cur_screen_tile._ROW
 		BPL		loc_136226
@@ -288,13 +288,13 @@ loc_13623D:
 		STA		_anim_pos_col
 		LDA		#$15
 		STA		byte_73
-		JSR		sub_150124
+		JSR		_map_scroll_line_draw
 		INC		_cur_map_wnd_pos._ROW
 		INC		_cur_screen_tile._ROW
 loc_136250:
 		JMP		_game_state17_common
-loc_136253:
-		JMP		_game_state17_common
+;loc_136253:									; REDUNDANT
+;		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state03_map_scroll_mode_set:
@@ -303,21 +303,21 @@ _game_state03_map_scroll_mode_set:
 		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state07:
-		LDA		_cur_game_cursor_scr_pos._ROW
-		CMP		#$38
-		BCS		loc_13626D
+_game_state07_buttons_push:
+		LDA		_cur_game_cursor_scr_pos._ROW	; we already know this is buttons
+		CMP		#$38							; if below 38, this is const palette
+		BCS		.constr_button_push				; otherwize this in config/info buttons
 		LDA		_pad0_autorep_press
 		AND		#$80
-		STA		_game_msg_wnd_active_flag
-		JMP		_game_state17_common
-loc_13626D:
+		STA		_game_msg_wnd_active_flag		; upper side of the screen activate the
+		JMP		_game_state17_common			; menu windows
+.constr_button_push:
 		PUSHB	_constr_palette_press_idx
 		JSR		_is_constr_palette_item_active
 		PLA
-		BCS		_j_apu_se_error
+		BCS		.j_apu_se_error
 		CMP		_constr_palette_selected_idx
-		BEQ		sub_1362C0
+		BEQ		.button_push_twice_test
 		STA		_cur_constr_palette_selected_idx
 		STA		_constr_palette_selected_idx
 		TAX
@@ -342,22 +342,16 @@ loc_13629F:
 		JMP		_game_state17_common
 loc_1362A9:
 		CPX		#$0D
-		BNE		_j_game_state17_common
+		BNE		.j_game_state17_common1
 		STA		_presents_build_menu_req
 		FJSRA	_presents_wnd_generate,PRGC,PRG2
 		JMP		_game_state17_common
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se_error:
+.j_apu_se_error:
 ;		JSR		_apu_se_error
 		APUA_SE	_SE_IDX_ERROR
-
-; =============== S U B	R O U T	I N E =======================================
-_j_game_state17_common:
+.j_game_state17_common1:
 		JMP		_game_state17_common
-
-; =============== S U B	R O U T	I N E =======================================
-sub_1362C0:
+.button_push_twice_test:
 		CMP		#$0B
 		BNE		loc_1362CE
 		LDA		#$FF
@@ -373,7 +367,7 @@ loc_1362CE:
 		JMP		_game_state17_common
 loc_1362DC:
 		CMP		#$0D
-		BNE		_j_apu_se_error
+		BNE		.j_apu_se_error
 		LDA		#$FF
 		STA		_hud_present_name_draw_req
 		STA		_presents_build_menu_req
@@ -581,7 +575,7 @@ _game_state06_game_hud_redraw:
 		ADC		#$14
 		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		_constr_area_update_req
+		STA		_game_field_update_req
 		LDA		#$00
 		STA		_hud_redraw_req
 		LDA		#$FF
@@ -745,7 +739,7 @@ loc_13655C:
 		JMP		_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state0E:
+_game_state0E_idle_state:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136582
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
@@ -762,7 +756,7 @@ _game_state0E:
 		ADC		#$14
 		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		_constr_area_update_req
+		STA		_game_field_update_req
 		LDA		#$00
 		STA		_game_core_stop_flag
 loc_136582:
@@ -994,23 +988,23 @@ loc_1366C9:
 		LDA		#$03
 		JMP		_set_game_state_idx
 loc_1366D4:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_autorep_press				; game screen push button test
 		AND		#$80
 		BEQ		loc_1366E4
-		JSR		_scr_push_area_test
+		JSR		_test_for_game_buttons_push		; test if any button pushed, C=1 if no
 		BCS		loc_1366E4
 		LDA		#$07
-		JMP		_set_game_state_idx
+		JMP		_set_game_state_idx				; change state to handle buttons pushes
 loc_1366E4:
-		LDA		_pad0_autorep_release			; push A button action in map window
-		AND		#$80
+		LDA		_pad0_autorep_release			; here we push either the empty part of the screen
+		AND		#$80							; or game cfield
 		BEQ		loc_1366F3
-		LDA		_cur_game_cursor_area
+		LDA		_cur_game_cursor_area			; if cursor in game area
 		BEQ		loc_1366F3
-		LDA		#$08
+		LDA		#$08							; set state to handle building process
 		JMP		_set_game_state_idx
 loc_1366F3:
-		LDA		_constr_area_update_req
+		LDA		_game_field_update_req
 		BEQ		loc_1366FC
 		LDA		#$04
 		JMP		_set_game_state_idx
@@ -1025,7 +1019,7 @@ loc_136706:
 		LDA		#$06
 		JMP		_set_game_state_idx
 loc_136710:
-		LDA		_game_core_stop_flag
+		LDA		_game_core_stop_flag			; when
 		BEQ		loc_13671A
 		LDA		#$0E
 		JMP		_set_game_state_idx
@@ -1057,7 +1051,7 @@ _constr_palette_redraw:
 		ADC		#$14
 		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		_constr_area_update_req
+		STA		_game_field_update_req
 		STA		_constr_palette_update_req
 ;		JSR		_constr_palette_update_req_set	; REDUNDANT
 		CLC
@@ -2009,54 +2003,54 @@ _power_build_wnd_draw:
 ;		PLA
 ;		STA		byte_7A
 ;		RTS
-
+;
 ; =============== S U B	R O U T	I N E =======================================
-sub_136F32:
-		LDX		_ptr0+1
-		LDA		byte_7B
-		CLC
-		ADC		#$3C
-		STA		byte_7B
-		LDA		byte_7C
-		STA		_tmp2
-		LDA		byte_7D
-		STA		_tmp3
-loc_136F43:
-		LDA		byte_7E
-		STA		_tmp4
-		LDA		byte_7F
-		STA		_tmp5
-		EXTQMOVB	byte_7A,OP_NOP,0
-loc_136F5C:
-		EXTQMOVB	byte_7B,OP_NOP,0
-		EXTQMOVB	_tmp4,OP_NOP,0
-loc_136F5D:
-		EXTQMOVB	#$41,OP_NOP,0
-		INY
-		DEC		_tmp4
-		BNE		loc_136F5D
-		DO_WRAP	_tmp4,_tmp5,loc_136F89
-		EXTQMOVB	byte_7A,OP_AND,#$E0
-		JMP		loc_136F5C
-loc_136F89:
-		ADDWB	byte_7A,#$20
-		DEC		_tmp2
-		BNE		loc_136F43
-		DO_WRAP	_tmp2,_tmp3,loc_136FB0
-		LDA		byte_7A
-		AND		#$1F
-		STA		byte_7A
-		LDA		#>[_MMC5_EXRAM]
-		STA		byte_7B
-		BNE		loc_136F43
-loc_136FB0:
-		STX		_ptr0+1
-		RTS
-byte_136FB3:
-		.BYTE	$70,$74,$74,$74,$74,$74,$74,$74,$74,$76
-		.BYTE	$71,$DC,$79,$7A,$7B,$7C,$DC,$DC,$DC,$77
-		.BYTE	$72,$DC,$7D,$7E,$79,$7C,$7F,$7B,$80,$77
-		.BYTE	$73,$75,$75,$75,$75,$75,$75,$75,$75,$78
+;unref_3:
+;		LDX		_ptr0+1
+;		LDA		byte_7B
+;		CLC
+;		ADC		#$3C
+;		STA		byte_7B
+;		LDA		byte_7C
+;		STA		_tmp2
+;		LDA		byte_7D
+;		STA		_tmp3
+;loc_136F43:
+;		LDA		byte_7E
+;		STA		_tmp4
+;		LDA		byte_7F
+;		STA		_tmp5
+;		EXTQMOVB	byte_7A,OP_NOP,0
+;loc_136F5C:
+;		EXTQMOVB	byte_7B,OP_NOP,0
+;		EXTQMOVB	_tmp4,OP_NOP,0
+;loc_136F5D:
+;		EXTQMOVB	#$41,OP_NOP,0
+;		INY
+;		DEC		_tmp4
+;		BNE		loc_136F5D
+;		DO_WRAP	_tmp4,_tmp5,loc_136F89
+;		EXTQMOVB	byte_7A,OP_AND,#$E0
+;		JMP		loc_136F5C
+;loc_136F89:
+;		ADDWB	byte_7A,#$20
+;		DEC		_tmp2
+;		BNE		loc_136F43
+;		DO_WRAP	_tmp2,_tmp3,loc_136FB0
+;		LDA		byte_7A
+;		AND		#$1F
+;		STA		byte_7A
+;		LDA		#>[_MMC5_EXRAM]
+;		STA		byte_7B
+;		BNE		loc_136F43
+;loc_136FB0:
+;		STX		_ptr0+1
+;		RTS
+;byte_136FB3:
+;		.BYTE	$70,$74,$74,$74,$74,$74,$74,$74,$74,$76
+;		.BYTE	$71,$DC,$79,$7A,$7B,$7C,$DC,$DC,$DC,$77
+;		.BYTE	$72,$DC,$7D,$7E,$79,$7C,$7F,$7B,$80,$77
+;		.BYTE	$73,$75,$75,$75,$75,$75,$75,$75,$75,$78
 
 ; =============== S U B	R O U T	I N E =======================================
 _gui_ctrl_menu_input:
@@ -3836,7 +3830,7 @@ _constr_area_redraw:
 ;		BCS		locret_137D0A
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_137D0A
-		LDA		_constr_area_update_req
+		LDA		_game_field_update_req
 		BEQ		locret_137D0A
 		JSR		sub_137D20
 		LDA		_ppu_queue_pos_head
@@ -3865,7 +3859,7 @@ locret_137D0A:
 ; =============== S U B	R O U T	I N E =======================================
 sub_137D0B:
 		LDA		#$00
-		STA		_constr_area_update_req
+		STA		_game_field_update_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4146,10 +4140,10 @@ locret_137F29:
 
 ; =============== S U B	R O U T	I N E =======================================
 _swap_constr_area_update_params:
-		LDA		_constr_area_update_req
-		LDX		_constr_area_update_req_tmp
-		STA		_constr_area_update_req_tmp
-		STX		_constr_area_update_req
+		LDA		_game_field_update_req
+		LDX		_game_field_update_req_tmp
+		STA		_game_field_update_req_tmp
+		STX		_game_field_update_req
 		LDA		_update_rect_left
 		LDX		_update_rect_left_tmp
 		STA		_update_rect_left_tmp
@@ -4172,7 +4166,7 @@ _swap_constr_area_update_params:
 sub_15011A:
 		JSR		_swap_constr_area_update_params
 		LDA		#$00
-		STA		_constr_area_update_req_tmp
+		STA		_game_field_update_req_tmp
 		STA		byte_5C
 		RTS
 
@@ -4224,12 +4218,12 @@ loc_137F69:
 		LDA		#$1E
 		STA		_goto_transition_counter
 		LDA		#$FF
-		STA		_constr_area_update_req
+		STA		_game_field_update_req
 locret_137F7B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_scr_init:
+_game_start_init:
 ; REDUNDANT, moved to common initialization code
 ;		LDA		_cur_game_mode					; reinit the window starting pos
 ;		CMP		#$03							; all except practise start from the

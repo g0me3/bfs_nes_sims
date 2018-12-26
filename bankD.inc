@@ -10,7 +10,7 @@
 		SECTION_START	D00
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150124:
+_map_scroll_line_draw:
 		LDA		byte_71
 		BEQ		loc_15012B
 		JMP		loc_1501C5
@@ -395,46 +395,46 @@ locret_1503FA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_scr_push_area_test:
-		LDA		_cur_game_cursor_scr_pos._ROW
-		CMP		#$38
-		BCS		loc_150425
+_test_for_game_buttons_push:
+		LDA		_cur_game_cursor_scr_pos._ROW	; upper area between 28 and 38
+		CMP		#$38							; is a config and info buttons
+		BCS		.bottom_area_pushed
 		CMP		#$28
-		BCC		loc_150450
+		BCC		.no_buttons_area
 		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$98
-		BCS		loc_150450
+		BCS		.no_buttons_area				; buttons position between 10 and 98
 		CMP		#$10
-		BCC		loc_150450
+		BCC		.no_buttons_area
 		SBC		#$10
 		LSR
 		LSR
 		LSR
 		LSR
-		CMP		#$06
-		BNE		loc_15041B
-		LDA		#$05
+		CMP		#$06							; all 16px wide except hint button,
+		BNE		loc_15041B						; it is 32px, so button with idx 6
+		LDA		#$05							; also button with idx 5
 loc_15041B:
-		CMP		#$07
+		CMP		#$07							; also correct the GORO button index as well
 		BCC		loc_150421
 		LDA		#$06
 loc_150421:
-		STA		_gui_ctrl_menu_press_idx
+		STA		_gui_ctrl_menu_press_idx		; store config buttons
 		CLC
 		RTS
-loc_150425:
-		LDA		_cur_game_cursor_scr_pos._COL
+.bottom_area_pushed:
+		LDA		_cur_game_cursor_scr_pos._COL	; between 10 and 30 columns are contsr palette
 		CMP		#$30
-		BCS		loc_150450
+		BCS		.no_buttons_area
 		CMP		#$10
-		BCC		loc_150450
-		LDA		_cur_game_cursor_scr_pos._ROW
-		CMP		#$B0
-		BCS		loc_150450
-		SEC
-		SBC		#$40
-		BCC		loc_150450
-		LSR
+		BCC		.no_buttons_area
+		LDA		_cur_game_cursor_scr_pos._ROW	; all buttons 16x16px, 2 columns, 7 rows 14 total
+		CMP		#$B0							; indexes are
+		BCS		.no_buttons_area				; 0 1
+		SEC										; 2 3
+		SBC		#$40							; 4 5
+		BCC		.no_buttons_area				; ...
+		LSR										; C D
 		LSR
 		LSR
 		AND		#$FE
@@ -447,10 +447,10 @@ loc_150425:
 		LSR
 		LSR
 		ORA		_ptr0
-		STA		_constr_palette_press_idx
+		STA		_constr_palette_press_idx		; store calculated index, exit
 		CLC
 		RTS
-loc_150450:
+.no_buttons_area:
 		SEC
 		RTS
 
@@ -1482,7 +1482,7 @@ loc_150A0A:
 loc_150A15:
 		STA		_update_rect_bottom_tmp
 		LDA		#$FF
-		STA		_constr_area_update_req_tmp
+		STA		_game_field_update_req_tmp
 		STA		byte_5C
 		JMP		_swap_constr_area_update_params
 
@@ -4067,7 +4067,7 @@ loc_151F3B:
 loc_151F6D:
 		JSR		_buffers_force_flush
 		JSR		_constr_area_redraw
-		LDA		_constr_area_update_req
+		LDA		_game_field_update_req
 		BNE		loc_151F6D
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
