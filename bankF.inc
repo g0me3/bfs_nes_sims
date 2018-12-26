@@ -68,7 +68,8 @@ loc_18A053:
 		AND		#$F0							; we need wait they released
 		CMP		#$F0
 		BEQ		loc_18A053
-		JSR		_gui_ctrl_menu_pos_list_init	; initialize window positions
+; REDUNDANT, moved to common init code
+;		JSR		_gui_ctrl_menu_pos_list_init	; initialize window positions
 		LDA		#$03
 		STA		_MMC5_PRG_SIZE
 		LDA		#$04
@@ -1750,23 +1751,25 @@ loc_18AB8C:
 		STA		word_9B+1
 		JMP		loc_18AB7B
 
+; REDUNDANT, moved to common init code to be able to save it in save states
+; as well!
 ; =============== S U B	R O U T	I N E =======================================
-_gui_ctrl_menu_pos_list_init:
-		LDX		#$0B
-loc_18ABB5:
-		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
-		STA		_gui_ctrl_menu_pos_list,X		; game configure windows
-		DEX
-		BPL		loc_18ABB5
-		RTS
-
-_gui_ctrl_menu_pos_data:
-		.BYTE	$02,$07
-		.BYTE	$04,$07
-		.BYTE	$06,$07
-		.BYTE	$08,$07
-		.BYTE	$0A,$07
-		.BYTE	$0C,$07
+;_gui_ctrl_menu_pos_list_init:
+;		LDX		#$0B
+;loc_18ABB5:
+;		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
+;		STA		_gui_ctrl_menu_pos_list,X		; game configure windows
+;		DEX
+;		BPL		loc_18ABB5
+;		RTS
+;
+;_gui_ctrl_menu_pos_data:
+;		.BYTE	$02,$07
+;		.BYTE	$04,$07
+;		.BYTE	$06,$07
+;		.BYTE	$08,$07
+;		.BYTE	$0A,$07
+;		.BYTE	$0C,$07
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_chr_common_reload:

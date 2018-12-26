@@ -129,22 +129,29 @@ I_AREA_WIDX	EQU 4
 	ENDM
 
 	MAC	_tcity
-{1}		SET	.
+{1}										SET	.
 {1}._name:								.BYTE	0,0,0,0,0,0,0,0,0,0,0
 {1}._sister_name:						.BYTE	0,0,0,0,0,0,0,0,0,0,0
 {1}._bank_name:							.BYTE	0,0,0,0,0,0,0,0,0,0,0
-{1}._unused_name3:						.BYTE	0,0,0,0,0,0,0,0,0,0,0
-{1}._unused_name4:						.BYTE	0,0,0,0,0,0,0,0,0,0,0
+; REDUNDANT, remove by now, free some space for more savestates
+;{1}._unused_name3:						.BYTE	0,0,0,0,0,0,0,0,0,0,0
+;{1}._unused_name4:						.BYTE	0,0,0,0,0,0,0,0,0,0,0
+;
+; FIX, new vars for SAVE/LOAD state proper work
+; moved here to prevent erasing at the game init
+{1}._cur_game_mode:						.BYTE	0
+{1}._scenario_idx:						.BYTE	0
+; FIX, difficult workaround don't need anymore
+{1}._difficult:							.BYTE	0
+; -
 {1}._scenarios_clear_flags:				.BYTE	0
 {1}._all_scenarios_are_clear_ram_flag:	.BYTE	0
 		_trcifix8_8						{1}._level
 		_trci							{1}._delta
-{1}._var_5F6:							.BYTE	0	; *unused*
-{1}._var_5F7:							.BYTE	0	; *unused*
+		_tfix8_8						{1}._traf_lvl_avr
 		_tfix8_8						{1}._land_val_avr
 		_tfix8_8						{1}._crime_lvl_avr
 		_tfix8_8						{1}._poll_lvl_avr
-{1}._difficult:							.BYTE	0
 {1}._city_type:							.BYTE	0
 {1}._score:								.WORD	0
 {1}._money:								.BYTE	0,0,0
@@ -171,8 +178,12 @@ I_AREA_WIDX	EQU 4
 	; bit7 - loan message enabled, may loan now
 {1}._tax_year_sum:						.WORD	0
 {1}._loan_period:						.BYTE	0
-{1}._unused:							.BYTE	0	; *unused*
-{1}_size	SET	[.-{1}]
+; FIX, reinitialized before game, or erased or loadable now
+{1}._scenario_disaster_delay:			.BYTE	0
+{1}._scenario_disaster_end_year:		.BYTE	0
+										_tpos	{1}._wnd_pos
+{1}._gui_ctrl_menu_pos_list				.BYTE	0,0,0,0,0,0,0,0,0,0,0,0
+{1}_size								SET	[.-{1}]
 	ENDM
 
 	MAC	_treq

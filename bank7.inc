@@ -731,18 +731,18 @@ loc_B9607:
 		STA		_city._name,Y
 		STA		_city._sister_name,Y
 		STA		_city._bank_name,Y
-		STA		_city._unused_name3,Y
-		STA		_city._unused_name4,Y
+;		STA		_city._unused_name3,Y
+;		STA		_city._unused_name4,Y
 		DEY
 		BNE		loc_B9607
 		LDY		#$01
 		STY		_city._name
 		STY		_city._sister_name
 		STY		_city._bank_name
-		STY		_city._unused_name3
-		STY		_city._unused_name4
-		DEY
-		STY		_problem_accepted+2
+;		STY		_city._unused_name3
+;		STY		_city._unused_name4
+;		DEY										; REDUNDANT, unused
+;		STY		_tmp6DC+2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

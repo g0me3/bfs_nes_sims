@@ -1709,13 +1709,6 @@ locret_24C44:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_vars_init:
-; FIX, backup difficult if set at the difficult menu. this is temporary
-; workaround though, it is easier to do that just moving the difficult
-; setting out of the cleared values above ._level
-; -
-		LDA		_city._difficult
-		PHA
-; -
 		JSR		_sram_write_enable
 		LDX		#$00							; X=A=0
 		TXA
@@ -1732,11 +1725,6 @@ loc_1043D1:
 		CPX		#[_tmp6CC-_city._level]			; for city, the rest is tmp values
 		BNE		loc_1043D1
 		STA		_obj_active_flags				; A=0 still!
-; FIX, continues
-; -
-		PLA										; restore difficult
-		STA		_city._difficult
-; -
 		LDA		#$FF
 		STA		_city._year_to_bank				; special years clear
 		STA		_city._year_to_bank+1
@@ -1744,6 +1732,16 @@ loc_1043D1:
 		STA		_city._year_to_expo+1
 		STA		_city._year_to_liberty
 		STA		_city._year_to_liberty+1
+; FIX, moved here from PRGF to allow to save this values as a
+; save state as well. init them here by default for all new game
+; modes, but will load them from save state if needed
+		LDX		#$0B
+loc_18ABB5:
+		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
+		STA		_gui_ctrl_menu_pos_list,X		; game configure windows
+		DEX
+		BPL		loc_18ABB5
+; -
 		LDX		_cur_game_mode					; dependent from the game mode
 		BNE		loc_1043FF						; the last place we need it ZERO
 		FJSRA	_sram_data_load,SRAM,PRG3		; load saved city data, reload _game_vars_init
@@ -1814,6 +1812,9 @@ loc_10445D:
 ; -
 		LDA		#$00							; manually set default difficult
 		STA		_city._difficult
+; -
+; FIX, move wnd pos initialization here, so we may save it in savestates as well
+		MOVWI	_city._wnd_pos,$1B19
 ; -
 		MOVWI	_city._money,20000				; game mode 3, practice
 		MOVWI	_city._cur_year,1900			; starting year fixed
@@ -1892,6 +1893,13 @@ loc_1044A3:
 		JSR		_sram_write_disable
 		JMP		_city_stats_reset				; ALERT! _city_stats_reset used here from PRGB as well!
 
+_gui_ctrl_menu_pos_data:
+		.BYTE	$02,$07
+		.BYTE	$04,$07
+		.BYTE	$06,$07
+		.BYTE	$08,$07
+		.BYTE	$0A,$07
+		.BYTE	$0C,$07
 _difficult_money_list_lo:
 		.BYTE	<[20000]
 		.BYTE	<[10000]

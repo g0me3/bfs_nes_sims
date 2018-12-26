@@ -4238,18 +4238,20 @@ locret_137F7B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_scr_init:
-		LDA		_cur_game_mode					; reinit the window starting pos
-		CMP		#$03							; all except practise start from the
-		BNE		loc_137F8D						; upper-left corner. even the practice
-		LDA		#$19							; loaded map!
-		STA		_cur_map_wnd_pos._COL			; this is not so much right
-		LDA		#$1B
-		STA		_cur_map_wnd_pos._ROW
-		BNE		loc_137F93
-loc_137F8D:
-		LDA		#$00
-		STA		_cur_map_wnd_pos._COL
-		STA		_cur_map_wnd_pos._ROW
+; REDUNDANT, moved to common initialization code
+;		LDA		_cur_game_mode					; reinit the window starting pos
+;		CMP		#$03							; all except practise start from the
+;		BNE		loc_137F8D						; upper-left corner. even the practice
+;		LDA		#$19							; loaded map!
+;		STA		_cur_map_wnd_pos._COL			; this is not so much right
+;		LDA		#$1B
+;		STA		_cur_map_wnd_pos._ROW
+;		BNE		loc_137F93
+;loc_137F8D:
+;		LDA		#$00
+;		STA		_cur_map_wnd_pos._COL
+;		STA		_cur_map_wnd_pos._ROW
+		MOVW	_cur_map_wnd_pos,_city._wnd_pos	; for all modes except continue and practice this will be zero
 loc_137F93:
 ;		JSR		_constr_palette_update_req_set	; REDUNDANT
 		LDA		#$FF

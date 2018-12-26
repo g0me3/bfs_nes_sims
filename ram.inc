@@ -758,15 +758,7 @@ _graphs_draw_data_pos:
 		.BYTE	0
 _game_setup_sub_idx:
 		.BYTE	0
-_scenario_idx:
-		.BYTE	0
 _scenario_result_idx:
-		.BYTE	0
-_scenario_disaster_delay:
-		.BYTE	0
-_scenario_disaster_end_year:
-		.BYTE	0
-_cur_game_mode:
 		.BYTE	0
 _mmc5_mul1_shadow:
 		.BYTE	0
@@ -796,6 +788,14 @@ _mmc5_chr_banks_shadow:
 		.BYTE	0,0,0,0
 
 		_tcity _city
+
+; FIX of SAVE/LOAD, also aliases to not to rename a lot again
+_cur_game_mode					EQU	_city._cur_game_mode
+_scenario_idx					EQU	_city._scenario_idx
+_scenario_disaster_delay		EQU	_city._scenario_disaster_delay
+_scenario_disaster_end_year		EQU	_city._scenario_disaster_end_year
+_gui_ctrl_menu_pos_list			EQU _city._gui_ctrl_menu_pos_list
+;
 
 _goto_alert_req:
 		.BYTE	0
@@ -848,8 +848,6 @@ _fund_alloc_trans:
 _fund_alloc_education:
 		.BYTE	0,0
 ; -
-
-		_tfix8_8	_traf_lvl_avr
 
 _doing_a_good_job_votes:
 		.BYTE	0
@@ -1040,8 +1038,6 @@ _problem_percent:
 
 _ram_signature:
 		.BYTE	0,0,0,0
-_gui_ctrl_menu_pos_list:
-		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0
 
 		ORG	$7C0
 
@@ -1296,3 +1292,7 @@ _sram_data_crc:
 
 _sram_has_saved_city_data_flag:
 		.BYTE	0
+
+		#if .>$A000
+			ECHO "OUT OF SRAM=",[.-$A000]
+		#endif

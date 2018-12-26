@@ -1,4 +1,4 @@
-	TODO
+	NEW TODO
 
 - PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar, merge.
 - Graphs data interpolations for all values.
@@ -7,30 +7,19 @@
 - Finish mini-map re and rename.
 - Finish events animation code re and rename.
 - Recalibrate triggers for new crime recalibrated values
-- SAVE/LOAD functions must reinit _cur_game_mode value with the actual mode value after loading the main data in _sram_data_load, so need to be put inside _city structure.
-	- Also there should be stored scenatio specific values _scenario_idx, _scenario_disaster_delay, _scenario_disaster_end_year.
-	- The sram area has additional 16 bytes free, the RAM area has more.
-	- Note, these values are above _city structure, so all values and constants will shift up.
-	- Also there some other vars need to be put inside _city (_traf_lvl_avr), they are under _city sctructure. So overall size of RAM doesn't change.
-	- WARNING! MAKE SURE NO RAM ACCESS CORRUPTED THEN! backup before. Also the save states from original version will be incompatible.
-	- _cur_game_mode is zero only when continue, all it need for is to avoid game reinitialization and just load stoerd data. the last place it need to be zero is _game_vars_init, when data is loaded, it may be the same as previous stored value.
-	- Also i'd like to save _cur_map_wnd_pos as well, but currently it reinitializes in _game_scr_init. So we need to move initialization to _game_vars_init in case we put these values to the _city
-	- It seems, there is no much space for _gui_ctrl_menu_pos_list, sadly... but probably we could get some bytes from _tmp_map buffer.
-- Blackouts/Brownouts messages restore
 
 	NEW BUGS
 
 - During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
 - Ship object can stuck in a pond or at the map side forever sometimes. Also may be invisible because of that.
 
-	WHAT DONE
+	CHANGES LIST
 
 - Removal of the garbage data and commented out all unreferenced data and code for further possible usage, if any.
 - Cleanup some portions of the code, minor optimizations on size.
 - Macrofication of the code for much more readable listing.
 - Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
 - Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
-- Rescale and rebalance some values after fixing some calculation bugs. This may also change the overall game mechanics and difficulty, probably more adjusting needed.
 - Fixed BUGS#1
 - Fixed BUGS#2.1, put the nmi wait calls to force buffers flush after any ppu queue. This also makes the turbo button work slower, but no more buffers overflows there.
 - TODO BUGS#2.2
@@ -61,9 +50,15 @@
 - Fixed BUGS#23.4
 - Fixed BUGS#24
 - Fixed BUGS#25, including BUGS#24.1-5. Rebalanced calculations a bit also, so the the average scores now even worse for complete disasters.
+- Fixed BUGS#26, rescaled and rebalanced some values after fixing some calculation bugs. This may also change the overall game mechanics and difficulty, probably more adjusting needed.
+- Fixed BUGS#27, also added ability to save current window position as well, and position of all configuration windows.
+- TODO BUGS#28
 - Added UNFINISHED#1.5, now "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting of the Scenarios (SLOW).
+- TODO UNFINISHED#2.3, set default name
+- TODO UNFINISHED#2.4, remove unneeded names
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
-- Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
+- Restored UNFINISHED#5 ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
+- TODO UNFINISHED#4.1.1, UNFINISHED#4.1.7
 - TODO Make ship able to sail under the bridges and road/wires with hiding animations.
 - TODO Re-use the actual FE water tile for those scenarios which use it.
 - TODO UNFINISHED#7, proper fixed point conversions, re-use scaler values calculated once store, scale two adjascent graphs by it's max values combined (so we could see the actual relative values).
@@ -189,7 +184,8 @@ BUGS#25. City score calculations are broken too. The main problem here is becaus
 	BUGS#25.4 RCI growth levels (RCI meters to the borrom-left) never lowers the score. They should do that when negative. But tests are incorrect and never passed.
 	BUGS#25.5 Result of score adjustment with net migration proportion stored in wrong value, so the actual result is never used, instead used one of the multiplication arguments (exactly the proportion value).
 BUGS#26. Overal calculations of average values mostly broken. Somehow they balanced with random bugs or bugs on purpose, and somehow rescaled when needed. The main problem here, the original source has a wide range averages for base values. Pollution average, Crime level average are sums of all area levels divided by number of such areas. The average mathematically can't be greather than max value of the single area. In the NES code, values for all areas are in range from $00 to $0F. So average shouldn't be higher than $0F. However, due to some data formats mangling and misunderstanding, the averages calculated as a result of division of two fixed points values. And if we may logically assume, that area values in range $00 to $0F is a small fixed point values, we shouldn't treat the divider the same. Divider is an integer value. If you treat it as fixed point, where low nibble is FRAC, and high nibble is INT, then you will get anything, but average value. For example. Sum of crime area levels is $0653, total areas collected is $00F1. Then if divide as fixed point we divide 6.324 to 0.941 ($00F1=0.241/256). But since we divide to value <1, the result will be HIGHER than overall sum. And this value is used for all other calculations! So we literally using not the average levels, but weighted sums. Other side effect here is when we have more than 256 areas to calc overage, so higher nibble of 16-bit counter won't be zero, we will have a little scaling down of average velues, but still not so much high how it should be. Even if we will calc the max number of areas lite 38*38=1444, result will be only 5 times smaller. The only way to avoid it in current version is to keep all overages at ZERO. Which is mostly impossible for pollution, but highly possible for crime rate for example.
-BUGS#27. Save/Load option in the game has a special game mode index 0. At the same time, you may save and load any mode of the game! And when restored, game mode turns to 0. All special scenario or practice events are not functional anymore! So literally you just couldn't continue any game properly. The scenario special parameters are reset unless console is not rebooted.
+BUGS#27. Save/Load option in the game has a special game mode index 0. At the same time, you may save and load any mode of the game! And when restored, game mode turns to 0. All special scenario or practice events are not functional anymore! So literally you just couldn't continue the game properly unless you played the new city mode.
+BUGS#28. There are severgal scenario maps with some defects, usually not connected one or two power lines properly, so some buildings are not powered.
 
 	MISC
 
@@ -258,7 +254,7 @@ MISC#8. Map generation routines for New City mode taken from Micropolis sources 
 02	MORE INDUSTRIAL ZONES NEEDED				I<(R+C+I)/8					no			-
 03	MORE ROADS REQUIRED							(R+C+I)>=10, (R+C+I)>ROADS	no			-
 04	INADEQUATE RAIL SYSTEM						(R+C+I)>=50, (R+C+I)>RAILS	no			-
-05	BUILD A POWER PLANT							(R+C+I)>10, POWER=0			no			see BUGS#1
+05	BUILD A POWER PLANT							(R+C+I)>=10, POWER=0		no			see BUGS#1
 06	RESIDENTS DEMAND A STADIUM					R_L>=500fp, STADIUM=0		yes			-
 07	INDUSTRY REQUIRES A SEA PORT				I_L>=100fp, SEAPORT=0		yes			-
 08	COMMERCE REQUIRES AN AIRPORT				C_L>=150fp, AIRPORT=0		yes			-

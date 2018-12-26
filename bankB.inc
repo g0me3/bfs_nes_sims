@@ -4076,7 +4076,7 @@ loc_11FFBB:
 		PUSHW	_tmpE6							; multiply integer result to fp8_8, result integer
 		JSR		_mmc5_mul16to16					; result traffic_level = [traffic_value * 2.4]
 		PLA										; or may be treated as fp8_8 with lower nibble of integer
-		POPW	_traf_lvl_avr					; value as FRAC part and higher nibble as INT part
+		POPW	_city._traf_lvl_avr				; value as FRAC part and higher nibble as INT part
 		PLA
 		RTS
 

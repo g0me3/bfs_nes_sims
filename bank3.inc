@@ -1277,9 +1277,10 @@ _get_select_name:
 		BEQ		loc_588F6
 		CMP		#$02
 		BEQ		loc_58908
-		CMP		#$03
-		BEQ		loc_5891A
-		BNE		loc_5892C
+		RTS
+;		CMP		#$03							; REDUNDANT, unused by now
+;		BEQ		loc_5891A
+;		BNE		loc_5892C
 loc_588E4:
 		LDA		_city._name
 		SEC
@@ -1301,20 +1302,21 @@ loc_58908:
 		STA		_tmp51A
 		MOVWO	word_DA,_city._bank_name+1		; always empty, never initializes
 		RTS										; so displaying always just as "BANK"
-loc_5891A:
-		LDA		_city._unused_name3
-		SEC
-		SBC		#$01
-		STA		_tmp51A
-		MOVWO	word_DA,_city._unused_name3+1	; unused buffers/name
-		RTS										; there is unknown what they
-loc_5892C:										; were intended for
-		LDA		_city._unused_name4
-		SEC
-		SBC		#$01
-		STA		_tmp51A
-		MOVWO	word_DA,_city._unused_name4+1
-		RTS
+; REDUNDANT, unused by now
+;loc_5891A:
+;		LDA		_city._unused_name3
+;		SEC
+;		SBC		#$01
+;		STA		_tmp51A
+;		MOVWO	word_DA,_city._unused_name3+1	; unused buffers/name
+;		RTS										; there is unknown what they
+;loc_5892C:										; were intended for
+;		LDA		_city._unused_name4
+;		SEC
+;		SBC		#$01
+;		STA		_tmp51A
+;		MOVWO	word_DA,_city._unused_name4+1
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _cmd40_23_popul:
@@ -1702,7 +1704,7 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		JMP		_sram_write_disable
 loc_59C0E:
-		LDA		#>[_land_val_avr_map]				; CAUTION: low nibble is zero
+		LDA		#>[_land_val_avr_map]			; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
 		LDA		#<[_land_val_avr_map]
 		STA		_ptr0
@@ -1834,6 +1836,10 @@ loc_58FF1:
 		INX
 		CPX		#_graphs_size
 		BNE		loc_58FF1
+; FIX, store current wnd position, can't use _city member directly
+; because _cur_map_wnd_pos used frequently and has to be in zero page
+		MOVW	_city._wnd_pos,_cur_map_wnd_pos
+;
 		LDX		#$00
 loc_58FFE:
 		LDA		_city,X

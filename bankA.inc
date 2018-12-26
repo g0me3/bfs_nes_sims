@@ -1360,7 +1360,7 @@ _city_problems_list_recalc:
 		POPW	_problem_data+4
 		MMULB8	_problem_data+6,_city._tax_rate,#$0A; 6D4/6D5 = tax_rate * 10
 		FJSR	_traf_lvl_avr_recalc,SRAM,PRGB
-		MOVW	_problem_data+8,_traf_lvl_avr	; 6D6/6D7 = traffic level
+		MOVW	_problem_data+8,_city._traf_lvl_avr	; 6D6/6D7 = traffic level
 		JSR		_get_unemployment
 		STA		_problem_data+10				; FIX, now 6D8 = R/(C+I)*8 - 1
 		JSR		_get_fires						; FIX, now 6DA = _fires_count * 5
@@ -1989,22 +1989,22 @@ _event01_city_growt:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event06_total_jam:
-		LDA		_traf_lvl_avr.INT				; very high traffic value above $700
+		LDA		_city._traf_lvl_avr.INT			; very high traffic value above $700
 		BMI		nullsub_4						; test if already displayed for current loop
 		CMP		#$07
 		BCC		nullsub_4						; to trigger this event needed
 		ORA		#$80
-		STA		_traf_lvl_avr.INT				; set flag to avoid triggering before next loop
+		STA		_city._traf_lvl_avr.INT			; set flag to avoid triggering before next loop
 		JMP		_force_new_event				; can't be masked, always active
 
 ; =============== S U B	R O U T	I N E =======================================
 _event07_traffic:
-		LDA		_traf_lvl_avr.INT				; the same for low traffic alert
+		LDA		_city._traf_lvl_avr.INT			; the same for low traffic alert
 		BMI		nullsub_4
 		CMP		#$02
 		BCC		nullsub_4						; trigger value $200
 		ORA		#$80
-		STA		_traf_lvl_avr.INT				; this flag clears only at the end of the year
+		STA		_city._traf_lvl_avr.INT			; this flag clears only at the end of the year
 		JMP		_force_new_event				; when city problems are recalculated
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2316,9 +2316,9 @@ _scenario_result_test:
 loc_105142:
 		DEX
 		BNE		loc_105153
-		LDA		_traf_lvl_avr.INT				; SCENARIO 1 "BERN"
+		LDA		_city._traf_lvl_avr.INT			; SCENARIO 1 "BERN"
 		BNE		.scenario_failed				; traffic level should be less than 0.50fp
-		LDA		_traf_lvl_avr.FRAC				; actually, it always IS there
+		LDA		_city._traf_lvl_avr.FRAC		; actually, it always IS there
 		CMP		#$50
 		BCS		.scenario_failed
 		BCC		.scenario_won
