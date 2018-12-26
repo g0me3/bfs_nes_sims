@@ -1,0 +1,3081 @@
+
+		ORG $8000
+
+		BANK_START $07
+
+; =============== S U B	R O U T	I N E =======================================
+_city_name_draw:
+		JSR		_get_city_name_str
+		JSR		_city_name_str_pos_set
+		JSR		_city_name_str_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_city_name_str:
+		LDX		_city._name
+		DEX
+		STX		byte_51A
+		LDA		#<[_city._name+1]
+		STA		word_DA
+		LDA		#>[_city._name+1]
+		STA		word_DA+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_city_name_str_pos_set:
+		LDA		_cur_screen_tile._Y
+		LSR
+		CLC
+		ADC		#$1A
+		CMP		#$1E
+		BCC		loc_B8026
+		SBC		#$1E
+loc_B8026:
+		STA		_ptr0+1
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		#2
+		CMP		#$20
+		BCC		loc_B8034
+		SBC		#$20
+loc_B8034:
+		STA		_ptr0
+		CLC
+		ADC		#9
+		CMP		#$20
+		BCC		loc_B804A
+		SBC		#$1F
+		STA		_tmp3
+		LDA		#$A
+		SEC
+		SBC		_tmp3
+		STA		_tmp2
+		BNE		loc_B8052
+loc_B804A:
+		LDA		#$A
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+loc_B8052:
+		LDA		_ptr0+1
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		CLC
+		ADC		_ptr0
+		BCC		loc_B8068
+		INX
+loc_B8068:
+		STA		_ptr0
+		TXA
+		ORA		#$20
+		STA		_ptr0+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_city_name_str_queue:
+		LDX		_ppu_queue_pos_head
+		LDY		#0
+		LDA		_ptr0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0+1
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp2
+		STA		_ppu_queue_buf,X
+		INX
+loc_B8086:
+		LDA		byte_51A
+		BNE		loc_B808F
+		LDA		#$20
+		BNE		loc_B8095
+loc_B808F:
+		LDA		(word_DA),Y
+		DEC		byte_51A
+		INY
+loc_B8095:
+		STA		_ppu_queue_buf,X
+		INX
+		DEC		_tmp2
+		BNE		loc_B8086
+		LDA		_tmp3
+		BEQ		loc_B80BE
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		LDA		_ptr0
+		AND		#$E0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0+1
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp2
+		STA		_ppu_queue_buf,X
+		INX
+		JMP		loc_B8086
+loc_B80BE:
+		STX		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_constr_palette_state_update:
+		LDA		#0
+		STA		_ptr0
+		STA		_ptr0+1
+		STA		_tmp2
+		STA		_tmp3
+		TAX
+loc_B80CC:
+		JSR		sub_B813E
+		PHP
+		ROL		_ptr0
+		ROL		_ptr0+1
+		ROL		_tmp2
+		ROL		_tmp3
+		PLP
+		BCC		loc_B80DE
+		CLC
+		BCC		loc_B80E6
+loc_B80DE:
+		CPX		byte_B1
+		BNE		loc_B80E5
+		SEC
+		BCS		loc_B80E6
+loc_B80E5:
+		CLC
+loc_B80E6:
+		ROL		_ptr0
+		ROL		_ptr0+1
+		ROL		_tmp2
+		ROL		_tmp3
+		INX
+		CPX		#$E
+		BCC		loc_B80CC
+		LDA		_city._special_buildings_list
+		ORA		_city._special_buildings_list+1
+		ORA		_city._special_buildings_list+2
+		ORA		_city._special_buildings_list+3
+		BEQ		loc_B810A
+		LDA		_ptr0
+		AND		#$FD
+		STA		_ptr0
+		JMP		loc_B8110
+loc_B810A:
+		LDA		_ptr0
+		ORA		#2
+		STA		_ptr0
+loc_B8110:
+		LDA		_ptr0
+		CMP		_constr_palette_flags
+		BNE		loc_B8129
+		LDA		_ptr0+1
+		CMP		_constr_palette_flags+1
+		BNE		loc_B8129
+		LDA		_tmp2
+		CMP		_constr_palette_flags+2
+		BNE		loc_B8129
+		LDA		_tmp3
+		CMP		_constr_palette_flags+3
+		BNE		loc_B8129
+		RTS
+loc_B8129:
+		LDA		_ptr0
+		STA		_constr_palette_flags
+		LDA		_ptr0+1
+		STA		_constr_palette_flags+1
+		LDA		_tmp2
+		STA		_constr_palette_flags+2
+		LDA		_tmp3
+		STA		_constr_palette_flags+3
+		LDA		#$FF
+		STA		_regular_constr_palette_redraw_req
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B813E:
+		LDA		_city._money+2
+		BNE		loc_B815D
+		TXA
+		PHA
+		ASL
+		TAX
+		LDA		byte_B8163+1,X
+		CMP		_city._money+1
+		BCC		loc_B815B
+		BNE		loc_B815F
+		LDA		byte_B8163,X
+		CMP		_city._money
+		BCC		loc_B815B
+		BNE		loc_B815F
+loc_B815B:
+		PLA
+		TAX
+loc_B815D:
+		CLC
+		RTS
+loc_B815F:
+		PLA
+		TAX
+		SEC
+		RTS
+byte_B8163:
+		.BYTE	$01,$00
+		.BYTE	$0A,$00
+		.BYTE	$05,$00
+		.BYTE	$14,$00
+		.BYTE	$0A,$00
+		.BYTE	$64,$00
+		.BYTE	$64,$00
+		.BYTE	$64,$00
+		.BYTE	$F4,$01
+		.BYTE	$F4,$01
+		.BYTE	$B8,$0B
+		.BYTE	$B8,$0B
+		.BYTE	$88,$13
+		.BYTE	$00,$00
+		.BYTE	$88,$13
+		.BYTE	$10,$27
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8183:
+		LDA		byte_C7
+		CMP		#$90
+		BEQ		loc_B81BA
+		CMP		#$BD
+		BEQ		loc_B81C5
+		CMP		#$FE
+		BNE		loc_B8194
+		SEC
+		BCS		loc_B81C5
+loc_B8194:
+		LDA		_city._game_flags
+		LSR
+		BCC		loc_B81C8
+		LDA		byte_C7
+		CMP		#$B2
+		BCC		loc_B81C8
+		CMP		#$B5
+		BCC		loc_B81B4
+		CMP		#$BE
+		BCC		loc_B81C8
+		CMP		#$E0
+		BCC		loc_B81B4
+		CMP		#$E7
+		BCC		loc_B81C8
+		CMP		#$EB
+		BCS		loc_B81C8
+loc_B81B4:
+		INC		_money_delta
+		BNE		loc_B81BA
+		INC		_money_delta+1
+loc_B81BA:
+		JSR		_money_recalc
+		BCS		locret_B81C4
+		LDA		#$FF
+		STA		byte_CA
+		CLC
+locret_B81C4:
+		RTS
+loc_B81C5:
+		JMP		loc_B824B
+loc_B81C8:
+		LDA		_prev_constr_palette_press_idx
+		CMP		#1
+		BNE		loc_B81D1
+		JMP		loc_B81DB
+loc_B81D1:
+		CMP		#3
+		BNE		loc_B81D8
+		JMP		loc_B8200
+loc_B81D8:
+		JMP		loc_B8225
+loc_B81DB:
+		LDA		byte_C7
+		CMP		#$9C
+		BNE		loc_B81E5
+		LDA		#$B8
+		BNE		loc_B8245
+loc_B81E5:
+		CMP		#$9D
+		BNE		loc_B81ED
+		LDA		#$B7
+		BNE		loc_B8245
+loc_B81ED:
+		CMP		#$A7
+		BNE		loc_B81F5
+		LDA		#$B9
+		BNE		loc_B8245
+loc_B81F5:
+		CMP		#$A8
+		BEQ		loc_B81FC
+		JMP		loc_B8283
+loc_B81FC:
+		LDA		#$BA
+		BNE		loc_B8245
+loc_B8200:
+		LDA		byte_C7
+		CMP		#$91
+		BNE		loc_B820A
+		LDA		#$B7
+		BNE		loc_B8245
+loc_B820A:
+		CMP		#$92
+		BNE		loc_B8212
+		LDA		#$B8
+		BNE		loc_B8245
+loc_B8212:
+		CMP		#$A7
+		BNE		loc_B821A
+		LDA		#$BB
+		BNE		loc_B8245
+loc_B821A:
+		CMP		#$A8
+		BEQ		loc_B8221
+		JMP		loc_B8283
+loc_B8221:
+		LDA		#$BC
+		BNE		loc_B8245
+loc_B8225:
+		LDA		byte_C7
+		CMP		#$91
+		BNE		loc_B822F
+		LDA		#$BA
+		BNE		loc_B8245
+loc_B822F:
+		CMP		#$92
+		BNE		loc_B8237
+		LDA		#$B9
+		BNE		loc_B8245
+loc_B8237:
+		CMP		#$9C
+		BNE		loc_B823F
+		LDA		#$BC
+		BNE		loc_B8245
+loc_B823F:
+		CMP		#$9D
+		BNE		loc_B8283
+		LDA		#$BB
+loc_B8245:
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+loc_B824B:
+		DEC		word_C1+1
+		LDY		#$B4
+		LDA		(word_C1),Y
+		PHA
+		LDY		#$FF
+		LDA		(word_C1),Y
+		TAX
+		INC		word_C1+1
+		LDY		#$4C
+		LDA		(word_C1),Y
+		PHA
+		TXA
+		PHA
+		LDY		#1
+		LDA		(word_C1),Y
+		PHA
+		LDA		_prev_constr_palette_press_idx
+		CMP		#1
+		BNE		loc_B8285
+		PLA
+		JSR		sub_B830D
+		BCS		loc_B82BD
+		PLA
+		JSR		sub_B830D
+		BCS		loc_B82BE
+		PLA
+		JSR		sub_B8329
+		BCS		loc_B82D2
+		PLA
+		JSR		sub_B8329
+		BCS		loc_B82D3
+loc_B8283:
+		SEC
+		RTS
+loc_B8285:
+		CMP		#3
+		BNE		loc_B82A3
+		PLA
+		JSR		sub_B8343
+		BCS		loc_B82E5
+		PLA
+		JSR		sub_B8343
+		BCS		loc_B82E6
+		PLA
+		JSR		sub_B835B
+		BCS		loc_B82F0
+		PLA
+		JSR		sub_B835B
+		BCS		loc_B82F1
+		BCC		loc_B8283
+loc_B82A3:
+		PLA
+		JSR		sub_B8371
+		BCS		loc_B82F9
+		PLA
+		JSR		sub_B8371
+		BCS		loc_B82FA
+		PLA
+		JSR		sub_B838D
+		BCS		loc_B8304
+		PLA
+		JSR		sub_B838D
+		BCS		loc_B8305
+		BCC		loc_B8283
+loc_B82BD:
+		PLA
+loc_B82BE:
+		PLA
+		PLA
+		LDA		byte_C7
+		CMP		#$FE
+		BNE		loc_B82CA
+		LDA		#$EB
+		BNE		loc_B82CC
+loc_B82CA:
+		LDA		#$E0
+loc_B82CC:
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+loc_B82D2:
+		PLA
+loc_B82D3:
+		LDA		byte_C7
+		CMP		#$FE
+		BNE		loc_B82DD
+		LDA		#$EC
+		BNE		loc_B82DF
+loc_B82DD:
+		LDA		#$E1
+loc_B82DF:
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+loc_B82E5:
+		PLA
+loc_B82E6:
+		PLA
+		PLA
+		LDA		#$E2
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+loc_B82F0:
+		PLA
+loc_B82F1:
+		LDA		#$E3
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+loc_B82F9:
+		PLA
+loc_B82FA:
+		PLA
+		PLA
+		LDA		#$E4
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+loc_B8304:
+		PLA
+loc_B8305:
+		LDA		#$E5
+		STA		byte_CA
+		JSR		_money_recalc
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B830D:
+		CMP		#$91
+		BCC		loc_B8325
+		CMP		#$9C
+		BCC		loc_B8327
+		CMP		#$B7
+		BEQ		loc_B8327
+		CMP		#$BA
+		BEQ		loc_B8327
+		CMP		#$E0
+		BEQ		loc_B8327
+		CMP		#$EB
+		BEQ		loc_B8327
+loc_B8325:
+		CLC
+		RTS
+loc_B8327:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8329:
+		CMP		#$91
+		BCC		loc_B8325
+		CMP		#$9C
+		BCC		loc_B8327
+		CMP		#$B8
+		BEQ		loc_B8327
+		CMP		#$B9
+		BEQ		loc_B8327
+		CMP		#$E1
+		BEQ		loc_B8327
+		CMP		#$EC
+		BEQ		loc_B8327
+		BNE		loc_B8325
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8343:
+		CMP		#$9C
+		BCC		loc_B8357
+		CMP		#$A7
+		BCC		loc_B8359
+		CMP		#$B8
+		BEQ		loc_B8359
+		CMP		#$BC
+		BEQ		loc_B8359
+		CMP		#$E2
+		BEQ		loc_B8359
+loc_B8357:
+		CLC
+		RTS
+loc_B8359:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B835B:
+		CMP		#$9C
+		BCC		loc_B8357
+		CMP		#$A7
+		BCC		loc_B8359
+		CMP		#$B7
+		BEQ		loc_B8359
+		CMP		#$BB
+		BEQ		loc_B8359
+		CMP		#$E3
+		BEQ		loc_B8359
+		BNE		loc_B8357
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8371:
+		CMP		#$90
+		BCC		loc_B838B
+		CMP		#$A7
+		BCC		loc_B8389
+		CMP		#$B2
+		BCC		loc_B838B
+		CMP		#$B9
+		BEQ		loc_B838B
+		CMP		#$BB
+		BEQ		loc_B838B
+		CMP		#$E4
+		BEQ		loc_B838B
+loc_B8389:
+		CLC
+		RTS
+loc_B838B:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B838D:
+		CMP		#$90
+		BCC		loc_B838B
+		CMP		#$A7
+		BCC		loc_B8389
+		CMP		#$B2
+		BCC		loc_B838B
+		CMP		#$BA
+		BEQ		loc_B838B
+		CMP		#$BC
+		BEQ		loc_B838B
+		CMP		#$E5
+		BEQ		loc_B838B
+		BNE		loc_B8389
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B83A7:
+		LDA		#$FF
+		STA		byte_CA
+		LDA		_city._game_flags
+		AND		#$10
+		BEQ		loc_B83B4
+		CLC
+		RTS
+loc_B83B4:
+		LDY		#0
+loc_B83B6:
+		STY		_ptr0
+		LDA		(word_C5),Y
+		CMP		#$80
+		BEQ		loc_B83CA
+		TAY
+		LDA		(word_C1),Y
+		JSR		sub_B83D0
+		LDY		_ptr0
+		INY
+		BCC		loc_B83B6
+locret_B83C9:
+		RTS
+loc_B83CA:
+		JSR		_money_recalc
+		BCS		locret_B83C9
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B83D0:
+		PHA
+		LDA		_prev_constr_palette_press_idx
+		CMP		#$D
+		BNE		loc_B83E1
+		LDY		_cur_special_building_select_idx
+		LDA		_city._special_buildings_list,Y
+		CMP		#5
+		BEQ		loc_B8441
+loc_B83E1:
+		PLA
+		CMP		#$90
+		BCC		loc_B843F
+		CMP		#$90
+		BEQ		loc_B842C
+		PHA
+		LDA		_city._game_flags
+		LSR
+		BCC		loc_B843E
+		LDA		_prev_constr_palette_press_idx
+		CMP		#$D
+		BNE		loc_B8401
+		LDY		_cur_special_building_select_idx
+		LDA		_city._special_buildings_list,Y
+		CMP		#$E
+		BEQ		loc_B8453
+loc_B8401:
+		PLA
+loc_B8402:
+		LDY		_prev_constr_palette_press_idx
+		CPY		#4
+		BEQ		loc_B8410
+		CMP		#$A7
+		BCC		loc_B843F
+		CMP		#$B2
+		BCC		loc_B8436
+loc_B8410:
+		CMP		#$B4
+		BCC		loc_B842E
+		BEQ		loc_B8426
+		CMP		#$BE
+		BCC		loc_B843F
+		CMP		#$E0
+		BCC		loc_B8426
+		CMP		#$E7
+		BCC		loc_B843F
+		CMP		#$EB
+		BCS		loc_B843F
+loc_B8426:
+		INC		_money_delta
+		BNE		loc_B842C
+		INC		_money_delta+1
+loc_B842C:
+		CLC
+		RTS
+loc_B842E:
+		LDA		_prev_constr_palette_press_idx
+		CMP		#4
+		BNE		loc_B8426
+		BEQ		loc_B843F
+loc_B8436:
+		LDA		_prev_constr_palette_press_idx
+		CMP		#2
+		BNE		loc_B8426
+		BEQ		loc_B843F
+loc_B843E:
+		PLA
+loc_B843F:
+		SEC
+		RTS
+loc_B8441:
+		PLA
+		CMP		#$BD
+		BCC		loc_B8450
+		CMP		#$CE
+		BCC		loc_B844E
+		CMP		#$FE
+		BNE		loc_B8450
+loc_B844E:
+		CLC
+		RTS
+loc_B8450:
+		JMP		loc_B8402
+loc_B8453:
+		PLA
+		CMP		#$9C
+		BCC		loc_B845E
+		CMP		#$A7
+		BCS		loc_B845E
+		CLC
+		RTS
+loc_B845E:
+		JMP		loc_B8402
+
+; =============== S U B	R O U T	I N E =======================================
+_money_recalc:
+		LDA		_city._game_flags
+		AND		#$10
+		BNE		loc_B8483
+		SEC
+		LDA		_city._money
+		SBC		_money_delta
+		STA		_city._money
+		LDA		_city._money+1
+		SBC		_money_delta+1
+		STA		_city._money+1
+		LDA		_city._money+2
+		SBC		#0
+		STA		_city._money+2
+		BCC		loc_B8485
+loc_B8483:
+		CLC
+		RTS
+loc_B8485:
+		LDA		_city._money
+		ADC		_money_delta
+		STA		_city._money
+		LDA		_city._money+1
+		ADC		_money_delta+1
+		STA		_city._money+1
+		LDA		_city._money+2
+		ADC		#0
+		STA		_city._money+2
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_title_screen:
+		LDA		_title_sub_idx
+		CMP		#2
+		BEQ		loc_B8514
+		INC		_tmp118
+		DEC		_mmc5_operation_in_progress_flag
+		LDA		#$FF
+		STA		_game_core_state
+		JSR		_render_off
+		JSR		_spr_clear
+		LDA		#8
+		STA		_MMC5_NT_MODE
+		STA		_mmc5_nt_mode_shadow
+		LDX		#<[_tlm_res_title_main]
+		LDY		#>[_tlm_res_title_main]
+		JSR		_tlm_res_unpack
+		JSR		_wait_for_nmi
+		JSR		_ppu_reset
+		LDX		#0
+		STX		_game_wnd_spr_mode_flag
+		STX		_tmp118
+		STX		_title_sub_idx
+		STX		_cur_game_mode
+		INX
+		STX		_apu_mus_idx_req
+		LDX		#3
+		STX		_scr_mode_idx
+		LDA		#7
+		STA		_screen_pal_cur_bg_idx
+		LDA		#3
+		STA		_ppu_pal_dequeue_req
+		JSR		_wait_for_nmi
+		LDA		#$83
+		JSR		_pal_load_lib
+		LDA		#0
+		STA		_MMC5_NT_MODE
+		STA		_mmc5_nt_mode_shadow
+		LDA		#3
+		STA		_MMC5_CHR_BANKSA+3
+		STA		_mmc5_chr_banks_shadow+3
+		LDA		#$90
+		STA		_ppu_ctrl_shadow
+		LDA		_ppu_mask_shadow
+		AND		#$FC
+		STA		_ppu_mask_shadow
+		INC		_mmc5_operation_in_progress_flag
+		JSR		_render_on
+		JSR		_pal_fade_in
+loc_B8514:
+		JSR		_wait_for_nmi
+		LDA		_pad1_prev_held
+		AND		#$CA
+		CMP		#$CA
+		BNE		loc_B8526
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$00,$F3
+		.WORD	_sram_reset
+loc_B8526:
+		JSR		_title_sub_exec
+		BIT		_title_sub_idx
+		BMI		loc_B8534
+		JSR		_spr_finish
+		JMP		loc_B8514
+loc_B8534:
+		JSR		_name_bufs_reset
+		JSR		_spr_clear
+		LDA		#0
+		STA		_MMC5_NT_MODE
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_title_sub_exec:
+		LDA		_title_sub_idx
+		JSR		_switch
+		.BYTE	>[_title_sub0_init]
+		.BYTE	<[_title_sub0_init]
+		.BYTE	>[_title_sub1_title_input]
+		.BYTE	<[_title_sub1_title_input]
+		.BYTE	>[_title_sub2_menu_draw]
+		.BYTE	<[_title_sub2_menu_draw]
+		.BYTE	>[_title_sub3_menu_input]
+		.BYTE	<[_title_sub3_menu_input]
+
+; =============== S U B	R O U T	I N E =======================================
+_title_sub0_init:
+		INC		_title_sub_idx
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_title_sub1_title_input:
+		LDA		_pad0_autorep_press
+		AND		#$90
+		BEQ		locret_B855E
+		INC		_title_sub_idx
+		JMP		_pal_fade_out
+locret_B855E:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_title_sub2_menu_draw:
+		INC		_title_sub_idx
+		DEC		_mmc5_operation_in_progress_flag
+		LDA		#1
+		STA		_game_core_state
+		JSR		_render_off
+		JSR		_spr_clear
+		LDA		#8
+		STA		_MMC5_NT_MODE
+		STA		_mmc5_nt_mode_shadow
+		LDA		#3
+		STA		_MMC5_CHR_BANKSA+3
+		STA		_mmc5_chr_banks_shadow+3
+		LDX		#<[_tlm_res_title_menu_default]
+		LDY		#>[_tlm_res_title_menu_default]
+		LDA		_has_saved_city_data_flag
+		BNE		loc_B858C
+		LDX		#<[_tlm_res_title_menu_continue]
+		LDY		#>[_tlm_res_title_menu_continue]
+loc_B858C:
+		JSR		_tlm_res_unpack
+		LDA		_has_saved_city_data_flag
+		BNE		loc_B859E
+		LDA		_cur_game_mode
+		BNE		loc_B859E
+		LDX		#3
+		STX		_cur_game_mode
+loc_B859E:
+		JSR		_title_cursor_draw
+		LDX		#3
+		STX		_scr_mode_idx
+		LDX		#5
+		STX		_screen_pal_cur_spr_idx
+		LDA		#7
+		STA		_screen_pal_cur_bg_idx
+		LDA		#$83
+		JSR		_pal_load_lib
+		LDA		#0
+		STA		_MMC5_NT_MODE
+		STA		_mmc5_nt_mode_shadow
+		LDA		_apu_mus_pulse2_shadow+2
+		CMP		#1
+		BEQ		loc_B85CB
+		CMP		#2
+		BEQ		loc_B85CB
+		LDA		#1
+		STA		_apu_mus_idx_req
+loc_B85CB:
+		LDA		#$90
+		STA		_ppu_ctrl_shadow
+		LDA		_ppu_mask_shadow
+		AND		#$FC
+		STA		_ppu_mask_shadow
+		INC		_mmc5_operation_in_progress_flag
+		JSR		_render_on
+		JMP		_pal_fade_in
+
+; =============== S U B	R O U T	I N E =======================================
+_title_sub3_menu_input:
+		LDA		_pad0_autorep_press
+		AND		#$90
+		BNE		loc_B8624
+		LDA		_pad0_autorep_press
+		AND		#$C
+		BEQ		loc_B8631
+		LDA		#1
+		STA		_apu_se_flags
+		LDX		_cur_game_mode
+		LDA		_title_menu_item_select_up,X
+		TAX
+		LDA		_pad0_autorep_press
+		AND		#$C
+		BEQ		loc_B8631
+		CMP		#8
+		BNE		loc_B860F
+		LDA		_has_saved_city_data_flag
+		BNE		loc_B8608
+		DEX
+		BNE		loc_B861C
+		LDX		#4
+loc_B8608:
+		DEX
+		BPL		loc_B861C
+		LDX		#3
+		BNE		loc_B861C
+loc_B860F:
+		INX
+		CPX		#4
+		BCC		loc_B861C
+		LDX		#0
+		LDA		_has_saved_city_data_flag
+		BNE		loc_B861C
+		INX
+loc_B861C:
+		LDA		_title_menu_item_select_down,X
+		STA		_cur_game_mode
+		BPL		loc_B8631
+loc_B8624:
+		LDA		#1
+		STA		_apu_se_flags
+		JSR		_title_cursor_draw
+		LDA		#$80
+		STA		_title_sub_idx
+		RTS
+loc_B8631:
+		JSR		_title_cursor_draw
+		RTS
+_unused_2:
+		.BYTE	$03,$04
+_title_menu_item_select_up:
+		.BYTE	$00,$02,$03,$01
+_title_menu_item_select_down:
+		.BYTE	$00, $03,$01, $02
+
+; =============== S U B	R O U T	I N E =======================================
+_title_cursor_draw:
+		LDX		_cur_game_mode
+		LDA		_title_cursor_pos_list,X
+		LDX		_has_saved_city_data_flag
+		BNE		loc_B864D
+		SEC
+		SBC		#$10
+loc_B864D:
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		STA		_tmp4
+		LDA		#<[_spr_raw_title_cursor]
+		STA		_ptr0
+		LDA		#>[_spr_raw_title_cursor]
+		STA		_ptr0+1
+		JMP		_spr_raw_send
+_spr_raw_title_cursor:
+		.BYTE	$00,$F4,$03,$20
+		.BYTE	$00,$F5,$03,$28
+		.BYTE	$00,$F6,$03,$30
+		.BYTE	$08,$F7,$03,$20
+		.BYTE	$08,$F8,$03,$28
+		.BYTE	$FF
+_title_cursor_pos_list:
+		.BYTE	$68,$A8,$C8,$88
+_tlm_res_title_main:
+		.WORD	$2000
+		.BYTE	4
+		.WORD	_tlm_title_header
+		.WORD	byte_B86EB
+		.WORD	byte_B887C
+		.WORD	byte_B88B3
+_tlm_res_title_menu_continue:
+		.WORD	$2000
+		.BYTE	4
+		.WORD	_tlm_title_header
+		.WORD	byte_B8793
+		.WORD	byte_B887C
+		.WORD	byte_B8976
+_tlm_res_title_menu_default:
+		.WORD	$2000
+		.BYTE	4
+		.WORD	_tlm_title_header
+		.WORD	byte_B87F6
+		.WORD	byte_B887C
+		.WORD	byte_B89B8
+_tlm_title_header:
+		.BYTE	 $0E4,$44,$FF,$67,$02,$23,$FF,$01,$0E,$0F,$65,$80,$03,$FF,$FF,$7A
+		.BYTE	$7B,$27,$FF,$67,$12,$22,$FF,$62,$1D,$66,$90,$02,$FF,$7C,$7D,$26
+		.BYTE	$FF,$6E,$21,$69,$A0,$25,$FF,$6F,$30,$69,$B0,$25,$FF,$6F,$40,$69
+		.BYTE	$C0,$25,$FF,$6F,$50,$68,$D0,$26,$FF,$6F,$60,$67,$E0,$28,$FF,$63
+		.BYTE	$71,$2F,$FF,$62,$F5,$3B,$FF,$63,$8B,$3C,$FF,$01,$9C,$9D,$25,$FF
+		.BYTE	$FF
+byte_B86EB:
+		.BYTE	$2F,$FF,$00,$9E,$83,$00,$0D,$27,$FF,$00,$04,$2A,$FF,$64,$00,$02
+		.BYTE	$FF,$9F,$AB,$62,$BA,$00,$AA,$63,$AC,$64,$CB,$8A,$00,$1A,$64,$09
+		.BYTE	$03,$FF,$9F,$AA,$AC,$62,$BD,$66,$D9,$2C,$FF,$65,$19,$00,$FF,$66
+		.BYTE	$E8,$01,$9A,$9B,$8F,$00,$55,$65,$29,$03,$FF,$FF,$21,$22,$30,$FF
+		.BYTE	$84,$00,$1D,$65,$39,$03,$FF,$FF,$31,$32,$24,$FF,$62,$28,$24,$FF
+		.BYTE	$00,$40,$27,$FF,$65,$49,$03,$FF,$FF,$41,$42,$84,$00,$1B,$62,$48
+		.BYTE	$24,$FF,$01,$50,$51,$22,$FF,$62,$55,$00,$FF,$65,$59,$00,$FF,$62
+		.BYTE	$50,$24,$FF,$62,$58,$01,$FF,$FF,$64,$5D,$00,$FF,$6C,$63,$64,$60
+		.BYTE	$00,$FF,$64,$66,$01,$FF,$FF,$72,$6D,$7F,$70,$7F,$80,$7F,$90,$7F
+		.BYTE	$A0,$7F,$B0,$7F,$C0,$7F,$D0,$72,$E0,$23,$FF,$03,$F7,$F8,$FF,$FF
+		.BYTE	$64,$FB,$6D,$F0,$E4,$41,$FF,$FF
+byte_B8793:
+		.BYTE	$E4,$6A,$FF,$07,$8E,$AD,$AC,$C1,$AB,$C2,$C1,$AF,$37,$FF,$07,$9E
+		.BYTE	$BD,$BC,$D1,$BB,$D2,$D1,$BF,$E4,$54,$FF,$63,$AA,$09,$AB,$FF,$AE
+		.BYTE	$AF,$C0,$FF,$C1,$C2,$AB,$7B,$31,$FF,$63,$BA,$09,$BB,$FF,$BE,$BF
+		.BYTE	$D0,$FF,$D1,$D2,$BB,$8B,$3E,$FF,$00,$9B,$E4,$31,$FF,$0E,$AA,$AF
+		.BYTE	$C9,$AF,$C1,$AB,$FF,$AA,$C1,$AF,$8C,$AC,$AD,$C2,$8D,$30,$FF,$0E
+		.BYTE	$BA,$BF,$D9,$BF,$D1,$BB,$FF,$BA,$D1,$BF,$9C,$BC,$BD,$D2,$9D,$E4
+		.BYTE	$E8,$FF,$FF
+byte_B87F6:
+		.BYTE	$E4,$26,$FF,$01,$C3,$AF,$62,$C4,$0B,$AF,$FF,$AA,$AC,$C7,$AF,$C8
+		.BYTE	$FF,$C1,$C2,$AB,$7B,$2E,$FF,$01,$D3,$BF,$62,$D4,$0B,$BF,$FF,$BA
+		.BYTE	$BC,$D7,$BF,$D8,$FF,$D1,$D2,$BB,$8B,$3E,$FF,$00,$9B,$E4,$32,$FF
+		.BYTE	$07,$8E,$AD,$AC,$C1,$AB,$C2,$C1,$AF,$37,$FF,$07,$9E,$BD,$BC,$D1
+		.BYTE	$BB,$D2,$D1,$BF,$E4,$54,$FF,$63,$AA,$04,$AB,$FF,$AE,$AF,$C0,$93
+		.BYTE	$00,$33,$22,$FF,$63,$BA,$04,$BB,$FF,$BE,$BF,$D0,$F0,$56,$00,$53
+		.BYTE	$0E,$AA,$AF,$C9,$AF,$C1,$AB,$FF,$AA,$C1,$AF,$8C,$AC,$AD,$C2,$8D
+		.BYTE	$30,$FF,$0E,$BA,$BF,$D9,$BF,$D1,$BB,$FF,$BA,$D1,$BF,$9C,$BC,$BD
+		.BYTE	$D2,$9D,$E4,$A8,$FF,$FF
+byte_B887C:
+		.BYTE	$E4,$50,$14,$27,$54,$03,$14,$14,$94,$94,$32,$14,$29,$54,$9F,$00
+		.BYTE	$5A,$02,$54,$54,$54,$32,$14,$9F,$00,$90,$F0,$2B,$00,$90,$33,$14
+		.BYTE	$9E,$00,$F1,$08,$14,$14,$14,$14,$14,$14,$14,$14,$14,$9F,$01,$18
+		.BYTE	$F0,$21,$01,$18,$25,$14,$FF
+byte_B88B3:
+		.BYTE	$2F,$14,$00,$D4,$83,$00,$0D,$27,$14,$00,$D7,$2A,$14,$24,$D7,$00
+		.BYTE	$14,$2E,$D4,$03,$14,$14,$14,$D7,$99,$00,$22,$0D,$14,$14,$14,$14
+		.BYTE	$14,$14,$14,$14,$14,$14,$14,$14,$14,$D7,$94,$00,$29,$00,$D4,$8F
+		.BYTE	$00,$60,$02,$14,$D6,$D6,$30,$14,$00,$D7,$92,$00,$85,$00,$D6,$86
+		.BYTE	$00,$91,$00,$97,$93,$00,$81,$00,$D7,$8A,$00,$B6,$00,$D7,$85,$00
+		.BYTE	$26,$08,$14,$D7,$D7,$D7,$D7,$D7,$D7,$14,$D6,$8B,$00,$B1,$22,$D6
+		.BYTE	$02,$97,$97,$14,$2B,$D7,$00,$97,$24,$D6,$02,$14,$96,$96,$87,$00
+		.BYTE	$F8,$02,$D7,$D7,$D7,$91,$01,$03,$07,$D6,$96,$96,$D6,$D6,$D6,$D6
+		.BYTE	$D6,$91,$01,$1D,$05,$D7,$D6,$D6,$D6,$96,$96,$93,$01,$35,$22,$97
+		.BYTE	$9F,$01,$4C,$F0,$29,$01,$4C,$01,$D6,$D6,$9A,$01,$58,$2C,$D6,$83
+		.BYTE	$01,$69,$2B,$97,$02,$96,$96,$96,$85,$01,$36,$26,$96,$92,$01,$40
+		.BYTE	$01,$D6,$D6,$8D,$01,$B5,$85,$00,$25,$01,$14,$14,$92,$02,$0B,$E4
+		.BYTE	$41,$14,$FF
+byte_B8976:
+		.BYTE	$E4,$6A,$14,$00,$81,$26,$80,$37,$14,$9F,$00,$6B,$E4,$3C,$14,$85
+		.BYTE	$00,$6E,$83,$00,$70,$22,$80,$00,$81,$31,$14,$9F,$00,$E8,$0C,$14
+		.BYTE	$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$9F,$01,$15,$32
+		.BYTE	$14,$00,$80,$88,$00,$E8,$00,$81,$94,$00,$F2,$9F,$01,$68,$E4,$D7
+		.BYTE	$14,$FF
+byte_B89B8:
+		.BYTE	$E4,$26,$14,$25,$80,$85,$00,$26,$83,$00,$26,$00,$81,$9F,$00,$18
+		.BYTE	$3E,$14,$9F,$00,$57,$33,$14,$00,$81,$26,$80,$37,$14,$9F,$00,$AB
+		.BYTE	$E4,$3C,$14,$05,$80,$80,$80,$80,$80,$14,$99,$00,$50,$9F,$01,$28
+		.BYTE	$F0,$3F,$00,$6A,$89,$00,$27,$00,$81,$94,$00,$54,$9F,$01,$A8,$E4
+		.BYTE	$97,$14,$FF
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl6_A_bank_draw:
+		LDA		#$80
+		STA		_tmp118+7
+		LDA		#0
+		BIT		_city._bank_flags
+		BVC		loc_B8A11
+		LDA		#$3F
+		JSR		_bank_scr_common_spr_draw
+		JSR		_bank_scr_sub7_already_loan_draw
+		LDA		#7
+loc_B8A11:
+		STA		_tmp118+2
+		LDA		#$80
+		STA		_game_core_state
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl6_B_bank_input:
+		JSR		_bank_scr_sub_exec
+		BIT		_tmp118+2
+		BPL		locret_B8A34
+		LDA		#$40
+		STA		_scr_res_control_flags
+		LDA		#2
+		STA		_scr_res_idx
+		LDA		#$10
+		STA		_scr_res_control_flags
+		JMP		_pal_fade_out
+locret_B8A34:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub_exec:
+		LDA		_tmp118+2
+		JSR		_switch
+		.BYTE	>[_bank_scr_sub0_init]
+		.BYTE	<[_bank_scr_sub0_init]
+		.BYTE	>[_bank_scr_sub0_init]
+		.BYTE	<[_bank_scr_sub0_init]
+		.BYTE	>[_bank_scr_sub2_loan_select]
+		.BYTE	<[_bank_scr_sub2_loan_select]
+		.BYTE	>[_bank_scr_sub3_loan_done_init]
+		.BYTE	<[_bank_scr_sub3_loan_done_init]
+		.BYTE	>[_bank_scr_sub4_loan_done_animate]
+		.BYTE	<[_bank_scr_sub4_loan_done_animate]
+		.BYTE	>[_bank_scr_sub5_exit_wait_init]
+		.BYTE	<[_bank_scr_sub5_exit_wait_init]
+		.BYTE	>[_bank_scr_sub6_exit_wait_input]
+		.BYTE	<[_bank_scr_sub6_exit_wait_input]
+		.BYTE	>[_bank_scr_sub7_already_loan_draw]
+		.BYTE	<[_bank_scr_sub7_already_loan_draw]
+		.BYTE	>[_bank_scr_sub8_already_load_input]
+		.BYTE	<[_bank_scr_sub8_already_load_input]
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub0_init:
+		LDA		#0
+		STA		_tmp118+4
+		INC		_tmp118+2
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub2_loan_select:
+		LDA		#$A0
+		LDY		_tmp118+4
+		BEQ		loc_B8A5F
+		LDA		#$D0
+loc_B8A5F:
+		STA		_spr_insert_args._pos._X
+		LDA		#$D9
+		STA		_spr_insert_args._pos._Y
+		LDA		#0
+		STA		_spr_insert_args._idx
+		JSR		_spr_lib_prg2_insert
+		BIT		_pad0_autorep_press
+		BMI		loc_B8A8A
+		BVC		loc_B8A79
+		LDA		#1
+		STA		_tmp118+4
+		BNE		loc_B8AA2
+loc_B8A79:
+		LDA		_pad0_autorep_press
+		AND		#3
+		BEQ		locret_B8AA7
+		LDA		_tmp118+4
+		EOR		#1
+		STA		_tmp118+4
+		JMP		locret_B8AA7
+loc_B8A8A:
+		LDA		_tmp118+4
+		BNE		loc_B8AA2
+		LDA		#$15
+		STA		_city._bank_loan_period
+		LDA		#$F4
+		STA		_tax_alloc._bank_loan_year
+		LDA		#1
+		STA		_tax_alloc._bank_loan_year+1
+		INC		_tmp118+2
+		RTS
+loc_B8AA2:
+		LDA		#5
+		STA		_tmp118+2
+locret_B8AA7:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_spr_raw_send:
+		LDX		_spr_buf_pos
+		LDY		#0
+loc_B8AAC:
+		LDA		(_ptr0),Y
+		CMP		#$FF
+		BEQ		loc_B8AD6
+		CLC
+		ADC		_tmp2
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		ORA		_tmp3
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		CLC
+		ADC		_tmp4
+		STA		_spr_buf,X
+		INX
+		INY
+		BNE		loc_B8AAC
+loc_B8AD6:
+		STX		_spr_buf_pos
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub3_loan_done_init:
+		LDA		_city._bank_flags
+		ORA		#$C0
+		STA		_city._bank_flags
+		LDA		_city._money
+		CLC
+		ADC		#$10
+		STA		_city._money
+		LDA		_city._money+1
+		ADC		#$27
+		STA		_city._money+1
+		BCC		loc_B8AF7
+		INC		_city._money+2
+loc_B8AF7:
+		LDA		#0
+		STA		_tmp118
+		LDA		#$58
+		JSR		_bank_scr_common_spr_draw
+		INC		_tmp118+2
+		LDA		#<[byte_B8DC8]
+		STA		_ptr0
+		LDA		#>[byte_B8DC8]
+		STA		_ptr0+1
+		LDA		#<[byte_B8DFF]
+		STA		_tmp2
+		LDA		#>[byte_B8DFF]
+		STA		_tmp3
+		JMP		_ppu_res_queue
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub4_loan_done_animate:
+		JSR		sub_B8B92
+		INC		_tmp118
+		LDA		_tmp118
+		LSR
+		TAX
+		LDA		byte_B8D7E,X
+		BMI		loc_B8B89
+		JSR		_bank_scr_common_spr_draw
+		LDX		_tmp118
+		CPX		#$12
+		BEQ		loc_B8B63
+		CPX		#$22
+		BEQ		loc_B8B76
+		CPX		#$32
+		BEQ		loc_B8B50
+		CPX		#$42
+		BNE		locret_B8B91
+		LDA		#<[byte_B8DD3]
+		STA		_ptr0
+		LDA		#>[byte_B8DD3]
+		STA		_ptr0+1
+		LDA		#<[byte_B8E0A]
+		STA		_tmp2
+		LDA		#>[byte_B8E0A]
+		STA		_tmp3
+		JMP		_ppu_res_queue
+loc_B8B50:
+		LDA		#<[byte_B8DBD]
+		STA		_ptr0
+		LDA		#>[byte_B8DBD]
+		STA		_ptr0+1
+		LDA		#<[byte_B8DF4]
+		STA		_tmp2
+		LDA		#>[byte_B8DF4]
+		STA		_tmp3
+		JMP		_ppu_res_queue
+loc_B8B63:
+		LDA		#<[byte_B8DA7]
+		STA		_ptr0
+		LDA		#>[byte_B8DA7]
+		STA		_ptr0+1
+		LDA		#<[byte_B8DDE]
+		STA		_tmp2
+		LDA		#>[byte_B8DDE]
+		STA		_tmp3
+		JMP		_ppu_res_queue
+loc_B8B76:
+		LDA		#<[byte_B8DB2]
+		STA		_ptr0
+		LDA		#>[byte_B8DB2]
+		STA		_ptr0+1
+		LDA		#<[byte_B8DE9]
+		STA		_tmp2
+		LDA		#>[byte_B8DE9]
+		STA		_tmp3
+		JMP		_ppu_res_queue
+loc_B8B89:
+		LDA		#$3F
+		JSR		_bank_scr_common_spr_draw
+		INC		_tmp118+2
+locret_B8B91:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8B92:
+		LDA		#0
+		STA		_tmp2
+		STA		_tmp4
+		STA		_tmp3
+		LDA		_tmp118+4
+		BNE		loc_B8BAA
+		LDA		#<[byte_B8BB5]
+		STA		_ptr0
+		LDA		#>[byte_B8BB5]
+		STA		_ptr0+1
+		JMP		_spr_raw_send
+loc_B8BAA:
+		LDA		#<[byte_B8BD6]
+		STA		_ptr0
+		LDA		#>[byte_B8BD6]
+		STA		_ptr0+1
+		JMP		_spr_raw_send
+byte_B8BB5:
+		.BYTE	$CF,$D0,$02,$88
+		.BYTE	$CF,$D1,$02,$90
+		.BYTE	$CF,$D2,$02,$98
+		.BYTE	$CF,$D3,$02,$A0
+		.BYTE	$D7,$D4,$02,$88
+		.BYTE	$D7,$D5,$02,$90
+		.BYTE	$D7,$D6,$02,$98
+		.BYTE	$D7,$D7,$02,$A0
+		.BYTE	$FF
+byte_B8BD6:
+		.BYTE	$CF,$D8,$02,$B8
+		.BYTE	$CF,$D9,$02,$C0
+		.BYTE	$CF,$DA,$02,$C8
+		.BYTE	$CF,$DB,$02,$D0
+		.BYTE	$D7,$DC,$02,$B8
+		.BYTE	$D7,$DD,$02,$C0
+		.BYTE	$D7,$DE,$02,$C8
+		.BYTE	$D7,$DF,$02,$D0
+		.BYTE	$FF
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub5_exit_wait_init:
+		LDA		#$40
+		STA		_tmp118+7
+		INC		_tmp118+2
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub6_exit_wait_input:
+		JSR		sub_B8B92
+		LDA		_tmp118+4
+		BNE		loc_B8C0C
+		LDA		#$3F
+		JSR		_bank_scr_common_spr_draw
+loc_B8C0C:
+		DEC		_tmp118+7
+		BNE		locret_B8C16
+		LDA		#$80
+		STA		_tmp118+2
+locret_B8C16:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub7_already_loan_draw:
+		LDX		#0
+		LDA		_city._bank_loan_period
+loc_B8C1C:
+		CMP		#$A
+		BCC		loc_B8C25
+		SBC		#$A
+		INX
+		BNE		loc_B8C1C
+loc_B8C25:
+		STA		_ptr0
+		STX		_ptr0+1
+		LDX		_ppu_queue_pos_head
+		LDA		#$F6
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$26
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#2
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		_ptr0+1
+		LDA		byte_B8CB7,Y
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		_ptr0
+		LDA		byte_B8CB7,Y
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$16
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$27
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#2
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		_ptr0+1
+		LDA		byte_B8CC3,Y
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		_ptr0
+		LDA		byte_B8CC3,Y
+		STA		_ppu_queue_buf,X
+		INX
+		STX		_ppu_queue_pos_head
+		INC		_tmp118+2
+		LDX		_extnt_queue_pos_head
+		LDA		#$F6
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$5E
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#2
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$D8
+		STA		_extnt_queue_buf,X
+		INX
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$16
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$5F
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#2
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$D8
+		STA		_extnt_queue_buf,X
+		INX
+		STA		_extnt_queue_buf,X
+		INX
+		STX		_extnt_queue_pos_head
+		JMP		_bank_scr_common_spr_draw_pos3F
+byte_B8CB7:
+		.BYTE	$CA,$CB,$CC,$CD,$CE,$CF,$EA,$EB,$EC,$ED,$EE,$EF
+byte_B8CC3:
+		.BYTE	$DA,$DB,$DC,$DD,$DE,$DF,$FA,$FB,$FC,$FD,$FE,$FF
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_sub8_already_load_input:
+		LDA		_pad0_autorep_press
+		AND		#$C0
+		BNE		_bank_scr_return
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_common_spr_draw_pos3F:
+		LDA		#$3F
+		JMP		_bank_scr_common_spr_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_return:
+		LDA		#$80
+		STA		_tmp118+2
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_ppu_res_queue:
+		LDY		#0
+		LDX		_ppu_queue_pos_head
+loc_B8CE4:
+		LDA		(_ptr0),Y
+		BNE		loc_B8CF0
+		INY
+		LDA		(_ptr0),Y
+		BEQ		loc_B8CF7
+		DEY
+		LDA		(_ptr0),Y
+loc_B8CF0:
+		STA		_ppu_queue_buf,X
+		INX
+		INY
+		BNE		loc_B8CE4
+loc_B8CF7:
+		STX		_ppu_queue_pos_head
+		LDY		#0
+		LDX		_extnt_queue_pos_head
+loc_B8CFD:
+		LDA		(_tmp2),Y
+		BNE		loc_B8D09
+		INY
+		LDA		(_tmp2),Y
+		BEQ		loc_B8D10
+		DEY
+		LDA		(_tmp2),Y
+loc_B8D09:
+		STA		_extnt_queue_buf,X
+		INX
+		INY
+		BNE		loc_B8CFD
+loc_B8D10:
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_scr_common_spr_draw:
+		STA		_tmp2
+		LDX		#0
+		STX		_tmp4
+		CMP		#$49
+		BCS		loc_B8D1F
+		LDX		#$20
+loc_B8D1F:
+		STX		_tmp3
+		LDA		#<[byte_B8D5C]
+		STA		_ptr0
+		LDA		#>[byte_B8D5C]
+		STA		_ptr0+1
+		JSR		_spr_raw_send
+		LDA		#0
+		STA		_tmp3
+		LDA		#<[byte_B8D75]
+		STA		_ptr0
+		LDA		#>[byte_B8D75]
+		STA		_ptr0+1
+		JSR		_spr_raw_send
+		LDA		_tmp2
+		CMP		#$47
+		BCS		loc_B8D51
+		LDX		_spr_buf_pos
+		LDY		#0
+loc_B8D45:
+		LDA		byte_B8D54,Y
+		STA		_spr_buf,X
+		INX
+		INY
+		CPY		#8
+		BCC		loc_B8D45
+loc_B8D51:
+		STX		_spr_buf_pos
+		RTS
+byte_B8D54:
+		.BYTE	$37,$F4,$00,$80
+		.BYTE	$37,$F5,$00,$88
+byte_B8D5C:
+		.BYTE	$F0,$FD,$23,$68
+		.BYTE	$F0,$FD,$03,$70
+		.BYTE	$F0,$FD,$03,$78
+		.BYTE	$F0,$FD,$03,$80
+		.BYTE	$F0,$FD,$03,$88
+		.BYTE	$F0,$FD,$23,$90
+		.BYTE	$FF
+byte_B8D75:
+		.BYTE	$F8,$FB,$00,$78
+		.BYTE	$F8,$FC,$00,$80
+		.BYTE	$FF
+byte_B8D7E:
+		.BYTE	$58,$59,$5A,$5B
+		.BYTE	$5C,$5D,$5E,$5F
+		.BYTE	$5F,$5E,$5D,$5C
+		.BYTE	$5B,$5A,$59,$58
+		.BYTE	$57,$56,$55,$54
+		.BYTE	$53,$52,$51,$50
+		.BYTE	$4F,$4E,$4D,$4C
+		.BYTE	$4B,$4A,$49,$48
+		.BYTE	$47,$46,$45,$44
+		.BYTE	$43,$42,$41,$40
+		.BYTE	$FF
+byte_B8DA7:
+		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$00,$00
+byte_B8DB2:
+		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$00,$00
+byte_B8DBD:
+		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$00,$00
+byte_B8DC8:
+		.BYTE	$0D,$25,$06,$DC,$DC,$DC,$DC,$DC,$DC,$00,$00
+byte_B8DD3:
+		.BYTE	$ED,$24,$06,$35,$DF,$DF,$DF,$DF,$3A,$00,$00
+byte_B8DDE:
+		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$00,$00
+byte_B8DE9:
+		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00,$00
+byte_B8DF4:
+		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00,$00
+byte_B8DFF:
+		.BYTE	$0D,$5D,$06,$C8,$C8,$C8,$C8,$C8,$C8,$00,$00
+byte_B8E0A:
+		.BYTE	$ED,$5C,$06,$48,$01,$01,$01,$01,$48,$00,$00
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl1_A_graphs_draw:
+		JSR		_graphs_period_start_year_draw
+		JMP		_scr_res_hndl1_A_graphs1
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl1_B_graphs_input:
+		JSR		_graphs_period_start_year_draw
+		BIT		_scr_res_control_flags
+		BMI		loc_B8E30
+		BIT		_pad0_autorep_press
+		BVS		loc_B8E36
+		BPL		locret_B8E3F
+		LDA		#$20
+		STA		_apu_se_flags+1
+		JMP		sub_B8E7C
+loc_B8E30:
+		JSR		_flush_test_wait
+		JMP		sub_B8EFB
+loc_B8E36:
+		LDA		#$20
+		STA		_apu_se_flags+1
+		LDA		#$40
+		STA		_scr_res_control_flags
+locret_B8E3F:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_graphs_period_start_year_draw:
+		JSR		_get_graphs_scr_period_range
+		LDA		_spr_buf_pos
+		STA		_tmp5
+		LDA		#3
+		STA		_tmp4
+		LDY		#0
+loc_B8E4D:
+		LDA		_spr_graphs_period_start_year,Y
+		CMP		#$B0
+		BNE		loc_B8E5B
+		LDX		_tmp4
+		CLC
+		ADC		_ptr0,X
+		DEC		_tmp4
+loc_B8E5B:
+		LDX		_tmp5
+		STA		_spr_buf,X
+		INC		_tmp5
+		INY
+		CPY		#$10
+		BCC		loc_B8E4D
+		LDX		_tmp5
+		STX		_spr_buf_pos
+		RTS
+_spr_graphs_period_start_year:
+		.BYTE	$C7,$B0,$00,$3D
+		.BYTE	$C7,$B0,$00,$41
+		.BYTE	$C7,$B0,$00,$45
+		.BYTE	$C7,$B0,$00,$49
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8E7C:
+		LDA		_cur_game_cursor_scr_pos._X
+		CMP		#$18
+		BCC		nullsub_9
+		CMP		#$28
+		BCS		nullsub_9
+		LDA		_cur_game_cursor_scr_pos._Y
+		CMP		#$48
+		BCC		nullsub_9
+		CMP		#$A8
+		BCC		loc_B8EA5
+		LDX		#6
+		CMP		#$B0
+		BCC		nullsub_9
+		CMP		#$B8
+		BCC		loc_B8EB4
+		CMP		#$C0
+		BCC		nullsub_9
+		CMP		#$C8
+		BCS		nullsub_9
+		INX
+		BCC		loc_B8EB4
+loc_B8EA5:
+		LDX		#0
+		SEC
+		SBC		#$48
+		BEQ		loc_B8EB4
+		DEX
+loc_B8EAD:
+		INX
+		SBC		#$10
+		BEQ		loc_B8EB4
+		BCS		loc_B8EAD
+loc_B8EB4:
+		CPX		#6
+		BCC		sub_B8ED8
+		TXA
+		SEC
+		SBC		#6
+		CMP		_graphs_scr_period_mode
+		BEQ		nullsub_9
+		LDA		_graphs_scr_period_mode
+		EOR		#1
+		STA		_graphs_scr_period_mode
+		LDA		#$80
+		STA		_scr_res_control_flags
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F6,$F7
+		.WORD	sub_A021E
+		JMP		_scr_res_hndl1_A_graphs1
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8ED8:
+		CPX		byte_598
+		BEQ		nullsub_9
+		LDY		byte_599
+		LDA		byte_598
+		STA		byte_599
+		STX		byte_598
+		LDA		#$80
+		STA		_scr_res_control_flags
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F6,$F7
+		.WORD	sub_A01BF
+		LDA		#0
+		STA		byte_59B
+
+; =============== S U B	R O U T	I N E =======================================
+nullsub_9:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8EFB:
+		LDA		byte_59B
+		AND		#1
+		TAX
+		LDA		byte_598,X
+		BMI		loc_B8F1A
+		JSR		sub_B8F2D
+		PHA
+		LDA		byte_59B
+		AND		#1
+		TAY
+		LDX		byte_598,Y
+		JSR		sub_B8F82
+		PLA
+		JSR		sub_B8F9E
+loc_B8F1A:
+		INC		byte_59B
+		LDA		byte_59B
+		CMP		#$14
+		BCC		locret_B8F2C
+		LDA		#0
+		STA		_scr_res_control_flags
+		STA		byte_59B
+locret_B8F2C:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8F2D:
+		TAY
+		LDA		byte_59B
+		LSR
+		STA		_tmp2
+		TYA
+		STA		_tmp3
+		LDX		_graphs_scr_period_mode
+		BEQ		loc_B8F3E
+		LDX		#$3C
+loc_B8F3E:
+		STX		_ptr0+1
+		ASL
+		STA		_ptr0
+		ASL
+		ASL
+		CLC
+		ADC		_ptr0
+		ADC		_ptr0+1
+		TAY
+		PHA
+		LDX		#3
+		LDA		_tmp3
+		CMP		#4
+		BEQ		loc_B8F75
+		LDA		#0
+		STA		_ptr0
+		LDX		#$A
+loc_B8F5A:
+		LDA		_wram_map_buf+$7ED,Y
+		CMP		_ptr0
+		BCC		loc_B8F63
+		STA		_ptr0
+loc_B8F63:
+		INY
+		DEX
+		BNE		loc_B8F5A
+		LDX		#1
+		LDA		_ptr0
+		CMP		#$40
+		BCC		loc_B8F75
+		INX
+		CMP		#$80
+		BCC		loc_B8F75
+		INX
+loc_B8F75:
+		PLA
+		CLC
+		ADC		_tmp2
+		TAY
+		LDA		_wram_map_buf+$7ED,Y
+loc_B8F7D:
+		LSR
+		DEX
+		BNE		loc_B8F7D
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8F82:
+		STY		_ptr0
+		LDA		byte_B8F92,X
+		CLC
+		ADC		_ptr0
+		STA		_tmp2
+		LDA		byte_B8F98,X
+		STA		_tmp3
+		RTS
+byte_B8F92:
+		.BYTE	$C8,$C8,$C8,$B8,$C8,$A8
+byte_B8F98:
+		.BYTE	$81,$01,$41,$C1,$C1,$01
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B8F9E:
+		STA		_ptr0
+		LDA		#$20
+		SEC
+		SBC		_ptr0
+		LSR
+		STA		_ptr0+1
+		LDX		_ppu_queue_pos_head
+		LDA		byte_59B
+		CLC
+		ADC		#8
+		STA		_tmp4
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$25
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$90
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		_ptr0+1
+		BEQ		loc_B8FCF
+		LDA		#$DD
+loc_B8FC8:
+		STA		_ppu_queue_buf,X
+		INX
+		DEY
+		BNE		loc_B8FC8
+loc_B8FCF:
+		LDA		_ptr0
+		LSR
+		BCC		loc_B8FE1
+		TAY
+		LDA		_tmp2
+		CLC
+		ADC		#2
+		STA		_ppu_queue_buf,X
+		INX
+		TYA
+		BNE		loc_B8FE4
+loc_B8FE1:
+		BEQ		loc_B8FED
+		TAY
+loc_B8FE4:
+		LDA		_tmp2
+loc_B8FE6:
+		STA		_ppu_queue_buf,X
+		INX
+		DEY
+		BNE		loc_B8FE6
+loc_B8FED:
+		STX		_ppu_queue_pos_head
+		LDX		_extnt_queue_pos_head
+		LDA		_tmp4
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$5D
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$90
+		STA		_extnt_queue_buf,X
+		INX
+		LDY		_ptr0+1
+		BEQ		loc_B9010
+		LDA		#$81
+loc_B9009:
+		STA		_extnt_queue_buf,X
+		INX
+		DEY
+		BNE		loc_B9009
+loc_B9010:
+		LDA		_ptr0
+		LSR
+		BCC		loc_B9018
+		CLC
+		ADC		#1
+loc_B9018:
+		BEQ		loc_B9024
+		TAY
+		LDA		_tmp3
+loc_B901D:
+		STA		_extnt_queue_buf,X
+		INX
+		DEY
+		BNE		loc_B901D
+loc_B9024:
+		STX		_extnt_queue_pos_head
+		LDA		byte_598
+		CMP		#4
+		BEQ		loc_B9034
+		LDA		byte_599
+		CMP		#4
+		BNE		locret_B9082
+loc_B9034:
+		LDA		_ptr0+1
+		CMP		#9
+		LDX		#$B7
+		LDY		#$81
+		BCS		loc_B9046
+		LDA		_tmp2
+		CLC
+		ADC		#4
+		TAX
+		LDY		_tmp3
+loc_B9046:
+		STY		_tmp3
+		STX		_tmp2
+		LDX		_ppu_queue_pos_head
+		LDA		_tmp4
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$26
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#1
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp2
+		STA		_ppu_queue_buf,X
+		INX
+		STX		_ppu_queue_pos_head
+		LDX		_extnt_queue_pos_head
+		LDA		_tmp4
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$5E
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#1
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp3
+		STA		_extnt_queue_buf,X
+		INX
+		STX		_extnt_queue_pos_head
+locret_B9082:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl1_A_graphs1:
+		JSR		_get_graphs_scr_period_range
+		LDX		_ppu_queue_pos_head
+		LDY		#2
+loc_B908A:
+		LDA		byte_B9117,Y
+		STA		_ppu_queue_buf,X
+		INX
+		DEY
+		BPL		loc_B908A
+		LDA		#9
+		STA		_tmp4
+		LDA		_graphs_scr_period_mode
+		BNE		loc_B90AD
+		LDA		_city._cur_year
+		LSR
+		BCC		loc_B90AD
+		LDA		#1
+		LDY		#0
+		JSR		sub_B914A
+		JMP		loc_B90C0
+loc_B90AD:
+		LDA		#$DD
+		STA		_ppu_queue_buf,X
+		INX
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#2
+		JSR		sub_B9147
+		DEC		_tmp4
+		BEQ		loc_B90D6
+loc_B90C0:
+		LDA		_ptr0+1
+		CLC
+		ADC		#$B0
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		_ptr0
+		LDA		byte_B9163,Y
+		STA		_ppu_queue_buf,X
+		INX
+		DEC		_tmp4
+		BNE		loc_B90AD
+loc_B90D6:
+		STX		_ppu_queue_pos_head
+		LDX		_extnt_queue_pos_head
+		LDY		#2
+loc_B90DC:
+		LDA		byte_B9114,Y
+		STA		_extnt_queue_buf,X
+		INX
+		DEY
+		BPL		loc_B90DC
+		LDA		#9
+		STA		_tmp4
+		LDA		_graphs_scr_period_mode
+		BNE		loc_B90F5
+		LDA		_city._cur_year
+		LSR
+		BCS		loc_B9103
+loc_B90F5:
+		LDA		#$81
+		STA		_extnt_queue_buf,X
+		INX
+		STA		_extnt_queue_buf,X
+		INX
+		DEC		_tmp4
+		BEQ		loc_B9111
+loc_B9103:
+		LDA		#6
+		STA		_extnt_queue_buf,X
+		INX
+		STA		_extnt_queue_buf,X
+		INX
+		DEC		_tmp4
+		BNE		loc_B90F5
+loc_B9111:
+		STX		_extnt_queue_pos_head
+		RTS
+byte_B9114:
+		.BYTE	$12,$5F,$2A
+byte_B9117:
+		.BYTE	$12,$27,$2A
+
+; =============== S U B	R O U T	I N E =======================================
+_get_graphs_scr_period_range:
+		LDA		#$A
+		LDX		_graphs_scr_period_mode
+		BEQ		loc_B9123
+		LDA		#$64
+loc_B9123:
+		STA		_ptr0
+		LDA		_city._cur_year
+		SEC
+		SBC		_ptr0
+		TAY
+		LDA		_city._cur_year+1
+		SBC		#0
+		BCS		loc_B9136
+		LDA		#0
+		TAY
+loc_B9136:
+		STA		_ptr0+1
+		STY		_ptr0
+		JSR		_hex_to_dec9999999_1
+		LDA		_graphs_scr_period_mode
+		BEQ		locret_B9146
+		LDA		#0
+		STA		_ptr0
+locret_B9146:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B9147:
+		LDY		_graphs_scr_period_mode
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B914A:
+		CLC
+		ADC		_ptr0,Y
+		CMP		#$A
+		BCC		loc_B915F
+		LDA		#0
+		STA		_ptr0,Y
+		LDA		#1
+		INY
+		CPY		#4
+		BCC		sub_B914A
+		RTS
+loc_B915F:
+		STA		_ptr0,Y
+		RTS
+byte_B9163:
+		.BYTE	$BA,$DD,$BB,$DD,$BC,$DD,$BD,$DD,$BE,$DD
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec9999999_1:
+		LDY		#0
+		STY		_tmp2
+		LDX		#3
+		LDY		#0
+		STY		_tmp3
+		STY		_tmp4
+		STY		_tmp5
+		STY		_tmp6
+		STY		_tmp6+1
+loc_B917F:
+		LDY		#0
+loc_B9181:
+		LDA		_ptr0
+		CMP		byte_B91C9,X
+		LDA		_ptr0+1
+		SBC		byte_B91C2,X
+		LDA		_tmp2
+		SBC		byte_B91BB,X
+		BCC		loc_B91AA
+		LDA		_ptr0
+		SBC		byte_B91C9,X
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		byte_B91C2,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		SBC		byte_B91BB,X
+		STA		_tmp2
+		INY
+		BNE		loc_B9181
+loc_B91AA:
+		STY		_tmp2,X
+		DEX
+		BPL		loc_B917F
+		LDX		#0
+loc_B91B1:
+		LDA		_tmp2,X
+		STA		_ptr0+1,X
+		INX
+		CPX		#6
+		BNE		loc_B91B1
+		RTS
+byte_B91BB:
+		.BYTE	$00,$00,$00,$00,$01,$0F,$98
+byte_B91C2:
+		.BYTE	$00,$00,$03,$27,$86,$42,$96
+byte_B91C9:
+		.BYTE	$0A,$64,$E8,$10,$A0,$40,$80
+
+; =============== S U B	R O U T	I N E =======================================
+_flush_wait:
+		JSR		_wait_for_nmi
+
+; =============== S U B	R O U T	I N E =======================================
+_flush_test_wait:
+		LDA		_extnt_queue_pos_head
+		CMP		_extnt_queue_pos_tail
+		BNE		_flush_wait
+		LDA		_ppu_queue_pos_head
+		CMP		_ppu_queue_pos_tail
+		BNE		_flush_wait
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl2_B_budget_input:
+		JSR		_budget_tax_change_input
+		LDA		_pad0_held
+		BNE		loc_B920A
+		LDA		byte_596
+		CLC
+		ADC		#1
+		AND		#$7F
+		STA		byte_596
+		BEQ		loc_B91F7
+		JMP		loc_B927C
+loc_B91F7:
+		LDA		byte_597
+		CLC
+		ADC		#1
+		STA		byte_597
+		CMP		#7
+		BCC		loc_B927C
+		LDA		#$80
+		STA		_pad0_held
+		BNE		loc_B9243
+loc_B920A:
+		LDA		#0
+		STA		byte_596
+		STA		byte_597
+		JSR		_budget_wnd_cursor_draw
+		LDA		_pad0_autorep_release
+		AND		#$F
+		BEQ		loc_B9221
+		JSR		sub_B92DA
+		JMP		loc_B927C
+loc_B9221:
+		BIT		_pad0_autorep_release
+		BPL		loc_B927C
+		LDA		#1
+		STA		_apu_se_flags
+		LDA		_tmp584
+		CMP		#$A
+		BCS		loc_B9238
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F9
+		.WORD	_budget_funds_recalc
+		RTS
+loc_B9238:
+		BNE		loc_B9243
+		BIT		_city._bank_flags
+		BPL		loc_B9243
+		JSR		_bank_screen_init
+		RTS
+loc_B9243:
+		LDA		#0
+		STA		byte_596
+		STA		byte_597
+		JSR		_current_funds_calc
+		BCC		loc_B927C
+		LDA		byte_13B
+		BEQ		loc_B9271
+		JSR		_pal_fade_out
+		LDA		#0
+		STA		_scr_res_idx
+		STA		_fiscal_year_results_draw_req
+		STA		byte_13B
+		LDA		#$48
+		STA		_cur_game_cursor_scr_pos._Y
+		LDA		#$28
+		STA		_cur_game_cursor_scr_pos._X
+		LDA		#$10
+		STA		_scr_res_control_flags
+		RTS
+loc_B9271:
+		LDA		#0
+		STA		_fiscal_year_results_draw_req
+		LDA		#$40
+		STA		_scr_res_control_flags
+		RTS
+loc_B927C:
+		JSR		_budget_wnd_cursor_pos_set
+		JSR		sub_B9473
+		JMP		_budget_wnd_cursor_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_screen_init:
+		LDA		#6
+		STA		_scr_res_idx
+		LDA		#$10
+		STA		_scr_res_control_flags
+		JSR		_pal_fade_out
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_current_funds_calc:
+		LDY		#0
+		LDX		#3
+		SEC
+loc_B9298:
+		LDA		_money_plus_taxes_collected,Y
+		SBC		_total_funds,Y
+		INY
+		DEX
+		BNE		loc_B9298
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_save_taxes_data:
+		LDA		_tax_alloc._tax
+		STA		_city._tax_rate
+		LDA		_tax_alloc._fire
+		STA		_fire_fund_alloc
+		LDA		_tax_alloc._fire+1
+		STA		_fire_fund_alloc+1
+		LDA		_tax_alloc._police
+		STA		_police_fund_alloc
+		LDA		_tax_alloc._police+1
+		STA		_police_fund_alloc+1
+		LDA		_tax_alloc._trans
+		STA		_road_fund_alloc
+		LDA		_tax_alloc._trans+1
+		STA		_road_fund_alloc+1
+		LDA		_tax_alloc._education
+		STA		_education_fund_alloc
+		LDA		_tax_alloc._education+1
+		STA		_education_fund_alloc+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B92DA:
+		BIT		_city._bank_flags
+		BPL		loc_B9312
+		LDA		_pad0_autorep_release
+		AND		#$C
+		BEQ		loc_B9312
+		LDX		_tmp584
+		CMP		#8
+		BNE		loc_B92FE
+		CPX		#2
+		BCC		loc_B92F8
+		CPX		#$A
+		BCC		loc_B9312
+		DEC		_tmp584
+		RTS
+loc_B92F8:
+		LDA		#$B
+		STA		_tmp584
+		RTS
+loc_B92FE:
+		CPX		#8
+		BCC		loc_B9312
+		BEQ		loc_B930C
+		CPX		#$B
+		BEQ		loc_B9312
+		INC		_tmp584
+		RTS
+loc_B930C:
+		LDA		#$A
+		STA		_tmp584
+		RTS
+loc_B9312:
+		LDA		_pad0_autorep_release
+		AND		#$F
+		CMP		#4
+		AND		#5
+		BCS		loc_B9334
+		BNE		loc_B9329
+		LDA		_tmp584
+		AND		#1
+		BEQ		locret_B9365
+		LDA		#$FF
+		BNE		loc_B935A
+loc_B9329:
+		LDA		_tmp584
+		AND		#1
+		BNE		locret_B9365
+		LDA		#1
+		BNE		loc_B935A
+loc_B9334:
+		BNE		loc_B9349
+		LDA		_tmp584
+		CMP		#2
+		BCS		loc_B9345
+		AND		#1
+		CLC
+		ADC		#$C
+		STA		_tmp584
+loc_B9345:
+		LDA		#$FE
+		BNE		loc_B935A
+loc_B9349:
+		LDA		_tmp584
+		CMP		#$A
+		BCC		loc_B9358
+		AND		#1
+		CLC
+		ADC		#$FE
+		STA		_tmp584
+loc_B9358:
+		LDA		#2
+loc_B935A:
+		CLC
+		ADC		_tmp584
+		STA		_tmp584
+		LDX		#$40
+		STX		_apu_se_flags+1
+locret_B9365:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_wnd_cursor_pos_set:
+		BIT		_city._bank_flags
+		BPL		loc_B937D
+		LDA		_tmp584
+		CMP		#$A
+		BCC		loc_B937D
+		BNE		loc_B937D
+		LDA		#$B8
+		STA		_cur_game_cursor_scr_pos._Y
+		LDA		#$D4
+		STA		_cur_game_cursor_scr_pos._X
+		RTS
+loc_B937D:
+		LDX		#0
+		LDA		_tmp584
+		LSR
+		BCC		loc_B9386
+		INX
+loc_B9386:
+		TAY
+		LDA		byte_B9392,Y
+		STA		_cur_game_cursor_scr_pos._Y
+		LDA		byte_B9399,X
+		STA		_cur_game_cursor_scr_pos._X
+		RTS
+byte_B9392:
+		.BYTE	$3C,$6C,$74,$7C,$84,$D4,$00
+byte_B9399:
+		.BYTE	$AC,$B4
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_wnd_cursor_draw:
+		LDX		#$10
+		STX		_ptr0
+		LDX		_spr_buf_pos
+		LDA		byte_597
+		ASL
+		ASL
+		ASL
+		ASL
+		TAY
+loc_B93A9:
+		LDA		byte_B93D7,Y
+		STA		_spr_buf,X
+		INY
+		INX
+		DEC		_ptr0
+		BNE		loc_B93A9
+		LDA		byte_597
+		CMP		#6
+		BEQ		loc_B93D4
+		LDA		#4
+		STA		_ptr0
+		LDA		byte_596
+		AND		#$30
+		LSR
+		LSR
+		TAY
+loc_B93C8:
+		LDA		byte_B9447,Y
+		STA		_spr_buf,X
+		INY
+		INX
+		DEC		_ptr0
+		BNE		loc_B93C8
+loc_B93D4:
+		STX		_spr_buf_pos
+		RTS
+byte_B93D7:
+		.BYTE	$38,$B0,$02,$18,$38,$B0,$42,$1F,$02,$FA,$02,$FA,$02,$FA,$42,$FA
+		.BYTE	$38,$B1,$02,$18,$38,$B1,$42,$1F,$42,$B2,$02,$18,$42,$B2,$42,$1F
+		.BYTE	$38,$B3,$02,$18,$38,$B3,$42,$1F,$42,$B4,$02,$18,$42,$B4,$42,$1F
+		.BYTE	$38,$B5,$02,$18,$38,$B5,$42,$1F,$42,$B6,$02,$18,$42,$B6,$42,$1F
+		.BYTE	$38,$B7,$02,$18,$38,$B7,$42,$1F,$42,$B8,$02,$18,$42,$B8,$42,$1F
+		.BYTE	$38,$B9,$02,$18,$38,$B9,$42,$1F,$42,$BA,$02,$18,$42,$BA,$42,$1F
+		.BYTE	$02,$FA,$02,$FA,$02,$FA,$42,$FA,$42,$BB,$02,$18,$42,$BB,$42,$1F
+byte_B9447:
+		.BYTE	$40,$BC,$02,$18,$41,$BC,$02,$18,$42,$BC,$02,$18,$43,$BC,$02,$18
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_tax_change_input:
+		LDA		_pad0_held
+		BMI		loc_B9461
+		LDA		#0
+		STA		_budget_tax_adjust_value
+		RTS
+loc_B9461:
+		LDA		_pad0_autorep_release
+		BPL		locret_B9472
+		INC		_budget_tax_adjust_value
+		LDA		_budget_tax_adjust_value
+		CMP		#$40
+		BCC		locret_B9472
+		DEC		_budget_tax_adjust_value
+locret_B9472:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B9473:
+		LDA		_city._bank_flags
+		BEQ		locret_B94B4
+		LDA		#0
+		STA		_tmp2
+		STA		_tmp4
+		INC		_tmp118+2
+		LDA		_tmp118+2
+		CMP		#$30
+		BCC		loc_B948A
+		LDA		#0
+loc_B948A:
+		STA		_tmp118+2
+		LSR
+		LSR
+		LSR
+		TAX
+		LDA		byte_B94C7,X
+		STA		_tmp3
+		CPX		#3
+		BEQ		loc_B94A9
+		CPX		#6
+		BEQ		loc_B94A9
+		LDA		#<[byte_B94B5]
+		STA		_ptr0
+		LDA		#>[byte_B94B5]
+		STA		_ptr0+1
+		JMP		_spr_raw_send_0
+loc_B94A9:
+		LDA		#<[byte_B94BE]
+		STA		_ptr0
+		LDA		#>[byte_B94BE]
+		STA		_ptr0+1
+		JMP		_spr_raw_send_0
+locret_B94B4:
+		RTS
+byte_B94B5:
+		.BYTE	$A0,$43,$00,$BB
+		.BYTE	$A0,$44,$00,$C3
+		.BYTE	$FF
+byte_B94BE:
+		.BYTE	$A0,$41,$00,$BB
+		.BYTE	$A0,$42,$00,$C3
+		.BYTE	$FF
+byte_B94C7:
+		.BYTE	$02,$02,$02,$00,$00,$02
+
+; =============== S U B	R O U T	I N E =======================================
+_map_info_spr_rect_draw:
+		LDA		#0
+		STA		_tmp3
+		LDA		byte_138
+		STA		_tmp2
+		LDA		byte_139
+		STA		_tmp4
+		LDA		#<[_spr_map_info_rect]
+		STA		_ptr0
+		LDA		#>[_spr_map_info_rect]
+		STA		_ptr0+1
+		JMP		_spr_raw_send_0
+
+; =============== S U B	R O U T	I N E =======================================
+_map_info_spr_arrows_draw:
+		LDA		byte_138
+		STA		_tmp2
+		LDA		byte_139
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp3
+		LDA		#<[_spr_map_info_arrows]
+		STA		_ptr0
+		LDA		#>[_spr_map_info_arrows]
+		STA		_ptr0+1
+
+; =============== S U B	R O U T	I N E =======================================
+_spr_raw_send_0:
+		LDY		#0
+		LDX		_spr_buf_pos
+loc_B9500:
+		LDA		(_ptr0),Y
+		CMP		#$FF
+		BEQ		loc_B952A
+		CLC
+		ADC		_tmp2
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		ORA		_tmp3
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		CLC
+		ADC		_tmp4
+		STA		_spr_buf,X
+		INX
+		INY
+		BNE		loc_B9500
+loc_B952A:
+		STX		_spr_buf_pos
+		RTS
+_spr_map_info_rect:
+		.BYTE	$00,$04,$00,$00
+		.BYTE	$00,$05,$00,$2F
+		.BYTE	$28,$06,$00,$00
+		.BYTE	$28,$07,$00,$2F
+		.BYTE	$FF
+_spr_map_info_arrows:
+		.BYTE	$F0,$8B,$03,$14
+		.BYTE	$F0,$8C,$03,$1C
+		.BYTE	$F8,$8D,$03,$18
+		.BYTE	$38,$8B,$83,$14
+		.BYTE	$38,$8C,$83,$1C
+		.BYTE	$30,$8D,$83,$18
+		.BYTE	$10,$8F,$03,$3F
+		.BYTE	$18,$9F,$03,$3F
+		.BYTE	$14,$8E,$03,$37
+		.BYTE	$10,$8F,$43,$F0
+		.BYTE	$18,$9F,$43,$F0
+		.BYTE	$14,$8E,$43,$F8
+		.BYTE	$FF
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_hndl5_A_history_draw:
+		LDA		_scr_res_idx
+		CMP		#$A
+		BNE		locret_B95EC
+		LDA		#2
+		STA		_MMC5_CHR_MODE
+		LDA		#$48
+		STA		_tmp118+7
+		LDA		#0
+		STA		_tmp118+8
+		STA		_tmp118+9
+		STA		_tmp118+$A
+loc_B958B:
+		LDX		_tmp118+8
+		CPX		#$15
+		BCS		loc_B95E1
+		LDA		_city._history_list,X
+		BEQ		loc_B95E1
+		INC		_tmp118+8
+		TAX
+		DEX
+		LDA		_tmp118+$A
+		CLC
+		ADC		#6
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F9
+		.WORD	_txt_lib_printf
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F9
+		.WORD	_history_year_printf
+		JSR		_buffers_force_flush
+		LDX		_ppu_queue_pos_head
+		LDY		_tmp118+9
+		LDA		word_B95ED,Y
+		STA		_ppu_queue_buf,X
+		INX
+		INY
+		LDA		word_B95ED,Y
+		STA		_ppu_queue_buf,X
+		INX
+		INY
+		LDA		#1
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$3A
+		STA		_ppu_queue_buf,X
+		INX
+		STX		_ppu_queue_pos_head
+		STY		_tmp118+9
+		INC		_tmp118+7
+		INC		_tmp118+$A
+		BNE		loc_B958B
+loc_B95E1:
+		INC		_scr_res_idx
+		JSR		_buffers_force_flush
+		LDA		#1
+		STA		_MMC5_CHR_MODE
+locret_B95EC:
+		RTS
+word_B95ED:
+		.WORD	$24C8
+		.WORD	$2528
+		.WORD	$2588
+		.WORD	$25E8
+		.WORD	$2648
+		.WORD	$26A8
+		.WORD	$2708
+_unused_10:
+		.BYTE	$00,$06,$07,$08,$09,$0A,$0B,$0C
+
+; =============== S U B	R O U T	I N E =======================================
+_name_bufs_reset:
+		LDY		#$A
+		LDA		#$7C
+loc_B9607:
+		STA		_city,Y
+		STA		_city._sister_name,Y
+		STA		_city._bank_name,Y
+		STA		_city._unused_name3,Y
+		STA		_city._unused_name4,Y
+		DEY
+		BNE		loc_B9607
+		LDY		#1
+		STY		_city._name
+		STY		_city._sister_name
+		STY		_city._bank_name
+		STY		_city._unused_name3
+		STY		_city._unused_name4
+		DEY
+		STY		byte_6DC+2
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B962F:
+		LDY		_maps_info_mode_idx
+		LDA		byte_B9665,Y
+		TAY
+		LDA		byte_12E,Y
+		STA		_ptr0
+		TYA
+		ASL
+		ASL
+		CLC
+		ADC		_ptr0
+		TAX
+		LDA		byte_B9659,X
+		STA		_cur_game_cursor_scr_pos._Y
+		LDA		byte_B964D,X
+		STA		_cur_game_cursor_scr_pos._X
+		RTS
+byte_B964D:
+		.BYTE	$60,$90,$60,$90,$60,$98,$60,$98,$60,$90,$60,$90
+byte_B9659:
+		.BYTE	$50,$50,$78,$78,$80,$80,$80,$80,$B8,$B8,$B8,$B8
+byte_B9665:
+		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B966E:
+		LDY		#0
+		LDX		#$60
+loc_B9672:
+		LDA		byte_B9681,Y
+		STA		_spr_buf,X
+		INX
+		INY
+		CPY		#$20
+		BCC		loc_B9672
+		STX		_spr_buf_pos
+		RTS
+byte_B9681:
+		.BYTE	$80,$90,$00,$40
+		.BYTE	$80,$91,$00,$48
+		.BYTE	$80,$92,$00,$50
+		.BYTE	$80,$93,$00,$58
+		.BYTE	$80,$94,$00,$60
+		.BYTE	$80,$A0,$00,$68
+		.BYTE	$80,$A1,$00,$70
+		.BYTE	$80,$A2,$00,$78
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B96A1:
+		PHA
+		LDY		#$FF
+		BIT		byte_15E
+		BPL		loc_B96AB
+		LDY		#2
+loc_B96AB:
+		LDA		byte_15E
+loc_B96AE:
+		LSR
+		INY
+		BCC		loc_B96AE
+		LDA		byte_B96BB,Y
+		TAX
+		PLA
+		STA		_spr_buf,X
+		RTS
+byte_B96BB:
+		.BYTE	$1D,$21,$25,$11,$15,$19
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_header_year_draw:
+		LDA		_city._cur_year
+		STA		_ptr0
+		LDA		_city._cur_year+1
+		STA		_ptr0+1
+		JSR		_hex_to_dec9999999_0
+		LDX		_ppu_queue_pos_head
+		LDA		_scr_res_idx
+		AND		#$FE
+		CMP		#4
+		BNE		loc_B96F9
+		LDA		#$A1
+		STA		_tmp4
+		LDA		#$67
+		JSR		sub_B9754
+		LDA		#$B1
+		STA		_tmp4
+		LDA		#$87
+		JSR		sub_B9754
+		STX		_ppu_queue_pos_head
+		LDA		#<[byte_B9774]
+		STA		_tmp2
+		LDA		#>[byte_B9774]
+		STA		_tmp3
+		JSR		_info_wnd_year_extnt_queue
+		RTS
+loc_B96F9:
+		LDA		#0
+		STA		_tmp4
+		LDA		#$66
+		JSR		_info_wnd_year_nt_queue
+		LDA		#$40
+		STA		_tmp4
+		LDA		#$86
+		JSR		_info_wnd_year_nt_queue
+		STX		_ppu_queue_pos_head
+		LDA		#<[off_B9745]
+		STA		_tmp2
+		LDA		#>[off_B9745]
+		STA		_tmp3
+		JSR		_info_wnd_year_extnt_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_info_wnd_year_nt_queue:
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$24
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#4
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		#3
+loc_B972B:
+		LDA		_ptr0,Y
+		CLC
+		ADC		#$1B
+		CMP		#$20
+		BCC		loc_B973B
+		LDA		_ptr0,Y
+		CLC
+		ADC		#$36
+loc_B973B:
+		ADC		_tmp4
+		STA		_ppu_queue_buf,X
+		INX
+		DEY
+		BPL		loc_B972B
+		RTS
+off_B9745:
+		.WORD	_MMC5_EXRAM+$66
+		.BYTE	$04,$98,$98,$98,$98
+		.WORD	_MMC5_EXRAM+$86
+		.BYTE	$04,$98,$98,$98,$98
+		.BYTE	0
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B9754:
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$24
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#4
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		#3
+loc_B9766:
+		LDA		_ptr0,Y
+		CLC
+		ADC		_tmp4
+		STA		_ppu_queue_buf,X
+		INX
+		DEY
+		BPL		loc_B9766
+		RTS
+byte_B9774:
+		.BYTE	$67,$5C,$04,$4B,$4B,$4B,$4B,$87,$5C,$04,$4B,$4B,$4B,$4B,$00
+
+; =============== S U B	R O U T	I N E =======================================
+_info_wnd_year_extnt_queue:
+		LDX		_extnt_queue_pos_head
+		LDY		#0
+loc_B9787:
+		LDA		(_tmp2),Y
+		BEQ		loc_B9792
+		STA		_extnt_queue_buf,X
+		INX
+		INY
+		BNE		loc_B9787
+loc_B9792:
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec9999999_0:
+		LDY		#0
+		STY		_tmp2
+		LDX		#3
+		LDY		#0
+		STY		_tmp3
+		STY		_tmp4
+		STY		_tmp5
+		STY		_tmp6
+		STY		_tmp6+1
+loc_B97A7:
+		LDY		#0
+loc_B97A9:
+		LDA		_ptr0
+		CMP		byte_B97F1,X
+		LDA		_ptr0+1
+		SBC		byte_B97EA,X
+		LDA		_tmp2
+		SBC		byte_B97E3,X
+		BCC		loc_B97D2
+		LDA		_ptr0
+		SBC		byte_B97F1,X
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		byte_B97EA,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		SBC		byte_B97E3,X
+		STA		_tmp2
+		INY
+		BNE		loc_B97A9
+loc_B97D2:
+		STY		_tmp2,X
+		DEX
+		BPL		loc_B97A7
+		LDX		#0
+loc_B97D9:
+		LDA		_tmp2,X
+		STA		_ptr0+1,X
+		INX
+		CPX		#6
+		BNE		loc_B97D9
+		RTS
+byte_B97E3:
+		.BYTE	$00,$00,$00,$00,$01,$0F,$98
+byte_B97EA:
+		.BYTE	$00,$00,$03,$27,$86,$42,$96
+byte_B97F1:
+		.BYTE	$0A,$64,$E8,$10,$A0,$40,$80
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_common_cursor_spr_clear:
+		LDX		#$F
+		LDA		#$FA
+loc_B97FC:
+		STA		_spr_buf,X
+		DEX
+		BPL		loc_B97FC
+		RTS
+byte_B9803:
+		.BYTE	$FF,$FF,$FF,$F7,$BF,$FF,$FF,$FF,$FF,$FF,$FF,$7F,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$BF,$FF,$FF,$EF,$DF,$FF,$FF,$FF,$FF,$02,$00,$24
+		.BYTE	$02,$00,$00,$00,$04,$00,$00,$00,$01,$00,$00,$00,$20,$00,$00,$00
+		.BYTE	$04,$00,$02,$0C,$00,$00,$00,$44,$C9,$40,$00,$A1,$1C,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FE,$FF,$FD,$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$FF,$DF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$00,$88,$01
+		.BYTE	$00,$00,$00,$10,$00,$00,$00,$11,$80,$00,$00,$00,$00,$00,$04,$11
+		.BYTE	$00,$00,$00,$48,$A0,$00,$00,$81,$08,$00,$10,$90,$78,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$DD,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$DF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$02
+		.BYTE	$10,$00,$00,$80,$81,$00,$00,$00,$80,$00,$00,$10,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$13,$09,$00,$00,$41,$09,$80,$00,$93,$00,$FF,$FF,$FF
+		.BYTE	$7F,$FF,$FF,$DF,$FF,$FE,$FF,$FF,$FF,$BF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$02,$00,$20
+		.BYTE	$01,$00,$00,$00,$01,$00,$00,$20,$00,$00,$00,$00,$00,$04,$40,$14
+		.BYTE	$00,$10,$40,$0C,$08,$00,$10,$08,$40,$00,$01,$11,$18,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$7B,$BF,$FF,$FF,$FF
+		.BYTE	$BF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00
+		.BYTE	$00,$00,$00,$80,$01,$00,$00,$02,$04,$00,$00,$00,$20,$00,$00,$10
+		.BYTE	$00,$08,$02,$00,$2D,$80,$00,$A1,$C2,$02,$00,$91,$24,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$E6,$FF,$FF,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$00,$00,$24
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$01,$00,$00,$00,$00,$00,$00,$95
+		.BYTE	$00,$00,$00,$00,$08,$00,$00,$00,$09,$02,$00,$00,$18,$FF,$FF,$FF
+		.BYTE	$F7,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FB,$BE,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$02,$00,$01
+		.BYTE	$40,$00,$00,$00,$04,$00,$00,$50,$00,$00,$00,$01,$20,$00,$80,$11
+		.BYTE	$00,$00,$00,$48,$00,$00,$00,$20,$52,$00,$00,$00,$70,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$F7,$BF,$FF,$FF,$F7,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$DF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$01
+		.BYTE	$40,$10,$00,$00,$03,$00,$00,$00,$08,$00,$00,$00,$28,$02,$00,$84
+		.BYTE	$04,$00,$08,$98,$84,$00,$00,$68,$00,$00,$00,$83,$3C,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$FF,$F1,$FF,$FF,$FF,$F5
+		.BYTE	$FD,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$22
+		.BYTE	$02,$00,$00,$00,$00,$00,$00,$00,$80,$00,$00,$10,$20,$80,$00,$14
+		.BYTE	$04,$20,$02,$C8,$A8,$00,$00,$01,$00,$00,$00,$20,$3C,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$DF,$FF,$BF,$7F,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$F7
+		.BYTE	$FF,$FF,$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00
+		.BYTE	$10,$00,$20,$50,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$20,$00,$80,$41,$09,$00,$00,$01,$08,$00,$00,$82,$40,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$7F,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$02
+		.BYTE	$00,$00,$00,$80,$01,$00,$00,$40,$04,$00,$00,$50,$00,$00,$00,$00
+		.BYTE	$00,$00,$44,$44,$05,$00,$00,$81,$01,$08,$01,$81,$68,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$DF,$CF,$FF,$FF,$FF,$FF,$FF,$FF,$FB,$7F,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00
+		.BYTE	$00,$00,$00,$80,$08,$00,$00,$00,$00,$00,$00,$10,$00,$00,$80,$00
+		.BYTE	$00,$40,$00,$10,$A0,$00,$00,$29,$42,$80,$00,$31,$60,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$F7,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$3E,$FF,$FF,$FF
+		.BYTE	$BE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$02,$10,$00,$00,$00,$00,$00,$00,$28,$10,$80
+		.BYTE	$04,$00,$00,$00,$08,$00,$00,$40,$00,$00,$00,$02,$21,$FF,$FF,$FF
+		.BYTE	$FB,$FF,$FF,$F7,$FF,$FF,$FF,$77,$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF
+		.BYTE	$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$80,$10,$02
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$41,$00,$00,$00,$10,$20,$40,$00,$04
+		.BYTE	$40,$00,$00,$00,$80,$00,$00,$2C,$02,$08,$00,$83,$7C,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$D5,$FF,$FF,$FF,$FF,$FF,$FF,$BF,$FD,$FF,$DF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$05
+		.BYTE	$00,$00,$00,$00,$00,$00,$41,$00,$00,$00,$00,$40,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$48,$00,$00,$00,$64,$40,$40,$01,$00,$04,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$FF,$FF,$FF,$DF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$20,$01,$67
+		.BYTE	$13,$00,$00,$91,$8D,$00,$00,$42,$CF,$00,$10,$53,$3A,$00,$00,$94
+		.BYTE	$24,$00,$00,$DF,$ED,$00,$00,$E5,$EB,$00,$00,$BB,$04,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FB,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00
+		.BYTE	$80,$01,$60,$00,$80,$00,$00,$00,$00,$00,$00,$00,$04,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$80,$00,$02,$00,$04,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$BF,$BB
+		.BYTE	$DF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF,$00,$20,$00
+		.BYTE	$00,$40,$00,$00,$34,$80,$00,$00,$42,$20,$00,$00,$02,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$01,$01,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FE,$DF,$F6,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$80,$00,$40
+		.BYTE	$00,$00,$00,$00,$01,$00,$00,$80,$22,$08,$00,$40,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FD,$FF,$FF,$FF,$FF,$FF,$00,$14,$00
+		.BYTE	$00,$10,$00,$00,$20,$00,$40,$00,$00,$01,$00,$00,$00,$80,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$80,$00,$00,$20,$00,$40,$40,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$BF,$FD,$FF,$FF,$F7,$FF,$FF,$BF,$FF,$FF,$FF,$FF,$FF,$00,$01,$00
+		.BYTE	$00,$00,$00,$20,$00,$00,$00,$40,$00,$00,$00,$20,$00,$00,$00,$00
+		.BYTE	$00,$40,$00,$00,$00,$00,$00,$00,$00,$08,$00,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FD,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$7A,$F7,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$10,$00
+		.BYTE	$10,$00,$08,$00,$00,$40,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$10,$00,$00,$00,$04,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF,$FB,$FF,$FD
+		.BYTE	$FD,$FF,$DF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$00
+		.BYTE	$14,$00,$10,$04,$00,$00,$20,$05,$60,$00,$00,$28,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$40,$80,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$AD,$FF,$FF,$FF,$DF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$50,$00,$00
+		.BYTE	$04,$00,$08,$00,$02,$10,$00,$82,$00,$60,$80,$00,$08,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$40,$00,$02,$00,$00,$04,$08,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$BF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$00,$21
+		.BYTE	$00,$00,$00,$00,$00,$00,$24,$00,$00,$20,$00,$00,$00,$00,$00,$00
+		.BYTE	$00,$10,$00,$00,$00,$00,$00,$00,$00,$00,$20,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FB,$FB,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$01,$08,$01
+		.BYTE	$08,$60,$01,$08,$00,$00,$00,$00,$48,$00,$00,$00,$02,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$08,$08,$00,$40,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$BF,$FF,$FF,$FF,$FF,$FF,$BF
+		.BYTE	$FE,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$02,$05,$00
+		.BYTE	$00,$00,$10,$00,$20,$00,$00,$00,$00,$00,$00,$88,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$08,$00,$00,$10,$00,$00,$20,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$BF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$FF,$FF,$FF,$00,$08,$00
+		.BYTE	$88,$08,$81,$00,$02,$50,$10,$04,$08,$80,$00,$20,$10,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$EF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$02,$00
+		.BYTE	$00,$00,$00,$00,$00,$02,$00,$04,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$DF,$FF,$FF,$FF,$FF,$EF,$FF,$FF,$FF,$FF,$FF,$FF,$24,$00,$08
+		.BYTE	$04,$00,$00,$00,$00,$01,$00,$00,$00,$00,$14,$00,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$00,$40,$00,$00,$00,$00,$04,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$7F,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$00,$08,$01
+		.BYTE	$00,$40,$00,$00,$01,$00,$40,$00,$48,$00,$00,$20,$00,$00,$80,$00
+		.BYTE	$00,$00,$00,$00,$00,$00,$20,$00,$00,$00,$00,$00,$00,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$FB,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$02,$00,$62
+		.BYTE	$3E,$00,$00,$BF,$8F,$00,$01,$26,$BF,$00,$00,$2A,$55,$00,$00,$58
+		.BYTE	$36,$00,$00,$6A,$0B,$00,$00,$64,$E9,$00,$00,$F3,$40
+
+		BANK_END 7,$A000

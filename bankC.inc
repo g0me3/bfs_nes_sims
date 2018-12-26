@@ -1,0 +1,4711 @@
+
+		ORG $8000
+
+		BANK_START $0C
+
+; =============== S U B	R O U T	I N E =======================================
+_game_start:
+		JSR		_game_scr_init
+
+; =============== S U B	R O U T	I N E =======================================
+_MAIN_LOOP:
+		LDA		_main_sub_idx
+		CMP		#2
+		BEQ		loc_13600B
+		RTS
+loc_13600B:
+		JSR		_wait_for_nmi
+		JSR		_game_states_select
+		LDA		_obj_active_flags
+		AND		#1
+		BEQ		loc_13601B
+		JSR		_far_heavy_traffic_report_test
+loc_13601B:
+		LDA		_game_state_idx
+		JSR		_switch_0
+		.WORD	_game_state00
+		.WORD	_game_state01
+		.WORD	_game_state02_map_scroll
+		.WORD	_game_state03_map_scroll_mode_set
+		.WORD	_game_state04
+		.WORD	_game_state05_regular_constr_palette_redraw
+		.WORD	_game_state06_game_hud_redraw
+		.WORD	_game_state07
+		.WORD	_game_state08
+		.WORD	_game_state09_special_constr_palette_redraw
+		.WORD	_game_state0A_power_build_menu
+		.WORD	_game_state0B_gui_ctrl_menu
+		.WORD	_game_state0C_RCI_meter_redraw
+		.WORD	_game_state0D_cur_date_redraw
+		.WORD	_game_state0E
+		.WORD	_game_state0F_cur_money_redraw
+		.WORD	_game_state10_fiscal_year_draw
+		.WORD	_game_state11_cur_popul_redraw
+		.WORD	_game_state12_airport_build_menu
+		.WORD	_game_state13_msg_wnd_display
+		.WORD	_game_state14_special_build_menu
+		.WORD	_game_state15_game_cursor_area_switch
+		.WORD	_game_state16_city_name_redraw
+		.WORD	_game_state17_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state_common:
+		JSR		_game_cursor_input_control
+		JSR		_spr_finish
+		JSR		_auto_goto_test
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F3
+		.WORD	_constr_palette_state_update
+		LDA		_ppu_queue_pos_tail
+		SEC
+		SBC		_ppu_queue_pos_head
+		STA		_ptr0
+		LDA		_extnt_queue_pos_tail
+		SEC
+		SBC		_extnt_queue_pos_head
+		STA		_ptr0+1
+		LDA		byte_3C
+		EOR		#3
+		ORA		_ptr0
+		ORA		_ptr0+1
+		ORA		byte_39
+		ORA		byte_3A
+		ORA		byte_3B
+		ORA		_regular_constr_palette_redraw_req
+		ORA		_special_constr_palette_redraw_req
+		ORA		_RCI_meter_redraw_req
+		ORA		_cur_date_redraw_req
+		ORA		_cur_popul_redraw_req
+		ORA		_city_name_redraw_req
+		ORA		_game_core_stop_flag
+		ORA		_cur_money_redraw_req
+		ORA		_scroll_msg_active_flag
+		STA		byte_37
+		ORA		byte_5C
+		ORA		_hud_redraw_req
+		ORA		_game_msg_wnd_active_flag
+		ORA		_fiscal_year_results_draw_req
+		STA		_game_core_state
+		JMP		_MAIN_LOOP
+
+; =============== S U B	R O U T	I N E =======================================
+_switch_0:
+		ASL
+		STA		_ptr0
+		SEC
+		PLA
+		ADC		_ptr0
+		STA		_ptr0
+		PLA
+		ADC		#0
+		STA		_ptr0+1
+		LDY		#0
+		LDA		(_ptr0),Y
+		PHA
+		INY
+		LDA		(_ptr0),Y
+		STA		_ptr0+1
+		PLA
+		STA		_ptr0
+		JMP		(_ptr0)
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state00:
+		JSR		sub_136761
+		BCS		loc_1360DD
+		LDA		byte_3C
+		ORA		#1
+		STA		byte_3C
+		LDA		#$FF
+		STA		_cur_date_redraw_req
+		STA		_cur_money_redraw_req
+		STA		_cur_popul_redraw_req
+		STA		_city_name_redraw_req
+loc_1360DD:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state02_map_scroll:
+		LDA		byte_3C
+		AND		#3
+		BEQ		loc_136105
+		LSR
+		BCC		loc_1360F7
+		JSR		sub_136775
+		BCS		loc_136102
+		LDA		byte_3C
+		AND		#$FE
+		STA		byte_3C
+		JMP		_game_state_common
+loc_1360F7:
+		JSR		sub_136750
+		BCS		loc_136102
+		LDA		byte_3C
+		AND		#$FD
+		STA		byte_3C
+loc_136102:
+		JMP		_game_state_common
+loc_136105:
+		LDA		#$36
+		STA		_MMC5_CHR_BANKSA+2
+		JSR		_map_scroll_mode_minimap_draw
+		JSR		_map_scroll_mode_arrows_draw
+		LDA		_cur_screen_tile._X
+		ORA		_cur_screen_tile._Y
+		AND		#1
+		BNE		loc_136128
+		LDA		_pad0_held
+		AND		#$40
+		BNE		loc_136171
+		LDA		#0
+		STA		_scr_mode_idx
+		JSR		_scroll_msg_reset
+		JMP		_game_state_common
+loc_136128:
+		LDA		byte_70
+		AND		#3
+		BEQ		loc_13614A
+		LSR
+		BCC		loc_13613F
+		INC		_cur_screen_tile._X
+		LDA		_cur_screen_tile._X
+		CMP		#$40
+		BCC		loc_13616A
+		LDA		#0
+		STA		_cur_screen_tile._X
+		BEQ		loc_13616A
+loc_13613F:
+		DEC		_cur_screen_tile._X
+		BPL		loc_13616A
+		LDA		#$3F
+		STA		_cur_screen_tile._X
+		JMP		loc_13616A
+loc_13614A:
+		LDA		byte_70
+		AND		#$C
+		BEQ		loc_13616A
+		AND		#4
+		BEQ		loc_136162
+		INC		_cur_screen_tile._Y
+		LDA		_cur_screen_tile._Y
+		CMP		#$3C
+		BCC		loc_13616A
+		LDA		#0
+		STA		_cur_screen_tile._Y
+		BEQ		loc_13616A
+loc_136162:
+		DEC		_cur_screen_tile._Y
+		BPL		loc_13616A
+		LDA		#$3B
+		STA		_cur_screen_tile._Y
+loc_13616A:
+		LDA		#0
+		STA		byte_70
+		JMP		_game_state_common
+loc_136171:
+		LDA		_pad0_held
+		AND		#$F
+		BEQ		loc_13617C
+		JSR		_ppu_queue_empty_test_0
+		BCC		loc_13617F
+loc_13617C:
+		JMP		_game_state_common
+loc_13617F:
+		LDA		_pad0_held
+		AND		#$F
+		STA		byte_70
+		AND		#3
+		BEQ		loc_1361EA
+		LSR
+		BCS		loc_1361C0
+		LDA		_cur_map_wnd_pos._X
+		BEQ		loc_1361BD
+		LDA		_cur_game_cursor_area
+		BEQ		loc_1361A4
+		LDA		_constr_cursor_tile._X
+		CLC
+		ADC		byte_C0
+		CMP		#$19
+		BCS		loc_1361A4
+		LDA		_cur_game_cursor_scr_pos._X
+		CLC
+		ADC		#8
+		STA		_cur_game_cursor_scr_pos._X
+loc_1361A4:
+		LDA		#$FF
+		STA		byte_71
+		LDA		#$F8
+		STA		byte_72
+		LDA		#$1F
+		STA		byte_73
+		JSR		sub_150124
+		DEC		_cur_map_wnd_pos._X
+		DEC		_cur_screen_tile._X
+		BPL		loc_1361BD
+		LDA		#$3F
+		STA		_cur_screen_tile._X
+loc_1361BD:
+		JMP		_game_state_common
+loc_1361C0:
+		LDA		_cur_map_wnd_pos._X
+		CMP		#$35
+		BCS		loc_1361E7
+		LDA		_cur_game_cursor_area
+		BEQ		loc_1361D4
+		LDA		_cur_game_cursor_scr_pos._X
+		CMP		#$40
+		BCC		loc_1361D4
+		SBC		#8
+		STA		_cur_game_cursor_scr_pos._X
+loc_1361D4:
+		LDA		#$FF
+		STA		byte_71
+		LDA		#$19
+		STA		byte_72
+		LDA		#0
+		STA		byte_73
+		JSR		sub_150124
+		INC		_cur_map_wnd_pos._X
+		INC		_cur_screen_tile._X
+loc_1361E7:
+		JMP		_game_state_common
+loc_1361EA:
+		LDA		_pad0_held
+		AND		#$C
+		BEQ		loc_136253
+		LSR
+		LSR
+		LSR
+		BCS		loc_136229
+		LDA		_cur_map_wnd_pos._Y
+		BEQ		loc_136226
+		LDA		_cur_game_cursor_area
+		BEQ		loc_13620D
+		LDA		_constr_cursor_tile._Y
+		CLC
+		ADC		byte_C0
+		CMP		#$15
+		BCS		loc_13620D
+		LDA		_cur_game_cursor_scr_pos._Y
+		CLC
+		ADC		#8
+		STA		_cur_game_cursor_scr_pos._Y
+loc_13620D:
+		LDA		#0
+		STA		byte_71
+		LDA		#$F8
+		STA		byte_72
+		LDA		#$16
+		STA		byte_73
+		JSR		sub_150124
+		DEC		_cur_map_wnd_pos._Y
+		DEC		_cur_screen_tile._Y
+		BPL		loc_136226
+		LDA		#$3B
+		STA		_cur_screen_tile._Y
+loc_136226:
+		JMP		_game_state_common
+loc_136229:
+		LDA		_cur_map_wnd_pos._Y
+		CMP		#$37
+		BCS		loc_136250
+		LDA		_cur_game_cursor_area
+		BEQ		loc_13623D
+		LDA		_cur_game_cursor_scr_pos._Y
+		CMP		#$40
+		BCC		loc_13623D
+		SBC		#8
+		STA		_cur_game_cursor_scr_pos._Y
+loc_13623D:
+		LDA		#0
+		STA		byte_71
+		LDA		#$15
+		STA		byte_72
+		LDA		#$15
+		STA		byte_73
+		JSR		sub_150124
+		INC		_cur_map_wnd_pos._Y
+		INC		_cur_screen_tile._Y
+loc_136250:
+		JMP		_game_state_common
+loc_136253:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state03_map_scroll_mode_set:
+		LDA		#1
+		STA		_scr_mode_idx
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state07:
+		LDA		_cur_game_cursor_scr_pos._Y
+		CMP		#$38
+		BCS		loc_13626D
+		LDA		_pad0_autorep_press
+		AND		#$80
+		STA		_game_msg_wnd_active_flag
+		JMP		_game_state_common
+loc_13626D:
+		LDA		_cur_const_palette_press_idx
+		PHA
+		JSR		_is_constr_palette_item_active
+		PLA
+		BCS		_j_apu_se_error
+		CMP		_prev_constr_palette_press_idx
+		BEQ		sub_1362C0
+		STA		byte_B1
+		STA		_prev_constr_palette_press_idx
+		TAX
+		JSR		_apu_se_consrt_palette_click
+		LDA		_cur_game_cursor_scr_pos._X
+		STA		_constr_palette_area_cursor_pos._X
+		LDA		_cur_game_cursor_scr_pos._Y
+		STA		_constr_palette_area_cursor_pos._Y
+		LDA		byte_150351,X
+		STA		byte_C0
+		LDA		#$FF
+		STA		_special_constr_palette_redraw_req
+		CPX		#$B
+		BNE		loc_13629F
+		STA		_power_build_menu_req
+		JMP		_game_state_common
+loc_13629F:
+		CPX		#$C
+		BNE		loc_1362A9
+		STA		_airport_build_menu_req
+		JMP		_game_state_common
+loc_1362A9:
+		CPX		#$D
+		BNE		_j_game_state_common
+		STA		_special_build_menu_req
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$FC,$F2
+		.WORD	_special_items_wnd_draw
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se_error:
+		JSR		_apu_se_error
+
+; =============== S U B	R O U T	I N E =======================================
+_j_game_state_common:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+sub_1362C0:
+		CMP		#$B
+		BNE		loc_1362CE
+		LDA		#$FF
+		STA		_special_constr_palette_redraw_req
+		STA		_power_build_menu_req
+		JMP		_game_state_common
+loc_1362CE:
+		CMP		#$C
+		BNE		loc_1362DC
+		LDA		#$FF
+		STA		_special_constr_palette_redraw_req
+		STA		_airport_build_menu_req
+		JMP		_game_state_common
+loc_1362DC:
+		CMP		#$D
+		BNE		_j_apu_se_error
+		LDA		#$FF
+		STA		_special_constr_palette_redraw_req
+		STA		_special_build_menu_req
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$FC,$F2
+		.WORD	_special_items_wnd_draw
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_is_constr_palette_item_active:
+		ASL
+		TAX
+		LDY		_palette_activity_flags,X
+		LDA		_palette_activity_flags+1,X
+		AND		_constr_palette_flags,Y
+		BEQ		loc_136300
+		SEC
+		RTS
+loc_136300:
+		CLC
+		RTS
+_palette_activity_flags:
+		.BYTE	$03,$08
+		.BYTE	$03,$02
+		.BYTE	$02,$80
+		.BYTE	$02,$20
+		.BYTE	$02,$08
+		.BYTE	$02,$02
+		.BYTE	$01,$80
+		.BYTE	$01,$20
+		.BYTE	$01,$08
+		.BYTE	$01,$02
+		.BYTE	$00,$80
+		.BYTE	$00,$20
+		.BYTE	$00,$08
+		.BYTE	$00,$02
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state08:
+		LDA		byte_5C
+		BEQ		loc_136325
+		JMP		_game_state_common
+loc_136325:
+		LDA		_prev_constr_palette_press_idx
+		BNE		loc_13632C
+		JMP		loc_1363F8
+loc_13632C:
+		CMP		#4
+		BEQ		loc_136375
+		BCS		loc_1363AE
+		LDA		_pad0_held
+		CMP		_pad0_prev_held
+		BNE		loc_136346
+		LDA		_constr_cursor_tile._X
+		CMP		_prev_constr_cursor_tile._X
+		BNE		loc_136346
+		LDA		_constr_cursor_tile._Y
+		CMP		_prev_constr_cursor_tile._Y
+		BEQ		loc_13636F
+loc_136346:
+		JSR		sub_150498
+		JSR		sub_1504FD
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$FD
+		.WORD	sub_B8183
+		BCC		loc_136358
+		JMP		loc_1363EF
+loc_136358:
+		JSR		sub_15050A
+		JSR		sub_15055A
+		JSR		sub_1509D5
+		LDA		#$FF
+		STA		_cur_money_redraw_req
+		LDA		_constr_cursor_tile._X
+		STA		_prev_constr_cursor_tile._X
+		LDA		_constr_cursor_tile._Y
+		JSR		_apu_se_small_build
+loc_13636F:
+		JSR		_save_constr_cursor_pos
+		JMP		_game_state_common
+loc_136375:
+		LDA		_pad0_held
+		CMP		_pad0_prev_held
+		BNE		loc_136389
+		LDA		_constr_cursor_tile._X
+		CMP		_prev_constr_cursor_tile._X
+		BNE		loc_136389
+		LDA		_constr_cursor_tile._Y
+		CMP		_prev_constr_cursor_tile._Y
+		BEQ		loc_13636F
+loc_136389:
+		JSR		sub_150498
+		JSR		sub_1504FD
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$FD
+		.WORD	sub_B83A7
+		BCS		loc_1363EF
+		JSR		sub_15050A
+		JSR		sub_15055A
+		JSR		sub_1509D5
+		LDA		#$FF
+		STA		_cur_money_redraw_req
+		JSR		_apu_se_small_build
+		JSR		_save_constr_cursor_pos
+		JMP		_game_state_common
+loc_1363AE:
+		LDA		_pad0_autorep_press
+		BPL		loc_1363F5
+		LDA		_prev_constr_palette_press_idx
+		CMP		#$D
+		BNE		loc_1363BE
+		LDA		_constr_palette_flags
+		AND		#2
+		BNE		loc_1363EF
+loc_1363BE:
+		JSR		sub_150498
+		JSR		sub_1504FD
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$FD
+		.WORD	sub_B83A7
+		BCS		loc_1363EF
+		JSR		sub_15050A
+		JSR		sub_15055A
+		JSR		sub_1509D5
+		LDA		#$FF
+		STA		_cur_money_redraw_req
+		JSR		_apu_se_large_build
+		JSR		_bank_build_year_init
+		JSR		_special_building_remove_from_list
+		LDA		_prev_constr_palette_press_idx
+		CMP		#$D
+		BNE		loc_1363F5
+		LDA		#$FF
+		STA		_special_constr_palette_redraw_req
+		BNE		loc_1363F5
+loc_1363EF:
+		JSR		_save_constr_cursor_pos
+		JSR		_apu_se_error
+loc_1363F5:
+		JMP		_game_state_common
+loc_1363F8:
+		JSR		sub_150498
+		JSR		sub_1508BC
+		BCS		loc_13641E
+		JSR		sub_150551
+		JSR		sub_1509CF
+		LDA		#$FF
+		STA		_cur_money_redraw_req
+		LDX		byte_CC
+		DEX
+		BEQ		loc_136418
+		INC		_corruption_anim_flag
+		JSR		_apu_se_destroy
+		JMP		_game_state_common
+loc_136418:
+		JSR		_apu_se_bulldozer
+		JMP		_game_state_common
+loc_13641E:
+		LDA		byte_CD
+		BNE		loc_136425
+		JSR		_apu_se_error
+loc_136425:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_save_constr_cursor_pos:
+		LDA		_constr_cursor_tile._X
+		STA		_prev_constr_cursor_tile._X
+		LDA		_constr_cursor_tile._Y
+		STA		_prev_constr_cursor_tile._Y
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state04:
+		JSR		sub_137CD4
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state05_regular_constr_palette_redraw:
+		JSR		_regular_constr_palette_draw
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state06_game_hud_redraw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_136472
+		LDA		_cur_map_wnd_pos._X
+		STA		byte_54
+		CLC
+		ADC		#$18
+		STA		byte_55
+		LDA		_cur_map_wnd_pos._Y
+		STA		byte_56
+		CLC
+		ADC		#$14
+		STA		byte_57
+		LDA		#$FF
+		STA		byte_53
+		LDA		#0
+		STA		_hud_redraw_req
+		LDA		#$FF
+		STA		_RCI_meter_redraw_req
+		STA		_cur_date_redraw_req
+		STA		_cur_popul_redraw_req
+		STA		_city_name_redraw_req
+		STA		_cur_money_redraw_req
+		JSR		_seasonal_pal_load
+loc_136472:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state0A_power_build_menu:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_136482
+		JSR		_power_build_menu
+		LDA		#0
+		STA		_power_build_menu_req
+loc_136482:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state0B_gui_ctrl_menu:
+		JSR		_spr_clear
+		LDA		#0
+		STA		_wnd_lvl_idx
+		LDA		_gui_ctrl_menu_press_idx
+		STA		_wnd_idx
+		CMP		#5
+		BEQ		_game_msg_wnd_display
+		CMP		#6
+		BNE		loc_1364A3
+		JSR		_goto_start
+		LDA		#0
+		STA		_game_msg_wnd_active_flag
+		JMP		_game_state_common
+loc_1364A3:
+		ASL
+		TAX
+		LDA		_gui_ctrl_menu_pos_list,X
+		STA		_wnd_left_tile
+		INX
+		LDA		_gui_ctrl_menu_pos_list,X
+		STA		_wnd_top_tile
+		JSR		_draw_wnd_header_nt
+		JSR		_wnd_draw
+		JSR		_gui_ctrl_menu_input
+		BCS		loc_1364C9
+		JSR		_wnd_erase
+		JSR		_draw_wnd_header_extnt
+		LDA		#0
+		STA		_game_msg_wnd_active_flag
+		JMP		_game_state_common
+loc_1364C9:
+		LDX		_wnd_idx
+		CPX		#3
+		BEQ		loc_1364DA
+		LDA		#0
+		STA		_game_msg_wnd_active_flag
+		JSR		_game_msg_chr_common_load
+		JMP		_game_state_common
+loc_1364DA:
+		STA		_scr_res_idx
+		LDA		#2
+		STA		_scr_mode_idx
+		JSR		_pal_fade_out
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$00,$F9
+		.WORD	_scr_res_common
+		LDA		#0
+		STA		_game_msg_wnd_active_flag
+		JSR		_game_msg_chr_common_load
+		JSR		_game_hud_full_draw
+		JSR		_scroll_msg_reset
+		LDA		#0
+		STA		_scr_mode_idx
+		STA		_screen_pal_cur_spr_idx
+		JSR		_seasonal_pal_load
+		JSR		_pal_fade_in
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state13_msg_wnd_display:
+		INC		_game_msg_wnd_active_flag
+
+; =============== S U B	R O U T	I N E =======================================
+_game_msg_wnd_display:
+		JSR		_game_msg_wnd_pos_calc
+		JSR		_wait_for_nmi
+		LDA		#5
+		STA		_gui_ctrl_menu_press_idx
+		JSR		_draw_wnd_header_nt
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F4,$F3
+		.WORD	_game_msg_handler
+		JSR		_draw_wnd_header_extnt
+		JSR		_scroll_msg_reset
+		LDA		_debug_scroll_msg_flags
+		CMP		#3
+		BNE		loc_136530
+		STA		_scroll_msg_active_flag
+loc_136530:
+		LDA		#0
+		STA		_game_msg_wnd_active_flag
+		STA		_game_msg_awaits_flag
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state0C_RCI_meter_redraw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_136548
+		JSR		_RCI_meters_draw
+		LDA		#0
+		STA		_RCI_meter_redraw_req
+loc_136548:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state0D_cur_date_redraw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_13655C
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F3
+		.WORD	_cur_date_draw
+		LDA		#0
+		STA		_cur_date_redraw_req
+loc_13655C:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state0E:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_136582
+		INC		byte_535
+		LDA		_cur_map_wnd_pos._X
+		STA		byte_54
+		CLC
+		ADC		#$18
+		STA		byte_55
+		LDA		_cur_map_wnd_pos._Y
+		STA		byte_56
+		CLC
+		ADC		#$14
+		STA		byte_57
+		LDA		#$FF
+		STA		byte_53
+		LDA		#0
+		STA		_game_core_stop_flag
+loc_136582:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state0F_cur_money_redraw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_136595
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$FC,$F3
+		.WORD	_cur_money_draw
+		LDA		#0
+		STA		_cur_money_redraw_req
+loc_136595:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state10_fiscal_year_draw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_1365C8
+		LDA		#2
+		STA		_scr_res_idx
+		STA		_scr_mode_idx
+		JSR		_pal_fade_out
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$00,$F9
+		.WORD	_scr_res_common
+		JSR		_game_hud_full_draw
+		LDA		#0
+		STA		_scr_mode_idx
+		STA		_screen_pal_cur_spr_idx
+		JSR		_seasonal_pal_load
+		JSR		_pal_fade_in
+		JSR		_scroll_msg_reset
+		LDA		#0
+		STA		_fiscal_year_results_draw_req
+		STA		_cur_game_cursor_area
+loc_1365C8:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state11_cur_popul_redraw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_1365DC
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F3
+		.WORD	_cur_popul_draw
+		LDA		#0
+		STA		_cur_popul_redraw_req
+loc_1365DC:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state12_airport_build_menu:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_1365EC
+		JSR		_airport_build_menu
+		LDA		#0
+		STA		_airport_build_menu_req
+loc_1365EC:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state16_city_name_redraw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_136600
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F3
+		.WORD	_city_name_draw
+		LDA		#0
+		STA		_city_name_redraw_req
+loc_136600:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state17_common:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_states_select:
+		LDA		_fiscal_year_results_draw_req
+		BEQ		loc_136610
+		LDA		#$10
+		JMP		_set_game_state_idx
+loc_136610:
+		LDA		_scr_mode_idx
+		CMP		#1
+		BNE		loc_13661B
+		LDA		#2
+		JMP		_set_game_state_idx
+loc_13661B:
+		LDA		_game_msg_wnd_active_flag
+		BEQ		loc_136625
+		LDA		#$B
+		JMP		_set_game_state_idx
+loc_136625:
+		LDA		byte_5C
+		BEQ		loc_13662E
+		LDA		#4
+		JMP		_set_game_state_idx
+loc_13662E:
+		LDA		byte_39
+		BEQ		loc_136637
+		LDA		#0
+		JMP		_set_game_state_idx
+loc_136637:
+		LDA		byte_3A
+		BEQ		loc_136640
+		LDA		#1
+		JMP		_set_game_state_idx
+loc_136640:
+		LDA		byte_3C
+		AND		#3
+		CMP		#3
+		BEQ		loc_13665D
+		LSR
+		BCS		loc_136654
+		LDA		#$FF
+		STA		byte_39
+		LDA		#0
+		JMP		_set_game_state_idx
+loc_136654:
+		LDA		#$FF
+		STA		byte_3A
+		LDA		#1
+		JMP		_set_game_state_idx
+loc_13665D:
+		LDA		_regular_constr_palette_redraw_req
+		BEQ		loc_136666
+		LDA		#5
+		JMP		_set_game_state_idx
+loc_136666:
+		LDA		_power_build_menu_req
+		BEQ		loc_136670
+		LDA		#$A
+		JMP		_set_game_state_idx
+loc_136670:
+		LDA		_airport_build_menu_req
+		BEQ		loc_13667A
+		LDA		#$12
+		JMP		_set_game_state_idx
+loc_13667A:
+		LDA		_special_build_menu_req
+		BEQ		loc_136684
+		LDA		#$14
+		JMP		_set_game_state_idx
+loc_136684:
+		LDA		_game_msg_awaits_flag
+		BEQ		loc_13668E
+		LDA		#$13
+		JMP		_set_game_state_idx
+loc_13668E:
+		LDA		_pad0_autorep_press
+		AND		#$30
+		BEQ		loc_136699
+		LDA		#$15
+		JMP		_set_game_state_idx
+loc_136699:
+		LDA		_city_name_redraw_req
+		BEQ		loc_1366A3
+		LDA		#$16
+		JMP		_set_game_state_idx
+loc_1366A3:
+		LDA		_cur_money_redraw_req
+		BEQ		loc_1366AC
+		LDA		#$F
+		JMP		_set_game_state_idx
+loc_1366AC:
+		LDA		_cur_date_redraw_req
+		BEQ		loc_1366B6
+		LDA		#$D
+		JMP		_set_game_state_idx
+loc_1366B6:
+		LDA		_cur_popul_redraw_req
+		BEQ		loc_1366C0
+		LDA		#$11
+		JMP		_set_game_state_idx
+loc_1366C0:
+		LDA		_special_constr_palette_redraw_req
+		BEQ		loc_1366C9
+		LDA		#9
+		JMP		_set_game_state_idx
+loc_1366C9:
+		LDA		_pad0_held
+		AND		#$40
+		BEQ		loc_1366D4
+		LDA		#3
+		JMP		_set_game_state_idx
+loc_1366D4:
+		LDA		_pad0_autorep_press
+		AND		#$80
+		BEQ		loc_1366E4
+		JSR		_scr_push_area_test
+		BCS		loc_1366E4
+		LDA		#7
+		JMP		_set_game_state_idx
+loc_1366E4:
+		LDA		_pad0_autorep_release
+		AND		#$80
+		BEQ		loc_1366F3
+		LDA		_cur_game_cursor_area
+		BEQ		loc_1366F3
+		LDA		#8
+		JMP		_set_game_state_idx
+loc_1366F3:
+		LDA		byte_53
+		BEQ		loc_1366FC
+		LDA		#4
+		JMP		_set_game_state_idx
+loc_1366FC:
+		LDA		_RCI_meter_redraw_req
+		BEQ		loc_136706
+		LDA		#$C
+		JMP		_set_game_state_idx
+loc_136706:
+		LDA		_hud_redraw_req
+		BEQ		loc_136710
+		LDA		#6
+		JMP		_set_game_state_idx
+loc_136710:
+		LDA		_game_core_stop_flag
+		BEQ		loc_13671A
+		LDA		#$E
+		JMP		_set_game_state_idx
+loc_13671A:
+		LDA		#$17
+_set_game_state_idx:
+		STA		_game_state_idx
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_13671F:
+		JSR		_ppu_queue_empty_test_0
+		BCS		locret_136745
+		JSR		sub_136746
+		LDA		#0
+		STA		byte_3A
+		LDA		_cur_map_wnd_pos._X
+		STA		byte_54
+		CLC
+		ADC		#$18
+		STA		byte_55
+		LDA		_cur_map_wnd_pos._Y
+		STA		byte_56
+		CLC
+		ADC		#$14
+		STA		byte_57
+		LDA		#$FF
+		STA		byte_53
+		JSR		_regular_constr_palette_redraw_req_set
+		CLC
+locret_136745:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136746:
+		JSR		sub_1369B0
+		JSR		sub_136A19
+		JSR		sub_136A93
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136750:
+		JSR		_ppu_queue_empty_test_0
+		BCS		locret_136759
+		JSR		sub_13675A
+		CLC
+locret_136759:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_13675A:
+		JSR		sub_1369B0
+		JSR		sub_136B10
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136761:
+		JSR		_ppu_queue_empty_test_0
+		BCS		locret_136774
+		JSR		sub_136858
+		JSR		sub_1368BD
+		JSR		sub_136935
+		LDA		#0
+		STA		byte_39
+		CLC
+locret_136774:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136775:
+		JSR		_ppu_queue_empty_test_0
+		BCS		locret_136780
+		JSR		sub_136858
+		JSR		sub_136781
+locret_136780:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136781:
+		LDA		_ppu_queue_pos_head
+		STA		byte_544
+		LDA		_extnt_queue_pos_head
+		STA		byte_545
+		LDA		_cur_map_wnd_pos._X
+		SEC
+		SBC		#7
+		STA		byte_542
+		LDA		_cur_map_wnd_pos._Y
+		SEC
+		SBC		#7
+		STA		byte_543
+loc_13679B:
+		JSR		sub_1367D3
+		INC		byte_543
+		LDA		byte_7A
+		CLC
+		ADC		#$20
+		STA		byte_7A
+		LDA		byte_7B
+		ADC		#0
+		STA		byte_7B
+		DEC		byte_7C
+		BNE		loc_13679B
+		LDA		byte_7D
+		BEQ		loc_1367C8
+		STA		byte_7C
+		LDA		byte_7A
+		AND		#$1F
+		STA		byte_7A
+		LDA		#$20
+		STA		byte_7B
+		LDA		#0
+		STA		byte_7D
+		BEQ		loc_13679B
+loc_1367C8:
+		LDA		byte_544
+		LDX		byte_545
+		STA		_ppu_queue_pos_head
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_1367D3:
+		LDX		byte_544
+		LDA		byte_7A
+		AND		#$E0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_544
+		LDX		byte_545
+		LDA		byte_7A
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_545
+		STA		byte_546
+		LDA		byte_542
+		CLC
+		ADC		byte_7E
+		STA		_tmp_tile_pos._X
+		LDA		byte_543
+		STA		_tmp_tile_pos._Y
+		LDA		#$20
+		SEC
+		SBC		byte_7E
+		STA		byte_547
+		SEC
+loc_136823:
+		JSR		sub_137E6E
+		LDX		byte_544
+		LDA		word_6C
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_544
+		LDX		byte_545
+		LDA		word_6C+1
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_545
+		DEC		byte_546
+		BEQ		locret_136857
+		INC		_tmp_tile_pos._X
+		DEC		byte_547
+		BNE		loc_136823
+		LDA		#$20
+		STA		byte_547
+		LDA		byte_542
+		STA		_tmp_tile_pos._X
+		SEC
+		BCS		loc_136823
+locret_136857:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136858:
+		LDA		_cur_screen_tile._Y
+		LSR
+		SEC
+		SBC		#7
+		BCS		loc_136862
+		ADC		#$1E
+loc_136862:
+		PHA
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		_ptr0
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		_ptr0
+		STA		byte_7A
+		TXA
+		ADC		#$20
+		STA		byte_7B
+		CMP		#$23
+		BNE		loc_136892
+		LDA		byte_7A
+		CMP		#$C0
+		BCC		loc_136892
+		SBC		#$C0
+		STA		byte_7A
+		LDA		#$20
+		STA		byte_7B
+loc_136892:
+		PLA
+		CMP		#$18
+		BCC		loc_1368A3
+		SBC		#$17
+		STA		byte_7D
+		LDA		#7
+		SBC		byte_7D
+		STA		byte_7C
+		BCS		loc_1368AB
+loc_1368A3:
+		LDA		#7
+		STA		byte_7C
+		LDA		#0
+		STA		byte_7D
+loc_1368AB:
+		LDA		byte_7A
+		AND		#$1F
+		EOR		#$FF
+		SEC
+		ADC		#$20
+		CMP		#$20
+		BCC		loc_1368BA
+		LDA		#0
+loc_1368BA:
+		STA		byte_7E
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_1368BD:
+		LDA		#<[byte_1514D6]
+		STA		_ptr0
+		LDA		#>[byte_1514D6]
+		STA		_ptr0+1
+		LDA		byte_7A
+		AND		#$E0
+		STA		_tmp2
+		LDA		byte_7B
+		STA		_tmp3
+		LDA		byte_7C
+		STA		_tmp4
+		LDA		byte_7D
+		STA		_tmp5
+		LDX		_ppu_queue_pos_head
+		LDY		byte_7E
+loc_1368DB:
+		LDA		_tmp2
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp3
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		STA		_tmp6
+loc_1368EF:
+		LDA		(_ptr0),Y
+		STA		_ppu_queue_buf,X
+		INX
+		INY
+		CPY		#$20
+		BCC		loc_1368FC
+		LDY		#0
+loc_1368FC:
+		DEC		_tmp6
+		BNE		loc_1368EF
+		LDA		_ptr0
+		CLC
+		ADC		#$20
+		STA		_ptr0
+		LDA		_ptr0+1
+		ADC		#0
+		STA		_ptr0+1
+		DEC		_tmp4
+		BEQ		loc_136920
+		LDA		_tmp2
+		CLC
+		ADC		#$20
+		STA		_tmp2
+		LDA		_tmp3
+		ADC		#0
+		STA		_tmp3
+		BNE		loc_1368DB
+loc_136920:
+		LDA		_tmp5
+		BEQ		loc_136932
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp5
+		STA		_tmp2
+		LDA		#$20
+		STA		_tmp3
+		BNE		loc_1368DB
+loc_136932:
+		STX		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136935:
+		LDA		#<[byte_1515B7]
+		STA		_ptr0
+		LDA		#>[byte_1515B7]
+		STA		_ptr0+1
+		LDA		byte_7A
+		AND		#$E0
+		STA		_tmp2
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_tmp3
+		LDA		byte_7C
+		STA		_tmp4
+		LDA		byte_7D
+		STA		_tmp5
+		LDX		_extnt_queue_pos_head
+		LDY		byte_7E
+loc_136956:
+		LDA		_tmp2
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp3
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_extnt_queue_buf,X
+		INX
+		STA		_tmp6
+loc_13696A:
+		LDA		(_ptr0),Y
+		STA		_extnt_queue_buf,X
+		INX
+		INY
+		CPY		#$20
+		BCC		loc_136977
+		LDY		#0
+loc_136977:
+		DEC		_tmp6
+		BNE		loc_13696A
+		LDA		_ptr0
+		CLC
+		ADC		#$20
+		STA		_ptr0
+		LDA		_ptr0+1
+		ADC		#0
+		STA		_ptr0+1
+		DEC		_tmp4
+		BEQ		loc_13699B
+		LDA		_tmp2
+		CLC
+		ADC		#$20
+		STA		_tmp2
+		LDA		_tmp3
+		ADC		#0
+		STA		_tmp3
+		BNE		loc_136956
+loc_13699B:
+		LDA		_tmp5
+		BEQ		loc_1369AD
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp5
+		STA		_tmp2
+		LDA		#>[_MMC5_EXRAM]
+		STA		_tmp3
+		BNE		loc_136956
+loc_1369AD:
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_1369B0:
+		LDA		_cur_screen_tile._Y
+		LSR
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		_ptr0
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		_ptr0
+		STA		byte_7A
+		TXA
+		ADC		#$20
+		STA		byte_7B
+		CMP		#$23
+		BNE		loc_1369E2
+		LDA		byte_7A
+		CMP		#$C0
+		BCC		loc_1369E2
+		SBC		#$C0
+		STA		byte_7A
+		LDA		#$20
+		STA		byte_7B
+loc_1369E2:
+		LDA		_cur_screen_tile._Y
+		LSR
+		CMP		#$A
+		BCC		loc_1369F5
+		SBC		#9
+		STA		byte_7D
+		LDA		#$15
+		SBC		byte_7D
+		STA		byte_7C
+		BCS		loc_1369FD
+loc_1369F5:
+		LDA		#$15
+		STA		byte_7C
+		LDA		#0
+		STA		byte_7D
+loc_1369FD:
+		LDA		byte_7A
+		AND		#$1F
+		CMP		#$1A
+		BCC		loc_136A10
+		SBC		#$19
+		STA		byte_7F
+		LDA		#7
+		SBC		byte_7F
+		STA		byte_7E
+		RTS
+loc_136A10:
+		LDA		#7
+		STA		byte_7E
+		LDA		#0
+		STA		byte_7F
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136A19:
+		LDY		#0
+		LDX		_ppu_queue_pos_tail
+		LDA		byte_7A
+		STA		_ptr0
+		LDA		byte_7B
+		STA		_ptr0+1
+		LDA		byte_7E
+		STA		_tmp2
+		LDA		byte_7F
+		STA		_tmp3
+loc_136A2D:
+		LDA		_ptr0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0+1
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7C
+		STA		_tmp4
+		ORA		#$80
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7D
+		STA		_tmp5
+loc_136A47:
+		LDA		byte_15175E,Y
+		INY
+		STA		_ppu_queue_buf,X
+		INX
+		DEC		_tmp4
+		BNE		loc_136A47
+		LDA		_tmp5
+		BEQ		loc_136A75
+		LDA		_ptr0
+		AND		#$1F
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp5
+		STA		_tmp4
+		ORA		#$80
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#0
+		STA		_tmp5
+		BEQ		loc_136A47
+loc_136A75:
+		INC		_ptr0
+		DEC		_tmp2
+		BNE		loc_136A2D
+		LDA		_tmp3
+		BEQ		loc_136A90
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		DEC		_ptr0
+		LDA		_ptr0
+		AND		#$E0
+		STA		_ptr0
+		JMP		loc_136A2D
+loc_136A90:
+		STX		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136A93:
+		LDY		#0
+		LDX		_extnt_queue_pos_tail
+		LDA		byte_7A
+		STA		_ptr0
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_ptr0+1
+		LDA		byte_7E
+		STA		_tmp2
+		LDA		byte_7F
+		STA		_tmp3
+loc_136AAA:
+		LDA		_ptr0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_ptr0+1
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7C
+		STA		_tmp4
+		ORA		#$80
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7D
+		STA		_tmp5
+loc_136AC4:
+		LDA		byte_1517F1,Y
+		INY
+		STA		_extnt_queue_buf,X
+		INX
+		DEC		_tmp4
+		BNE		loc_136AC4
+		LDA		_tmp5
+		BEQ		loc_136AF2
+		LDA		_ptr0
+		AND		#$1F
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp5
+		STA		_tmp4
+		ORA		#$80
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#0
+		STA		_tmp5
+		BEQ		loc_136AC4
+loc_136AF2:
+		INC		_ptr0
+		DEC		_tmp2
+		BNE		loc_136AAA
+		LDA		_tmp3
+		BEQ		loc_136B0D
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		DEC		_ptr0
+		LDA		_ptr0
+		AND		#$E0
+		STA		_ptr0
+		JMP		loc_136AAA
+loc_136B0D:
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136B10:
+		LDA		_ppu_queue_pos_head
+		STA		byte_80
+		LDA		_extnt_queue_pos_head
+		STA		byte_81
+		LDA		_cur_map_wnd_pos._X
+		STA		byte_55
+		SEC
+		SBC		#7
+		STA		byte_54
+		LDA		_cur_map_wnd_pos._Y
+		STA		byte_56
+		CLC
+		ADC		#$15
+		STA		byte_57
+loc_136B2A:
+		LDA		byte_54
+		CMP		byte_55
+		BEQ		loc_136B56
+		STA		_tmp_tile_pos._X
+		LDA		byte_56
+		STA		_tmp_tile_pos._Y
+		JSR		sub_136B5F
+		INC		byte_54
+		DEC		byte_7E
+		BEQ		loc_136B43
+		INC		byte_7A
+		BNE		loc_136B2A
+loc_136B43:
+		LDA		byte_7A
+		AND		#$E0
+		STA		byte_7A
+		LDA		byte_7F
+		BEQ		loc_136B56
+		STA		byte_7E
+		LDA		#0
+		STA		byte_7F
+		JMP		loc_136B2A
+loc_136B56:
+		LDA		byte_80
+		LDX		byte_81
+		STA		_ppu_queue_pos_head
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136B5F:
+		LDX		byte_80
+		LDA		byte_7A
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7C
+		ORA		#$80
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_80
+		LDX		byte_81
+		LDA		byte_7A
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7C
+		STA		byte_82
+		ORA		#$80
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_81
+		LDA		byte_7D
+		STA		byte_83
+loc_136B98:
+		SEC
+		JSR		sub_137E6E
+		LDX		byte_80
+		LDA		word_6C
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_80
+		LDX		byte_81
+		LDA		word_6C+1
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_81
+		INC		_tmp_tile_pos._Y
+		CLC
+		DEC		byte_82
+		BNE		loc_136B98
+		LDA		byte_83
+		BEQ		locret_136BF8
+		STA		byte_82
+		LDA		#0
+		STA		byte_83
+		LDX		byte_80
+		LDA		byte_7A
+		AND		#$1F
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_82
+		ORA		#$80
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_80
+		LDX		byte_81
+		LDA		byte_7A
+		AND		#$1F
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_82
+		ORA		#$80
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_81
+		JMP		loc_136B98
+locret_136BF8:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_special_constr_palette_draw:
+		LDA		_prg_prgA000_shadow
+		PHA
+		LDA		#$F2
+		STA		_prg_prgA000_shadow
+		STA		_MMC5_PRG_PAGES+2
+		LDA		_ppu_queue_pos_head
+		STA		_ptr0
+		LDA		_extnt_queue_pos_head
+		STA		_ptr0+1
+		JSR		sub_136C6F
+		LDA		_prev_constr_palette_press_idx
+		CMP		#$B
+		BNE		loc_136C1D
+		LDX		_cur_power_type_select_idx
+		BEQ		loc_136C3A
+		CLC
+		ADC		#3
+		BCC		loc_136C3A
+loc_136C1D:
+		CMP		#$C
+		BNE		loc_136C28
+		LDX		_cur_port_type_select_idx
+		BEQ		loc_136C3A
+		CLC
+		ADC		#3
+loc_136C28:
+		CMP		#$D
+		BNE		loc_136C3A
+		LDX		_cur_special_building_select_idx
+		LDY		_city._special_buildings_list,X
+		DEY
+		BPL		loc_136C37
+		LDY		#$F
+loc_136C37:
+		LDA		byte_136C5F,Y
+loc_136C3A:
+		LDX		#$C
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		byte_D7
+		JSR		sub_136CB8
+		JSR		sub_136D06
+		LDA		_ptr0
+		STA		_ppu_queue_pos_head
+		LDA		_ptr0+1
+		STA		_extnt_queue_pos_head
+		PLA
+		STA		_prg_prgA000_shadow
+		STA		_MMC5_PRG_PAGES+2
+		RTS
+byte_136C5F:
+		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$10
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136C6F:
+		LDA		_cur_screen_tile._Y
+		LSR
+		SEC
+		SBC		#1
+		BCS		loc_136C79
+		ADC		#$1E
+loc_136C79:
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		byte_7A
+		TXA
+		CLC
+		ADC		#$20
+		STA		byte_7B
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		#$12
+		AND		#$1F
+		PHA
+		CLC
+		ADC		byte_7A
+		STA		byte_7A
+		PLA
+		CMP		#$15
+		BCC		loc_136CAF
+		SEC
+		SBC		#$14
+		STA		byte_7F
+		LDA		#$C
+		SEC
+		SBC		byte_7F
+		STA		byte_7E
+		RTS
+loc_136CAF:
+		LDA		#$C
+		STA		byte_7E
+		LDA		#0
+		STA		byte_7F
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136CB8:
+		LDX		_ptr0
+		LDA		byte_7E
+		STA		_tmp2
+		LDA		byte_7F
+		STA		_tmp3
+		LDA		byte_7A
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp2
+		STA		_ppu_queue_buf,X
+		INX
+		LDY		byte_D7
+loc_136CD6:
+		LDA		byte_3E6CF,Y
+		STA		_ppu_queue_buf,X
+		INX
+		INY
+		DEC		_tmp2
+		BNE		loc_136CD6
+		LDA		_tmp3
+		BEQ		loc_136D03
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		LDA		byte_7A
+		AND		#$E0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp2
+		STA		_ppu_queue_buf,X
+		INX
+		JMP		loc_136CD6
+loc_136D03:
+		STX		_ptr0
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136D06:
+		LDX		_ptr0+1
+		LDA		byte_7A
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7E
+		STA		_extnt_queue_buf,X
+		INX
+		LDY		byte_D7
+loc_136D1F:
+		LDA		byte_3E79B,Y
+		STA		_extnt_queue_buf,X
+		INX
+		INY
+		DEC		byte_7E
+		BNE		loc_136D1F
+		LDA		byte_7F
+		BEQ		loc_136D4F
+		STA		byte_7E
+		LDA		#0
+		STA		byte_7F
+		LDA		byte_7A
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7E
+		STA		_extnt_queue_buf,X
+		INX
+		JMP		loc_136D1F
+loc_136D4F:
+		STX		_ptr0+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_airport_build_menu:
+		JSR		_spr_clear
+		JSR		_airport_build_wnd_draw
+		LDA		#$FF
+		STA		byte_37
+		JSR		_special_constr_palette_draw
+loc_136D5F:
+		JSR		_wait_for_nmi
+		JSR		_spr_clear
+		LDA		_cur_port_type_select_idx
+		ASL
+		ASL
+		ASL
+		ASL
+		STA		_ptr0
+		ASL
+		CLC
+		ADC		_ptr0
+		ADC		#$3B
+		STA		_spr_insert_args._pos._X
+		LDA		#$C2
+		STA		_spr_insert_args._pos._Y
+		LDA		#0
+		STA		_spr_insert_args._idx
+		JSR		_spr_lib_prg2_insert
+		LDA		_pad0_autorep_press
+		AND		#$F
+		BNE		loc_136D8E
+		LDA		_pad0_autorep_press
+		AND		#$C0
+		BEQ		loc_136D5F
+		BNE		loc_136DAF
+loc_136D8E:
+		JSR		_apu_se_item_select
+		LDA		_cur_port_type_select_idx
+		BEQ		loc_136DA3
+		LDA		#3
+		STA		byte_C0
+		LDA		#0
+		STA		_cur_port_type_select_idx
+		JSR		_special_constr_palette_draw
+		JMP		loc_136D5F
+loc_136DA3:
+		LDA		#4
+		STA		byte_C0
+		INC		_cur_port_type_select_idx
+		JSR		_special_constr_palette_draw
+		JMP		loc_136D5F
+loc_136DAF:
+		JSR		_spr_clear
+		JSR		_wnd_erase
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_airport_build_wnd_draw:
+		LDA		#0
+		STA		_wnd_lvl_idx
+		LDA		#$A
+		STA		_wnd_idx
+		LDA		#4
+		STA		_wnd_left_tile
+		LDA		#$10
+		STA		_wnd_top_tile
+		JMP		_wnd_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_power_build_menu:
+		JSR		_spr_clear
+		JSR		_power_build_wnd_draw
+		LDA		#$FF
+		STA		byte_37
+		JSR		_special_constr_palette_draw
+loc_136DD6:
+		JSR		_wait_for_nmi
+		JSR		_spr_clear
+		LDA		_cur_power_type_select_idx
+		ASL
+		ASL
+		ASL
+		ASL
+		STA		_ptr0
+		ASL
+		CLC
+		ADC		_ptr0
+		ADC		#$4B
+		STA		_spr_insert_args._pos._X
+		LDA		#$B2
+		STA		_spr_insert_args._pos._Y
+		LDA		#0
+		STA		_spr_insert_args._idx
+		JSR		_spr_lib_prg2_insert
+		LDA		_pad0_autorep_press
+		AND		#$F
+		BNE		loc_136E05
+		LDA		_pad0_autorep_press
+		AND		#$C0
+		BEQ		loc_136DD6
+		BNE		loc_136E1E
+loc_136E05:
+		JSR		_apu_se_item_select
+		LDA		_cur_power_type_select_idx
+		BEQ		loc_136E16
+		LDA		#0
+		STA		_cur_power_type_select_idx
+		JSR		_special_constr_palette_draw
+		JMP		loc_136DD6
+loc_136E16:
+		INC		_cur_power_type_select_idx
+		JSR		_special_constr_palette_draw
+		JMP		loc_136DD6
+loc_136E1E:
+		JSR		_spr_clear
+		JSR		_wnd_erase
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_power_build_wnd_draw:
+		LDA		#0
+		STA		_wnd_lvl_idx
+		LDA		#6
+		STA		_wnd_idx
+		STA		_wnd_left_tile
+		LDA		#$E
+		STA		_wnd_top_tile
+		JMP		_wnd_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_unref_0:
+		LDA		_cur_screen_tile._Y
+		LSR
+		STA		_ptr0
+		CLC
+		ADC		#$A
+		CMP		#$1E
+		BCC		loc_136E44
+		SBC		#$1E
+loc_136E44:
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		byte_7A
+		TXA
+		CLC
+		ADC		#$20
+		STA		byte_7B
+		LDA		_cur_screen_tile._X
+		LSR
+		STA		_ptr0+1
+		CLC
+		ADC		#7
+		CMP		#$20
+		BCC		loc_136E68
+		SBC		#$20
+loc_136E68:
+		CLC
+		ADC		byte_7A
+		STA		byte_7A
+		AND		#$1F
+		CMP		#$17
+		BCC		loc_136E81
+		SBC		#$16
+		STA		byte_7F
+		LDA		#$A
+		SEC
+		SBC		byte_7F
+		STA		byte_7E
+		JMP		loc_136E89
+loc_136E81:
+		LDA		#$A
+		STA		byte_7E
+		LDA		#0
+		STA		byte_7F
+loc_136E89:
+		LDA		_ptr0
+		CMP		#$11
+		BCC		loc_136EA0
+		CMP		#$14
+		BCS		loc_136EA0
+		SEC
+		SBC		#$10
+		STA		byte_7D
+		LDA		#4
+		SEC
+		SBC		byte_7D
+		STA		byte_7C
+		RTS
+loc_136EA0:
+		LDA		#4
+		STA		byte_7C
+		LDA		#0
+		STA		byte_7D
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_unref_1:
+		LDA		byte_7A
+		PHA
+		LDA		byte_7B
+		PHA
+		LDX		_ptr0
+		LDY		#0
+		LDA		byte_7C
+		STA		_tmp2
+		LDA		byte_7D
+		STA		_tmp3
+loc_136EBB:
+		LDA		byte_7E
+		STA		_tmp4
+		LDA		byte_7F
+		STA		_tmp5
+		LDA		byte_7A
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp4
+		STA		_ppu_queue_buf,X
+		INX
+loc_136ED5:
+		LDA		byte_136FB3,Y
+		STA		_ppu_queue_buf,X
+		INX
+		INY
+		DEC		_tmp4
+		BNE		loc_136ED5
+		LDA		_tmp5
+		BEQ		loc_136F02
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp5
+		LDA		byte_7A
+		AND		#$E0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_tmp4
+		STA		_ppu_queue_buf,X
+		INX
+		JMP		loc_136ED5
+loc_136F02:
+		LDA		byte_7A
+		CLC
+		ADC		#$20
+		STA		byte_7A
+		LDA		byte_7B
+		ADC		#0
+		STA		byte_7B
+		DEC		_tmp2
+		BNE		loc_136EBB
+		LDA		_tmp3
+		BEQ		loc_136F29
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		LDA		byte_7A
+		AND		#$1F
+		STA		byte_7A
+		LDA		#$20
+		STA		byte_7B
+		BNE		loc_136EBB
+loc_136F29:
+		STX		_ptr0
+		PLA
+		STA		byte_7B
+		PLA
+		STA		byte_7A
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_136F32:
+		LDX		_ptr0+1
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		byte_7B
+		LDA		byte_7C
+		STA		_tmp2
+		LDA		byte_7D
+		STA		_tmp3
+loc_136F43:
+		LDA		byte_7E
+		STA		_tmp4
+		LDA		byte_7F
+		STA		_tmp5
+		LDA		byte_7A
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp4
+		STA		_extnt_queue_buf,X
+		INX
+loc_136F5D:
+		LDA		#$41
+		STA		_extnt_queue_buf,X
+		INX
+		INY
+		DEC		_tmp4
+		BNE		loc_136F5D
+		LDA		_tmp5
+		BEQ		loc_136F89
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp5
+		LDA		byte_7A
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_7B
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp4
+		STA		_extnt_queue_buf,X
+		INX
+		JMP		loc_136F5D
+loc_136F89:
+		LDA		byte_7A
+		CLC
+		ADC		#$20
+		STA		byte_7A
+		LDA		byte_7B
+		ADC		#0
+		STA		byte_7B
+		DEC		_tmp2
+		BNE		loc_136F43
+		LDA		_tmp3
+		BEQ		loc_136FB0
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+		LDA		byte_7A
+		AND		#$1F
+		STA		byte_7A
+		LDA		#>[_MMC5_EXRAM]
+		STA		byte_7B
+		BNE		loc_136F43
+loc_136FB0:
+		STX		_ptr0+1
+		RTS
+byte_136FB3:
+		.BYTE	$70,$74,$74,$74,$74,$74,$74,$74,$74,$76
+		.BYTE	$71,$DC,$79,$7A,$7B,$7C,$DC,$DC,$DC,$77
+		.BYTE	$72,$DC,$7D,$7E,$79,$7C,$7F,$7B,$80,$77
+		.BYTE	$73,$75,$75,$75,$75,$75,$75,$75,$75,$78
+
+; =============== S U B	R O U T	I N E =======================================
+_gui_ctrl_menu_input:
+		LDA		#$36
+		STA		_MMC5_CHR_BANKSA+3
+		JSR		_wnd_rect_calc
+		LDA		_gui_ctrl_menu_press_idx
+		CMP		#3
+		BNE		loc_136FF3
+		LDA		_cur_wnd_pos_backup._X
+		STA		_cur_wnd_pos._X
+		LDA		_cur_wnd_pos_backup._Y
+		STA		_cur_wnd_pos._Y
+		BNE		loc_136FFB
+loc_136FF3:
+		LDA		_wnd_left_pos
+		STA		_cur_wnd_pos._X
+		LDA		_wnd_top_pos
+		STA		_cur_wnd_pos._Y
+loc_136FFB:
+		JSR		_wait_for_nmi
+		JSR		_gui_ctrl_menu_spr_draw
+		LDA		_gui_ctrl_menu_press_idx
+		CMP		#3
+		BNE		loc_13700F
+		LDA		_cur_wnd_pos._X
+		STA		_cur_wnd_pos_backup._X
+		LDA		_cur_wnd_pos._Y
+		STA		_cur_wnd_pos_backup._Y
+loc_13700F:
+		LDA		_pad0_held
+		AND		#$80
+		BNE		loc_137018
+		JSR		_gui_ctrl_menu_redraw
+loc_137018:
+		LDA		_pad0_held
+		BEQ		loc_13707F
+		LDA		_pad0_autorep_press
+		BEQ		loc_137064
+		AND		#$80
+		BEQ		loc_13704E
+		LDA		_cur_wnd_pos._Y
+		LSR
+		LSR
+		LSR
+		CMP		_wnd_top_tile
+		BEQ		loc_137073
+		JSR		sub_137291
+		BCC		loc_13707F
+		PHA
+		LDA		_gui_ctrl_menu_press_idx
+		CMP		#4
+		BEQ		loc_13704A
+		JSR		_spr_clear
+		JSR		_wait_for_nmi
+		JSR		_game_msg_chr_common_load
+		LDA		#0
+		STA		byte_514
+		PLA
+		SEC
+		RTS
+loc_13704A:
+		PLA
+		JMP		loc_137054
+loc_13704E:
+		LDA		_pad0_autorep_press
+		AND		#$40
+		BEQ		loc_137064
+loc_137054:
+		JSR		_spr_clear
+		JSR		_wait_for_nmi
+		JSR		_game_msg_chr_common_load
+		LDA		#0
+		STA		byte_514
+		CLC
+		RTS
+loc_137064:
+		LDA		_pad0_held
+		AND		#$80
+		BEQ		loc_13707F
+		LDA		_cur_wnd_pos._Y
+		LSR
+		LSR
+		LSR
+		CMP		_wnd_top_tile
+		BNE		loc_13707F
+loc_137073:
+		LDA		_cur_wnd_pos._X
+		LSR
+		LSR
+		LSR
+		CMP		_wnd_left_tile
+		BNE		loc_13707F
+		JSR		_menu_wnd_redraw_flag_set
+loc_13707F:
+		JSR		sub_13738F
+		JSR		_spr_finish
+		JMP		loc_136FFB
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_rect_calc:
+		LDA		_wnd_left_tile
+		ASL
+		ASL
+		ASL
+		STA		_wnd_left_pos
+		LDA		_wnd_top_tile
+		ASL
+		ASL
+		ASL
+		STA		_wnd_top_pos
+		LDA		_wnd_width_tile
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_wnd_left_pos
+		BCC		loc_1370A2
+		LDA		#$FF
+loc_1370A2:
+		STA		_wnd_right_pos
+		LDA		_wnd_height_tile
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_wnd_top_pos
+		STA		_wnd_bottom_pos
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_gui_ctrl_menu_spr_draw:
+		LDA		_gui_ctrl_menu_redraw_flag
+		BEQ		_gui_ctrl_menu_cursor_spr_draw
+		JMP		_gui_ctrl_menu_frame_spr_draw
+_gui_ctrl_menu_cursor_spr_draw:
+		LDA		_pad0_held
+		AND		#$F
+		LSR
+		BCC		loc_1370D1
+		PHA
+		LDA		_cur_wnd_pos._X
+		CLC
+		ADC		#2
+		BCS		loc_1370C9
+		CMP		_wnd_right_pos
+		BCC		loc_1370CE
+loc_1370C9:
+		LDA		_wnd_right_pos
+		SEC
+		SBC		#1
+loc_1370CE:
+		STA		_cur_wnd_pos._X
+		PLA
+loc_1370D1:
+		LSR
+		BCC		loc_1370E5
+		PHA
+		LDA		_cur_wnd_pos._X
+		SEC
+		SBC		#2
+		BCC		loc_1370E0
+		CMP		_wnd_left_pos
+		BCS		loc_1370E2
+loc_1370E0:
+		LDA		_wnd_left_pos
+loc_1370E2:
+		STA		_cur_wnd_pos._X
+		PLA
+loc_1370E5:
+		LSR
+		BCC		loc_1370FC
+		PHA
+		LDA		_cur_wnd_pos._Y
+		CLC
+		ADC		#2
+		BCS		loc_1370F4
+		CMP		_wnd_bottom_pos
+		BCC		loc_1370F9
+loc_1370F4:
+		LDA		_wnd_bottom_pos
+		SEC
+		SBC		#1
+loc_1370F9:
+		STA		_cur_wnd_pos._Y
+		PLA
+loc_1370FC:
+		LSR
+		BCC		loc_13710E
+		LDA		_cur_wnd_pos._Y
+		SEC
+		SBC		#2
+		BCC		loc_13710A
+		CMP		_wnd_top_pos
+		BCS		loc_13710C
+loc_13710A:
+		LDA		_wnd_top_pos
+loc_13710C:
+		STA		_cur_wnd_pos._Y
+loc_13710E:
+		LDA		_pad0_held
+		BEQ		loc_137117
+		LDA		#$FF
+		STA		byte_514
+loc_137117:
+		LDA		byte_514
+		BMI		loc_137122
+		AND		#$F
+		CMP		#$A
+		BCS		loc_137133
+loc_137122:
+		LDA		#0
+		STA		_spr_insert_args._idx
+		STA		_spr_insert_args._attr
+		LDA		_cur_wnd_pos._X
+		STA		_spr_insert_args._pos._X
+		LDA		_cur_wnd_pos._Y
+		STA		_spr_insert_args._pos._Y
+		JSR		_spr_lib_prg2_insert
+loc_137133:
+		LDX		byte_514
+		BMI		locret_137142
+		INX
+		CPX		#$20
+		BCC		loc_13713F
+		LDX		#0
+loc_13713F:
+		STX		byte_514
+locret_137142:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_gui_ctrl_menu_frame_spr_draw:
+		LDA		_wnd_width_tile
+		ASL
+		ASL
+		ASL
+		EOR		#$FF
+		CLC
+		ADC		#1
+		STA		_ptr0
+		LDA		_wnd_height_tile
+		ASL
+		ASL
+		ASL
+		EOR		#$FF
+		SEC
+		SBC		#$1F
+		STA		_ptr0+1
+		LDA		_pad0_held
+		AND		#$F
+		LSR
+		BCC		loc_137173
+		PHA
+		LDA		_cur_wnd_pos._X
+		CLC
+		ADC		#2
+		BCS		loc_13716E
+		CMP		_ptr0
+		BCC		loc_137170
+loc_13716E:
+		LDA		_ptr0
+loc_137170:
+		STA		_cur_wnd_pos._X
+		PLA
+loc_137173:
+		LSR
+		BCC		loc_137183
+		PHA
+		LDA		_cur_wnd_pos._X
+		SEC
+		SBC		#2
+		BCS		loc_137180
+		LDA		#0
+loc_137180:
+		STA		_cur_wnd_pos._X
+		PLA
+loc_137183:
+		LSR
+		BCC		loc_137197
+		PHA
+		LDA		_cur_wnd_pos._Y
+		CLC
+		ADC		#2
+		BCS		loc_137192
+		CMP		_ptr0+1
+		BCC		loc_137194
+loc_137192:
+		LDA		_ptr0+1
+loc_137194:
+		STA		_cur_wnd_pos._Y
+		PLA
+loc_137197:
+		LSR
+		BCC		loc_1371A7
+		LDA		_cur_wnd_pos._Y
+		SEC
+		SBC		#2
+		CMP		#$28
+		BCS		loc_1371A5
+		LDA		#$28
+loc_1371A5:
+		STA		_cur_wnd_pos._Y
+loc_1371A7:
+		LDA		#0
+		STA		_spr_insert_args._idx
+		STA		_spr_insert_args._attr
+		LDA		_cur_wnd_pos._X
+		STA		_spr_insert_args._pos._X
+		LDA		_cur_wnd_pos._Y
+		STA		_spr_insert_args._pos._Y
+		JSR		_spr_lib_prg2_insert
+		LDA		_wnd_width_tile
+		SEC
+		SBC		#1
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_cur_wnd_pos._X
+		STA		_ptr0
+		LDA		_wnd_height_tile
+		SEC
+		SBC		#1
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_cur_wnd_pos._Y
+		STA		_ptr0+1
+		LDX		_spr_buf_pos
+		LDY		#0
+		LDA		_cur_wnd_pos._Y
+		STA		_spr_buf,X
+		INX
+		LDA		byte_137246,Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		#0
+		STA		_spr_buf,X
+		INX
+		LDA		_cur_wnd_pos._X
+		STA		_spr_buf,X
+		INX
+		LDA		_cur_wnd_pos._Y
+		STA		_spr_buf,X
+		INX
+		LDA		byte_137246,Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		#0
+		STA		_spr_buf,X
+		INX
+		LDA		_ptr0
+		STA		_spr_buf,X
+		INX
+		LDA		_ptr0+1
+		STA		_spr_buf,X
+		INX
+		LDA		byte_137246,Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		#0
+		STA		_spr_buf,X
+		INX
+		LDA		_cur_wnd_pos._X
+		STA		_spr_buf,X
+		INX
+		LDA		_ptr0+1
+		STA		_spr_buf,X
+		INX
+		LDA		byte_137246,Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		#0
+		STA		_spr_buf,X
+		INX
+		LDA		_ptr0
+		STA		_spr_buf,X
+		INX
+		STX		_spr_buf_pos
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_menu_wnd_redraw_flag_set:
+		LDA		#$FF
+		STA		_gui_ctrl_menu_redraw_flag
+		RTS
+byte_137246:
+		.BYTE	$E0,$E1,$E2,$E3
+
+; =============== S U B	R O U T	I N E =======================================
+_gui_ctrl_menu_redraw:
+		LDA		_gui_ctrl_menu_redraw_flag
+		BNE		loc_13724F
+		RTS
+loc_13724F:
+		JSR		_spr_clear
+		LDA		_cur_wnd_pos._X
+		AND		#$F8
+		CMP		_wnd_left_pos
+		BNE		loc_137262
+		LDA		_cur_wnd_pos._Y
+		AND		#$F8
+		CMP		_wnd_top_pos
+		BEQ		loc_13728C
+loc_137262:
+		JSR		_wnd_erase
+		LDA		_wnd_idx
+		ASL
+		TAX
+		LDA		_cur_wnd_pos._X
+		AND		#$F8
+		STA		_cur_wnd_pos._X
+		LSR
+		LSR
+		LSR
+		STA		_gui_ctrl_menu_pos_list,X
+		STA		_wnd_left_tile
+		INX
+		LDA		_cur_wnd_pos._Y
+		AND		#$F8
+		STA		_cur_wnd_pos._Y
+		LSR
+		LSR
+		LSR
+		STA		_gui_ctrl_menu_pos_list,X
+		STA		_wnd_top_tile
+		JSR		_wnd_draw
+		JSR		_wnd_rect_calc
+loc_13728C:
+		LDA		#0
+		STA		_gui_ctrl_menu_redraw_flag
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137291:
+		LDA		_cur_wnd_pos._X
+		LSR
+		LSR
+		LSR
+		SEC
+		SBC		_wnd_left_tile
+		STA		_ptr0
+		LDA		_cur_wnd_pos._Y
+		LSR
+		LSR
+		LSR
+		SEC
+		SBC		_wnd_top_tile
+		STA		_ptr0+1
+		LDY		_wnd_idx
+		LDX		byte_13734B,Y
+		LDA		off_137351,Y
+		STA		_tmp2
+		LDA		off_137357,Y
+		STA		_tmp3
+		LDY		#0
+		STY		_tmp5
+loc_1372B8:
+		LDA		(_tmp2),Y
+		CLC
+		ADC		#3
+		STA		_tmp4
+		LDA		_ptr0
+		CMP		(_tmp2),Y
+		BCC		loc_1372F4
+		CMP		_tmp4
+		BCS		loc_1372F4
+		INY
+		LDA		(_tmp2),Y
+		CLC
+		ADC		#3
+		STA		_tmp4
+		LDA		_ptr0+1
+		CMP		(_tmp2),Y
+		BCC		loc_1372F5
+		CMP		_tmp4
+		BCS		loc_1372F5
+		LDX		_wnd_idx
+		CPX		#4
+		BEQ		loc_137331
+		PHA
+		JSR		_apu_se_click
+		PLA
+		CPX		#0
+		BEQ		loc_1372FD
+		DEX
+		BEQ		loc_137304
+		DEX
+		BEQ		loc_137326
+		LDA		_tmp5
+		SEC
+		RTS
+loc_1372F4:
+		INY
+loc_1372F5:
+		INY
+		INC		_tmp5
+		DEX
+		BNE		loc_1372B8
+		CLC
+		RTS
+loc_1372FD:
+		LDA		_tmp5
+		STA		_city._game_speed
+		CLC
+		RTS
+loc_137304:
+		LDX		_tmp5
+		LDA		_city._game_flags
+		EOR		byte_137345,X
+		STA		_city._game_flags
+		AND		#8
+		BNE		loc_137317
+		LDA		#$80
+		BNE		loc_13731D
+loc_137317:
+		LDY		_city._city_type
+		LDA		byte_13733F,Y
+loc_13731D:
+		CMP		_apu_mus_pulse2_shadow+2
+		BEQ		loc_137324
+		STA		_apu_mus_idx_req
+loc_137324:
+		CLC
+		RTS
+loc_137326:
+		LDX		_tmp5
+		LDA		_disasters_flags
+		EOR		byte_137345,X
+		STA		_disasters_flags
+		CLC
+		RTS
+loc_137331:
+		LDX		_tmp5
+		JSR		_farcall_argsAXY_safe
+		.BYTE	$F7,$F3
+		.WORD	_game_menu_exec
+		LDA		#0
+		STA		_wnd_lvl_idx
+		RTS
+byte_13733F:
+		.BYTE	$08,$20,$41,$42,$44,$48
+byte_137345:
+		.BYTE	$01,$02,$04,$08,$10,$20
+byte_13734B:
+		.BYTE	$04,$04,$06,$06,$04,$01
+off_137351:
+		.BYTE	<[byte_13735D]
+		.BYTE	<[byte_137365]
+		.BYTE	<[byte_13736D]
+		.BYTE	<[byte_137379]
+		.BYTE	<[byte_137385]
+		.BYTE	<[byte_13738D]
+off_137357:
+		.BYTE	>[byte_13735D]
+		.BYTE	>[byte_137365]
+		.BYTE	>[byte_13736D]
+		.BYTE	>[byte_137379]
+		.BYTE	>[byte_137385]
+		.BYTE	>[byte_13738D]
+byte_13735D:
+		.BYTE	$02,$04,$08,$04,$02,$09,$08,$09
+byte_137365:
+		.BYTE	$02,$04,$08,$04,$02,$0A,$08,$0A
+byte_13736D:
+		.BYTE	$02,$04,$06,$04,$0A,$04,$02,$09,$06,$09,$0A,$09
+byte_137379:
+		.BYTE	$02,$04,$0A,$04,$02,$09,$06,$04,$06,$09,$0A,$09
+byte_137385:
+		.BYTE	$03,$04,$08,$04,$03,$09,$08,$09
+byte_13738D:
+		.BYTE	$01,$01
+
+; =============== S U B	R O U T	I N E =======================================
+sub_13738F:
+		LDA		_wnd_left_tile
+		ASL
+		ASL
+		ASL
+		STA		byte_AA
+		LDA		_wnd_top_tile
+		ASL
+		ASL
+		ASL
+		STA		byte_AB
+		LDX		_wnd_idx
+		BEQ		loc_1373A8
+		DEX
+		BEQ		loc_1373C6
+		DEX
+		BEQ		loc_1373F5
+		RTS
+loc_1373A8:
+		LDX		_city._game_speed
+		LDA		byte_137423,X
+		CLC
+		ADC		byte_AA
+		STA		_spr_insert_args._pos._X
+		LDA		byte_137427,X
+		CLC
+		ADC		byte_AB
+		STA		_spr_insert_args._pos._Y
+		LDA		#5
+		STA		_spr_insert_args._idx
+		LDA		#0
+		STA		_spr_insert_args._attr
+		JMP		_spr_lib_prg2_insert
+loc_1373C6:
+		LDA		_city._game_flags
+		LDX		#0
+loc_1373CB:
+		LSR
+		BCC		loc_1373EF
+		PHA
+		TXA
+		PHA
+		LDA		byte_13742B,X
+		CLC
+		ADC		byte_AA
+		STA		_spr_insert_args._pos._X
+		LDA		byte_13742F,X
+		CLC
+		ADC		byte_AB
+		STA		_spr_insert_args._pos._Y
+		LDA		#5
+		STA		_spr_insert_args._idx
+		LDA		#0
+		STA		_spr_insert_args._attr
+		JSR		_spr_lib_prg2_insert
+		PLA
+		TAX
+		PLA
+loc_1373EF:
+		INX
+		CPX		#4
+		BCC		loc_1373CB
+		RTS
+loc_1373F5:
+		LDA		_disasters_flags
+		LDX		#0
+loc_1373F9:
+		LSR
+		BCC		loc_13741D
+		PHA
+		TXA
+		PHA
+		LDA		byte_137433,X
+		CLC
+		ADC		byte_AA
+		STA		_spr_insert_args._pos._X
+		LDA		byte_137439,X
+		CLC
+		ADC		byte_AB
+		STA		_spr_insert_args._pos._Y
+		LDA		#5
+		STA		_spr_insert_args._idx
+		LDA		#0
+		STA		_spr_insert_args._attr
+		JSR		_spr_lib_prg2_insert
+		PLA
+		TAX
+		PLA
+loc_13741D:
+		INX
+		CPX		#6
+		BCC		loc_1373F9
+		RTS
+byte_137423:
+		.BYTE	$14,$44,$14,$44
+byte_137427:
+		.BYTE	$18,$18,$40,$40
+byte_13742B:
+		.BYTE	$14,$44,$14,$44
+byte_13742F:
+		.BYTE	$18,$18,$48,$48
+byte_137433:
+		.BYTE	$14,$34,$54,$14,$34,$54
+byte_137439:
+		.BYTE	$18,$18,$18,$40,$40,$40
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_draw:
+		LDA		#$40
+		STA		_apu_se_flags
+		JSR		_mmc5_prgA000_bank2_set
+loc_137446:
+		JSR		_wnd_draw_line
+		JSR		_wait_for_nmi
+		LDA		_wnd_draw_cnt
+		BNE		loc_137446
+		JSR		_mmc5_prgA000_bank2_restore
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_draw_line:
+		LDA		#0
+		STA		_wnd_ppu_data_backup_req
+		LDA		_wnd_draw_cnt
+		BNE		loc_137464
+		LDA		#$FF
+		STA		_wnd_draw_cnt
+		LDA		#0
+		STA		_wnd_cur_line_num
+loc_137464:
+		JSR		_ppu_queue_empty_test_0
+		BCC		loc_13746A
+		RTS
+loc_13746A:
+		LDX		_wnd_lvl_idx
+		JSR		_wnd_load_type_data
+		BCS		loc_1374AB
+		LDA		_wnd_type,X
+		BNE		loc_137490
+		LDA		_wnd_cur_line_num
+		CMP		_wnd_height_tile,X
+		BCC		loc_137480
+		LDA		#0
+		STA		_wnd_draw_cnt
+		RTS
+loc_137480:
+		JSR		_wnd_prequeue_data_line
+		JSR		_wnd_ppu_ofs_calc0
+		JSR		_wnd_ppu_data_backup_req_set
+		JSR		_wnd_nt_line_queue0
+		JSR		_wnd_extnt_line_queue0
+		RTS
+loc_137490:
+		LDA		_wnd_cur_line_num
+		CMP		_wnd_width_tile,X
+		BCC		loc_13749B
+		LDA		#0
+		STA		_wnd_draw_cnt
+		RTS
+loc_13749B:
+		JSR		_wnd_prequeue_data_line
+		JSR		_wnd_ppu_ofs_calc1
+		JSR		_wnd_ppu_data_backup_req_set
+		JSR		_wnd_nt_line_queue1
+		JSR		_wnd_extnt_line_queue1
+		RTS
+loc_1374AB:
+		BRK
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_erase:
+		LDA		#$20
+		STA		_apu_se_flags
+		JSR		_mmc5_prgA000_bank2_set
+loc_1374B3:
+		JSR		_wnd_erase_line
+		JSR		_wait_for_nmi
+		LDA		_wnd_erase_cnt
+		BNE		loc_1374B3
+		JSR		_mmc5_prgA000_bank2_restore
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_erase_line:
+		LDX		_wnd_lvl_idx
+		LDA		#0
+		STA		_wnd_ppu_data_backup_req
+		LDA		_wnd_erase_cnt
+		BNE		loc_1374DC
+		LDA		#$FF
+		STA		_wnd_erase_cnt
+		LDA		_wnd_height_tile,X
+		LDY		_wnd_type,X
+		BEQ		loc_1374D7
+		LDA		_wnd_width_tile,X
+loc_1374D7:
+		SEC
+		SBC		#1
+		STA		_wnd_cur_line_num
+loc_1374DC:
+		JSR		_ppu_queue_empty_test_0
+		BCC		loc_1374E2
+		RTS
+loc_1374E2:
+		LDA		_wnd_type,X
+		BNE		loc_1374F8
+		JSR		_wnd_ppu_ofs_calc0
+		JSR		_wnd_nt_backup_queue0
+		JSR		_wnd_extnt_backup_queue0
+		DEC		_wnd_cur_line_num
+		BPL		locret_1374F7
+		LDA		#0
+		STA		_wnd_erase_cnt
+locret_1374F7:
+		RTS
+loc_1374F8:
+		JSR		_wnd_ppu_ofs_calc1
+		JSR		_wnd_nt_backup_queue1
+		JSR		_wnd_extnt_backup_queue1
+		DEC		_wnd_cur_line_num
+		BPL		locret_137509
+		LDA		#0
+		STA		_wnd_erase_cnt
+locret_137509:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_mmc5_prgA000_bank2_set:
+		LDA		#$FF
+		STA		_mmc5_operation_in_progress_flag
+		LDA		_prg_prgA000_shadow
+		STA		_mmc5_prgA000_bank_tmp
+		LDA		#$F2
+		STA		_prg_prgA000_shadow
+		STA		_MMC5_PRG_PAGES+2
+		LDA		#0
+		STA		_mmc5_operation_in_progress_flag
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_mmc5_prgA000_bank2_restore:
+		LDA		#$FF
+		STA		_mmc5_operation_in_progress_flag
+		LDA		_mmc5_prgA000_bank_tmp
+		STA		_prg_prgA000_shadow
+		STA		_MMC5_PRG_PAGES+2
+		LDA		#0
+		STA		_mmc5_operation_in_progress_flag
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_load_type_data:
+		LDY		_wnd_idx,X
+		LDA		_wnd_height0_list,Y
+		STA		_wnd_width_tile,X
+		CMP		#$11
+		BCS		loc_13754D
+		LDA		_wnd_height1_list,Y
+		STA		_wnd_height_tile,X
+		CMP		#$11
+		BCS		loc_13754D
+		LDA		_wnd_type_list,Y
+		STA		_wnd_type,X
+		LDA		_wnd_width_list,Y
+		STA		_wnd_width,X
+		RTS
+loc_13754D:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_prequeue_data_line:
+		LDY		_wnd_idx,X
+		LDA		_wnd_nt_lib_lo,Y
+		STA		_ptr0
+		LDA		_wnd_nt_lib_hi,Y
+		STA		_ptr0+1
+		LDA		_wnd_extnt_lib_lo,Y
+		STA		_tmp2
+		LDA		_wnd_extnt_lib_hi,Y
+		STA		_tmp3
+		LDA		_wnd_width,X
+		STA		_tmp4
+		LDY		_wnd_cur_line_num
+		STY		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDY		_MMC5_MUL1
+		TAY
+		TXA
+		PHA
+		LDX		#0
+loc_13757C:
+		LDA		(_ptr0),Y
+		STA		_pre_ppu_buf,X
+		LDA		(_tmp2),Y
+		INY
+		STA		_pre_ppu_buf+$20,X
+		INX
+		DEC		_tmp4
+		BNE		loc_13757C
+		PLA
+		TAX
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_ppu_ofs_calc0:
+		LDA		_game_wnd_spr_mode_flag
+		BEQ		loc_137597
+		JMP		loc_1375F0
+loc_137597:
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		_wnd_left_tile,X
+		CMP		#$20
+		BCC		loc_1375A3
+		SBC		#$20
+loc_1375A3:
+		STA		_ptr0
+		LDA		_cur_screen_tile._Y
+		LSR
+		SEC
+		SBC		#7
+		BCS		loc_1375AF
+		ADC		#$1E
+loc_1375AF:
+		CLC
+		ADC		_wnd_top_tile,X
+		ADC		_wnd_cur_line_num
+		CMP		#$1E
+		BCC		loc_1375BA
+		SBC		#$1E
+loc_1375BA:
+		LDY		#$20
+		STY		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDY		_MMC5_MUL1
+		CLC
+		ADC		_ptr0
+		STA		_wnd_line_tmp_ppu_ofs
+		STY		_wnd_line_tmp_ppu_ofs+1
+		AND		#$1F
+		STA		_ptr0
+		ADC		_wnd_width,X
+		CMP		#$20
+		BCC		loc_1375E7
+		LDA		#$20
+		SBC		_ptr0
+		STA		_wnd_line_tmp_width
+		LDA		_wnd_width,X
+		SEC
+		SBC		_wnd_line_tmp_width
+		STA		_wnd_line_tmp_height
+		RTS
+loc_1375E7:
+		LDA		_wnd_width,X
+		STA		_wnd_line_tmp_width
+		LDA		#0
+		STA		_wnd_line_tmp_height
+		RTS
+loc_1375F0:
+		LDA		_wnd_left_tile,X
+		STA		_ptr0
+		LDA		_wnd_top_tile,X
+		CLC
+		ADC		_wnd_cur_line_num
+		LDY		#$20
+		STY		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDY		_MMC5_MUL1
+		CLC
+		ADC		_ptr0
+		STA		_wnd_line_tmp_ppu_ofs
+		TYA
+		ORA		#4
+		STA		_wnd_line_tmp_ppu_ofs+1
+		LDA		_wnd_width,X
+		STA		_wnd_line_tmp_width
+		LDA		#0
+		STA		_wnd_line_tmp_height
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_ppu_ofs_calc1:
+		LDA		_game_wnd_spr_mode_flag
+		BEQ		loc_137622
+		JMP		loc_137681
+loc_137622:
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		_wnd_left_tile,X
+		CMP		#$20
+		BCC		loc_13762E
+		SBC		#$20
+loc_13762E:
+		CLC
+		ADC		_wnd_cur_line_num
+		CMP		#$20
+		BCC		loc_137637
+		SBC		#$20
+loc_137637:
+		STA		_ptr0
+		LDA		_cur_screen_tile._Y
+		LSR
+		SEC
+		SBC		#7
+		BCS		loc_137643
+		ADC		#$1E
+loc_137643:
+		CLC
+		ADC		_wnd_top_tile,X
+		CMP		#$1E
+		BCC		loc_13764C
+		SBC		#$1E
+loc_13764C:
+		PHA
+		LDY		#$20
+		STY		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDY		_MMC5_MUL1
+		CLC
+		ADC		_ptr0
+		STA		_wnd_line_tmp_ppu_ofs
+		STY		_wnd_line_tmp_ppu_ofs+1
+		PLA
+		STA		_ptr0
+		LDA		#$1E
+		SEC
+		SBC		_ptr0
+		CMP		_wnd_width,X
+		BCS		loc_137678
+		STA		_wnd_line_tmp_width
+		LDA		_wnd_width,X
+		SEC
+		SBC		_wnd_line_tmp_width
+		STA		_wnd_line_tmp_height
+		RTS
+loc_137678:
+		LDA		_wnd_width,X
+		STA		_wnd_line_tmp_width
+		LDA		#0
+		STA		_wnd_line_tmp_height
+		RTS
+loc_137681:
+		LDA		_wnd_left_tile,X
+		CLC
+		ADC		_wnd_cur_line_num
+		STA		_ptr0
+		LDA		_wnd_top_tile,X
+		LDY		#$20
+		STY		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDY		_MMC5_MUL1
+		CLC
+		ADC		_ptr0
+		STA		_wnd_line_tmp_ppu_ofs
+		TYA
+		ORA		#4
+		STA		_wnd_line_tmp_ppu_ofs+1
+		LDA		_wnd_width,X
+		STA		_wnd_line_tmp_width
+		LDA		#0
+		STA		_wnd_line_tmp_height
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_ppu_data_backup_req_set:
+		LDA		#$FF
+		STA		_wnd_ppu_data_backup_req
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_nt_line_queue0:
+		LDY		_ppu_queue_pos_head
+		LDX		#0
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#$20
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_ptr0
+		STA		_ppu_queue_buf,Y
+		INY
+loc_1376D0:
+		LDA		_pre_ppu_buf,X
+		INX
+		STA		_ppu_queue_buf,Y
+		INY
+		DEC		_ptr0
+		BNE		loc_1376D0
+		LDA		_ptr0+1
+		BEQ		loc_1376FE
+		STA		_ptr0
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$E0
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#$20
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_ptr0
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		#0
+		STA		_ptr0+1
+		BEQ		loc_1376D0
+loc_1376FE:
+		STY		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_nt_line_queue1:
+		LDY		_ppu_queue_pos_head
+		LDX		#0
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#$20
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_ptr0
+		ORA		#$80
+		STA		_ppu_queue_buf,Y
+		INY
+loc_137723:
+		LDA		_pre_ppu_buf,X
+		INX
+		STA		_ppu_queue_buf,Y
+		INY
+		DEC		_ptr0
+		BNE		loc_137723
+		LDA		_ptr0+1
+		BEQ		loc_137751
+		STA		_ptr0
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$1F
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		#$20
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_ptr0
+		ORA		#$80
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		#0
+		STA		_ptr0+1
+		BEQ		loc_137723
+loc_137751:
+		STY		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_extnt_line_queue0:
+		LDY		_extnt_queue_pos_head
+		LDX		#0
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_ptr0
+		STA		_extnt_queue_buf,Y
+		INY
+loc_137774:
+		LDA		_pre_ppu_buf+$20,X
+		INX
+		STA		_extnt_queue_buf,Y
+		INY
+		DEC		_ptr0
+		BNE		loc_137774
+		LDA		_ptr0+1
+		BEQ		loc_1377A2
+		STA		_ptr0
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$E0
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_ptr0
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		#0
+		STA		_ptr0+1
+		BEQ		loc_137774
+loc_1377A2:
+		STY		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_extnt_line_queue1:
+		LDY		_extnt_queue_pos_head
+		LDX		#0
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_ptr0
+		ORA		#$80
+		STA		_extnt_queue_buf,Y
+		INY
+loc_1377C7:
+		LDA		_pre_ppu_buf+$20,X
+		INX
+		STA		_extnt_queue_buf,Y
+		INY
+		DEC		_ptr0
+		BNE		loc_1377C7
+		LDA		_ptr0+1
+		BEQ		loc_1377F5
+		STA		_ptr0
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$1F
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		_ptr0
+		ORA		#$80
+		STA		_extnt_queue_buf,Y
+		INY
+		LDA		#0
+		STA		_ptr0+1
+		BEQ		loc_1377C7
+loc_1377F5:
+		STY		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_nt_backup_queue0:
+		LDX		_ppu_queue_pos_head
+		LDA		_wnd_cur_line_num
+		ASL
+		ASL
+		ASL
+		ASL
+		TAY
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0
+		STA		_ppu_queue_buf,X
+		INX
+loc_13781D:
+		LDA		_wnd_lvl_idx
+		BEQ		loc_137827
+		LDA		_nt_backup_buf1,Y
+		JMP		loc_13782A
+loc_137827:
+		LDA		_nt_backup_buf0,Y
+loc_13782A:
+		INY
+		STA		_ppu_queue_buf,X
+		INX
+		DEC		_ptr0
+		BNE		loc_13781D
+		LDA		_ptr0+1
+		BEQ		loc_137856
+		STA		_ptr0
+		LDA		#0
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$E0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0
+		STA		_ppu_queue_buf,X
+		INX
+		JMP		loc_13781D
+loc_137856:
+		STX		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_nt_backup_queue1:
+		LDX		_ppu_queue_pos_head
+		LDA		_wnd_cur_line_num
+		ASL
+		ASL
+		ASL
+		ASL
+		TAY
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0
+		ORA		#$80
+		STA		_ppu_queue_buf,X
+		INX
+loc_137880:
+		LDA		_wnd_lvl_idx
+		BEQ		loc_13788A
+loc_137884:
+		LDA		_nt_backup_buf1,Y
+		JMP		loc_13788D
+loc_13788A:
+		LDA		_nt_backup_buf0,Y
+loc_13788D:
+		INY
+		STA		_ppu_queue_buf,X
+		INX
+		DEC		_ptr0
+		BNE		loc_137880
+		LDA		_ptr0+1
+		BEQ		loc_1378B9
+		STA		_ptr0
+		LDA		#0
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$1F
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		#$20
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		_ptr0
+		ORA		#$80
+		STA		_ppu_queue_buf,X
+		INX
+		JMP		loc_137880
+loc_1378B9:
+		STX		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_extnt_backup_queue0:
+		LDX		_extnt_queue_pos_head
+		LDA		_wnd_cur_line_num
+		ASL
+		ASL
+		ASL
+		ASL
+		TAY
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_ptr0
+		STA		_extnt_queue_buf,X
+		INX
+loc_1378E1:
+		LDA		_wnd_lvl_idx
+		BEQ		loc_1378EB
+		LDA		_extnt_backup1,Y
+		JMP		loc_1378EE
+loc_1378EB:
+		LDA		_extnt_backup0,Y
+loc_1378EE:
+		INY
+		STA		_extnt_queue_buf,X
+		INX
+		DEC		_ptr0
+		BNE		loc_1378E1
+		LDA		_ptr0+1
+		BEQ		loc_13791A
+		STA		_ptr0
+		LDA		#0
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_ptr0
+		STA		_extnt_queue_buf,X
+		INX
+		JMP		loc_1378E1
+loc_13791A:
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_extnt_backup_queue1:
+		LDX		_extnt_queue_pos_head
+		LDA		_wnd_cur_line_num
+		ASL
+		ASL
+		ASL
+		ASL
+		TAY
+		LDA		_wnd_line_tmp_width
+		STA		_ptr0
+		LDA		_wnd_line_tmp_height
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_wnd_line_tmp_ppu_ofs+1
+		ORA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_ptr0
+		ORA		#$80
+		STA		_extnt_queue_buf,X
+		INX
+loc_137944:
+		LDA		_wnd_lvl_idx
+		BEQ		loc_13794E
+		LDA		_extnt_backup1,Y
+		JMP		loc_137951
+loc_13794E:
+		LDA		_extnt_backup0,Y
+loc_137951:
+		INY
+		STA		_extnt_queue_buf,X
+		INX
+		DEC		_ptr0
+		BNE		loc_137944
+		LDA		_ptr0+1
+		BEQ		loc_13797D
+		STA		_ptr0
+		LDA		#0
+		STA		_ptr0+1
+		LDA		_wnd_line_tmp_ppu_ofs
+		AND		#$1F
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_ptr0
+		ORA		#$80
+		STA		_extnt_queue_buf,X
+		INX
+		JMP		loc_137944
+loc_13797D:
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_draw:
+		LDX		#0
+		JSR		_RCI_meters_R_prequeue
+		JSR		_RCI_meters_C_prequeue
+		JSR		_RCI_meters_I_prequeue
+		JSR		_RCI_meters_pos_calc
+		JSR		_RCI_meters_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_R_prequeue:
+		LDA		_RCI_meters_values._R
+		LDY		#$80
+		STY		_ptr0+1
+		LDY		#$80
+		BNE		_RCI_meters_prequeue
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_C_prequeue:
+		LDA		_RCI_meters_values._C
+		LDY		#$80
+		STY		_ptr0+1
+		LDY		#$81
+		BNE		_RCI_meters_prequeue
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_I_prequeue:
+		LDA		_RCI_meters_values._I
+		LDY		#0
+		STY		_ptr0+1
+		LDY		#$82
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_prequeue:
+		STY		_ptr0
+		AND		#$FF
+		BMI		loc_1379F9
+		PHA
+		SEC
+		SBC		#8
+		BCS		loc_1379BF
+		LDA		#0
+loc_1379BF:
+		TAY
+		LDA		byte_151740,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		PLA
+		CMP		#9
+		BCC		loc_1379D1
+		LDA		#8
+loc_1379D1:
+		TAY
+		LDA		byte_151746,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		LDA		_ptr0
+		STA		_pre_ppu_buf,X
+		INX
+		LDY		#0
+		LDA		byte_15174F,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		LDA		byte_151758,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		RTS
+loc_1379F9:
+		EOR		#$FF
+		CLC
+		ADC		#1
+		PHA
+		PHA
+		LDY		#0
+		LDA		byte_151740,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		LDA		byte_151746,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		LDA		_ptr0
+		STA		_pre_ppu_buf,X
+		INX
+		PLA
+		SEC
+		SBC		#8
+		BCS		loc_137A24
+		LDA		#0
+loc_137A24:
+		TAY
+		LDA		byte_151758,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf+1,X
+		PLA
+		CMP		#9
+		BCC		loc_137A35
+		LDA		#8
+loc_137A35:
+		TAY
+		LDA		byte_15174F,Y
+		CLC
+		ADC		_ptr0+1
+		STA		_pre_ppu_buf,X
+		INX
+		INX
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_pos_calc:
+		LDA		_cur_screen_tile._Y
+		LSR
+		CLC
+		ADC		#$F
+		CMP		#$1E
+		BCC		loc_137A4E
+		SBC		#$1E
+loc_137A4E:
+		STA		_ptr0+1
+		CLC
+		ADC		#4
+		CMP		#$1E
+		BCC		loc_137A64
+		SBC		#$1D
+		STA		_tmp3
+		LDA		#5
+		SEC
+		SBC		_tmp3
+		STA		_tmp2
+		BNE		loc_137A6C
+loc_137A64:
+		LDA		#5
+		STA		_tmp2
+		LDA		#0
+		STA		_tmp3
+loc_137A6C:
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		#2
+		CMP		#$20
+		BCC		loc_137A78
+		SBC		#$20
+loc_137A78:
+		STA		_ptr0
+		CLC
+		ADC		#2
+		CMP		#$20
+		BCC		loc_137A8E
+		SBC		#$1F
+		STA		_tmp5
+		LDA		#3
+		SEC
+		SBC		_tmp5
+		STA		_tmp4
+		BNE		loc_137A96
+loc_137A8E:
+		LDA		#3
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp5
+loc_137A96:
+		LDA		_ptr0+1
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		CLC
+		ADC		_ptr0
+		BCC		loc_137AAC
+		INX
+loc_137AAC:
+		STA		_ptr0
+		TXA
+		ORA		#$20
+		STA		_ptr0+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_RCI_meters_queue:
+		LDX		#0
+		LDY		_ppu_queue_pos_head
+loc_137AB8:
+		LDA		_tmp3
+		STA		_tmp6+1
+		LDA		_ptr0
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_ptr0+1
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_tmp2
+		STA		_tmp6
+		ORA		#$80
+		STA		_ppu_queue_buf,Y
+		INY
+loc_137AD2:
+		LDA		_pre_ppu_buf,X
+		INX
+		STA		_ppu_queue_buf,Y
+		INY
+		DEC		_tmp6
+		BNE		loc_137AD2
+		LDA		_tmp6+1
+		BEQ		loc_137B01
+		STA		_tmp6
+		LDA		#0
+		STA		_tmp6+1
+		LDA		_ptr0
+		AND		#$1F
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		#$20
+		STA		_ppu_queue_buf,Y
+		INY
+		LDA		_tmp6
+		ORA		#$80
+		STA		_ppu_queue_buf,Y
+		INY
+		JMP		loc_137AD2
+loc_137B01:
+		DEC		_tmp4
+		BEQ		loc_137B0A
+		INC		_ptr0
+		JMP		loc_137AB8
+loc_137B0A:
+		LDA		_tmp5
+		BEQ		loc_137B1D
+		STA		_tmp4
+		LDA		#0
+		STA		_tmp5
+		LDA		_ptr0
+		AND		#$E0
+		STA		_ptr0
+		JMP		loc_137AB8
+loc_137B1D:
+		STY		_ppu_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_regular_constr_palette_draw:
+		LDA		_regular_constr_palette_redraw_req
+		BEQ		locret_137B5D
+		JSR		_ppu_queue_empty_test_0
+		BCS		locret_137B5D
+		LDA		_constr_palette_flags
+		STA		_tmp4
+		LDA		_constr_palette_flags+1
+		STA		_tmp5
+		LDA		_constr_palette_flags+2
+		STA		_tmp6
+		LDA		_constr_palette_flags+3
+		STA		_tmp6+1
+		LDA		#$D
+		STA		_tmp3
+loc_137B3D:
+		JSR		sub_137B5E
+		BCC		loc_137B48
+		JSR		sub_137B9C
+		JMP		loc_137B55
+loc_137B48:
+		AND		#$FF
+		BPL		loc_137B52
+		JSR		sub_137B86
+		JMP		loc_137B55
+loc_137B52:
+		JSR		sub_137B70
+loc_137B55:
+		DEC		_tmp3
+		BPL		loc_137B3D
+		LDA		#0
+		STA		_regular_constr_palette_redraw_req
+locret_137B5D:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137B5E:
+		LSR		_tmp6+1
+		ROR		_tmp6
+		ROR		_tmp5
+		ROR		_tmp4
+		ROR
+		LSR		_tmp6+1
+		ROR		_tmp6
+		ROR		_tmp5
+		ROR		_tmp4
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137B70:
+		LDA		_tmp3
+		JSR		sub_137BB2
+		LDA		_tmp3
+		JSR		sub_137C04
+		LDA		#<[byte_151698]
+		STA		word_B2
+		LDA		#>[byte_151698]
+		STA		word_B2+1
+		JSR		sub_137C08
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137B86:
+		LDA		_tmp3
+		JSR		sub_137BB2
+		LDA		_tmp3
+		JSR		sub_137C04
+		LDA		#<[byte_1516D0]
+		STA		word_B2
+		LDA		#>[byte_1516D0]
+		STA		word_B2+1
+		JSR		sub_137C08
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137B9C:
+		LDA		_tmp3
+		JSR		sub_137BB2
+		LDA		_tmp3
+		JSR		sub_137C04
+		LDA		#<[byte_151708]
+		STA		word_B2
+		LDA		#>[byte_151708]
+		STA		word_B2+1
+		JSR		sub_137C08
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137BB2:
+		LDY		#0
+		PHA
+		AND		#$FE
+		STA		_ptr0
+		LDA		_cur_screen_tile._Y
+		LSR
+		SEC
+		ADC		_ptr0
+		CMP		#$1E
+		BCC		loc_137BC6
+		SEC
+		SBC		#$1E
+loc_137BC6:
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		_ptr0+1
+		PLA
+		AND		#1
+		ASL
+		ADC		#2
+		STA		_tmp2
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		_tmp2
+		AND		#$1F
+		CMP		#$1F
+		BNE		loc_137BEC
+		INY
+		INY
+loc_137BEC:
+		CLC
+		ADC		_ptr0+1
+		STA		_tmp_extnt_dest_ofs
+		TXA
+		ORA		#>[_MMC5_EXRAM]
+		STA		_tmp_extnt_dest_ofs+1
+		CMP		#$5F
+		BNE		loc_137C01
+		LDA		_tmp_extnt_dest_ofs
+		CMP		#$A0
+		BCC		loc_137C01
+		INY
+loc_137C01:
+		STY		byte_B6
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137C04:
+		ASL
+		ASL
+		TAY
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137C08:
+		LDX		_extnt_queue_pos_head
+		LDA		_tmp_extnt_dest_ofs
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp_extnt_dest_ofs+1
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_B6
+		AND		#2
+		BNE		loc_137C58
+		LDA		#2
+		STA		_extnt_queue_buf,X
+		INX
+		JSR		_ppu_extnt_word_queue
+		LDA		byte_B6
+		LSR
+		BCS		loc_137C3E
+		LDA		_tmp_extnt_dest_ofs
+		CLC
+		ADC		#$20
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp_extnt_dest_ofs+1
+		ADC		#0
+		STA		_extnt_queue_buf,X
+		INX
+		JMP		loc_137C4C
+loc_137C3E:
+		LDA		_tmp_extnt_dest_ofs
+		AND		#$1F
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#>[_MMC5_EXRAM]
+		STA		_extnt_queue_buf,X
+		INX
+loc_137C4C:
+		LDA		#2
+		STA		_extnt_queue_buf,X
+		INX
+		JSR		_ppu_extnt_word_queue
+		STX		_extnt_queue_pos_head
+		RTS
+loc_137C58:
+		LDA		#1
+		STA		_extnt_queue_buf,X
+		INX
+		JSR		_ppu_extnt_byte_queue
+		LDA		_tmp_extnt_dest_ofs
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp_extnt_dest_ofs+1
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#1
+		STA		_extnt_queue_buf,X
+		INX
+		JSR		_ppu_extnt_byte_queue
+		LDA		byte_B6
+		LSR
+		BCS		loc_137C8C
+		LDA		_tmp_extnt_dest_ofs
+		CLC
+		ADC		#$20
+		STA		_tmp_extnt_dest_ofs
+		LDA		_tmp_extnt_dest_ofs+1
+		ADC		#0
+		STA		_tmp_extnt_dest_ofs+1
+		BNE		loc_137C96
+loc_137C8C:
+		LDA		_tmp_extnt_dest_ofs
+		AND		#$1F
+		STA		_tmp_extnt_dest_ofs
+		LDA		#>[_MMC5_EXRAM]
+		STA		_tmp_extnt_dest_ofs+1
+loc_137C96:
+		LDA		_tmp_extnt_dest_ofs
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp_extnt_dest_ofs+1
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#1
+		STA		_extnt_queue_buf,X
+		INX
+		JSR		_ppu_extnt_byte_queue
+		LDA		_tmp_extnt_dest_ofs
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		_tmp_extnt_dest_ofs+1
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		#1
+		STA		_extnt_queue_buf,X
+		INX
+		JSR		_ppu_extnt_byte_queue
+		STX		_extnt_queue_pos_head
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_ppu_extnt_word_queue:
+		LDA		(word_B2),Y
+		INY
+		STA		_extnt_queue_buf,X
+		INX
+
+; =============== S U B	R O U T	I N E =======================================
+_ppu_extnt_byte_queue:
+		LDA		(word_B2),Y
+		INY
+		STA		_extnt_queue_buf,X
+		INX
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137CD4:
+		JSR		_ppu_queue_empty_test_0
+		BCS		locret_137D0A
+		LDA		byte_53
+		BEQ		locret_137D0A
+		JSR		sub_137D20
+		LDA		_ppu_queue_pos_head
+		STA		byte_62
+		LDA		_extnt_queue_pos_head
+		STA		byte_63
+loc_137CE8:
+		JSR		sub_137D82
+		JSR		sub_137DE8
+		SEC
+loc_137CEF:
+		JSR		sub_137E6E
+		JSR		sub_137E15
+		JSR		sub_137E2A
+		BCC		loc_137CEF
+		JSR		sub_137F16
+		BCC		loc_137CE8
+		JSR		sub_137F22
+		LDA		byte_62
+		STA		_ppu_queue_pos_head
+		LDA		byte_63
+		STA		_extnt_queue_pos_head
+locret_137D0A:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137D0B:
+		LDA		#0
+		STA		byte_53
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_ppu_queue_empty_test_0:
+		LDA		_ppu_queue_pos_tail
+		CMP		_ppu_queue_pos_head
+		BNE		loc_137D1E
+		LDA		_extnt_queue_pos_tail
+		CMP		_extnt_queue_pos_head
+		BNE		loc_137D1E
+		CLC
+		RTS
+loc_137D1E:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137D20:
+		LDA		byte_56
+		BPL		loc_137D26
+		LDA		#0
+loc_137D26:
+		CMP		_cur_map_wnd_pos._Y
+		BCS		loc_137D2C
+		LDA		_cur_map_wnd_pos._Y
+loc_137D2C:
+		STA		byte_56
+		SEC
+		SBC		_cur_map_wnd_pos._Y
+		STA		byte_59
+		LDA		byte_57
+		SEC
+		SBC		_cur_map_wnd_pos._Y
+		CMP		#$15
+		BCC		loc_137D43
+		LDA		#$14
+		CLC
+		ADC		_cur_map_wnd_pos._Y
+		STA		byte_57
+loc_137D43:
+		LDA		byte_54
+		BPL		loc_137D49
+		LDA		#0
+loc_137D49:
+		CMP		_cur_map_wnd_pos._X
+		BCS		loc_137D4F
+		LDA		_cur_map_wnd_pos._X
+loc_137D4F:
+		STA		byte_54
+		SEC
+		SBC		_cur_map_wnd_pos._X
+		CLC
+		ADC		#7
+		STA		byte_58
+		LDA		byte_55
+		SEC
+		SBC		_cur_map_wnd_pos._X
+		CMP		#$19
+		BCC		loc_137D69
+		LDA		#$18
+		CLC
+		ADC		_cur_map_wnd_pos._X
+		STA		byte_55
+loc_137D69:
+		LDX		#0
+		LDA		byte_57
+		SEC
+		SBC		byte_56
+		ADC		#0
+		CMP		#2
+		BCC		loc_137D7A
+		LDA		#1
+		LDX		#$FF
+loc_137D7A:
+		STA		byte_64
+		STX		byte_65
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137D80:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137D82:
+		LDA		_cur_screen_tile._Y
+		LSR
+		CLC
+		ADC		byte_59
+		CMP		#$1E
+		BCC		loc_137D8E
+		SBC		#$1E
+loc_137D8E:
+		LDX		#$20
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		STA		_ptr0
+		LDA		_cur_screen_tile._X
+		LSR
+		CLC
+		ADC		byte_58
+		AND		#$1F
+		PHA
+		CLC
+		ADC		_ptr0
+		STA		byte_66
+		STA		byte_68
+		TXA
+		ORA		#$20
+		STA		byte_67
+		TXA
+		ORA		#>[_MMC5_EXRAM]
+		STA		byte_69
+		PLA
+		EOR		#$FF
+		SEC
+		ADC		#$20
+		STA		_ptr0
+		LDA		byte_55
+		SEC
+		SBC		byte_54
+		CLC
+		ADC		#1
+		CMP		_ptr0
+		BEQ		loc_137DD9
+		BCC		loc_137DD9
+		SBC		_ptr0
+		STA		byte_6B
+		LDA		_ptr0
+		STA		byte_6A
+		JMP		loc_137DDF
+loc_137DD9:
+		STA		byte_6A
+		LDA		#0
+		STA		byte_6B
+loc_137DDF:
+		LDA		byte_54
+		STA		_tmp_tile_pos._X
+		LDA		byte_56
+		STA		_tmp_tile_pos._Y
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137DE8:
+		LDX		byte_62
+		LDA		byte_66
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_67
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_6A
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_62
+		LDX		byte_63
+		LDA		byte_68
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_69
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_6A
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_63
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137E15:
+		LDX		byte_62
+		LDA		word_6C
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_62
+		LDX		byte_63
+		LDA		word_6C+1
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_63
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137E2A:
+		INC		_tmp_tile_pos._X
+		DEC		byte_6A
+		BNE		loc_137E6A
+		LDA		byte_6B
+		BEQ		loc_137E6C
+		STA		byte_6A
+		LDA		#0
+		STA		byte_6B
+		LDX		byte_62
+		LDA		byte_66
+		AND		#$E0
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_67
+		STA		_ppu_queue_buf,X
+		INX
+		LDA		byte_6A
+		STA		_ppu_queue_buf,X
+		INX
+		STX		byte_62
+		LDX		byte_63
+		LDA		byte_68
+		AND		#$E0
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_69
+		STA		_extnt_queue_buf,X
+		INX
+		LDA		byte_6A
+		STA		_extnt_queue_buf,X
+		INX
+		STX		byte_63
+loc_137E6A:
+		CLC
+		RTS
+loc_137E6C:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137E6E:
+		LDA		_tmp6E+1
+		BEQ		loc_137E7C
+		BCS		loc_137E7C
+		LDA		_tmp_tile_pos._X
+		CMP		#$4C
+		BCS		loc_137E86
+		BCC		loc_137EAF
+loc_137E7C:
+		LDA		_tmp_tile_pos._X
+		CMP		#$4C
+		BCS		loc_137E86
+		ORA		_tmp_tile_pos._Y
+		BPL		loc_137E93
+loc_137E86:
+		LDA		#0
+		STA		_tmp6E+1
+		LDA		#$DF
+		STA		word_6C
+		LDA		#1
+		STA		word_6C+1
+		RTS
+loc_137E93:
+		LDA		_tmp_tile_pos._Y
+		LDX		#$4C
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+		CLC
+		ADC		_tmp_tile_pos._X
+		STA		_tmp6E
+		TXA
+		ADC		#>[_wram_map_buf]
+		STA		_tmp6E+1
+		BNE		loc_137EB5
+loc_137EAF:
+		INC		_tmp6E
+		BNE		loc_137EB5
+		INC		_tmp6E+1
+loc_137EB5:
+		LDX		#0
+		LDY		#0
+		LDA		(_tmp6E),Y
+		BPL		loc_137EC4
+		CMP		#$90
+		BCS		loc_137ED3
+		JSR		sub_137EDD
+loc_137EC4:
+		LDY		#1
+		STY		byte_533
+		STX		byte_534
+		JSR		sub_150BF7
+		BCC		loc_137ED6
+		BCS		loc_137ED9
+loc_137ED3:
+		JSR		sub_150FCF
+loc_137ED6:
+		JSR		sub_137EFB
+loc_137ED9:
+		JSR		sub_15104E
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137EDD:
+		AND		#$F
+		TAX
+		LDA		byte_137EEC,X
+		TAY
+		DEC		_tmp6E+1
+		LDA		(_tmp6E),Y
+		INC		_tmp6E+1
+		INX
+		RTS
+byte_137EEC:
+		.BYTE	$B4,$B3,$FF,$68,$67,$66,$B2,$FE,$1C,$1B,$1A,$19,$65,$B1,$FD
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137EFB:
+		STX		_tmp2
+		TAX
+		LDA		off_151884,X
+		STA		_ptr0
+		LDA		off_151983,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		ASL
+		TAY
+		LDA		(_ptr0),Y
+		STA		word_6C+1
+		INY
+		LDA		(_ptr0),Y
+		STA		word_6C
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137F16:
+		INC		byte_56
+		INC		byte_59
+		DEC		byte_64
+		BEQ		loc_137F20
+		CLC
+		RTS
+loc_137F20:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_137F22:
+		LDA		byte_65
+		BNE		locret_137F29
+		JSR		sub_15011A
+locret_137F29:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_auto_goto_test:
+		LDA		_city._game_flags
+		AND		#4
+		BNE		_goto_start
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_goto_start:
+		LDA		_goto_alert_req
+		BEQ		locret_137F7B
+		LDA		_goto_transition_counter
+		BNE		locret_137F7B
+		LDA		_goto_dest_tile._X
+		SEC
+		SBC		#$C
+		BCS		loc_137F48
+		LDA		#0
+		BEQ		loc_137F4E
+loc_137F48:
+		CMP		#$35
+		BCC		loc_137F4E
+		LDA		#$35
+loc_137F4E:
+		STA		_cur_map_wnd_pos._X
+		STA		byte_54
+		CLC
+		ADC		#$18
+		STA		byte_55
+		LDA		_goto_dest_tile._Y
+		SEC
+		SBC		#$A
+		BCS		loc_137F63
+		LDA		#0
+		BEQ		loc_137F69
+loc_137F63:
+		CMP		#$37
+		BCC		loc_137F69
+		LDA		#$37
+loc_137F69:
+		STA		_cur_map_wnd_pos._Y
+		STA		byte_56
+		CLC
+		ADC		#$14
+		STA		byte_57
+		LDA		#$1E
+		STA		_goto_transition_counter
+		LDA		#$FF
+		STA		byte_53
+locret_137F7B:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_game_scr_init:
+		LDA		_cur_game_mode
+		CMP		#3
+		BNE		loc_137F8D
+		LDA		#$19
+		STA		_cur_map_wnd_pos._X
+		LDA		#$1B
+		STA		_cur_map_wnd_pos._Y
+		BNE		loc_137F93
+loc_137F8D:
+		LDA		#0
+		STA		_cur_map_wnd_pos._X
+		STA		_cur_map_wnd_pos._Y
+loc_137F93:
+		JSR		_regular_constr_palette_redraw_req_set
+		LDA		#0
+		STA		_MMC5_NT_MODE
+		STA		_game_wnd_spr_mode_flag
+		STA		_scr_mode_idx
+		STA		_game_msg_idx
+		STA		_screen_pal_cur_spr_idx
+		STA		_screen_pal_cur_bg_idx
+		STA		_game_map_area_cursor_pos_backup._X
+		STA		_game_map_area_cursor_pos_backup._Y
+		STA		_game_msg_wnd_active_flag
+		LDA		#$18
+		STA		_cur_game_cursor_scr_pos._X
+		STA		_constr_palette_area_cursor_pos._X
+		LDA		#$48
+		STA		_cur_game_cursor_scr_pos._Y
+		STA		_constr_palette_area_cursor_pos._Y
+		LDA		#1
+		STA		byte_C0
+		JSR		_game_hud_full_draw
+		JSR		_seasonal_pal_load
+		JSR		_pal_fade_in
+		JSR		_scroll_msg_reset
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_seasonal_pal_load:
+		LDX		_city._cur_month
+		LDA		_seasonal_pal_list,X
+		STA		_screen_pal_cur_bg_idx
+		JSR		_pal_load_lib
+		LDA		#2
+		STA		_ppu_pal_dequeue_req
+		RTS
+_seasonal_pal_list:
+		.BYTE	$0E,$0E,$00,$00,$00,$0C,$0C,$0C,$0D,$0D,$0D,$0E
+
+		BANK_END C,$A000

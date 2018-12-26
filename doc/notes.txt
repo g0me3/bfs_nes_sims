@@ -1,0 +1,189 @@
+
+	CODES
+
+- At any time during the game, press A + B + Select + Start on controller 1 to Soft Reset.
+- At the title screen, press A + B + Up + Left on controller 2 to clear SRAM data.
+- During the game in any mode, at any message window (disasters, hints, information), press at the same time A + B on controller 2 and all D-Pad buttons Up + Down + Left + Right using both controllers in any combination (Up + Left on controller 1 and Down + Right on controller 2, etc.). Release all buttons. Now, hold one of the D-Pad buttons on both controllers at the same time (for example hold Right on controller 1 and Right on controller 2, etc.), while holding these buttons, press once any other D-Pad button on controller 1. Exit the message window either with A or B on controller 1. A message "I AM GOD   I WISH YOU HAPPY" will scroll at the game' HUD instead of regular alert messages and a debug mode is toggles ON. Do the same operations one more time to toggle this mode OFF with another message "I AM GOD   DEBUG OFF". The debug mode makes some changes to the gameplay:
+	- all constructions cost no money. however, the budget income/outcome still work.
+	- be able to place any number of buildings at any position without collision check (causes a lot of glitches if heavily obused)
+- You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, DISASTERS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and will lost when exit from the game.
+
+	UNFINISHED
+
+- There are 6 scenarios available from the beginning. Don't know wether you can beat any of them, but there is a handler with message about beating all scenarios which raises flag (0x5EC = 1) and now there are two special scenarios available: "Las Vegas UFO" and "Freedom", both have no briefing texts, only blank windows. One special scenario map is used for Practice. So there are total 9 map resources, all used.
+- There is no UFO object in game, only CHR sprites left: two frames of UFO, a tractor beam and a shadow fof the ground.
+- There are 5 name buffers inside
+	- first is your town name, default name "SIMCITY"
+	- second is what you enter as a favorite word, used as a sister town name during the game in New Town mode, if not entered, used the default name. In practice and scenario modes is blank, so message about Sistership of towns will lack of name of the City at all.
+	- third name used as bank name inside the message resourses, but never initialized with any value, always blank, the same as with blank Cister Town name.
+	- two more are unused completely
+- Although the disasters sometimes occur, the plane crash seems to has no effect on the ground at all.
+- One of the SE effects unreferenced and seems unused. Use GG AKOXTGAA+YSXZPKAP then write $08 to $00F1 address in RAM to hear it.
+- There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine. From 0 to F except B ("Blackouts"), also 18 ("Heavy traffic report") used in a custom handler. The rest of messages aren't used at all. Most of them are about disasters and crashes, some crashed doesn't appear in this version of the game ("Plane crash", "Helicopter crash", "Shipwreck reported", "Train crash", "Hi unemployment rate", "City gone broke", "Explosion", "Brownouts"). See the full list of events in the table in MISC section.
+- *3 There is a counter of all map tiles that were tested and are powered already, some kind of "consumption" rate. But it never used. Instead there is only one flag used in overal calculations if tile is powered or not. We have bug here in power consumption calculation which in not needed, but in the end this still get some insignificant or hardly noticeable effect on overall game mechanics involing the power calculations.
+- There are currently 3 different kind of vehicles visible on the map: a Heli, an Airplain and a Train (its indexes correspondingly 0, 1 and 3). The missing vehicle object with index 2 has most of its code programmed. Judging from the unused CHR data tiles this should be a Ship. The map overview mode displaying all vehicles as a small letters. For used vehicles has accordingly "H" (Heli), "A" (Airplane) and "R" (tRain). Unused vehicle should be displayed as "S" (Ship) correspondingly.
+- Ship start routine takes a lot of cycles to find nothing useful because broken. Instead of end of map buffer ptr it compares against the map buffer size while looking for a special ship deploy tile (#FE) never used though. Fix it with GG to skip uneeded work SUEXUEVN+TNOXUATP. Unfortunately, this will make proper ship pos calcs, but does not start an actual ship floating. There are no ship objs init code at all anywhere.
+- In the data for in-game menus, there are two unused "YES/NO" windows: "DO YOU QUIT PLAYING WITHOUT SAVING?" and "DO YOU WANT TO START NEW CITY?". Both unused, they just ask you to save or not and then quit.
+- The data used for Graphs screen in the current version calculated very briefly, they just div the game parameters by 16 and show the result. For a small town you couldn't see anything, the results are always zero. Even for a large town it mostly zero all the time. So there is no proper scaling. However, the max values for RCI data is calculated and stored but never used. The calc data is a mess. And finally, there is a bug in R calc, as against others values they get the higher nibble of R level, then div it to 2, but the code looks like copy-paste, they should've div to 2 16-bit value instead.
+
+	BUGS
+
+- Use the turbo button A on some input screens (input name, budget selector) to crash or glitch the screen (maybe emulator problem).
+- First briefing message in Practice mode has a typo with missing colon and space "..., iron out traffic snarls[, ]control environmental pollution..."
+- There is an unused disabled branch in Practice mode to check if you go well or bad during this game. This branch should check your town population after some years, then send a message if you did it well or you need more practice. For some reason, they set the game period only for 5 years and population to 30000, so virtually impossible on a such small land for Practice. So it's seems they just decided to disable it by now. To re-enable it use GG GESLGPTZ.
+- There is non-critical bug in special items free slot search routine. In case you have no free slots, it will run for 256 loops of dummy cycle instead of just exit. No side effects in this except missed cycles.
+- Some events haven't appear automatically when you get it (see table below) due to some sort of hardly visible bug with indexes comparisons. In case you get this bug, you need to go to the hints menu and press it in order to obtain a Special item. Most of events works just fine, there only 2 of them which isn't visible. If you miss this, the item will be lost when next event occurs.
+- *1 B$6CC RAM address is a temporary variable used in many places of the program to store intermediate calc data. However, most of the time it has a value of POWER STATIONS summary counter, which is calculated every game iteration. This var used exactly as a POWER STATIONS count for the warning scrolled messages test. Although it used for calculations at the end of the fiscal year and has a semi-random value immediately after the year budget screen is closed, this has no really significant effect to the game and message triggering except the case this semi random value gets ZERO, which is rarely possible.
+- Seems this bug is kind of bad but appears to be not so critical. At BANKB:$A8D9 there is a calculations which fetch power grid buffer data, then test if the particular tile is powered up or not. The opcode at BANKB:$A90E (AND $A3B6,X) refers to the bitmasks table from BANKA, but in BANKB it refers to the portion of the game's code so masking will get the wrong result most of the time, reporting are powered while they are not or vice versa. Seems they overlooked this when moving the code around (it's easy to do so if you have automatic links calculation, like in my BFS using DASM ~CaH4e3 lol). To fix in in current ROM, use GG KIEXNPVU+OLOZEPUX. See more details in UNFINISHED sect. *3
+- Crackling sound in square channel fixes with GG EPXXYZNP (a courtesy of Chris Covell).
+- When airplane crashes, it's damaging one particular tile on the map with enabling "GOTO" alert button. However, due to copy-paste bug, the coordinates of "GOTO" are wrong and not points to the crash site. To fix it use GG KEEAGEVE.
+- Some core recalc functions used in the main loop with crytical section entry/leave routines, meant to have priority when calculated during the game. Usually they called as "critical section enter, call routine, critical section leave". But the routines itself contains an critical section leave routines inside, meant they called twice. So they probably meant to be called inside routines automatically, or I they are leftover from the dev stage. Or in reverse, unfinished planned behaviour.
+- Pollution area zone calculated as a sum of weights of the tiles for every 4x4 map area. Weights are follow: developer I area +2 for a tile (+8 for 2x2 building), coal power station +3 for a tile (+36 for 3x3 building), flooded ground +15 for a tile (probably BUG here, flooded ground idx is B5 used here, the nuclear pollution tile idx is B6, so why flood is more polluted than nuclear waste?), the rest gives 0. If there are no any buildings/roads/maps tiles inside the calculation area, pollution level ignored, so technically we will have no any pollution in areas with floods outside of any buildings. Any other building with non-zero pollution weights are itself a building, so will be included in the map instantly.
+- Tere is a var $67D, which never written by any code, but read sometimes and used in calcs. It used at $A:$AB69, where the calc results stored in vars $6D6-6DB. May it be a mistakenly swapped numbers 67D-6D7 for a proper var? Then it should be a high nibble of traffic level value. However, it is used also at $A:$A9F7 in an overall city assessed value, added to police stations count and weighted then summed in overal value. So police stations+traffic level high nibble means more value, than lower traffic? odd...
+- Assessed city value clear routine clears only lower nibble, not touching high ones. Next they clear the _annual_score_change var which is temporary recalculated var too, but sin near the assessed value ram address... Or they missed to clear the whole number, or just mistakenly clear other vars...
+
+	MISC
+
+- The game engine consists of two main separate mostly independent parts. First is an interface and display control part. It handles all inputs, menus, drawing graphics, screen objects/sprites manager, disasters manipulation. The second is a city control and statistics collector part. It does all city specific calcs on population, industry, energy, pollution and traffic. Does statis and charts for info displays, etc... Both parts constantly does its own work in loop, never stop. The most interesting part, they work like some kind of threads in parallel. The threads manager in NMI handler switches between two process through stack manipulation, so both work some kind in parallel. The interface thread has a priority on a man activity. If you press any button, it will take control instantly, and city calcs will be halted. In other way, the city calc part can raise a flags to forbit some portions of the interface code to read the data it calculating now. I have not seen such engine in any game before. Usually, threading methods used in a scripted engines. This is the first game I've seen that do it on the native code. Basicly, this method can be used for multi-threading operation systems for NES, the problem is just in a very small stack.
+- For some reason until you get the City Status and build a Bank, you have only 3 free Special events slots. The rest of the game you'll have 4 slots. However, if all your slots are full and still unused, any pending event will wait until it empty.
+- The word "ISHI" is used as a RAM signature for Soft/Hard Reset test.
+- All music tracks are used in the game. Most of tracks you may hear during scenario game mode with each town grow up. some tracks are "paired", first started one track, then jump to the next one (01-02 title, 08-10 practice, 48-50, 60-40 information) witch finally loops. so, we have all tracks covered with a corresponding game events.
+- *2 There is an automatically spawned helicopter for observing the road traffic. It floats randomly and every iteration its coordinates tested against the traffic map. If helicopter flying over the traffic location with dencity above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli event were added to the game at the late stage of developement with a quick and lazy method, avoiding the regular message system and called from the top of the system loop.
+- Sound engine tables the same as in Nintendo games: Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All has similar way to play SE by setting flag bits.
+- Power consumption calculated as: TOTAL_POWER = COAL*700 + NUCLEAR*2000 pts. Every single powerable building tile and every electric wire consume 1 pt. Due to recursive method of collecting the network data, there will be extra power points consumed according to placement and location of adjascent buildings.
+
+	APPEND. A - SPECIAL EVENTS
+
+	EVENT						REQUIREMENTS			RESULTS					REPEATS				MESSAGE APPEAR
+01	Becomes a Town 				2000 population			Town History record		once per game		yes
+02	Becomes a City				10000 population		Town History record,	once per game		yes
+														White House Building
+03	Becomes a Capital			50000 population		Town History record		once per game		yes
+04	Becomes a Metropolis		100000 population		Town History record		once per game		yes
+05	Becomes a Megapolis			500000 population		Town History record		once per game		yes
+06	Traffic is bumper to bumper traffic level 7			-						every recalculation	yes
+07	Commuters are grid-locket	traffic level 2			- 						every recalculation	yes
+08	Crime rate is much too high	crime level 7			-						every recalculation	yes
+0B	Bank wants to build office	5 years after built		Bank Special Building	once per game		yes
+								White House Building
+0C	City wants relationship		150000 population		-						once per game		yes
+0D	Open amusement park			120000 population		Amusement Park Building	once per game		yes
+0E	Open a Zoo					250000 population		Zoo Building			once per game		yes
+0F	Open a Casino				200000 population		Casino Building			once per game		yes
+10	Build an extra land			2 Sea Ports				Extra Land Item			once per game		no (bug)
+11	New Police Station			10 Police Stations		New Police Building		once per game		yes
+12	New FireStation				10 Police Stations		New Fire Building		once per game		yes
+13	10th anniversary monument	Fidex 1910 year			10th Monument			once per game		yes
+14	100th anniversary monument	Fixed 2000 year			100th Monument			once per game		yes
+15	Holding World Expo			Fixed 1950 year			-						once per game		yes
+16	Erect Expo monument			1 year after Expo		Expo Monument			once per game		yes
+17	Statue of Liberty present	10 years after City		Statue of Liberty		once per game		yes
+								relationship
+18	Build a Library				70000 population		Library Building		once per game		no (bug)
+19	Parks expand				200 park squares		Parks Building			once per game		yes
+1A	Railroad Station			150 rail squares		Railroad Station		once per game		yes
+
+	APPEND B. SCROLL MESSAGES
+
+	MESSAGE										REQUIREMENTS				FORCED		NOTES
+00	MORE RESIDENTIAL ZONES NEEDED				R<(R+C+I)/4					no			-
+01	MORE COMMERCIAL ZONES NEEDED				C<(R+C+I)/8					no			-
+02	MORE INDUSTRIAL ZONES NEEDED				I<(R+C+I)/8					no			-
+03	MORE ROADS REQUIRED							(R+C+I)>=10, (R+C+I)>ROADS	no			-
+04	INADEQUATE RAIL SYSTEM						(R+C+I)>=50, (R+C+I)>RAILS	no			-
+05	BUILD A POWER PLANT							(R+C+I)>10, POWER=0			no			*1 see BUGS sect.
+06	RESIDENTS DEMAND A STADIUM					RLEVEL>=500, STADIUM=0		yes			-
+07	INDUSTRY REQUIRES A SEA PORT				ILEVEL>=100, SEAPORT=0		yes			-
+08	COMMERCE REQUIRES AN AIRPORT				VLEVEL>=150, AIRPORT=0		yes			-
+09	CITIZENS DEMAND A FIRE DEPARTMENT			W$672>=60, SPOLICE=0		no			-
+0A	CITIZENS DEMAND A POLICE DEPARTMENT			W$672>=60, SFIRE=0			no			-
+0B	BLACKOUTS REPORTED  CHECK POWER MAP			-unused-					-			-
+0C	CITIZENS UPSET  THE TAX RATE IS TOO HIGH	TAX_RATE>=12				no			-
+0D	ROADS DETERIORATING  DUE TO LACK OF FUNDS	RFUND_RATE<22, ROADS>=30	no			-
+0E	FIRE DEPARTMENTS NEED FUNDING				FFUND_RATE<11, W$672>=20	no			-
+0F	POLICE DEPARTMENTS NEED FUNDING				PFUND_RATE<11, W$672>=20	no			-
+10	A PLANE HAS CRASHED							-unused-					-			-
+11	SHIPWRECK REPORTED							-unused-					-			-
+12	A TRAIN CRASHED								-unused-					-			-
+13	A HELICOPTER CRASHED						-unused-					-			-
+14	UNEMPLOYMENT RATE IS HIGH					-unused-					-			-
+15	YOUR CITY HAS GONE BROKE					-unused-					-			-
+16	EXPLOSION DETECTED							-unused-					-			-
+17	BROWNOUTS  BUILD ANOTHER POWER PLANT		-unused-					-			-
+18	HEAVY TRAFFIC REPORTED						TRAFFIC>=10 under HELI		yes			*2 see MISC sect.
+
+	APPEND C. MAP TILE INDEXES
+
+		BUILDING					FLAGS	FLAG BITS
+00-18	regular R area				CA		11001010
+19		hospital					CA		11001010
+1A		school						CA		11001010
+1B-1F	-							-		-
+20-38	C area						CA		11001010
+39-3F	-							-		-
+40-48	I area						CA		11001010
+49-4F	-							-		-
+50		police station				CA		11001010
+51		fire station				CA		11001010
+52-5F	-							-		-
+60		coal power station			CA		11001010
+61		nuclear power station		CA		11001010
+62		sea port					CA		11001010
+63		stadium						CA		11001010
+64		air port					CA		11001010
+65-6F	-							-		-
+70		bank						CE		11001110
+71		amusement park				CE		11001110
+72		zoo							CE		11001110
+73		casino						CE		11001110
+74		reclaimed water ground		CE		11001110	*replaced with 90
+75		new police station			CE		11001110
+76		new fire station			CE		11001110
+77		10th monument				CE		11001110
+78		100th monument				CE		11001110
+79		expo monument				CE		11001110
+7A		liberty monument			CE		11001110
+7B		library						CE		11001110
+7C		park						CE		11001110
+7D		bus station					CE		11001110
+7E		white house					CE		11001110
+7F		-							-		-
+80-8E	internal building's tiles	C0		11000000
+8F		-							-		-
+90		buldozered ground			02		00000011
+91-9B	road						62		01100011
+9C-A6	rail						52		01010011
+A7-B1	electic						C2		11000011
+B2		park grass					46		01000110
+B3		park tree					06		00000110
+B4		corrupt ground				02		00000010
+B5		flooded ground				00		00000000
+B6		polluted ground				00		00000000
+B7-B8	road+rail					52		01010011
+B9-BA	electric+road				E2		11100011
+BB-BC	electric+rail				D2		11010011
+BD		water						05		00000101
+BE-CD	ground/water shores			06		00000110
+CE-DF	unbuldozered ground			46		01000110
+E0-E1	water+road					05		00000101	*unused
+E2-E3	water+rail					15		00010101
+E4-E5	water+electric				85		10000101
+E6		fire ground					00		00000000
+E7-EA	disaster ground anim		00		00000000
+EB-EC	water+road copy				05		00000101	*unused
+ED-FC	road/water diagonal			05		00000101	*unused
+FD		-							-		-
+FE		special water ship start	05		00000101	*unused
+FF		-							-		-
+
+		FLAG BITS	76543210
+
+		7bit (80) - conduct power tile
+		6bit (40) - corrupteable/burnable tile
+		5bit (20) - road tile
+		4bit (10) -	rail tile
+		3bit (08) -	consume power tile
+		2bit (04) - non-destructable tiles
+		1bit (02) -
+		0bit (01) -
+
