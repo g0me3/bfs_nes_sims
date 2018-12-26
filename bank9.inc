@@ -1992,7 +1992,7 @@ _get_info_maps_wnd_menu_cursor_pos:
 		LDY		_cur_info_maps_button_idx		; for info maps with multiple
 		LDA		_info_maps_options_list,Y		; options, get the ram ofs of
 		TAY										; option idx var
-		LDA		_info_maps_menu_extra_idx,Y	; now get the actual value
+		LDA		_info_maps_menu_extra_idx,Y		; now get the actual value
 		STA		_ptr0
 		TYA
 		ASL										; we may have 4 options for all menus
@@ -2006,14 +2006,17 @@ _get_info_maps_wnd_menu_cursor_pos:
 		STA		_cur_game_cursor_scr_pos._COL
 		RTS
 
+; NOTE, all menus uses the same routine to select between 4 menu items
+; to prevent them to be used on 2-item menus, two sets of params
+; are the same in arrays.
 _info_maps_sub_menu_pos_col_list:
 		.BYTE	$60,$90,$60,$90	; 4 menu options
-		.BYTE	$60,$98,$60,$98	; 2 menu options, NOTE, last two bytes *unused* as well
-		.BYTE	$60,$90			; 2 menu options ,$60,$90 REDUNDANT, *unused*
+		.BYTE	$60,$98,$60,$98	; 2 menu options, two options are the same
+		.BYTE	$60,$90,$60,$90	; 2 menu options, same
 _info_maps_sub_menu_pos_row_list:
 		.BYTE	$50,$50,$78,$78	; 4 menu options
-		.BYTE	$80,$80,$80,$80 ; 2 menu options NOTE, last two bytes *unused* as well
-		.BYTE	$B8,$B8			; 2 menu options ,$B8,$B8 REDUNDANT, *unused*
+		.BYTE	$80,$80,$80,$80 ; 2 menu options, two options are the same
+		.BYTE	$B8,$B8,$60,$90	; 2 menu options
 _info_maps_options_list:
 		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
 
@@ -2259,11 +2262,11 @@ _info_maps_arrows_move:
 		LDA		#$28
 		STA		_scr_res_control_flags			; control flags are set to frame move mode
 		STA		_game_core_state				; THREAD0 takes control for now, THREAD1 suspended
-		LDA		_pad0_press				; d-pad autorep test
+		LDA		_pad0_press						; d-pad autorep test
 		AND		#$0F
 		BEQ		.dpad_released
 		LDX		#$04
-		STX		_dpad0_autorep_timer		; when press, reload dpad autorep counter
+		STX		_dpad0_autorep_timer			; when press, reload dpad autorep counter
 		BNE		.arrows_move
 .dpad_released:
 		LDA		_pad0_held

@@ -3051,13 +3051,13 @@ _tlm_extnt_inactive_buttons_lib:
 		.BYTE	$04,$84,$04,$04
 		.BYTE	$04,$04,$04,$04
 		.BYTE	$84,$84,$84,$84
-_rci_white_tile_list:
+_rci_positive_upper_tile_list:
 		.BYTE	$0B,$17,$03,$02,$01,$00
-byte_151746:
+_rci_positive_middle_tile_list:
 		.BYTE	$0B,$17,$16,$15,$14,$13,$12,$11,$10
-byte_15174F:
+_rci_negative_middle_tile_list:
 		.BYTE	$0B,$1E,$1D,$1C,$1B,$1A,$19,$18,$10
-byte_151758:
+_rci_negative_bottom_tile_list:
 		.BYTE	$0F,$09,$08,$07,$06,$05
 _tlm_constr_palette_static_nt:
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
@@ -4237,7 +4237,6 @@ _hud_date_to_str:
 		INX
 		JMP		_hud_month_str_queue
 
-
 ; =============== S U B	R O U T	I N E =======================================
 _hud_year_str_queue:
 		LDA		_city._cur_year
@@ -4303,7 +4302,7 @@ loc_58E0E:
 ;		.WORD	1
 
 ; =============== S U B	R O U T	I N E =======================================
-; TODO: bank 9 different type of month display lib
+; TODO: PRG9 different type of month display lib
 ;
 _hud_month_str_queue:
 		LDA		_city._cur_month

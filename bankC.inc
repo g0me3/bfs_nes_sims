@@ -28,31 +28,31 @@ loc_13600B:
 		JSR		_far_heavy_traffic_report_test	; if heli in flight, test traffic as well
 loc_13601B:
 		LDA		_game_state_idx					; execute selected state
-		JSR		_switch
-		.WORD	_state00_hud_redraw
-		.WORD	_state01_constr_palette_redraw
-		.WORD	_state02_map_scroll
-		.WORD	_state03_map_scroll_mode_set
-		.WORD	_state04_game_field_redraw
-		.WORD	_state05_constr_palette_update
-		.WORD	_state06_screen_refresh
-		.WORD	_state07_buttons_push
-		.WORD	_state08_build
-		.WORD	_state09_hud_build_name_draw
-		.WORD	_state0A_power_build_menu
-		.WORD	_state0B_gui_ctrl_menu
-		.WORD	_state0C_RCI_meter_redraw
-		.WORD	_state0D_hud_date_redraw
-		.WORD	_state0E_idle_state
-		.WORD	_state0F_hud_money_redraw
-		.WORD	_state10_fiscal_year_draw
-		.WORD	_state11_hud_popul_redraw
-		.WORD	_state12_airport_build_menu
-		.WORD	_state13_msg_wnd_display
-		.WORD	_state14_presents_build_menu
-		.WORD	_state15_game_cursor_area_switch
-		.WORD	_state16_hud_city_name_redraw
-		.WORD	_state17_common
+		SWITCH
+		SW_PTR	_state00_hud_redraw
+		SW_PTR	_state01_constr_palette_redraw
+		SW_PTR	_state02_map_scroll
+		SW_PTR	_state03_map_scroll_mode_set
+		SW_PTR	_state04_game_field_redraw
+		SW_PTR	_state05_constr_palette_update
+		SW_PTR	_state06_screen_refresh
+		SW_PTR	_state07_buttons_push
+		SW_PTR	_state08_build
+		SW_PTR	_state09_hud_build_name_draw
+		SW_PTR	_state0A_power_build_menu
+		SW_PTR	_state0B_gui_ctrl_menu
+		SW_PTR	_state0C_RCI_meter_redraw
+		SW_PTR	_state0D_hud_date_redraw
+		SW_PTR	_state0E_idle_state
+		SW_PTR	_state0F_hud_money_redraw
+		SW_PTR	_state10_budget_screen
+		SW_PTR	_state11_hud_popul_redraw
+		SW_PTR	_state12_airport_build_menu
+		SW_PTR	_state13_msg_wnd_display
+		SW_PTR	_state14_presents_build_menu
+		SW_PTR	_state15_game_cursor_area_switch
+		SW_PTR	_state16_hud_city_name_redraw
+		SW_PTR	_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
 _state00_hud_redraw:
@@ -842,7 +842,7 @@ _state0E_idle_state:
 ;		STA		_full_game_field_redraw_req
 		JSR		_full_game_field_refresh_set	; OPTIMIZED, merged
 		LDA		#$00
-		STA		_game_core_stop_flag
+		STA		_game_core_stop_flag			; idle state periodically refreshes the game field
 loc_136582:
 		JMP		_state17_common
 
@@ -860,7 +860,7 @@ loc_136595:
 		JMP		_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_state10_fiscal_year_draw:
+_state10_budget_screen:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_1365C8
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
@@ -869,7 +869,7 @@ _state10_fiscal_year_draw:
 		STA		_scr_res_idx
 		STA		_scr_mode_idx
 		JSR		_pal_fade_out
-		FJSRA	_scr_res_common,SRAM,PRG9
+		FJSRA	_scr_res_common,SRAM,PRG9		; displays the budget screen
 		JSR		_full_screen_redraw
 		LDA		#$00
 		STA		_scr_mode_idx
@@ -965,35 +965,39 @@ _state17_common:
 _states_select:
 		LDA		_budget_scr_draw_req
 		BEQ		loc_136610
-		LDA		#$10
-		JMP		_set_game_state_idx
+		LDA		#_state10_budget_screen_sidx
+		JMP		.set_game_state_idx
 loc_136610:
 		LDA		_scr_mode_idx					; full map scroll mode request
 		CMP		#$01
 		BNE		loc_13661B
-		LDA		#$02
-		JMP		_set_game_state_idx
+		LDA		#_state02_map_scroll_sidx
+		JMP		.set_game_state_idx
 loc_13661B:
 		LDA		_game_msg_wnd_active_flag
 		BEQ		loc_136625
-		LDA		#$0B
-		JMP		_set_game_state_idx
+		LDA		#_state0B_gui_ctrl_menu_sidx
+		JMP		.set_game_state_idx
 loc_136625:
 		LDA		_build_game_field_update_req	; one of two game field redraw requests, set and
 		BEQ		loc_13662E						; clear usually at the same time, but the first one
-		LDA		#$04							; is set when you build something and has a priority
-		JMP		_set_game_state_idx				; or idle screen updates
+		LDA		#_state04_game_field_redraw_sidx; is set when you build something and has a priority
+		JMP		.set_game_state_idx				; or idle screen updates
 loc_13662E:
 		LDA		_hud_redraw_req					; keep state of hud redraw till the end
-		BEQ		loc_136637
-		LDA		#$00
-		JMP		_set_game_state_idx
-loc_136637:
+; REDUNDANT
+;		BEQ		loc_136637
+;		LDA		#_state00_hud_redraw_sidx
+;		JMP		.set_game_state_idx
+;loc_136637:
+		BNE		loc_136637						; OPTIMIZED
 		LDA		_constr_palette_redraw_req		; also keep state of pal redraw till the end
-		BEQ		loc_136640
-		LDA		#$01
-		JMP		_set_game_state_idx				; full redraw constr palette frame
-loc_136640:
+; REDUNDANT
+;		BEQ		loc_136640
+;		LDA		#_state01_constr_palette_redraw_sidx
+;		JMP		.set_game_state_idx				; full redraw constr palette frame
+;loc_136640:
+		BNE		loc_136640						; OPTIMIZED
 		LDA		_gui_active_controls_flags		; check gui flags active
 		AND		#$03
 		CMP		#$03
@@ -1002,114 +1006,116 @@ loc_136640:
 		BCS		loc_136654						; bit0 clear if static hud need to be redrawn
 		LDA		#$FF
 		STA		_hud_redraw_req					; set the static hud redraw flag
-		LDA		#$00
-		JMP		_set_game_state_idx				; also set the state for redraw already
+loc_136637:
+		LDA		#_state00_hud_redraw_sidx
+		JMP		.set_game_state_idx				; also set the state for redraw already
 loc_136654:
 		LDA		#$FF
 		STA		_constr_palette_redraw_req		; bit 1 clear, then constr palette full redraw request set
-		LDA		#$01
-		JMP		_set_game_state_idx				; also state of the game updated
+loc_136640:
+		LDA		#_state01_constr_palette_redraw_sidx
+		JMP		.set_game_state_idx				; also state of the game updated
 loc_13665D:
 		LDA		_constr_palette_update_req		; when constr palette redrawn, need to update active icons
 		BEQ		loc_136666
-		LDA		#$05
-		JMP		_set_game_state_idx				; update the states of const palette buttons
+		LDA		#_state05_constr_palette_update_sidx
+		JMP		.set_game_state_idx				; update the states of const palette buttons
 loc_136666:
 		LDA		_power_build_menu_req
 		BEQ		loc_136670
-		LDA		#$0A
-		JMP		_set_game_state_idx
+		LDA		#_state0A_power_build_menu_sidx
+		JMP		.set_game_state_idx
 loc_136670:
 		LDA		_airport_build_menu_req
 		BEQ		loc_13667A
-		LDA		#$12
-		JMP		_set_game_state_idx
+		LDA		#_state12_airport_build_menu_sidx
+		JMP		.set_game_state_idx
 loc_13667A:
 		LDA		_presents_build_menu_req
 		BEQ		loc_136684
-		LDA		#$14
-		JMP		_set_game_state_idx
+		LDA		#_state14_presents_build_menu_sidx
+		JMP		.set_game_state_idx
 loc_136684:
 		LDA		_game_msg_awaits_flag
 		BEQ		loc_13668E
-		LDA		#$13
-		JMP		_set_game_state_idx
+		LDA		#_state13_msg_wnd_display_sidx
+		JMP		.set_game_state_idx				; exceeded 128 bytes range here
 loc_13668E:
 		LDA		_pad0_press
 		AND		#$30
 		BEQ		loc_136699
-		LDA		#$15
-		JMP		_set_game_state_idx
+		LDA		#_state15_game_cursor_area_switch_sidx
+		BNE		.set_game_state_idx
 loc_136699:
 		LDA		_hud_city_name_redraw_req
 		BEQ		loc_1366A3
-		LDA		#$16
-		JMP		_set_game_state_idx
+		LDA		#_state16_hud_city_name_redraw_sidx
+		BNE		.set_game_state_idx
 loc_1366A3:
 		LDA		_hud_money_redraw_req
 		BEQ		loc_1366AC
-		LDA		#$0F
-		JMP		_set_game_state_idx
+		LDA		#_state0F_hud_money_redraw_sidx
+		BNE		.set_game_state_idx
 loc_1366AC:
 		LDA		_hud_date_redraw_req
 		BEQ		loc_1366B6
-		LDA		#$0D
-		JMP		_set_game_state_idx
+		LDA		#_state0D_hud_date_redraw_sidx
+		BNE		.set_game_state_idx
 loc_1366B6:
 		LDA		_hud_popul_redraw_req
 		BEQ		loc_1366C0
-		LDA		#$11
-		JMP		_set_game_state_idx
+		LDA		#_state11_hud_popul_redraw_sidx
+		BNE		.set_game_state_idx
 loc_1366C0:
 		LDA		_hud_build_name_draw_req
 		BEQ		loc_1366C9
-		LDA		#$09
-		JMP		_set_game_state_idx
+		LDA		#_state09_hud_build_name_draw_sidx
+		BNE		.set_game_state_idx
 loc_1366C9:
 		LDA		_pad0_held
 		AND		#$40
 		BEQ		loc_1366D4
-		LDA		#$03
-		JMP		_set_game_state_idx
+		LDA		#_state03_map_scroll_mode_set_sidx
+		BNE		.set_game_state_idx
 loc_1366D4:
 		LDA		_pad0_press						; game screen push button test
 		AND		#$80
 		BEQ		loc_1366E4
 		JSR		_test_for_game_buttons_push		; test if any button pushed, C=1 if no
 		BCS		loc_1366E4
-		LDA		#$07
-		JMP		_set_game_state_idx				; change state to handle buttons pushes
+		LDA		#_state07_buttons_push_sidx
+		BNE		.set_game_state_idx				; change state to handle buttons pushes
 loc_1366E4:
 		LDA		_pad0_autorep					; here we push either the empty part of the screen
 		AND		#$80							; or game cfield
 		BEQ		loc_1366F3
 		LDA		_cur_game_cursor_area			; if cursor in game area
 		BEQ		loc_1366F3
-		LDA		#$08							; set state to handle building process
-		JMP		_set_game_state_idx
+		LDA		#_state08_build_sidx			; set state to handle building process
+		BNE		.set_game_state_idx
 loc_1366F3:
-		LDA		_full_game_field_redraw_req			; one of two similar requests, not sure why 2
+		LDA		_full_game_field_redraw_req		; one of two similar requests, not sure why 2
 		BEQ		loc_1366FC						; both selects the same state, probably
-		LDA		#$04							; one planned for full redraw, another for
-		JMP		_set_game_state_idx				; partial, but now both merged
+		LDA		#_state04_game_field_redraw_sidx; one planned for full redraw, another for
+		BNE		.set_game_state_idx				; partial, but now both merged
 loc_1366FC:
 		LDA		_RCI_meter_redraw_req
 		BEQ		loc_136706
-		LDA		#$0C
-		JMP		_set_game_state_idx
+		LDA		#_state0C_RCI_meter_redraw_sidx
+		BNE		.set_game_state_idx
 loc_136706:
 		LDA		_screen_refresh_req
 		BEQ		loc_136710
-		LDA		#$06
-		JMP		_set_game_state_idx
+		LDA		#_state06_screen_refresh_sidx
+		BNE		.set_game_state_idx
 loc_136710:
-		LDA		_game_core_stop_flag			; when
+		LDA		_game_core_stop_flag
 		BEQ		loc_13671A
-		LDA		#$0E
-		JMP		_set_game_state_idx
+		LDA		#_state0E_idle_state_sidx
+		BNE		.set_game_state_idx
 loc_13671A:
-		LDA		#$17
-_set_game_state_idx:
+		LDA		#_state17_common_sidx
+.set_game_state_idx:
 		STA		_game_state_idx
 		RTS
 
@@ -1124,18 +1130,20 @@ _constr_palette_redraw:
 		JSR		_constr_palette_static_extnt_draw
 		LDA		#$00							; when constr palette redraw
 		STA		_constr_palette_redraw_req		; finished, calc the game field
-		LDA		_cur_map_wnd_pos._COL			; rect coordinates and set flag
-		STA		_update_rect_left				; request to redraw it also, so we
-		CLC										; will finish complete screen redraw
-		ADC		#$18							; process
-		STA		_update_rect_right
-		LDA		_cur_map_wnd_pos._ROW
-		STA		_update_rect_top
-		CLC
-		ADC		#$14
-		STA		_update_rect_bottom
-		LDA		#$FF
-		STA		_full_game_field_redraw_req			; almost finished with screen update
+; REDUNDANT, merged
+;		LDA		_cur_map_wnd_pos._COL			; rect coordinates and set flag
+;		STA		_update_rect_left				; request to redraw it also, so we
+;		CLC										; will finish complete screen redraw
+;		ADC		#$18							; process
+;		STA		_update_rect_right
+;		LDA		_cur_map_wnd_pos._ROW
+;		STA		_update_rect_top
+;		CLC
+;		ADC		#$14
+;		STA		_update_rect_bottom
+;		LDA		#$FF
+;		STA		_full_game_field_redraw_req		; almost finished with screen update
+		JSR		_full_game_field_refresh_set	; WARNING, A=FF on exit here!
 		STA		_constr_palette_update_req		; need to update button states and fame field
 ;		JSR		_constr_palette_update_req_set	; REDUNDANT
 		CLC
@@ -3577,14 +3585,14 @@ _RCI_meters_draw:
 		JSR		_RCI_meters_R_prequeue			; precalc rci meters columns
 		JSR		_RCI_meters_C_prequeue
 		JSR		_RCI_meters_I_prequeue
-		JSR		_RCI_meters_pos_calc
-		JMP		_RCI_meters_queue
+		JSR		_RCI_meters_pos_calc			; calc position and wraps
+		JMP		_RCI_meters_queue				; queue data
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_R_prequeue:
 		LDA		_RCI_meters_values._R			; read an actual value and
-		LDY		#$80							; color/tileset settings
-		STY		_ptr0+1
+		LDY		#$80							; tileset offset, uses different
+		STY		_tmp1							; bg colors, 80 for R and C
 ;		LDY		#$80							; REDUNDANT, obvious
 		BNE		_RCI_meters_prequeue
 
@@ -3592,7 +3600,7 @@ _RCI_meters_R_prequeue:
 _RCI_meters_C_prequeue:
 		LDA		_RCI_meters_values._C
 		LDY		#$80
-		STY		_ptr0+1
+		STY		_tmp1
 ;		LDY		#$81							; REDUNDANT
 		INY										; OPTIMIZED
 		BNE		_RCI_meters_prequeue
@@ -3600,94 +3608,117 @@ _RCI_meters_C_prequeue:
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_I_prequeue:
 		LDA		_RCI_meters_values._I
-		LDY		#$00
-		STY		_ptr0+1
+		LDY		#$00							; for I tileset is at offset 00
+		STY		_tmp1
 		LDY		#$82
 
 ; =============== S U B	R O U T	I N E =======================================
+; the rci meter is a column of 5 tiles, two upper and two lower are
+; represents positive or negative lever values, so each lever uses
+; two tiles, and the middle tile is an RCI meter label (letter)
+; althourh the RCI labels already drawn there before, the update
+; process draws full line of 5 tiles, so RCI labels need to be rewritten
+; also
 _RCI_meters_prequeue:
-		STY		_ptr0							; draw with common routine
+		STY		_tmp0							; RCI label for column
 		AND		#$FF
 		BMI		.rci_draw_negative				; draw negative or positive separately
 		PHA										; for positive first calc the white
 		SEC										; part of the column
 		SBC		#$08
-		BCS		loc_1379BF
-		LDA		#$00
+		BCS		loc_1379BF						; get upper tile height and size idx 0-5
+		LDA		#$00							;
 loc_1379BF:
 		TAY
-		LDA		_rci_white_tile_list,Y
-		CLC
-		ADC		_ptr0+1
+		LDA		_rci_positive_upper_tile_list,Y	; fill upper positive tile
+		CLC										; adjust the tileset if needed
+		ADC		_tmp1
 		STA		_pre_ppu_buf,X
 		INX
-		PLA
-		CMP		#$09
-		BCC		loc_1379D1
+		PLA										; restore lever value stored before
+		CMP		#$09							; and test wether it lower or higher than 8
+		BCC		loc_1379D1						; if higher, draw solid line always
 		LDA		#$08
 loc_1379D1:
 		TAY
-		LDA		byte_151746,Y
+		LDA		_rci_positive_middle_tile_list,Y; fill middle tile also
 		CLC
-		ADC		_ptr0+1
+		ADC		_tmp1
 		STA		_pre_ppu_buf,X
 		INX
-		LDA		_ptr0
+		LDA		_tmp0
+		STA		_pre_ppu_buf,X					; fill RCI label letter
+		INX
+; REDUNDANT, these empty tiles are always the same, no need to
+; fetch them from arrays, also no need to adjust tilesets, empty tiles
+; are the same in both
+;		LDY		#$00
+;		LDA		_rci_negative_middle_tile_list,Y; and then two empty tiles for negative side
+;		CLC
+;		ADC		_tmp1
+;		STA		_pre_ppu_buf,X
+;		INX
+;		LDA		_rci_negative_bottom_tile_list,Y
+;		CLC
+;		ADC		_tmp1
+; -
+; OPTIMIZED
+		LDA		#$0B
 		STA		_pre_ppu_buf,X
 		INX
-		LDY		#$00
-		LDA		byte_15174F,Y
-		CLC
-		ADC		_ptr0+1
-		STA		_pre_ppu_buf,X
-		INX
-		LDA		byte_151758,Y
-		CLC
-		ADC		_ptr0+1
+		LDA		#$0F
+; -
 		STA		_pre_ppu_buf,X
 		INX
 		RTS
 .rci_draw_negative:
-		EOR		#$FF
+		EOR		#$FF							; for negative values do the same but invert value first
 		CLC
 		ADC		#$01
+		PHA										; keep two copies of value for later
 		PHA
-		PHA
-		LDY		#$00
-		LDA		_rci_white_tile_list,Y
-		CLC
-		ADC		_ptr0+1
+; REDUNDANT, also very unoptimal and not needed
+;		LDY		#$00
+;		LDA		_rci_positive_upper_tile_list,Y	; fill upper two empty lines
+;		CLC
+;		ADC		_tmp1
+;		STA		_pre_ppu_buf,X					; also with correction to tileset
+;		INX
+;		LDA		_rci_positive_middle_tile_list,Y
+;		CLC
+;		ADC		_tmp1
+; -
+; OPTIMIZED, both tiles here the same
+		LDA		#$0B
 		STA		_pre_ppu_buf,X
 		INX
-		LDA		byte_151746,Y
-		CLC
-		ADC		_ptr0+1
+; -
 		STA		_pre_ppu_buf,X
 		INX
-		LDA		_ptr0
-		STA		_pre_ppu_buf,X
+		LDA		_tmp0
+		STA		_pre_ppu_buf,X					; draw middle tile
 		INX
 		PLA
 		SEC
-		SBC		#$08
-		BCS		loc_137A24
+		SBC		#$08							; lower value goes first here, so
+		BCS		loc_137A24						; we will use absolute offset +1 delta
 		LDA		#$00
 loc_137A24:
 		TAY
-		LDA		byte_151758,Y
+		LDA		_rci_negative_bottom_tile_list,Y; draw next tile in advance
 		CLC
-		ADC		_ptr0+1
+		ADC		_tmp1
 		STA		_pre_ppu_buf+1,X
 		PLA
-		CMP		#$09
+		CMP		#$09							; lower tile value test
 		BCC		loc_137A35
 		LDA		#$08
 loc_137A35:
 		TAY
-		LDA		byte_15174F,Y
+		LDA		_rci_negative_middle_tile_list,Y
 		CLC
-		ADC		_ptr0+1
-		STA		_pre_ppu_buf,X
+		ADC		_tmp1
+		STA		_pre_ppu_buf,X					; draw current tile and increment twice
 		INX
 		INX
 		RTS
@@ -3703,44 +3734,31 @@ _RCI_meters_pos_calc:
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_queue:
-		LDX		#$00
-		LDY		_ppu_queue_pos_head
+		LDY		#$00
+		PPUQSTART
 loc_137AB8:
-		LDA		_tmp3
-		STA		_tmp6+1
-		LDA		_ptr0
-		STA		_ppu_queue_buf,Y
-		INY
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,Y
-		INY
+		LDA		_tmp3							; length of line data is 5 tiles
+		STA		_tmp6+1							; get actual length and wrap length
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
 		LDA		_tmp2
-		STA		_tmp6
+		STA		_tmp6							; set length with vertical flag
 		ORA		#$80
-		STA		_ppu_queue_buf,Y
-		INY
+		PPUQMOVA
 loc_137AD2:
-		LDA		_pre_ppu_buf,X
-		INX
-		STA		_ppu_queue_buf,Y
+		LDA		_pre_ppu_buf,Y					; send first part
 		INY
+		PPUQMOVA
 		DEC		_tmp6
-		BNE		loc_137AD2
-		DO_WRAP	_tmp6,_tmp6+1,loc_137B01
-		LDA		_ptr0
-		AND		#$1F
-		STA		_ppu_queue_buf,Y
-		INY
+		BNE		loc_137AD2						; test if wrap needed
+		DO_WRAP	_tmp6,_tmp6+1,loc_137B01		; if yes, wrap positions and use
+		PPUQMOVB	_ptr0,OP_AND,#$1F			; wrap length to rest of the data
 		LDA		#$20
-		STA		_ppu_queue_buf,Y
-		INY
-		LDA		_tmp6
-		ORA		#$80
-		STA		_ppu_queue_buf,Y
-		INY
+		PPUQMOVA
+		PPUQMOVB	_tmp6,OP_ORA,#$80
 		JMP		loc_137AD2
 loc_137B01:
-		DEC		_tmp4
+		DEC		_tmp4							; draw 3 columns of data
 		BEQ		loc_137B0A
 		INC		_ptr0
 		JMP		loc_137AB8
@@ -3751,7 +3769,7 @@ loc_137B0A:
 		STA		_ptr0
 		JMP		loc_137AB8
 loc_137B1D:
-		STY		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

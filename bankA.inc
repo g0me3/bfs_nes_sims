@@ -184,7 +184,7 @@ loc_1041A8:
 ;		LDA		_city._delta,X					; OPTIMIZED, already in A
 		BPL		.positive_speed					; now calc the RCI meter value for display
 		NEGA									; for negative rci_meter = -abs(speed)*0.1
-		PHA
+		PHA										; convert to -8 to 8 gange again
 		PUSHB	#$1B
 		JSR		_mmc5_mul8to8
 		PLA
