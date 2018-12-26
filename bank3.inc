@@ -309,7 +309,7 @@ loc_BC1B:
 		BEQ		loc_BC1C						; adjust character idx
 		CLC										; for a corresponding line
 		ADC		_ptr0							; -
-		.BYTE	$2C								; -
+		.BYTE	$2C								; eats next LDA opcode for sure
 loc_BC1C:										; -
 		LDA		_tmp8							; or replace with space symbol
 		PPUQMOVA
@@ -1536,7 +1536,7 @@ _adc_cur_year:
 		LDX		_city._cur_year+1
 		CLC
 		ADC		_city._cur_year
-		LDA		_city._cur_year
+;		LDA		_city._cur_year					; BUG wait, WHAT?
 		BCC		locret_58A9E
 		INX
 locret_58A9E:
@@ -1565,7 +1565,7 @@ loc_58AA8:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._ROW,NONE,_tmp0,#$1E
-		CIADDB	_tmp2,_cur_screen_tile._COL, #$07,NONE,#$20
+		CIADDB	_tmp2,_cur_screen_tile._COL,#$07, NONE,#$20
 		WRAPB	_tmp3,_tmp4,_tmp2,#$19,#$20
 		BUFPOS	_tmp1,_tmp2,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp2)+#$0000
 		RTS
@@ -1877,10 +1877,7 @@ loc_58CE6:
 		LDA		_scroll_msg_shift_pos
 		AND		#$07
 		BEQ		loc_58D0D
-		LDA		_scroll_msg_shift_pos
-		CLC
-		ADC		#$02
-		STA		_scroll_msg_shift_pos
+		ADDB	_scroll_msg_shift_pos,#$02
 		LDA		_scroll_msg_start_pos
 		LDX		_scroll_msg_idx
 		CMP		_scroll_msg_end_pos,X
@@ -1919,7 +1916,7 @@ loc_58D30:
 		LDA		_scroll_msg_lib_hi,X
 		STA		_ptr15+1
 loc_58D3D:
-		LDA		_cur_screen_tile._ROW
+		LDA		_cur_screen_tile._ROW			; TODO: CIADDB without store!
 		LSR
 		CLC
 		ADC		#$1B

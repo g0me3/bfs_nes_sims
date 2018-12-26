@@ -2209,10 +2209,7 @@ _graph_col_draw:
 		LSR
 		STA		_ptr0+1							; calc empty size of column
 		PPUQSTART
-		LDA		_graphs_draw_data_pos			; calc graphs starting pos
-		CLC
-		ADC		#$08
-		STA		_tmp4
+		MADDB	_tmp4,_graphs_draw_data_pos,#$08; calc graphs starting pos
 		PPUQMOVA
 		PPUQMOVB	#$25,OP_NOP,0
 		PPUQMOVB	#$90,OP_NOP,0				; ppu vertical data column queue 10 tiles
@@ -2456,10 +2453,8 @@ _scr_res_hndl2_B_budget_input:
 		BEQ		.budget_hi_timer_inc
 		JMP		.budget_screen_animate
 .budget_hi_timer_inc:
+		INC		_budget_display_timer+1
 		LDA		_budget_display_timer+1
-		CLC
-		ADC		#$01
-		STA		_budget_display_timer+1
 		CMP		#$07
 		BCC		.budget_screen_animate			; 7 times 128 frames
 		LDA		#$80							; then auto quit button

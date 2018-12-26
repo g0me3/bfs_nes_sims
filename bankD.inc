@@ -683,11 +683,11 @@ _surround_tiles1_list:
 		.BYTE	$80
 
 ; surrounding tiles 3x3 building
-; -013-
-; 4*--5
-; 6---7
-; 8---9
-; -ABC-
+; -012-
+; 3*--4
+; 5---6
+; 7---8
+; -9AB-
 ;
 _surround_tiles2_list:
 		.BYTE	$00,$FF
@@ -741,13 +741,13 @@ _get_building_tile_map_ptr:
 		CLC
 		ADC		_cur_constr_cursor_map_pos._COL
 		STA		_tmp511
-		CMP		#$4C							; test if rightmost tile
-		BCS		.out_of_bounds					; out of bound
+		CMP		#$4C							; out of bounds test
+		BCS		.out_of_bounds
 		LDA		(word_D0),Y
 		CLC
 		ADC		_cur_constr_cursor_map_pos._ROW
 		STA		_tmp512
-		CMP		#$4C							; same for bottom tiles
+		CMP		#$4C							; same for Y
 		BCS		.out_of_bounds
 ; REDUNDANT
 ;		LDX		#$4C
@@ -769,20 +769,21 @@ _get_building_tile_map_ptr:
 ; OPTIMIZED
 		BUFPOS	word_D2,_tmp511,_tmp512,#$4C,#>[_city_map]	; FIX, optimized version
 ; -
-;		CMP		#>[_city_map]					; OUT UF BOUNDS TEST 2!!
-;		BCC		.out_of_bounds					; REDUNDANT, not needed!
-;		CMP		#>[_city_map_end]				; out of bounds test 3
-;		BCC		.calc_ok
+;		CMP		#>[_city_map]					; REDUNDANT, previous tests work for
+;		BCC		.out_of_bounds					; either >4C and <0 cases because
+;		CMP		#>[_city_map_end]				; negative values are >4C also so this
+;		BCC		.calc_ok						; additional test just not needed here
 ;		BNE		.out_of_bounds
 ;		LDA		word_D2
 ;		CMP		#<[_city_map_end]				; out of bounds test 4
 ;		BCS		.out_of_bounds
 ;.calc_ok:
+; -
 		CLC
 		RTS
-;.out_of_bounds:								; REDUNDANT, not needed!
-;		SEC
-;		RTS
+.out_of_bounds:
+		SEC
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _adjust_conjunction_tiles:
@@ -4626,9 +4627,9 @@ _hud_str_pos_calc_and_queue:
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)
 		PPUQSTART
 		LDY		#$00
-		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_tmp0,OP_NOP,0
 loc_59B65:
-		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+		PPUQMOVB	_tmp1,OP_ORA,#$20
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_59B66:
 		LDA		_pre_ppu_buf,Y

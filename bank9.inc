@@ -639,25 +639,12 @@ _new_city_next_map_push:
 ; number roll animations below without blinking the sprites itself
 ;
 ;		JSR		_wait_for_nmi					; FIX, removed
-		LDA		_new_map_number					; now increment map number,
-		CLC										; store it to tmp0
-		ADC		#$01
-		STA		_ptr0
-		LDA		_new_map_number+1
-		ADC		#$00
-		STA		_ptr0+1
-		CMP		#$03
-		BCC		.do_next_map					; check rough if less than 999
-		BNE		loc_EA321						; REDUNDANT, more than 1024, never possible here actually
-		LDA		_ptr0							; more than exactly 999
-		CMP		#$E8
+		INCW	_new_map_number					; now increment map number
+		CMPW	_new_map_number,999				; clamp to 0 after 999
 		BCC		.do_next_map
-loc_EA321:
-		LDA		#$00							; clamp back to 0
-		STA		_ptr0+1
-		STA		_ptr0
+		MOVWI	_new_map_number,0
 .do_next_map:
-		MOVW	_new_map_number,_ptr0			; store map number
+		MOVW	_tmp0,_new_map_number
 		JSR		_hex_to_dec9999					; also hex to dec it
 		LDA		#$01							; masks for buttons to roll
 		LDX		_ptr0							; all positive because increment only
@@ -1705,10 +1692,11 @@ loc_EAAB6:
 		AND		#$0F							; and extract type of building color
 loc_EAABF:
 		TAX
-		LDA		_tmp118,X						; increment stat counter
-		CLC
-		ADC		#$01
-		STA		_tmp118,X
+;		LDA		_tmp118,X						; increment stat counter
+;		CLC
+;		ADC		#$01
+;		STA		_tmp118,X
+		INC		_tmp118,X
 		TXA
 		AND		#$03
 		TAX

@@ -843,9 +843,21 @@ _total_free	SET _total_free+_bank{1}_free
 	ENDM
 
 	MAC	ADDB
+	#if {2}==#$02
+		INC		{1}
+		INC		{1}
+	#else
 		LDA		{1}
 		CLC
 		ADC		{2}
+		STA		{1}
+	#endif
+	ENDM
+
+	MAC	MADDB
+		LDA		{2}
+		CLC
+		ADC		{3}
 		STA		{1}
 	ENDM
 
@@ -930,9 +942,21 @@ _total_free	SET _total_free+_bank{1}_free
 	ENDM
 
 	MAC	SUBB
+	#if {2}==#$02
+		DEC		{1}
+		DEC		{1}
+	#else
 		LDA		{1}
 		SEC
 		SBC		{2}
+		STA		{1}
+	#endif
+	ENDM
+
+	MAC	MSUBB
+		LDA		{2}
+		SEC
+		SBC		{3}
 		STA		{1}
 	ENDM
 

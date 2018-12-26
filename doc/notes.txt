@@ -179,7 +179,7 @@ BUGS#25. City score calculations are broken too. The main problem here is becaus
 BUGS#26.FIXED(BFS) Overal calculations of average values mostly broken. However, somehow they compensated by BUGS#24, BUGS#25, or were rebalanced manually in attempt to fix incorrect results of previous calculations. The main problem here the original source has a wide range averages for base values. Pollution average, Crime level average are sums of all area levels divided by number of such areas. The average mathematically can't be greather than max value of the single area. In the NES code, values for all areas are in range from $00 to $0F. So average shouldn't be higher than $0F. However, due to some data formats mangling and misunderstanding, the averages calculated as a result of division of two fixed points values. And even if we may assume that area values in range $00 to $0F are a small fixed point values, we mustn't treat the divider the same. Divider is an integer value. If you treat it as fixed point, where low nibble is FRAC, and high nibble is INT, then you will get anything but average value. For example. Sum of crime area levels is $0653, total areas collected is $00F1. Then if divide as fixed point we divide 6.324 to 0.941 ($00F1=0.241/256). But since we divide to value <1, the result will be HIGHER than overall sum. And then this value is used for all other calculations! So we literally using not the average levels, but weighted sums. Other side effect here is when we have more than 256 areas to calc overage the higher nibble of 16-bit counter won't be zero, so we will have a little scaling down of average velues, but still not so much high how it should be. Even if we will calc the max number of areas (38*38=1444) the counter won't be greater than $05A4 or only 5 times smalled if treated as a fixed point number. The only way to beat this problem during the game is to keep all overages at closer to zero as possible. Which is mostly impossible for pollution for example, and even for crime rates low on map the overage will be high enough to cause a problems.
 BUGS#27.FIXED(BFS) Save/Load option in the game has a special game mode index 0. At the same time you may save and load any mode of the game. When restored, the game mode turns zero and then special scenario or practice events won't appear anymore. So literally you just couldn't continue the game properly unless you've played the new city mode.
 BUGS#28.FIXED(BFS) The Fires control routine tries to fire up all tiles near it, however, due to incorrect using of the subroutine which corrupts X register, most of the time fires skip the rest of the nearest tiles as soon as at least one near tile appears to be inside any building.
-BUGS#29.FIXED(BFS) In some cases,
+BUGS#29.FIXED(BFS) The liberty statue and an expo statues are presents which should appear automatically after some years of a trigger event, the relationship and expro correspondingly (see APPEND. A). However, there is a bug in addition routine which prevents the correct values to be stored, so both presents appears immediately after trigger events on the next simulation loop. There is a third event with same condition, it's a Bank. But this time the addition performed manually and in different portion of code so does not affected by this bug.
 
 	APPEND. A - EVENTS/PRESENTS
 
@@ -209,8 +209,8 @@ BUGS#29.FIXED(BFS) In some cases,
 13	10th anniversary monument	practice/city JAN 1910	persent "10th Monument"		once per game		yes
 14	100th anniversary monument	practice/city JAN 2000	present "100th Monument"	once per game		yes
 15	Holding World Expo			practice/city JAN 1950	expo starts					once per game		yes
-16	Erect Expo monument			practice/city JAN 1951	present "Expo Monument"		once per game		yes
-17	Statue of Liberty present	practice/city 10 years,	present "Liberty"			once per game		yes
+16	Erect Expo monument			practice/city JAN 1951	present "Expo Monument"		once per game		yes, see BUGS#29
+17	Statue of Liberty present	practice/city 10 years,	present "Liberty"			once per game		yes, see BUGS#29
 								after City Sistership
 18	Build a Library				70000 population		present "Library"			once per game		no, see BUGS#4
 19	Parks expand				200 park squares		present "Extra Park"		once per game		yes
@@ -371,4 +371,3 @@ So this is restored and fixed the original bug at the same time.
 - Ship object goes completely invisible when stuck on the edge of the map on in the ponds.
 - The train object goes invisible on the Water/Rails tiles and never comes back in some cases.
 - During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
-- Return back corner test for building surrounding in PRGC/PRGD
