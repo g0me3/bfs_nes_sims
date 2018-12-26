@@ -119,8 +119,9 @@ loc_10415F:
 ; NOTE, RCI levels here are depending on people requirements, if no requirements,
 ; then calc as usual if any requirement is set, then delta will be always 0,
 ; .ignore_requirements delta already bad enough, so no need to force it to zero.
-; for R meter it depending on stadium requirement, for C meter - on seaport
-; requirement and for I meter - on airport requirement
+;
+; Requirements for R meter depending on stadium, for C meter - on airport
+; and for I meter on sea port
 ;
 _RCI_meter_recalc:
 		LDA		_city._delta,X					; requirements are preventing only growth
@@ -208,7 +209,7 @@ _rci_meters_accel_tax_list:
 ;
 ; at the beginning the power nodes list consists only of power station coordinates
 ;
-; 1. fetch current power node, until there are no more, else exit
+; 1. fetch current power node until there are no more, else exit
 ; 2. enable power grid for current node, increment power consumption value
 ; 3. search if nearest tiles from 0 to 3 clockwise are need power
 ;	(if tile powerable and not powered yet and not the power station itself)
@@ -226,11 +227,11 @@ _rci_meters_accel_tax_list:
 ; with it. so, this particular tile will consume the power every time it fetched
 ; from the nodes list again.
 ; NOTE, also we can see, the very time-cost operation of test the tile if need power
-; can be performed a couple of times, which is not so much optimal too.
+; can be performed a couple of times on the same tile, which is not so much optimal too.
 ;
 ; for example: when put one power station to the map, the algo will go following way
-; inside the power station tiles. numbers are represent order, * represent insertion
-; into the power nodes list:
+; inside the power station tiles. numbers are represent order/power consumption,
+; * represent insertion into the power nodes list:
 ;    0    1    2		0  fetch power node 0,0
 ;   +----+----+----+	1  0,0 powered, 1,0 and 0,1 are need power, put 0,0 as new power node, jump to 0,1
 ; 0 |1*13|8   |7   |	2  0,1 powered, 1,1 and 0,2 are need power, put 0,1 as new power node, jump to 0,2
@@ -248,6 +249,9 @@ _rci_meters_accel_tax_list:
 ;
 ; if we put additional connection wires near the points like 0,0 or 2,1 we will see they put in the
 ; node list twice or three times.
+;
+; This algo was taken by NES developers from Micropolis source code as is, so this is definitely
+; original behaviour/problems of calculating power consumption...
 ;
 _power_grid_recalc:
 		JSR		_sram_write_enable						; set game buffers to read
@@ -518,6 +522,9 @@ _power_grid_test:
 ; =============== S U B	R O U T	I N E =======================================
 ; TODO: when space is enough, merge me with my copy
 ; copy of _map_tile_read in PRGB
+; NOTE: also, this is similar to BUFPOS macros, but not exactly the same
+; however, _wram_map_buf starting from the beginning of the page, so
+; may be clearly converted to it!
 ;
 _map_tile_read_0:
 		LDA		_tmp_map_pos._ROW
@@ -611,6 +618,14 @@ _power_grid_read:
 		SECTION_START B02
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO, some parameters are interpolated with previous ones, some not.
+; they need to be interpolated in common routine at once.
+;
+; Micropolis core sources has a different scaling values
+; Rh = R/8
+; Ch = C
+; Ih = I
+; Money
 _graphs_10_year_data_update:
 		LDA		#$00
 		STA		_tmpE6
@@ -764,12 +779,12 @@ loc_1045FE:
 		BNE		.clamp_to_max_m
 		CLC
 		ADC		#$80
-		BCC		.clamp_to_max_m
+		BCC		.money_store
 .clamp_to_max_m:
 		LDA		#$FF
 		BNE		.money_store
 .negative_income:
-		LDA		_taxes_income				; negative value
+		LDA		_taxes_income					; negative value
 		EOR		#$FF
 		CLC
 		ADC		#$01
@@ -782,9 +797,9 @@ loc_1045FE:
 		EOR		#$FF
 		ADC		#$00
 		STA		_tmpE8
-		BNE		.clamp_to_min_m				; clamp if higher nibble non-zero
-		LDA		_tmpE7						; already got values in tmp vars
-		LSR									; so just /32 here
+		BNE		.clamp_to_min_m					; clamp if higher nibble non-zero
+		LDA		_tmpE7							; already got values in tmp vars
+		LSR										; so just /32 here
 		ROR		_tmpE6
 		LSR
 		ROR		_tmpE6
@@ -794,12 +809,12 @@ loc_1045FE:
 		ROR		_tmpE6
 		LSR
 		ROR		_tmpE6
-		CMP		#$00						; for high nibble in A
-		BNE		.clamp_to_min_m				; opposite values here as well.
+		CMP		#$00							; for high nibble in A
+		BNE		.clamp_to_min_m					; opposite values here as well.
 		LDA		#$80
 		SEC
 		SBC		_tmpE6
-		BCC		.money_store
+		BCS		.money_store
 .clamp_to_min_m:
 		LDA		#$00
 ; -
@@ -1575,27 +1590,21 @@ loc_104CB1:
 		ROL		_tmpE7
 		ASL
 		ROL		_tmpE7
-		LDA		_tmpE6
-		CMP		#$E8
-		LDA		_tmpE7
-		SBC		#$03
+		CMPWI	_tmpE6,1000
 		BCC		loc_104CD4
-		LDA		#$E8
-		STA		_tmpE6
-		LDA		#$03
-		STA		_tmpE7
+		MOVWI	_tmpE6,1000
 loc_104CD4:
-		LDA		_required._stadium
-		BEQ		loc_104CDC
-		JSR		_tmpE6_multiply_217
+		LDA		_required._stadium				; unfulfilled requests lower
+		BEQ		loc_104CDC						; the overall score by 0.85 each
+		JSR		_mul_fp0_85
 loc_104CDC:
-		LDA		_required._seaport
-		BEQ		loc_104CE4
-		JSR		_tmpE6_multiply_217
-loc_104CE4:
 		LDA		_required._airport
+		BEQ		loc_104CE4
+		JSR		_mul_fp0_85
+loc_104CE4:
+		LDA		_required._seaport
 		BEQ		loc_104CEC
-		JSR		_tmpE6_multiply_217
+		JSR		_mul_fp0_85
 loc_104CEC:
 		LDA		_fund_rate_trans
 		CMP		#$20
@@ -1617,27 +1626,27 @@ loc_104D0A:
 		LDA		_fund_rate_police
 		CMP		#$0F
 		BCS		loc_104D14
-		JSR		_city_problem_calc1
+		JSR		_mul_a_add_fp0_95
 loc_104D14:
 		LDA		_fund_rate_fire
 		CMP		#$0F
 		BCS		loc_104D1E
-		JSR		_city_problem_calc1
+		JSR		_mul_a_add_fp0_95
 loc_104D1E:
 		LDA		_city._delta._R
 		CMP		#$40
 		BVC		loc_104D28
-		JSR		_tmpE6_multiply_217
+		JSR		_mul_fp0_85
 loc_104D28:
 		LDA		_city._delta._C
 		CMP		#$40
 		BVC		loc_104D32
-		JSR		_tmpE6_multiply_217
+		JSR		_mul_fp0_85
 loc_104D32:
 		LDA		_city._delta._I
 		CMP		#$40
 		BVC		loc_104D3C
-		JSR		_tmpE6_multiply_217
+		JSR		_mul_fp0_85
 loc_104D3C:
 		LDA		_popul_cur
 		ORA		_popul_cur+1
@@ -1752,7 +1761,7 @@ loc_104E17:
 ; =============== S U B	R O U T	I N E =======================================
 ; mul 0.85
 ;
-_tmpE6_multiply_217:
+_mul_fp0_85:
 		PUSHW	_tmpE6
 		PUSHB	#$D9
 		JSR		_mmc5_mul16to8
@@ -1761,7 +1770,9 @@ _tmpE6_multiply_217:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_city_problem_calc1:
+; mul (arg + 0.94), arg in range [0-14], mul range [0.94-0.99]
+;
+_mul_a_add_fp0_95:
 		CLC
 		ADC		#$F1
 		TAX
@@ -2161,12 +2172,12 @@ loc_105059:
 ; =============== S U B	R O U T	I N E =======================================
 _check_for_free_present_slot:
 		LDX		#$02
-		LDA		_city._events_used_flags			; test if city status acquired
+		LDA		_city._events_used_flags			; WEIRD, test if city status acquired, but why?
 		AND		#$04
 		BEQ		loc_105069							; if no, only 3 slots are available
 		LDX		#$03
 loc_105069:
-		LDA		_city._presents_list,X		; technically calc here is correct
+		LDA		_city._presents_list,X				; technically calc here is correct
 ; BUG! loop not needed.
 		BEQ		locret_105071						; it'll always get last slot
 		DEY											; but then DEY loop not needed here then
@@ -2529,24 +2540,24 @@ _scroll_msg06_test:
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg07_test:
 		LDA		#$00
-		STA		_required._airport
+		STA		_required._seaport
 		CMPWI	_city._level._I,$0064		; fp value 0.39
 		BCC		nullsub_10
 		LDA		_sea_ports_count
 		BNE		nullsub_10
-		INC		_required._airport
+		INC		_required._seaport
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg08_test:
 		LDA		#$00
-		STA		_required._seaport
+		STA		_required._airport
 		CMPWI	_city._level._C,$0096		; fp value 0.59
 		BCC		nullsub_10
 		LDA		_airports_count
 		BNE		nullsub_5
-		INC		_required._seaport
+		INC		_required._airport
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 

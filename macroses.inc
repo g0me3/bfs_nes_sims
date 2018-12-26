@@ -177,8 +177,8 @@ I_AREA_WIDX	EQU 4
 	MAC	_treq
 {1}		SET	.
 {1}._stadium:	.BYTE	0
-{1}._seaport:	.BYTE	0
 {1}._airport:	.BYTE	0
+{1}._seaport:	.BYTE	0
 	ENDM
 
 DEVELOPED_WIDX		EQU 0

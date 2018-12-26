@@ -756,14 +756,11 @@ _train_hide_mode:
 		.BYTE	0
 _train_turns_counter:
 		.BYTE	0
-_tmp573:
-		.BYTE	0
-_tmp574:
-		.BYTE	0
-_tmp575:
-		.BYTE	0
-_tmp576:
-		.BYTE	0
+
+		_tpos	_map_start
+
+		_tpos	_map_pos
+
 _tmp577:
 		.BYTE	0
 _tmp578:
@@ -778,9 +775,9 @@ _tmp57C:
 		.BYTE	0
 _tmp57D:
 		.BYTE	0
-_tmp57E:
+_map_dir:
 		.BYTE	0
-_tmp57F:
+_map_last_dir:
 		.BYTE	0
 _tmp580:
 		.BYTE	0

@@ -467,7 +467,7 @@ _presents_build_menu:
 		LDA		#$00							; always skip to the first slot, which
 		STA		_cur_present_select_idx			; can't be zero.
 loc_3E6BD:
-		APUA_SE	_SE_IDX_SELECT							; play se
+		APUA_SE	_SE_IDX_SELECT					; play se
 		JSR		_building_name_and_cost_hud_draw; redraw selection name if needed
 		JMP		.present_wnd_loop
 .present_wnd_buttons:							; exit with A/B buttons

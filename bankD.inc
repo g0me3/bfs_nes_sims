@@ -470,25 +470,35 @@ locret_150474:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; BUG, ok, the main problem here, we never change the selected present idx, when
+; removing the item. unless any other similar menus, this one does removing
+; of its items from list, and slot we selected earlier will point to the empty
+; slot! however, code does not check this at all. and always will select it
+; when building a new present (unless you don't go to the menu twice and not reselect
+; another one), so we will have broken building here.
+;
 _present_remove_from_list:
-		LDA		_const_palette_selected_idx
+		LDA		_const_palette_selected_idx		; check if we selected a present button
 		CMP		#$0D
 		BEQ		loc_15047C
 		RTS
 loc_15047C:
-		LDX		_cur_present_select_idx
+		LDX		_cur_present_select_idx			; remove currently selected item
+		BEQ		loc_15047D						; FIX to construction bug!
+		DEC		_cur_present_select_idx			; -
+loc_15047D:
 		LDA		#$00
 		STA		_city._presents_list,X
 loc_150484:
 		INX
 		CPX		#$04
-		BCS		loc_150492
+		BCS		loc_150492						; then shift all items above one position down
 		LDA		_city._presents_list,X
 		STA		_city._presents_list-1,X
 		JMP		loc_150484
 loc_150492:
 		LDA		#$00
-		STA		_city._presents_list+3
+		STA		_city._presents_list+3			; clear last moved item
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

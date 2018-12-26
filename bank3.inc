@@ -673,11 +673,9 @@ _game_msg_line_display:
 		POPB	_tmp6
 ; NOTE: here is the code for extnt data queue for message lines
 ; as you can see, it's always 0B, the same as drawn by the windows
-; drawing routine, so they already 0B always, and never changes
-; so we may remove it completely from here without harm
-;
-; WARNING! a special icon at the second practice hint screen
-; changes color of Start word if this isn't used
+; drawing routine, so they already 0B why we do need to reinit it?
+; because of a special icon at the second practice hint screen!
+; it changes the color of word "start" if extnt isn't cleared
 ;
 		PUSHB	_tmp4
 		PUSHB	_tmp5
@@ -2508,13 +2506,16 @@ _off_power_anim_data:
 		SECTION_START 901
 
 ; =============== S U B	R O U T	I N E =======================================
+; NOTE, all following code and algos are exactly the same as in Micropolis
+; sources, so we may quickly merge these sources with this code
+;
 _generate_new_map:
 		LDA		#$FF
 		STA		_mmc5_operation_in_progress_flag
-		MOVW	_rand_seed,_new_map_number
-		ROL		_rand_seed
-		ROL		_rand_seed+1
-		ROL
+		MOVW	_rand_seed,_new_map_number		; initialize RNG to a specific value
+		ROL		_rand_seed						; for every map, so all maps will be
+		ROL		_rand_seed+1					; random but every single map generates
+		ROL										; exactly the same way
 		ROL		_rand_seed
 		ROL		_rand_seed+1
 		ROL
@@ -2526,16 +2527,16 @@ _generate_new_map:
 		JSR		_rand
 		JSR		_rand
 		JSR		_rand
-		CMP		#$2B
-		BCS		loc_59354
+		CMP		#$2B							; 43 from 256 to decide
+		BCS		loc_59354						; to generate island map
 		JSR		_generate_isle_map
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		RTS
 loc_59354:
 		JSR		_wram_map_clear
-		JSR		_generate_new_mapA
-		JSR		_generate_new_mapB
+		JSR		_generate_map_start
+		JSR		_generate_rivers
 		JSR		_generate_new_mapC
 		JSR		_generate_new_mapD
 		JSR		_generate_new_mapE
@@ -2548,39 +2549,39 @@ loc_59354:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_isle_map:
 		LDA		#$4B
-		STA		_tmp573
-		STA		_tmp574
+		STA		_map_start._COL
+		STA		_map_start._ROW
 loc_59379:
 		LDA		#$02
-		LDX		_tmp573
+		LDX		_map_start._COL
 		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
-		LDX		_tmp574
+		LDX		_map_start._ROW
 		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
 		LDA		#$00
 loc_59393:
-		JSR		_isle_map_tile_write
-		DEC		_tmp574
+		JSR		_map_start_write
+		DEC		_map_start._ROW
 		BPL		loc_59379
-		DEC		_tmp573
+		DEC		_map_start._COL
 		BMI		loc_593A8
 		LDA		#$4B
-		STA		_tmp574
+		STA		_map_start._ROW
 		JMP		loc_59379
 loc_593A8:
 		LDA		#$00
-		STA		_tmp573
+		STA		_map_start._COL
 loc_593AD:
 		LDX		#$09
 		JSR		_rand_clamp_X
-		STA		_tmp576
-		LDA		_tmp573
-		STA		_tmp575
+		STA		_map_pos._ROW
+		LDA		_map_start._COL
+		STA		_map_pos._COL
 		JSR		_generate_new_map_sub3
 		LDX		#$09
 		JSR		_rand_clamp_X
@@ -2588,28 +2589,28 @@ loc_593AD:
 		LDA		#$47
 		SEC
 		SBC		_ptr0
-		STA		_tmp576
+		STA		_map_pos._ROW
 		JSR		_generate_new_map_sub3
 		LDA		#$00
-		STA		_tmp576
+		STA		_map_pos._ROW
 		JSR		_generate_new_map_sub3
 		LDA		#$48
-		STA		_tmp576
+		STA		_map_pos._ROW
 		JSR		_generate_new_map_sub3
-		LDX		_tmp573
+		LDX		_map_start._COL
 		INX
 		INX
-		STX		_tmp573
+		STX		_map_start._COL
 		CPX		#$4C
 		BCC		loc_593AD
 		LDA		#$00
-		STA		_tmp574
+		STA		_map_start._ROW
 loc_593F1:
 		LDX		#$09
 		JSR		_rand_clamp_X
-		STA		_tmp575
-		LDA		_tmp574
-		STA		_tmp576
+		STA		_map_pos._COL
+		LDA		_map_start._ROW
+		STA		_map_pos._ROW
 		JSR		_generate_new_map_sub3
 		LDX		#$09
 		JSR		_rand_clamp_X
@@ -2617,18 +2618,18 @@ loc_593F1:
 		LDA		#$47
 		SEC
 		SBC		_ptr0
-		STA		_tmp575
+		STA		_map_pos._COL
 		JSR		_generate_new_map_sub3
 		LDA		#$00
-		STA		_tmp575
+		STA		_map_pos._COL
 		JSR		_generate_new_map_sub3
 		LDA		#$48
-		STA		_tmp575
+		STA		_map_pos._COL
 		JSR		_generate_new_map_sub3
-		LDX		_tmp574
+		LDX		_map_start._ROW
 		INX
 		INX
-		STX		_tmp574
+		STX		_map_start._ROW
 		CPX		#$4C
 		BCC		loc_593F1
 		JSR		_generate_new_mapD
@@ -2638,9 +2639,9 @@ loc_593F1:
 
 
 ; =============== S U B	R O U T	I N E =======================================
-_isle_map_tile_write:
+_map_start_write:
 		PHA
-		BUFPOS	_ptr0,_tmp573,_tmp574,#$4C,#>[_wram_map_buf]	; DST=(_tmp574*#$4C+_tmp573)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_map_start._COL,_map_start._ROW,#$4C,#>[_wram_map_buf]	; DST=(_map_start._ROW*#$4C+_map_start._COL)+#>[_wram_map_buf]00
 		LDY		#$00
 		PLA
 		STA		(_ptr0),Y
@@ -2668,7 +2669,7 @@ _isle_map_tile_read572_2:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read575:
-		BUFPOS	_ptr0,_tmp575,_tmp576,#$4C,#>[_wram_map_buf]	; DST=(_tmp576*#$4C+_tmp575)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_map_pos._COL,_map_pos._ROW,#$4C,#>[_wram_map_buf]	; DST=(_map_pos._ROW*#$4C+_map_pos._COL)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		RTS
@@ -2690,96 +2691,90 @@ loc_5946A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapA:
+_generate_map_start:
 		LDX		#$19
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$1A
-		STA		_tmp573
-		STA		_tmp575
+		STA		_map_start._COL
+		STA		_map_pos._COL
 		LDX		#$19
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$1A
-		STA		_tmp574
-		STA		_tmp576
+		STA		_map_start._ROW
+		STA		_map_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapB:
+_generate_rivers:
 		LDX		#$04
 		JSR		_rand_clamp_X
-		STA		_tmp57F
-		STA		_tmp57E
-		JSR		_generate_new_mapB_0
-		LDA		_tmp573
-		STA		_tmp575
-		LDA		_tmp574
-		STA		_tmp576
-		LDA		_tmp57F
+		STA		_map_last_dir
+		STA		_map_dir
+		JSR		_generate_b_river
+		MOVW	_map_pos,_map_start
+		LDA		_map_last_dir
 		EOR		#$04
-		STA		_tmp57F
-		STA		_tmp57E
-		JSR		_generate_new_mapB_0
-		LDA		_tmp573
-		STA		_tmp575
-		LDA		_tmp574
-		STA		_tmp576
+		STA		_map_last_dir
+		STA		_map_dir
+		JSR		_generate_b_river
+		MOVW	_map_pos,_map_start
 		LDX		#$04
 		JSR		_rand_clamp_X
-		STA		_tmp57F
-		JMP		_generate_new_mapB_1
+		STA		_map_last_dir
+		JMP		_generate_s_river
 
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapB_0:
-		JSR		_generate_new_map_sub4
+_generate_b_river:
+		JSR		_generate_test_bounds
 		BCS		locret_5950D
 		JSR		_generate_new_map_sub0
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_594F0
-		INC		_tmp57E
+		INC		_map_dir
 loc_594F0:
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_594FA
-		DEC		_tmp57E
+		DEC		_map_dir
 loc_594FA:
 		JSR		_rand
 		CMP		#$18
 		BCS		loc_59507
-		LDA		_tmp57F
-		STA		_tmp57E
+		LDA		_map_last_dir
+		STA		_map_dir
 loc_59507:
-		JSR		_generate_new_mapB_0A
-		JMP		_generate_new_mapB_0
+		JSR		_generate_b_riverA
+		JMP		_generate_b_river
 locret_5950D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapB_1:
-		JSR		_generate_new_map_sub4
+_generate_s_river:
+		JSR		_generate_test_bounds
 		BCS		locret_5953D
 		JSR		_generate_new_map_sub3
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_59520
-		INC		_tmp57E
+		INC		_map_dir
 loc_59520:
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_5952A
-		DEC		_tmp57E
+		DEC		_map_dir
 loc_5952A:
 		JSR		_rand
 		CMP		#$14
 		BCS		loc_59537
-		LDA		_tmp57F
-		STA		_tmp57E
+		LDA		_map_last_dir
+		STA		_map_dir
 loc_59537:
-		JSR		_generate_new_mapB_0A
-		JMP		_generate_new_mapB_1
+		JSR		_generate_b_riverA
+		JMP		_generate_s_river
 locret_5953D:
 		RTS
 
@@ -2793,10 +2788,10 @@ _generate_new_mapF:
 loc_59549:
 		LDX		#$4C
 		JSR		_rand_clamp_X
-		STA		_tmp575
+		STA		_map_pos._COL
 		LDX		#$4C
 		JSR		_rand_clamp_X
-		STA		_tmp576
+		STA		_map_pos._ROW
 		JSR		_generate_new_mapF_0
 		DEC		_tmp57C
 		BNE		loc_59549
@@ -2811,14 +2806,14 @@ _generate_new_mapF_0:
 		CLC
 		ADC		#$17
 		STA		_tmp57D
-		LDA		_tmp575
+		LDA		_map_pos._COL
 		STA		_tmp577
-		LDA		_tmp576
+		LDA		_map_pos._ROW
 		STA		_tmp578
 loc_5957F:
 		LDX		#$08
 		JSR		_rand_clamp_X
-		STA		_tmp57E
+		STA		_map_dir
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_map_buf_end_test
 		BCS		locret_595BA
@@ -2844,12 +2839,12 @@ loc_595C5:
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$03
-		STA		_tmp575
+		STA		_map_pos._COL
 		LDX		#$3E
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$03
-		STA		_tmp576
+		STA		_map_pos._ROW
 		LDX		#$06
 		JSR		_rand_clamp_X
 		ADC		#$01
@@ -2860,14 +2855,14 @@ loc_595E5:
 		SEC
 		SBC		#$03
 		CLC
-		ADC		_tmp575
+		ADC		_map_pos._COL
 		STA		_tmp577
 		LDX		#$07
 		JSR		_rand_clamp_X
 		SEC
 		SBC		#$03
 		CLC
-		ADC		_tmp576
+		ADC		_map_pos._ROW
 		STA		_tmp578
 		JSR		_rand
 		CMP		#$34
@@ -2885,10 +2880,10 @@ loc_59613:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapF_0A:
-		LDA		_tmp57E
+		LDA		_map_dir
 		AND		#$07
-		STA		_tmp57E
-		LDX		_tmp57E
+		STA		_map_dir
+		LDX		_map_dir
 		LDA		_tmp577
 		CLC
 		ADC		_map_gen_data0,X
@@ -2900,19 +2895,19 @@ _generate_new_mapF_0A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapB_0A:
-		LDA		_tmp57E
+_generate_b_riverA:
+		LDA		_map_dir
 		AND		#$07
-		STA		_tmp57E
-		LDX		_tmp57E
-		LDA		_tmp575
+		STA		_map_dir
+		LDX		_map_dir
+		LDA		_map_pos._COL
 		CLC
 		ADC		_map_gen_data0,X
-		STA		_tmp575
-		LDA		_tmp576
+		STA		_map_pos._COL
+		LDA		_map_pos._ROW
 		CLC
 		ADC		_map_gen_data1,X
-		STA		_tmp576
+		STA		_map_pos._ROW
 		RTS
 _map_gen_data0:
 		.BYTE	$00,$01,$01,$01
@@ -2927,15 +2922,15 @@ _generate_new_map_sub0:
 		STA		_tmp579
 loc_59673:
 		LDX		_tmp579
-		LDA		_tmp575
+		LDA		_map_pos._COL
 		CLC
 		ADC		_map_gen_data3,X
 		STA		_tmp577
-		LDA		_tmp576
+		LDA		_map_pos._ROW
 		CLC
 		ADC		_map_gen_data4,X
 		STA		_tmp578
-		LDA		_map_gen_data2,X
+		LDA		_map_b_river_matrix,X
 		BEQ		loc_59692
 		JSR		_generate_new_map_sub1
 loc_59692:
@@ -2946,7 +2941,7 @@ loc_59692:
 		BCC		loc_59673
 		RTS
 
-_map_gen_data2:
+_map_b_river_matrix:
 		.BYTE	$00,$00,$03,$03,$03,$00,$00
 		.BYTE	$00,$03,$02,$02,$02,$03,$00
 		.BYTE	$03,$02,$02,$02,$02,$02,$03
@@ -2977,11 +2972,11 @@ _generate_new_map_sub3:
 		STA		_tmp57A
 loc_59736:
 		LDX		_tmp57A
-		LDA		_tmp575
+		LDA		_map_pos._COL
 		CLC
 		ADC		_map_gen_data6,X
 		STA		_tmp577
-		LDA		_tmp576
+		LDA		_map_pos._ROW
 		CLC
 		ADC		_map_gen_data7,X
 		STA		_tmp578
@@ -3051,8 +3046,8 @@ loc_597DD:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_map_sub4:
-		LDA		_tmp575
+_generate_test_bounds:
+		LDA		_map_pos._COL
 		BPL		loc_597EA
 		CMP		#$FC
 		BCC		loc_59800
@@ -3061,7 +3056,7 @@ loc_597EA:
 		CMP		#$4A
 		BCS		loc_59800
 loc_597EE:
-		LDA		_tmp576
+		LDA		_map_pos._ROW
 		BPL		loc_597F9
 		CMP		#$FC
 		BCC		loc_59800
@@ -3079,8 +3074,8 @@ loc_59800:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub5:
 		LDA		#$00
-		STA		_tmp575
-		STA		_tmp576
+		STA		_map_pos._COL
+		STA		_map_pos._ROW
 loc_5980A:
 		JSR		_isle_map_tile_read575				; OPTIMIZED size
 		BMI		loc_5988D
@@ -3092,11 +3087,11 @@ loc_59835:
 		LDY		_tmp4
 		CPY		#$04
 		BCS		loc_59883
-		LDA		_tmp575
+		LDA		_map_pos._COL
 		CLC
 		ADC		_map_gen_data8,Y
 		STA		_tmp577
-		LDA		_tmp576
+		LDA		_map_pos._ROW
 		CLC
 		ADC		_map_gen_data9,Y
 		STA		_tmp578
@@ -3119,18 +3114,18 @@ loc_59883:
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_5988D:
-		INC		_tmp575
-		LDA		_tmp575
+		INC		_map_pos._COL
+		LDA		_map_pos._COL
 		CMP		#$4C
 		BCS		loc_5989A
 		JMP		loc_5980A
 loc_5989A:
-		INC		_tmp576
-		LDA		_tmp576
+		INC		_map_pos._ROW
+		LDA		_map_pos._ROW
 		CMP		#$4C
 		BCS		locret_598AC
 		LDA		#$00
-		STA		_tmp575
+		STA		_map_pos._COL
 		JMP		loc_5980A
 locret_598AC:
 		RTS
@@ -3144,8 +3139,8 @@ _cur_graphs_button_press_idxAD:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapD:
 		LDA		#$00
-		STA		_tmp575
-		STA		_tmp576
+		STA		_map_pos._COL
+		STA		_map_pos._ROW
 loc_598C5:
 		JSR		_isle_map_tile_read575				; OPTIMIZED size
 		CMP		#$03
@@ -3161,11 +3156,11 @@ loc_598F3:
 		BCC		loc_598FC
 		JMP		loc_59987
 loc_598FC:
-		LDA		_tmp575
+		LDA		_map_pos._COL
 		CLC
 		ADC		_map_gen_data8,Y
 		STA		_tmp577
-		LDA		_tmp576
+		LDA		_map_pos._ROW
 		CLC
 		ADC		_map_gen_data9,Y
 		STA		_tmp578
@@ -3177,14 +3172,14 @@ loc_598FC:
 		CLC
 		ADC		#$01
 		CLC
-		ADC		_tmp575
+		ADC		_map_pos._COL
 		STA		_tmp577
 		LDA		_map_gen_data9,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		CLC
-		ADC		_tmp576
+		ADC		_map_pos._ROW
 		STA		_tmp578
 		LDX		#$4C
 		MULXA
@@ -3217,18 +3212,18 @@ loc_59987:
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_59991:
-		INC		_tmp575
-		LDA		_tmp575
+		INC		_map_pos._COL
+		LDA		_map_pos._COL
 		CMP		#$4C
 		BCS		loc_5999E
 		JMP		loc_598C5
 loc_5999E:
-		INC		_tmp576
-		LDA		_tmp576
+		INC		_map_pos._ROW
+		LDA		_map_pos._ROW
 		CMP		#$4C
 		BCS		locret_599B0
 		LDA		#$00
-		STA		_tmp575
+		STA		_map_pos._COL
 		JMP		loc_598C5
 locret_599B0:
 		RTS

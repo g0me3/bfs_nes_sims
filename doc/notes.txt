@@ -1,11 +1,14 @@
 	TODO
 
-- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar to above ones. merge
+- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar to above ones. Merge.
+- Graphs data interpolations for all values.
+- Graphs data scale based on previously unused values.
+- Scroll message about Air Plain crash is more fit to the system than Windows message. On some scenarios, Alert Message Windows about Air plane crush forcefully displayed too often along with GOTO icon. The crash may occurs in a several different ways. So let the Crash Alert be as a disaster alert, but for the rest of the crashes just report with scroll message (when plane and hely collide, for example)... also we may sometimes crash the hely as well.
+- _wram_map_buffer offset calculations uses full 16-bit offset, however, this buffer sit at the beginning of the page, so BUFPOS macros can be used unstead. Also, MULAI macros used mostly in THREAD1 and thread-safe, so using BUFPOS may be even faster, because uses non-thread safe MULXA. Carefullt check if there are no code using X register also.
 
 	NEW BUGS
 
 - Ship object can stuck in a pond or at the map side forever sometimes. Also may be invisible because of that.
-- New graphs for money flow still not working well for negative values.
 
 	WHAT DONE
 
@@ -36,12 +39,12 @@
 - TODO BUGS#18
 - Fixed	BUGS#19
 - Fixed BUGS#20, workaround somehow, there are a lot of paches needed to fix it in the original version, but can be patched much more easy in recompile if throw the difficult settings out of resetable area of the game variables. Currently it may cause some errors if I made any mistake in disasm, so let it just a workaround now. But it's work.
-- TODO BUGS#21
+- Fixed BUGS#21
 - TODO BUGS#22
 - Fixed BUGS#23.1
-- TODO BUGS#23.2
-- TODO BUGS#23.3
-- TODO BUGS#23.4
+- Fixed BUGS#23.2
+- Fixed BUGS#23.3, the tax money flow used instead of high nibble, also calculations uses signed values. Still need some kind of interpolation as other values.
+- Fixed BUGS#23.4
 - Fixed BUGS#24
 - Fixed BUGS#24.1
 - Fixed BUGS#24.2
@@ -81,9 +84,14 @@ UNFINISHED#3. One of the SE effects unreferenced and there is not known where it
 	UNFINISHED#3.1 Unused sound can be heard by setting var $F2 to value $10. Some kind of low alert buzzer. Maybe for unclear meltdown alert which has no any special indication otherwise
 	UNFINISHED#3.2 To another unused sound, set $F2 to value $80. Another kind of click or cancel sound line unreferenced one.
 UNFINISHED#4. There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine.
-	UNFINISHED#4.1 Used from 0 to F except B ("Blackouts"), also 18 ("Heavy traffic report") in a custom handler. The rest of messages aren't used at all.
-	UNFINISHED#4.2 Most of them are about disasters and crashes and duplicates the ingame alert messages.
-	UNFINISHED#4.3 Some events doesn't appear in this version ("Helicopter crash", "Shipwreck reported", "Train crash", "Hi unemployment rate", "City gone broke", "Explosion", "Brownouts"). See the full list of events in the table below.
+	UNFINISHED#4.1 The used ones are: from $0 to $F (except $B "Blackouts") and $18 (starting from a custom handler). The rest aren't used and were just derived from the original Micropolis sources. Most of original messages not presented in this messages are converted to ingame Alert Window Messages, except one (see below).
+		UNFINISHED#4.1.1 0B "BLACKOUTS REPORTED  CHECK POWER MAP", when POWERED_ZONES/ALL_ZONES < 0.7
+		UNFINISHED#4.1.2 10 "A PLANE HAS CRASHED", converted to Alert Window Message.
+		UNFINISHED#4.1.3 11 "SHIPWRECK REPORTED", 12 "A TRAIN CRASHED", 13 "A HELICOPTER CRASHED", the rest of crashes from original source not implemented here. There were a lot of various cases to damage vehicles, like by tornado, monster, collisions, random crashed when disasters are enabled, etc...
+		UNFINISHED#4.1.4 14 "UNEMPLOYMENT RATE IS HIGH", not used even in the Micropolis sources.
+		UNFINISHED#4.1.5 15 "YOUR CITY HAS GONE BROKE", used in Micropolis when in Autobudget mode Current money plus Taxes collected aren't enough to fully fund all structures.
+		UNFINISHED#4.1.6 16 "EXPLOSION DETECTED", explosion were used for either the disasters when damaging the Building, combined with vehicles crashes usually.
+		UNFINISHED#4.1.7 17 "BROWNOUTS  BUILD ANOTHER POWER PLANT", when power consumption calculated with power grid map calculation exceeded the amount of generated power by all power plants combined (see equation in BUGS#17 section).
 UNFINISHED#5. There are currently 3 different kind of vehicles visible on the map: a Heli, an Airplain and a Train (its indexes correspondingly 0, 1 and 3). The missing vehicle object with index 2 has most of its code programmed. Judging from the unused CHR data tiles this should be a Ship. The map overview mode displaying all vehicles as a small letters. For used vehicles has accordingly "H" (Heli), "A" (Airplane) and "R" (tRain). Unused vehicle should be displayed as "S" (Ship) correspondingly.
 	UNFINISHED#5.1. There is an unfinished leftover code from an old attempt to calculate the starting position for unused Ship vehicle. It executes every time when the game engine counts sea ports and trying to search for a specific tile in the map buffer ($FE) then it should set the starting position of the ship, which never used because there is no Ship deploy code in the ROM at all. This also takes a lot of redundant CPU cycles. FIX GG: SUEXUEVN+TNOXUATP (disables unused check at all).
 	UNFINISHED#5.2 The search loop stop conditions uses the buffer size instead of the end of the buffer offset so this loop may search through all CPU space, wrap to RAM and ends something in RAM MIRROR area but can stop earlier because there are some $FE bytes in the PRG code.
@@ -95,19 +103,19 @@ UNFINISHED#6. In the data for in-game menus there are two unused "YES/NO" window
 UNFINISHED#7. Every year, the current state of city parameters are stored in the graphs arrays. Since all values used here are fixed point, they attempt to scale them down to 8-bit fixed values, also calculate the max value for further scaling. However, this scaling value never used, the actual graphs display routine calculate it's own max value and scaling factor for each graph independently.
 UNFINISHED#8. Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
 UNFINISHED#9. Helicopter sprites contain a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason. FIX GG: 039-E37-E6E
-UNFINISHED#10. There are a lot of unused CHR data for BG objects:
+UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably intended to be changed according to current date or scenario type.
 	UNFINISHED#10.1 BANK1E, TILES 0C 4x4 (Airport Terminal 2)
 	UNFINISHED#10.2 BANK1F, TILES 0C 4x4 (Airport Terminal 3)
 	UNFINISHED#10.3 BANK48, TILES 14 2x2 (Extra Park 2)
 	UNFINISHED#10.4 BANK48, TILES 1D 2x2 (White House 2)
-	UNFINISHED#10.5 BANK49, TILES 00 2x2 (White House 2)
-	UNFINISHED#10.6 BANK49, TILES 03 2x2 (White House 3)
+	UNFINISHED#10.5 BANK49, TILES 00 2x2 (White House 3)
+	UNFINISHED#10.6 BANK49, TILES 03 2x2 (White House 4)
 	UNFINISHED#10.7 BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Nascar Track and two Baseball staduims building along with animations)
 UNFINISHED#11. Also there are a little bit of ingame-icons:
 	UNFINISHED#11.1 BANK20, TILES 20 8x2 ("CLEAR" tablet)
 	UNFINISHED#11.2 BANK2B, TILES 16 2x2 ("BANK" icon with frame)
 UNFINISHED#12. Message windows during the game has a various animation sequences depending on current message. There are 19 sequences are used for 10 scenes. Sequences 6 to 11 intended to be used in 4 additional scenes but they isn't. To see each of 4 unused scenes use FIX GG codes and open default hint window during the game by pushing to the "HINT" button. The evidence that the game should have 4 more hint messages is that there are two of the arrays has 40 entries instead of 36 (the number of hint messages currently, see APPEND A below).
-	UNFINISHED#12.1 Scenes 6-7. Uses the same sprites as for Traffic Jam message, but the "Mayor" character stands still at the rightmost window size and constantly looking to the left sweating. The closed door animation in the center of the window which someone badging from the outside. Sprites of it never appear elsewhere. Both animated sprites together exceeded the 8 sprites per line limit and thus the "Mayor" missing part of its face. Probably should have been used when the city gone broke at some point, but there are no such warning in current version. FIX GG: ZAEAPGPA+TANAPGLA+YANAZGGA
+	UNFINISHED#12.1 Scenes 6-7. Uses the same sprites as for Traffic Jam message, but the "Mayor" character stands still at the rightmost window size and constantly looking to the left sweating. The closed door animation in the center of the window which someone badging from the outside. Sprites of it never appear elsewhere. Both animated sprites together exceeded the 8 sprites per line limit and thus the "Mayor" missing part of its face. In the Micropolis sources there is an unused as well message string  "They are rioting the screets!!", but there are no such warnings in current version at all. FIX GG: ZAEAPGPA+TANAPGLA+YANAZGGA
 	UNFINISHED#12.2 Scene 8. The "Mayor" character stand with his back toward us. Sprites never used before. Animation very short. Usage isn't clear. FIX GG: AANAPGLE
 	UNFINISHED#12.3 Scene 9. The mayor character at the middle of the screen with crutch and a bandage on its head, explaining something. Sprites aren't used enywhere else also. Most probably should be used for earnings about disasters or low funding of medicine. FIX GG: PANAPGLE
 	UNFINISHED#12.4 Scenes 10-11. The "Mayor" character constantly running from the left side to the right side of the window. The green cloud is floating after him. Most probalby this animation is for pollution warning message. Also exceeded the 8 sprites limit at some point. In any case, there aren't messages of pollution warning in the game. FIX GG: ZAEAPGPA+ZANAPGLE+LANAZGGE+LUEZYALU
@@ -152,24 +160,25 @@ BUGS#19. Game cursor not disables when the game message window appears. to repro
 BUGS#20. Difficult settings does not work for New City mode. Although it can be selected, it will clear at the beginning of any game mode, so in any case you'll play on EASY by default. CANNOT BE PATCHED
 BUGS#21. When you buid a present, a corresponding item removed from the list and when empty disables the menu. If you select first one and build a present, then you'll be able to build a second present immediately. They will be properly removed from the list. However, if you choose to build the second prize first, then immediately build another one, you'll build a glitched construction that can't be removed or bulldozered. CANNOT BE PATCHED
 BUGS#22. Some electric tiles near the water electric tiles treated as non-powered in some cases.
-BUGS#23. Graphs calculations slightly broken and mangled.
+BUGS#23. Graphs calculations slightly broken and mangled, mostly due to copy-pasting.
 	BUGS#23.1 For R it should multiply level value by 2, but instead multiplied integer part of value with itself. The R levels usually are in range 1 to 2, so most of the time we have roughly rounded integer value for this in case of this bug.
 	BUGS#23.2 For "Pollution" button they uses crime level value instead.
-	BUGS#23.3 For "Money" button they uses highest nibble of money without highest bit which means only money above 65535 will be documented and used also this means they used copy-pasted code here from previous calculations.
-	BUGS#23.4 For "Crime" button they uses tax income value which may be positive or negative. They attempted to att signed values to graph by shifting the Y axis to -128, but didn't tested the tax incom value for negativeness at all, so all negative values turns max parameters when clamped.
+	BUGS#23.3 For "Cash Flow" button they uses highest nibble of money which means only money above 65535 will be documented and used. Also they do the same highest bit masking as for special values in crime and pollution levels, which never used for money value, so this is definitely a copy-paste too.
+	BUGS#23.4 For "Crime" button they uses tax income value which may be positive or negative. They attempted to att signed values to graph by shifting the Y axis to -128, but didn't tested the tax incom value for negativeness at all, so all negative values turns max parameters when clamped. Actuall, this behaviour were in the original Micropolis source for "Cash Flow".
 BUGS#24. City problems list calculation routines has also at least one more major mistake that gets semi-random results on the overall calc in addition to _fires_level usage (not counting they are semi-random by design). One of the problems (unemployment) uses RCI proportion as a test value: param={L_R/(L_C+L_I)*8} also clamped to FRAC portion of fixed point value. However, calc routine stores divider in wrong temporary variable. Shoulbe go to $EA-$EB, but gets to $E7-$E8 instead. INES FIX PATCH: $14C43: EA, $14C4B: EA, $14C4E: EA, $14C51: EA, $14C54: EB, $14C56: EA.
 	BUGS#24.1 Clamping RCI proportion to 0.999 also seems wrong. Uses this equation we calc how much times residental zones development level higher than C+I level combined, means how much unemployed people there are. When unemployment is high, INT portion of result should be non-zero. For all values >=1.00 we have truncation. So we will get highest level of unemployment even if all people are working (R=C+I). This sounds kinda wrong. Micropolis source subtract 1.00 from result of proportion and then truncate to 0.999, then we have correc values for all cases!
 	BUGS#24.2 The problem sorting routine looks kinda wrong as well. It skips problem with the same amount of percents and takes only the last one of them, also for many cases it takes not the greatest ones.
 
 	MISC
 
-MISC#1. There is an automatically spawned helicopter for observing the road traffic. It fly randomly and every iteration its coordinates tested against the traffic map. If helicopter hovering over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement with a quick and lazy method, avoiding the regular message system and called from the top of the system loop.
-MISC#2. The game engine consists of two main separate mostly independent parts. First is an interface and display control part. It handles all inputs, menus, drawing graphics, screen objects/sprites manager, disasters manipulation. The second is a city control and statistics collector part. It does all city specific calcs on population, industry, energy, pollution and traffic. Does statis and charts for info displays, etc... Both parts constantly does its own work in loop, never stop. The most interesting part, they work like some kind of threads in parallel. The threads manager in NMI handler switches between two process through stack manipulation, so both work some kind in parallel. The interface thread has a priority on a man activity. If you press any button, it will take control instantly, and city calcs will be halted. In other way, the city calc part can raise a flags to forbit some portions of the interface code to read the data it calculating now. I have not seen such engine in any game before. Usually, threading methods used in a scripted engines. This is the first game I've seen that do it on the native code. Basicly, this method can be used for multi-threading operation systems for NES, the problem is just in a very small stack.
+MISC#1. There is an automatically spawned helicopter for observing the road traffic. It fly randomly and every iteration its coordinates tested against the traffic map. If helicopter hovering over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement. However, method of calling this message is the same as in Micropolis sources, from sprite engine separately from common scroll message system.
+MISC#2. The game engine consists of two main separate parts. First is an interface and display control part, game engine. It handles all inputs, menus, drawing graphics, screen objects/sprites manager, disasters manipulation. The second is a city control and statistics collector part, simulation engine. It does all city specific calcs on population, industry, energy, pollution and traffic, does stats and charts for info displays, etc... Both parts constantly do its own work in loop, never stop. The most interesting part, the threads manager in NMI handler switches between two process through stack manipulation, so both work some kind like a paraller threads. The game engine has a priority on simulation engine. If you press any button, it will take control instantly, and city calcs are be halted. However, simulation engine can enter some kind of critical sections, which may protect the simulation calculations from accessing from the game engine. I have not seen such engine in any game before. Usually, threading methods used in a scripted engines. This is the first game I've seen that do it on the native code. Basicly, this method can be used for multi-threading operation systems for NES, the problem is just in a very small stack.
 MISC#3. For some reason until you get the City Status and build a Bank, you have only 3 free Special events slots. The rest of the game you'll have 4 slots. However, if all your slots are full, any pending event will wait until any empty slot appears.
 MISC#4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test.
 MISC#5. All music tracks are used in the game. Most of tracks used to highlight the town population value. some tracks are "paired" and consists of two conjuncted parts. An intro and looped main track (01/02 title, 08/10 practice, 48/50, 60/40 information).
-MISC#6. Sound engine tables the same as in Nintendo games: Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All has similar way to play SE by setting flag bits and so on. However, as against the Sound Engine for Wrecking Crew for example, this one written highly briefly, unoptimal. There is no channel data and code unification, has a different set of commands, lack the loop commands at all, so music data and code are largely oversized.
+MISC#6. One of the tables in the Sound engine used for calculating note lengths is the same as in Nintendo games Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All of them has similar way to play SE by setting flag bits and so on. However, as against the Sound Engine for Wrecking Crew for example, this one written highly briefly, and heavily modified. There is no channel data and code unification, a different set of commands, lack the loop commands at all, so music data and code incompatible and not optimal.
 MISC#7. With the Micropolis source codes it is easier to understand some odd things in the NES code, most of this described in the comments in the current sources. The main Micropolis engine were taken mostly exactly the same with some small insifnificant changes due to optimizations or rough fixed point rounding errors.
+MISC#8. Map generation routines for New City mode taken from Micropolis sources exactly line by line.
 
 	APPEND. A - EVENTS/PRESENTS
 
@@ -227,25 +236,25 @@ MISC#7. With the Micropolis source codes it is easier to understand some odd thi
 02	MORE INDUSTRIAL ZONES NEEDED				I<(R+C+I)/8					no			-
 03	MORE ROADS REQUIRED							(R+C+I)>=10, (R+C+I)>ROADS	no			-
 04	INADEQUATE RAIL SYSTEM						(R+C+I)>=50, (R+C+I)>RAILS	no			-
-05	BUILD A POWER PLANT							(R+C+I)>10, POWER=0			no			see BUGS section #1
+05	BUILD A POWER PLANT							(R+C+I)>10, POWER=0			no			see BUGS#1
 06	RESIDENTS DEMAND A STADIUM					R_L>=500fp, STADIUM=0		yes			-
 07	INDUSTRY REQUIRES A SEA PORT				I_L>=100fp, SEAPORT=0		yes			-
 08	COMMERCE REQUIRES AN AIRPORT				C_L>=150fp, AIRPORT=0		yes			-
 09	CITIZENS DEMAND A FIRE DEPARTMENT			ALL_L>=60fp, SPOLICE=0		no			ALL_L=(R_L+C_L+I_L)
 0A	CITIZENS DEMAND A POLICE DEPARTMENT			ALL_L>=60fp, SFIRE=0		no			ALL_L=(R_L+C_L+I_L)
-0B	BLACKOUTS REPORTED  CHECK POWER MAP			-unused-					-			-
-0C	CITIZENS UPSET  THE TAX RATE IS TOO HIGH	TAX_RATE>=12%				no			-
-0D	ROADS DETERIORATING  DUE TO LACK OF FUNDS	RFUND_RATE<22%, ROADS>=30	no			-
-0E	FIRE DEPARTMENTS NEED FUNDING				FFUND_RATE<11%, ALL_L>=20fp	no			ALL_L=(R_L+C_L+I_L)
-0F	POLICE DEPARTMENTS NEED FUNDING				PFUND_RATE<11%, ALL_L>=20fp	no			ALL_L=(R_L+C_L+I_L)
-10	A PLANE HAS CRASHED							-unused-					-			-
-11	SHIPWRECK REPORTED							-unused-					-			-
-12	A TRAIN CRASHED								-unused-					-			-
-13	A HELICOPTER CRASHED						-unused-					-			-
-14	UNEMPLOYMENT RATE IS HIGH					-unused-					-			-
-15	YOUR CITY HAS GONE BROKE					-unused-					-			-
-16	EXPLOSION DETECTED							-unused-					-			-
-17	BROWNOUTS  BUILD ANOTHER POWER PLANT		-unused-					-			-
+0B	BLACKOUTS REPORTED  CHECK POWER MAP			-unused-					-			see UNFINISHED#4.1.1
+0C	CITIZENS UPSET  THE TAX RATE IS TOO HIGH	TAX_RATE>=0C				no			-
+0D	ROADS DETERIORATING  DUE TO LACK OF FUNDS	RFUND_RATE<18, ROADS>=30	no			-
+0E	FIRE DEPARTMENTS NEED FUNDING				FFUND_RATE<0B, ALL_L>=20fp	no			ALL_L=(R_L+C_L+I_L)
+0F	POLICE DEPARTMENTS NEED FUNDING				PFUND_RATE<0B, ALL_L>=20fp	no			ALL_L=(R_L+C_L+I_L)
+10	A PLANE HAS CRASHED							-unused-					-			used as EVENT MESSAGE #22
+11	SHIPWRECK REPORTED							-unused-					-			see UNFINISHED#4.1.3
+12	A TRAIN CRASHED								-unused-					-			see UNFINISHED#4.1.3
+13	A HELICOPTER CRASHED						-unused-					-			see UNFINISHED#4.1.3
+14	UNEMPLOYMENT RATE IS HIGH					-unused-					-			see UNFINISHED#4.1.4
+15	YOUR CITY HAS GONE BROKE					-unused-					-			see UNFINISHED#4.1.5
+16	EXPLOSION DETECTED							-unused-					-			see UNFINISHED#4.1.6
+17	BROWNOUTS  BUILD ANOTHER POWER PLANT		-unused-					-			see UNFINISHED#4.1.7
 18	HEAVY TRAFFIC REPORTED						TRAFFIC>=10 under HELI pos	yes			see MISC#1
 
 	APPEND C. MAP TILE INDEXES
