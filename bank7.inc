@@ -1108,7 +1108,7 @@ loc_B8A5F:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._idx
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		BIT		_pad0_autorep_press
 		BMI		loc_B8A8A
 		BVC		loc_B8A79

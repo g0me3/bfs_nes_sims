@@ -474,6 +474,7 @@ loc_18A3CF:
 		TAX
 		PLA
 		RTI
+
 _pal_anim_table:
 		.BYTE	$36,$36,$36,$36,$36,$36
 		.BYTE	$26,$26,$26,$26,$26,$26
@@ -782,126 +783,6 @@ loc_18A5D9:
 		ROL
 		DEY
 		BNE		loc_18A5D9
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; TODO: merge _spr_lib_prg8_insert, _spr_lib_prg2_insert, _spr_lib_prgF_insert
-; functions, reduce duplicated code.
-;
-_spr_lib_prg2_insert:
-		PUSHB	_prg_prgA000_shadow
-		LDA		#$F2
-		STA		_MMC5_PRG_PAGES+2
-		LDX		_spr_insert_args._idx
-		LDA		_spr_lib_lo,X
-		STA		_ptr0
-		LDA		_spr_lib_hi,X
-		STA		_ptr0+1
-		DEC		_spr_insert_args._pos._Y
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_18A603:
-		LDA		(_ptr0),Y
-		CMP		#$80
-		BEQ		loc_18A643
-		LDA		_spr_insert_args._attr
-		ASL
-		LDA		(_ptr0),Y
-		INY
-		BCC		loc_18A615
-		EOR		#$FF
-		SBC		#$06
-loc_18A615:
-		CLC
-		ADC		_spr_insert_args._pos._Y
-		STA		_spr_buf,X
-		INX
-		LDA		(_ptr0),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_ptr0),Y
-		INY
-		ORA		_spr_insert_args._attr
-		STA		_spr_buf,X
-		INX
-		LDA		_spr_insert_args._attr
-		ASL
-		ASL
-		LDA		(_ptr0),Y
-		INY
-		BCC		loc_18A639
-		EOR		#$FF
-		SBC		#$06
-loc_18A639:
-		CLC
-		ADC		_spr_insert_args._pos._X
-		STA		_spr_buf,X
-		INX
-		JMP		loc_18A603
-loc_18A643:
-		STX		_spr_buf_pos
-		POPB	_prg_prgA000_shadow
-		STA		_MMC5_PRG_PAGES+2
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; TODO: merge _spr_lib_prg8_insert, _spr_lib_prg2_insert, _spr_lib_prgF_insert
-; functions, reduce duplicated code.
-;
-_spr_lib_prg8_insert:
-		PUSHB	_prg_prg8000_shadow
-		LDA		#$F8
-		STA		_MMC5_PRG_PAGES+1
-		LDX		_spr_insert_args._idx
-		LDA		_spr_lib_lo,X
-		STA		_ptr0
-		LDA		_spr_lib_hi,X
-		STA		_ptr0+1
-		DEC		_spr_insert_args._pos._Y
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_18A666:
-		LDA		(_ptr0),Y
-		CMP		#$80
-		BEQ		loc_18A6A4
-		LDA		(_ptr0),Y
-		INY
-		CLC
-		ADC		_spr_insert_args._pos._Y
-		STA		_spr_buf,X
-		INX
-		LDA		(_ptr0),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_ptr0),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_ptr0),Y
-		INY
-		CLC
-		ADC		_spr_insert_args._pos._X
-		CMP		#$38
-		BCC		loc_18A692
-		CMP		#$F8
-		BCC		loc_18A69D
-loc_18A692:
-		LDA		#$F4
-		DEX
-		DEX
-		DEX
-		STA		_spr_buf,X
-		JMP		loc_18A666
-loc_18A69D:
-		STA		_spr_buf,X
-		INX
-		JMP		loc_18A666
-loc_18A6A4:
-		STX		_spr_buf_pos
-		POPB	_prg_prg8000_shadow
-		STA		_MMC5_PRG_PAGES+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2085,6 +1966,275 @@ loc_18AEB4:
 		CLC
 		ADC		#$10
 		STA		_spr_buf_pos
+		RTS
+
+; ---------------------------------------------------------------------------
+; ---------------S-P-R-I-T-E--R-O-U-T-I-N-E-S--A-N-D--D-A-T-A----------------
+; ---------------------------------------------------------------------------
+
+; =============== S U B	R O U T	I N E =======================================
+; sprite insert routine with additional option to flip and overwrite both
+; sprite flip and attributes. Used to draw the same sprites mirrored differently
+; on screen with effects. cursors, rects, arrows, selection corners, etc..
+;
+;_spr_lib_attr_insert:
+;		PUSHB	_prg_prgA000_shadow
+;		LDA		#$F2
+;		STA		_MMC5_PRG_PAGES+2
+;		LDX		_spr_insert_args._idx
+;		LDA		_spr_lib_lo,X
+;		STA		_ptr0
+;		LDA		_spr_lib_hi,X
+;		STA		_ptr0+1
+;		DEC		_spr_insert_args._pos._Y
+;		LDX		_spr_buf_pos
+;		LDY		#$00
+;loc_18A603:
+;		LDA		(_ptr0),Y
+;		CMP		#$80
+;		BEQ		loc_18A643
+;		LDA		_spr_insert_args._attr
+;		ASL
+;		LDA		(_ptr0),Y
+;		INY
+;		BCC		loc_18A615
+;		EOR		#$FF
+;		SBC		#$06
+;loc_18A615:
+;		CLC
+;		ADC		_spr_insert_args._pos._Y
+;		STA		_spr_buf,X
+;		INX
+;		LDA		(_ptr0),Y
+;		INY
+;		STA		_spr_buf,X
+;		INX
+;		LDA		(_ptr0),Y
+;		INY
+;		ORA		_spr_insert_args._attr
+;		STA		_spr_buf,X
+;		INX
+;		LDA		_spr_insert_args._attr
+;		ASL
+;		ASL
+;		LDA		(_ptr0),Y
+;		INY
+;		BCC		loc_18A639
+;		EOR		#$FF
+;		SBC		#$06
+;loc_18A639:
+;		CLC
+;		ADC		_spr_insert_args._pos._X
+;		STA		_spr_buf,X
+;		INX
+;		JMP		loc_18A603
+;loc_18A643:
+;		STX		_spr_buf_pos
+;		POPB	_prg_prgA000_shadow
+;		STA		_MMC5_PRG_PAGES+2
+;		RTS
+;
+; =============== S U B	R O U T	I N E =======================================
+; Display raw sprites in corresponding position on screen, no flips/attr
+; overwrites not performed. Used only in drawing an ingame message windows
+; with animated sprites. Simple version of _spr_lib_attr_insert, may be
+; replaced with it, but with additional clear of the _attr parameter.
+; However, has an additional code at the end to clip the sprites out of the
+; boundary of the mesage window.
+;
+;_spr_lib_clip_insert:
+;		PUSHB	_prg_prg8000_shadow
+;		LDA		#$F8
+;		STA		_MMC5_PRG_PAGES+1
+;		LDX		_spr_insert_args._idx
+;		LDA		_spr_lib_lo,X
+;		STA		_ptr0
+;		LDA		_spr_lib_hi,X
+;		STA		_ptr0+1
+;		DEC		_spr_insert_args._pos._Y
+;		LDX		_spr_buf_pos
+;		LDY		#$00
+;loc_18A666:
+;		LDA		(_ptr0),Y
+;		CMP		#$80
+;		BEQ		loc_18A6A4
+;		LDA		(_ptr0),Y
+;		INY
+;		CLC
+;		ADC		_spr_insert_args._pos._Y
+;		STA		_spr_buf,X
+;		INX
+;		LDA		(_ptr0),Y
+;		INY
+;		STA		_spr_buf,X
+;		INX
+;		LDA		(_ptr0),Y
+;		INY
+;		STA		_spr_buf,X
+;		INX
+;		LDA		(_ptr0),Y
+;		INY
+;		CLC
+;		ADC		_spr_insert_args._pos._X
+;		CMP		#$38
+;		BCC		loc_18A692
+;		CMP		#$F8
+;		BCC		loc_18A69D
+;loc_18A692:
+;		LDA		#$F4
+;		DEX
+;		DEX
+;		DEX
+;		STA		_spr_buf,X
+;		JMP		loc_18A666
+;loc_18A69D:
+;		STA		_spr_buf,X
+;		INX
+;		JMP		loc_18A666
+;loc_18A6A4:
+;		STX		_spr_buf_pos
+;		POPB	_prg_prg8000_shadow
+;		STA		_MMC5_PRG_PAGES+1
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; Simpliest routine to add raw sprites without attr control and clipping
+; uses different type of tmp on purpose, because it's called from NMI, and
+; _tmp0 may be used in other code as well as args are used different vars.
+;
+_spr_lib_raw_insert:
+		LDX		_spr_insert_raw_args._idx
+		LDA		_spr_lib_lo,X
+		STA		_tmp15
+		LDA		_spr_lib_hi,X
+		STA		_tmp15+1
+		DEC		_spr_insert_raw_args._pos._Y
+		LDX		_spr_buf_pos
+		LDY		#$00
+loc_88C9C:
+		LDA		(_tmp15),Y
+		CMP		#$80
+		BEQ		loc_88CC5
+		INY
+		CLC
+		ADC		_spr_insert_raw_args._pos._Y
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		CLC
+		ADC		_spr_insert_raw_args._pos._X
+		STA		_spr_buf,X
+		INX
+		JMP		loc_88C9C
+loc_88CC5:
+		STX		_spr_buf_pos
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; Merged versions of sprite routines. Maybe little slower in common,
+; but i'm sure will not much slower in general.
+;
+_spr_lib_attr_insert:
+		PUSHB	_prg_prgA000_shadow
+		LDA		#$F2
+		STA		_MMC5_PRG_PAGES+2
+		LDA		#$00							; clip no, attrs yes
+		STA		_tmp17
+		JSR		_spr_lib_insert_ex
+		POPB	_prg_prgA000_shadow
+		STA		_MMC5_PRG_PAGES+2
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_spr_lib_clip_insert:
+		PUSHB	_prg_prg8000_shadow
+		LDA		#$F8
+		STA		_MMC5_PRG_PAGES+1
+		LDA		#$80							; clip yes
+		STA		_tmp17
+		LDA		#$00							; attrs no
+		STA		_spr_insert_args._attr
+		JSR		_spr_lib_insert_ex
+		POPB	_prg_prg8000_shadow
+		STA		_MMC5_PRG_PAGES+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; Common sprite insert routine for all different kind of sprites.
+;
+_spr_lib_insert_ex:
+		LDX		_spr_insert_args._idx
+		LDA		_spr_lib_lo,X
+		STA		_ptr0
+		LDA		_spr_lib_hi,X
+		STA		_ptr0+1
+		DEC		_spr_insert_args._pos._Y
+		LDX		_spr_buf_pos
+		LDY		#$00
+loc_18A603:
+		LDA		(_ptr0),Y
+		CMP		#$80
+		BEQ		loc_18A643
+		LDA		_spr_insert_args._attr
+		ASL
+		LDA		(_ptr0),Y
+		INY
+		BCC		loc_18A615
+		EOR		#$FF
+		SBC		#$06
+loc_18A615:
+		CLC
+		ADC		_spr_insert_args._pos._Y
+		STA		_spr_buf,X
+		INX
+		LDA		(_ptr0),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_ptr0),Y
+		INY
+		ORA		_spr_insert_args._attr
+		STA		_spr_buf,X
+		INX
+		LDA		_spr_insert_args._attr
+		ASL
+		ASL
+		LDA		(_ptr0),Y
+		INY
+		BCC		loc_18A639
+		EOR		#$FF
+		SBC		#$06
+loc_18A639:
+		CLC
+		ADC		_spr_insert_args._pos._X
+		BIT		_tmp17
+		BPL		loc_18A69D						; no 80 flag, no clip
+		CMP		#$38
+		BCC		loc_18A692
+		CMP		#$F8
+		BCC		loc_18A69D
+loc_18A692:
+		LDA		#$F4
+		DEX
+		DEX
+		DEX
+		STA		_spr_buf,X
+		JMP		loc_18A603
+loc_18A69D:
+		STA		_spr_buf,X
+		INX
+		JMP		loc_18A603
+loc_18A643:
+		STX		_spr_buf_pos
 		RTS
 
 _spr_lib_lo:

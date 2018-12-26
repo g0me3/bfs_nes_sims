@@ -185,7 +185,8 @@ loc_58144:
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSRA	_game_msg_chr_setup,PRG2,PRG2
+;		FJSRA	_game_msg_chr_setup,PRG2,PRG2		; OPTIMIZE
+		JSR		_game_msg_chr_setup					; FIX: local sub now
 		LDA		#$00
 		STA		_ptr0
 		JSR		_game_msg_display
@@ -254,6 +255,43 @@ loc_581EC:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; assuming all these are the same here, we'll hardly change it someday
+; now, reducing the size, we can return it back to the original bank here
+;
+_game_msg_chr_setup:
+		LDX		_game_msg_idx
+;		LDA		_game_msg_chr0_list,X		; OPTIMIZE
+		LDA		#$30
+		STA		_MMC5_CHR_BANKSA
+;		LDA		_game_msg_chr1_list,X		; OPTIMIZE
+		LDA		#$31
+		STA		_MMC5_CHR_BANKSA+1
+;		LDA		_game_msg_chr2_list,X		; OPTIMIZE
+		LDA		#$32
+		STA		_MMC5_CHR_BANKSA+2
+		LDA		_game_msg_chr3_list,X
+		STA		_MMC5_CHR_BANKSA+3
+		RTS
+
+; OPTIMIZE
+;_game_msg_chr0_list:
+;		.BYTE	$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+;		.BYTE	$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
+;		.BYTE	$30,$30,$30,$30
+;_game_msg_chr1_list:
+;		.BYTE	$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
+;		.BYTE	$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
+;		.BYTE	$31,$31,$31,$31
+;_game_msg_chr2_list:
+;		.BYTE	$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32
+;		.BYTE	$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32
+;		.BYTE	$32,$32,$32,$32
+_game_msg_chr3_list:
+		.BYTE	$33,$33,$57,$33,$3B,$33,$33,$33,$35,$3D,$33,$57,$33,$57,$57,$57
+		.BYTE	$57,$57,$57,$57,$57,$33,$57,$57,$57,$57,$57,$33,$33,$33,$33,$33
+		.BYTE	$33,$33,$33,$33
+
+; =============== S U B	R O U T	I N E =======================================
 _game_msg_apu_select:
 		LDX		_game_msg_idx
 		LDA		_game_msg_apu_types_list,X
@@ -293,9 +331,8 @@ _game_msg_apu_types_list:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_display:
 		PUSHB	_ptr0
-;		JSR		_far_wnd_header_draw			; OPTIMIZED
-		FJSRA	_wnd_header_draw,PRG0,PRG0
-;-
+		FJSRA	_wnd_header_draw,PRG0,PRG0			; FIX: direct call here
+;		JSR		_far_wnd_header_draw				; OPTIMIZE
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -322,6 +359,8 @@ loc_5829C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; REDUNDANT now
+;
 ;_far_wnd_header_draw:
 ;		FJSRA	_wnd_header_draw,PRG0,PRG0
 ;		RTS
@@ -680,7 +719,7 @@ loc_585F2:
 		DEX
 		STX		byte_52D
 		STY		byte_52E
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 loc_58614:
 		LDY		byte_530
 		LDX		byte_52F
@@ -702,7 +741,7 @@ loc_58622:
 		STA		_spr_insert_args._pos._X
 		LDA		#$A8
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 locret_58641:
 		RTS
 loc_58642:
@@ -958,7 +997,7 @@ loc_58864:
 		CLC
 		ADC		byte_74,Y
 		STA		byte_74,Y
-		JSR		_spr_lib_prg8_insert
+		JSR		_spr_lib_clip_insert
 loc_5886E:
 		DEC		byte_522
 		BEQ		locret_58876
@@ -1937,7 +1976,7 @@ loc_590C9:
 		STA		_spr_insert_args._idx
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JMP		_spr_lib_prg2_insert
+		JMP		_spr_lib_attr_insert
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_yes_no_menu_yes_push_draw:
@@ -1959,7 +1998,7 @@ _common_yes_no_menu_button_push_draw:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JMP		_spr_lib_prg2_insert
+		JMP		_spr_lib_attr_insert
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_load_menu:
@@ -2202,7 +2241,7 @@ _turn_off_power_animate:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$A2
 		STA		_spr_insert_args._idx
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		LDA		byte_582
 		LDX		#$00
 loc_592E4:
@@ -2220,7 +2259,7 @@ loc_592ED:
 		STA		_spr_insert_args._pos._X
 		LDA		#$48
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 loc_59301:
 		LDX		byte_582
 		INX

@@ -4,35 +4,6 @@
 		BANK_START $F2
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_chr_setup:
-		LDX		_game_msg_idx
-		LDA		_game_msg_chr0_list,X
-		STA		_MMC5_CHR_BANKSA
-		LDA		_game_msg_chr1_list,X
-		STA		_MMC5_CHR_BANKSA+1
-		LDA		_game_msg_chr2_list,X
-		STA		_MMC5_CHR_BANKSA+2
-		LDA		_game_msg_chr3_list,X
-		STA		_MMC5_CHR_BANKSA+3
-		RTS
-_game_msg_chr0_list:
-		.BYTE	$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
-		.BYTE	$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
-		.BYTE	$30,$30,$30,$30
-_game_msg_chr1_list:
-		.BYTE	$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
-		.BYTE	$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31,$31
-		.BYTE	$31,$31,$31,$31
-_game_msg_chr2_list:
-		.BYTE	$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32
-		.BYTE	$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32,$32
-		.BYTE	$32,$32,$32,$32
-_game_msg_chr3_list:
-		.BYTE	$33,$33,$57,$33,$3B,$33,$33,$33,$35,$3D,$33,$57,$33,$57,$57,$57
-		.BYTE	$57,$57,$57,$57,$57,$33,$57,$57,$57,$57,$57,$33,$33,$33,$33,$33
-		.BYTE	$33,$33,$33,$33
-
-; =============== S U B	R O U T	I N E =======================================
 _presents_wnd_draw:
 		JSR		_sram_on
 		LDX		#$F0
@@ -433,7 +404,7 @@ loc_3E64B:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._idx
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		LDA		_pad0_autorep_press
 		AND		#$0F
 		BNE		loc_3E68B

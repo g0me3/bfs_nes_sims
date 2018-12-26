@@ -3241,7 +3241,7 @@ _mmc5_mul16to8_fast:
 		STA		_tmp3
 		LDA		_ptr0
 		STA		_MMC5_MUL0
-		LDA		#$64					; FIXME: WTF LDA $64?
+;		LDA		#$64					; FIX: WTF LDA $64 redundant
 		LDA		_MMC5_MUL0
 		STA		_ptr0
 		LDA		_MMC5_MUL1

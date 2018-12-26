@@ -3976,7 +3976,7 @@ _map_scroll_mode_minimap_draw:
 		CLC
 		ADC		#$53
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		LDA		#$06
 		STA		_spr_insert_args._idx
 		LDA		#$08
@@ -3985,7 +3985,7 @@ _map_scroll_mode_minimap_draw:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JMP		_spr_lib_prg2_insert
+		JMP		_spr_lib_attr_insert
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_scroll_mode_arrows_draw:
@@ -4017,7 +4017,7 @@ loc_151EE6:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		PLA
 		TAY
 		JMP		loc_151EDB

@@ -1739,7 +1739,7 @@ loc_136D5F:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._idx
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		LDA		_pad0_autorep_press
 		AND		#$0F
 		BNE		loc_136D8E
@@ -1805,7 +1805,7 @@ loc_136DD6:
 		STA		_spr_insert_args._pos._Y
 		LDA		#$00
 		STA		_spr_insert_args._idx
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		LDA		_pad0_autorep_press
 		AND		#$0F
 		BNE		loc_136E05
@@ -2265,7 +2265,7 @@ loc_137122:
 		STA		_spr_insert_args._pos._X
 		LDA		_cur_wnd_pos._Y
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 loc_137133:
 		LDX		byte_514
 		BMI		locret_137142
@@ -2358,7 +2358,7 @@ loc_1371A7:
 		STA		_spr_insert_args._pos._X
 		LDA		_cur_wnd_pos._Y
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		LDA		_wnd_width_tile
 		SEC
 		SBC		#$01
@@ -2654,7 +2654,7 @@ loc_1373A8:
 		STA		_spr_insert_args._idx
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JMP		_spr_lib_prg2_insert
+		JMP		_spr_lib_attr_insert
 loc_1373C6:
 		LDA		_city._game_flags
 		LDX		#$00
@@ -2676,7 +2676,7 @@ loc_1373CB:
 		STA		_spr_insert_args._idx
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		PLA
 		TAX
 		PLA
@@ -2706,7 +2706,7 @@ loc_1373F9:
 		STA		_spr_insert_args._idx
 		LDA		#$00
 		STA		_spr_insert_args._attr
-		JSR		_spr_lib_prg2_insert
+		JSR		_spr_lib_attr_insert
 		PLA
 		TAX
 		PLA

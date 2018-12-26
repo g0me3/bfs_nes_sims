@@ -1092,9 +1092,9 @@ _test_power_grid_map_bit:
 		TAX
 		LDY		#$00
 		LDA		(_tmpE6),Y
-; BUG!
-; here $0A3B6 is a inv_bitmasks array at BANKA
-		AND		_inv_bitmasks,X					; FIX: all bitmasks now in system bank
+; BUG: here were used $0A3B6, an inv_bitmasks array in BANKA
+; FIX: all bitmask arrays are in system bank now
+		AND		_inv_bitmasks,X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3215,16 +3215,12 @@ loc_11F801:
 		LDA		_tmp_map_pos._Y
 		LSR
 		LSR
-; BUG!
-; -
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$13
-		STA		_mmc5_mul1_shadow				; BUG: copy-paste, same shadow var, may be critical
-		STA		_MMC5_MUL0
-;-
-;		MULAI	#$13							; FIX: use correct macro
-;-
+;		STA		_mmc5_mul1_shadow
+;		STA		_MMC5_MUL1
+;		LDA		#$13
+;		STA		_mmc5_mul1_shadow				; BUG: copy-paste, same shadow var, may be critical
+;		STA		_MMC5_MUL0
+		MULAI	#$13							; FIX: uses correct macro
 		LDA		_tmp_map_pos._X
 		LSR
 		LSR

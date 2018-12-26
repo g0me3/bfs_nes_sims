@@ -805,7 +805,7 @@ loc_24632:
 		STA		_spr_insert_args._pos._X
 		LDA		_tmp6CE
 		STA		_spr_insert_args._pos._Y
-		JMP		_spr_lib_prg2_insert
+		JMP		_spr_lib_attr_insert
 loc_2464A:
 		JMP		_spr_finish
 
@@ -854,7 +854,7 @@ loc_246AC:
 		STA		_spr_insert_args._pos._X
 		LDA		byte_6DC+5
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert			; draw common button frame sprite
+		JSR		_spr_lib_attr_insert			; draw common button frame sprite
 		LDX		#$FD							; then manually hack its
 		LDA		byte_6DC+6						; middle tile to display a corresponding
 		CMP		#$08							; letter in it
@@ -1837,22 +1837,22 @@ _quo	EQU		$22
 
 		MAC		MSG_DIC
 {1}		EQU		[[.-_msg_dictionary]|$80]
-		.BYTE	{2},{3}
+		.BYTE	{2},$FF
 		ENDM
 
 _msg_dictionary:
-		MSG_DIC	_the,	"the",$FF
-		MSG_DIC	_to,	"to",$FF
-		MSG_DIC	_and,	"and",$FF
-		MSG_DIC	_of,	"of",$FF
-		MSG_DIC	_have,	"have",$FF
-		MSG_DIC	_city_,	"city",$FF
-		MSG_DIC	_You,	"You",$FF
-		MSG_DIC	_years,	"years",$FF
-		MSG_DIC	_in,	"in",$FF
-		MSG_DIC	_your,	"your",$FF
-		MSG_DIC	_you,	"you",$FF
-		MSG_DIC	_con,	"con",$FF
+		MSG_DIC	_the,	"the"
+		MSG_DIC	_to,	"to"
+		MSG_DIC	_and,	"and"
+		MSG_DIC	_of,	"of"
+		MSG_DIC	_have,	"have"
+		MSG_DIC	_city_,	"city"
+		MSG_DIC	_You,	"You"
+		MSG_DIC	_years,	"years"
+		MSG_DIC	_in,	"in"
+		MSG_DIC	_your,	"your"
+		MSG_DIC	_you,	"you"
+		MSG_DIC	_con,	"con"
 _scenario_msg6:
 		.BYTE	_eof
 _scenario_msg7:
@@ -1862,7 +1862,7 @@ _scenario_msg0:
 		.BYTE	"quake was m",_in,"or compared",$A
 		.BYTE	_to," that ",_of," ",_the," ensu",_in,"g",$A
 		.BYTE	"fires,which ",_to,"ok days ",_to,$A
-		.BYTE	_con,"trol.1500people died.",$A
+		.BYTE	_con,"trol.1500 people died.",$A				; FIX: "1500[ ]people"
 		.BYTE	" Controll",_in,"g ",_the," fires",$A
 		.BYTE	"should be ",_your," ",_in,"itial",$A
 		.BYTE	_con,"cern.Then clear ",_the,$A
@@ -1900,7 +1900,7 @@ _scenario_msg2:
 		.BYTE	_eof
 _scenario_msg3:
 		.BYTE	" A large reptilian crea-",$A
-		.BYTE	"ture has been spooted",$A
+		.BYTE	"ture has been spotted",$A				; FIX: [spooted]->[spotted]
 		.BYTE	"head",_in,"g for Tokyo. It",$A
 		.BYTE	"seems ",_to," be attracted ",_to,$A
 		.BYTE	_the," heavy levels ",_of," ",_in,"-",$A
@@ -1917,7 +1917,7 @@ _scenario_msg4:
 		.BYTE	_to,"rs.The area ",_in," ",_the,$A
 		.BYTE	"vic",_in,"ity ",_of," ",_the," reac",_to,"r",$A
 		.BYTE	"will be severely ",_con,"tam-",$A
-		.BYTE	_in,"ated by rediation,forc-",$A
+		.BYTE	_in,"ated by radiation,forc-",$A		; FIX: [rediation]->[radiation]
 		.BYTE	_in,"g ",_you," ",_to," restructure",$A
 		.BYTE	_the," ",_city_," around it.",_You,$A
 		.BYTE	_have," 5 ",_years," ",_to," get ",_the,$A
@@ -1972,7 +1972,7 @@ _practice_msg0:
 		.BYTE	"adjust ",_the," budget,",$A
 		.BYTE	"lower skyrocket",_in,"g  crime",$A
 		.BYTE	"rates, iron out traffic",$A
-		.BYTE	"snarls",_con,"trol enviro-",$A					; BUG! snarls[, ]control
+		.BYTE	"snarls,",_con,"trol enviro-",$A					; FIX: snarls[,]control
 		.BYTE	"nmental pollution, ",_and,$A
 		.BYTE	"many o",_the,"r elements that",$A
 		.BYTE	"require ",_your," attention.",$A

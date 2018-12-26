@@ -493,7 +493,7 @@ _scr_res_cursor_spr_insert_ex:
 		STA		_spr_insert_args._pos._X
 		LDA		_cur_game_cursor_scr_pos._Y
 		STA		_spr_insert_args._pos._Y
-		JMP		_spr_lib_prg2_insert
+		JMP		_spr_lib_attr_insert
 
 byte_A0374:
 		.BYTE	$FE,$02,$FE,$02

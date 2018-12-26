@@ -1849,47 +1849,6 @@ _far_fire_or_destroy_map_tile_ex:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; TODO: merge _spr_lib_prg8_insert, _spr_lib_prg2_insert, _spr_lib_prgF_insert
-; functions, reduce duplicated code.
-;
-_spr_lib_prgF_insert:
-		LDX		_spr_insert_raw_args._idx
-		LDA		_spr_lib_lo,X
-		STA		_tmp15
-		LDA		_spr_lib_hi,X
-		STA		_tmp15+1
-		DEC		_spr_insert_raw_args._pos._Y
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_88C9C:
-		LDA		(_tmp15),Y
-		CMP		#$80
-		BEQ		loc_88CC5
-		INY
-		CLC
-		ADC		_spr_insert_raw_args._pos._Y
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		CLC
-		ADC		_spr_insert_raw_args._pos._X
-		STA		_spr_buf,X
-		INX
-		JMP		loc_88C9C
-loc_88CC5:
-		STX		_spr_buf_pos
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _spr_game_interface_cursor_draw:
 		LDA		_game_msg_wnd_active_flag
 		BNE		loc_88CD1
@@ -1902,7 +1861,7 @@ loc_88CD1:
 		STA		_spr_insert_raw_args._pos._X
 		LDA		_cur_game_cursor_scr_pos._Y
 		STA		_spr_insert_raw_args._pos._Y
-		JMP		_spr_lib_prgF_insert
+		JMP		_spr_lib_raw_insert
 loc_88CE0:
 		LDX		_prev_constr_palette_press_idx
 		LDA		_constr_building_sizes_list,X
@@ -1918,7 +1877,7 @@ loc_88CEC:
 		LDA		_cur_game_cursor_scr_pos._Y
 		AND		#$F8
 		STA		_spr_insert_raw_args._pos._Y
-		JMP		_spr_lib_prgF_insert
+		JMP		_spr_lib_raw_insert
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_8:
