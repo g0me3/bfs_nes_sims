@@ -24,6 +24,13 @@ _ptr6	EQU		.
 _tmp6:
 		.BYTE	0,0
 _tmp7	EQU		_tmp6+1
+
+; variables never used in the original code, hovewer, tmp9 is
+; reinitialized with 0 at the reset for unknown reason
+;
+; will use these regs for my own if i need some spare vars
+; to be sure they doesn't interfer with anything.
+;
 _tmp8:
 		.BYTE	0
 _tmp9:
@@ -441,7 +448,7 @@ _thread_priority_req:
 		.BYTE	0
 _game_core_state:
 		.BYTE	0
-byte_107:
+_mini_map_need_redraw_flag:
 		.BYTE	0
 _thread1_flags:
 		.BYTE	0,0
@@ -507,9 +514,9 @@ _obj_active_flags:
 		.BYTE	0
 _frames_div4_counter:
 		.BYTE	0
-byte_140:
+_new_city_screen_cur_row_idx:
 		.BYTE	0
-byte_141:
+_new_city_screen_cur_col_idx:
 		.BYTE	0
 _title_sub_idx:
 		.BYTE	0
@@ -539,9 +546,9 @@ _obj_monster_spr_idx:
 
 		_tobj6w	_obj_shift
 
-byte_15B:
+_new_city_map_regen_req:
 		.BYTE	0
-byte_15C:
+_new_city_map_regen_delay:
 		.BYTE	0
 _new_city_digit_spr_y_pos:
 		.BYTE	0
@@ -1042,9 +1049,9 @@ byte_6DC:
 					; in name input	system
 byte_6E3:
 		.BYTE	0,0,0,0,0,0,0
-_unused_4:
-		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-		.BYTE	0,0,0,0,0,0
+
+		ORG	$700
+
 _pre_ppu_buf:
 		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0

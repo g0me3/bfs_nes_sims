@@ -13,11 +13,11 @@ RESET:
 		SEI
 		CLD
 		LDX		#$00
-		STX		_PPU_CTRL
+		STX		_PPU_CTRL						; regular startup code here
 		STX		_PPU_MASK
 		INX
 loc_18A00B:
-		INC		_frames_counter
+		INC		_frames_counter					; skip 2 frames of ppu dead state
 		LDA		_PPU_STATUS
 		BPL		loc_18A00B
 		DEX
@@ -25,25 +25,25 @@ loc_18A00B:
 		DEX
 		TXS
 		LDX		#$04
-		STX		_MMC5_PRG_PAGES
+		STX		_MMC5_PRG_PAGES					; set wram bank
 		LDX		#$00
 		STX		_APU_STATUS
 		STX		_ppu_mask_shadow
 loc_18A023:
-		LDA		aIshi,X
-		BMI		loc_18A033
-		CMP		_ram_signature,X
+		LDA		aIshi,X							; check ram signature
+		BMI		loc_18A033						; when ram isn't clear, just reset map buffer
+		CMP		_ram_signature,X				; oddly enough because its always rewritten any way
 		BNE		loc_18A030
 		INX
 		BNE		loc_18A023
 loc_18A030:
-		JSR		_map_buf_init
+		JSR		_map_buf_init					; so actually this check does nothing here
 loc_18A033:
-		LDY		#>[_pre_ppu_buf]
-		STY		_ptr0+1
-		LDY		#<[_pre_ppu_buf]
-		STY		_ptr0								; CAUTION! Y here = 0 because addr = 700
-		TYA											; clear Y manually if address changes
+		LDY		#$07							; now clar ram area $0000-$07FF
+		STY		_ptr0+1							; because we load 700, then decrease Y
+		LDY		#$00							; we will get 7FF for next offset and so on
+		STY		_ptr0							; so we clear here all ram
+		TYA
 loc_18A03C:
 		STA		(_ptr0),Y
 		DEY
@@ -53,18 +53,18 @@ loc_18A03C:
 		LDX		#$00
 		LDY		#$04
 loc_18A049:
-		LDA		aIshi,X
+		LDA		aIshi,X							; rewrite signature even if it already there
 		STA		_ram_signature,X
 		INX
 		DEY
 		BNE		loc_18A049
 loc_18A053:
-		JSR		_get_input
-		LDA		_pad0_held
-		AND		#$F0
+		JSR		_get_input						; read pad to check if we rebooted with
+		LDA		_pad0_held						; soft-reset buttons, then
+		AND		#$F0							; we need wait they released
 		CMP		#$F0
 		BEQ		loc_18A053
-		JSR		_gui_ctrl_menu_pos_list_ilit
+		JSR		_gui_ctrl_menu_pos_list_init	; initialize window positions
 		LDA		#$03
 		STA		_MMC5_PRG_SIZE
 		LDA		#$04
@@ -79,8 +79,8 @@ loc_18A053:
 		STY		_MMC5_PRG_PAGES+3
 		INY
 		STY		_MMC5_PRG_PAGES+4
-		LDA		#$00
-		STA		_tmp9
+;		LDA		#$00							; never used, reinit twice...
+;		STA		_tmp9
 		LDA		#$C0
 		STA		_PAD1_REG
 ;		LDA		#$00							; unknown register, probably debug leftover
@@ -99,7 +99,7 @@ loc_18A09D:
 		STX		_MMC5_NT_FILL					; X here = $FF
 		INX
 		STX		_MMC5_IRQ_ENABLE				; now X = $00
-		STX		_mmc5_sp_mode_shadow
+		STX		_mmc5_sp_mode_shadow			; reset all MMC5 registers
 		STX		_MMC5_SP_MODE
 		STX		_mmc5_sp_scroll_shadow
 		STX		_MMC5_SP_SCROLL
@@ -107,10 +107,10 @@ loc_18A09D:
 		STX		_MMC5_NT_MODE
 		STX		_MMC5_AT_FILL
 		STX		_MMC5_CHR_BANKSA+7
-		STX		_title_sub_idx					; title sub = 0 by default
+;		STX		_title_sub_idx					; REDUNDANT, all ram vars here are 0
 		INX
 		INX
-		STX		_mmc5_chr_mode_shadow
+		STX		_mmc5_chr_mode_shadow			; we need only to reinit vars that shouldn't be 0
 		STX		_MMC5_CHR_MODE
 		INX
 		STX		_MMC5_CHR_SIZE
@@ -170,20 +170,18 @@ loc_18A0F0:
 		STA		_MMC5_CHR_MODE
 		LDA		#$80
 		STA		_ppu_ctrl_shadow
-		STA		_PPU_CTRL
-		LDA		#$00							; every title entry should
-		STA		_title_sub_idx					; init starting mode manually
+		STA		_PPU_CTRL						; enable nmi, start game
 		CLI
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD0_LOOP:
-		JSR		_THREAD0_MAIN
-		JSR		_wait_for_nmi
+		JSR		_THREAD0_MAIN					; main loop for thread0, gui
+		JSR		_wait_for_nmi					; draw and other user stuff
 		JMP		_THREAD0_LOOP
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD0_MAIN:
-		LDX		_main_sub_idx
+		LDX		_main_sub_idx					; main game state idx, title is 0
 		BNE		_game_setup_mode
 		LDA		#$00
 		STA		_scr_res_idx
@@ -191,14 +189,14 @@ _THREAD0_MAIN:
 		FJSRA	_title_screen,PRG7,PRG9
 		INC		_main_sub_idx
 		RTS
-_game_setup_mode:
+_game_setup_mode:								; title menu is 1
 		DEX
 		BNE		_ingame_mode
 		JSR		_ppu_queues_reset
 		FJSRA	_game_setup,SRAM,PRG1
 		RTS
 _ingame_mode:
-		JSR		_ppu_queues_reset
+		JSR		_ppu_queues_reset				; ingame is 2
 		FJSRA	_game_vars_init,SRAM,PRGA
 		JSR		_thread1_init
 		FJSRA	_game_start,PRGC,PRGD
@@ -425,7 +423,7 @@ loc_18A30D:
 		STY		_thread1_flags
 		STY		_thread1_flags+1
 		INY
-		STY		byte_107
+		STY		_mini_map_need_redraw_flag
 		STY		_game_core_state
 _switch_to_thread0:
 		LDX		#$00
@@ -1705,7 +1703,7 @@ loc_18AB8C:
 		JMP		loc_18AB7B
 
 ; =============== S U B	R O U T	I N E =======================================
-_gui_ctrl_menu_pos_list_ilit:
+_gui_ctrl_menu_pos_list_init:
 		LDX		#$0B
 loc_18ABB5:
 		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
@@ -3528,10 +3526,10 @@ _sprA0:
 
 ; =============== S U B	R O U T	I N E =======================================
 _rand:
-		LDA		_rand_seed
-		STA		_rand_seed+2
-		ADC		_rand_seed+1
-		STA		_rand_seed
+		LDA		_rand_seed						; result of operations here
+		STA		_rand_seed+2					; depends on undefined C state
+		ADC		_rand_seed+1					; upon entry, so calcs are
+		STA		_rand_seed						; semi-random by itself
 		ADC		_rand_seed+2
 		STA		_rand_seed+1
 		RTS

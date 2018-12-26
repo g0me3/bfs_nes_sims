@@ -99,9 +99,10 @@
 15. Although Difficult setting non functional in original game (see BUGS#20) there are some portions of the code that depends on Difficult setting, all of them however has no effect on the original game.
 	15.1 Starting amount of money on Easy is 20000, on Normal - 10000, and 5000 on Hard.
 	15.2 Tax Rate value higher to 1 on Normal and to 2 on Hard modes while calculating the RCI growth values of the City. So you may have Tax Rate at 7, but the RCI levels will be calculated as if it 8 on Normal or 9 on Hard correspondingly.
-	15.2 Fund requested for transport calculated as (roads+(rails*2))*coeff. Where coeff = 0.7 for easy, 0.9 for Normal and 1.2 for Hard.
-	15.3 Overall Tax Collected value calculated as (R_L+C_L+I_L)*overall_city_value*coeff*0.71*tax_rate. coeff = 1.4 for Easy, 1.2 for Norman and 0.8 for Hard.
+	15.2 Fund requested for transport calculated as (roads+(rails*2))*coeff. Where coeff = 0.7 for easy, 0.9 for Normal and 1.2 for Hard. (exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void))
+  	15.3 Overall Tax Collected value calculated as (R_L+C_L+I_L)*overall_city_value*coeff*0.71*tax_rate. coeff = 1.4 for Easy, 1.2 for Norman and 0.8 for Hard. ((exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void)))
 	15.4 However, unless the SNES version, the NES does not explode Nuclear Power stations randomly for Normal/Hard modes. The Nuclear Meltdown only available for BOSTON scenario and even has no Alert message corresponding to it. Nuclear meltdown occurs with only a sound and "GOTO" button activated.
+16. There is an unused unreferenced type of Fire disaster which fires half of the Fire disaster tiles on the map at once. In the original Amiga/DOS/C64 versions there was a Scenario for Hamburg Germany 1944 Bombing. There is no such disaster in later version of this game (but there were screens on earliest versions), but such unreferenced type of didsaster clearly evidence that they planned it somehow at some point.
 
 	BUGS
 

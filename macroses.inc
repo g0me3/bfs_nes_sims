@@ -89,7 +89,7 @@ I_AREA_WIDX	EQU 4
 		_trci							{1}._delta
 {1}._var_5F6:							.BYTE	0
 {1}._var_5F7:							.BYTE	0
-		_trcifix8_8						{1}._overall_land_value
+		_tfix8_8						{1}._overall_land_value
 {1}._crime_level:						.WORD	0
 {1}._var_5FC:							.BYTE	0
 {1}._var_5FD:							.BYTE	0
