@@ -1425,7 +1425,7 @@ loc_BBE8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_queue:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_BC1A:
@@ -1455,7 +1455,7 @@ loc_BC1C:										; -
 ;		JMP		loc_BC1B						; -
 		JMP		loc_BC1A
 loc_BC49:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 _wnd_pos_ofs_X:

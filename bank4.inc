@@ -146,7 +146,7 @@ loc_700E5:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_draw:
 		STY		_ptr0+1
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	_tmp2,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		LDA		_tmp4
@@ -171,9 +171,9 @@ loc_7011E:
 		EXTQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_7011E
 loc_7014D:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		LDY		_ptr0+1
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	_tmp2,OP_NOP,0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
@@ -193,7 +193,7 @@ loc_70167:
 		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_70167
 loc_70196:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 byte_70199:
 		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
@@ -250,7 +250,7 @@ _game_msg_presentss_list:
 _game_msg_presents_icon_line_draw:
 		TYA
 		PHA
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	_tmp2,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		LDA		_tmp4
@@ -275,10 +275,10 @@ loc_70252:
 		EXTQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_70252
 loc_70280:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		PLA
 		TAY
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	_tmp2,OP_NOP,0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
@@ -298,7 +298,7 @@ loc_7029A:
 		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_7029A
 loc_702C8:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 _tlm_nt_game_msg_presentss_icons_lib:
 		.BYTE	$3A,$3B,$3C

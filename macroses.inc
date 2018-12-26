@@ -334,6 +334,24 @@ NONE	EQU		-1
 		STA		{1}
 	ENDM
 
+	;
+	;
+	MAC	PPUQSTART
+		LDX		_ppu_queue_pos_head
+	ENDM
+
+	MAC	PPUQEND
+		STX		_ppu_queue_pos_head
+	ENDM
+
+	MAC	EXTQSTART
+		LDX		_extnt_queue_pos_head
+	ENDM
+
+	MAC	EXTQEND
+		STX		_extnt_queue_pos_head
+	ENDM
+
 	;\t\tSTA\t\t_ppu_queue_buf\,X\n\t\tINX\n
 	;\t\tPPUQMOVA\n
 	;

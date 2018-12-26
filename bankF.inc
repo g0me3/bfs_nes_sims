@@ -2086,381 +2086,385 @@ loc_18AEB4:
 		ADC		#$10
 		STA		_spr_buf_pos
 		RTS
+
 _spr_lib_lo:
-		.BYTE	<[byte_18B019]
-		.BYTE	<[byte_18B02A]
-		.BYTE	<[byte_18B03B]
-		.BYTE	<[byte_18B04C]
-		.BYTE	<[byte_18B05D]
-		.BYTE	<[byte_18B06E]
-		.BYTE	<[byte_18B077]
-		.BYTE	<[byte_18B118]
-		.BYTE	<[byte_18B129]
-		.BYTE	<[byte_18B136]
-		.BYTE	<[byte_18B143]
-		.BYTE	<[byte_18B150]
-		.BYTE	<[byte_3FD1E]
-		.BYTE	<[byte_3FD3F]
-		.BYTE	<[byte_3FD60]
+		.BYTE	<[_spr00]
+		.BYTE	<[_spr01]
+		.BYTE	<[_spr02]
+		.BYTE	<[_spr03]
+		.BYTE	<[_spr04]
+		.BYTE	<[_spr05]
+		.BYTE	<[_spr06]
+		.BYTE	<[_spr07]
+		.BYTE	<[_spr08]
+		.BYTE	<[_spr09]
+		.BYTE	<[_spr0A]
+		.BYTE	<[_spr0B]
+		.BYTE	<[_spr0C]
+		.BYTE	<[_spr0D]
+		.BYTE	<[_spr0E]
 		.BYTE	0
-		.BYTE	<[byte_18B15D]
-		.BYTE	<[byte_18B1A2]
-		.BYTE	<[byte_18B1EB]
-		.BYTE	<[byte_18B258]
-		.BYTE	<[byte_18B2C5]
-		.BYTE	<[byte_18B332]
-		.BYTE	<[byte_18B3AF]
-		.BYTE	<[byte_18B41C]
-		.BYTE	<[byte_18B4A1]
-		.BYTE	<[byte_18B50E]
-		.BYTE	<[byte_18B57B]
-		.BYTE	<[byte_18B5E8]
-		.BYTE	<[byte_18B655]
-		.BYTE	<[byte_18B6C2]
-		.BYTE	<[byte_18B747]
-		.BYTE	<[byte_18B7B4]
-		.BYTE	<[byte_18B82D]
-		.BYTE	<[byte_18B8A6]
-		.BYTE	<[byte_18B913]
-		.BYTE	<[byte_18B96C]
-		.BYTE	<[byte_18B9F9]
-		.BYTE	<[byte_18BA52]
-		.BYTE	<[byte_18BA83]
-		.BYTE	<[byte_18BADC]
-		.BYTE	<[byte_18BB21]
-		.BYTE	<[byte_D0000]
-		.BYTE	<[byte_D0055]
-		.BYTE	<[byte_D00BE]
-		.BYTE	<[byte_D0143]
-		.BYTE	<[byte_D01B0]
-		.BYTE	<[byte_D021D]
-		.BYTE	<[byte_D0296]
-		.BYTE	<[byte_D031B]
-		.BYTE	<[byte_D03A8]
-		.BYTE	<[byte_D0415]
-		.BYTE	<[byte_D0472]
-		.BYTE	<[byte_D04DF]
-		.BYTE	<[byte_D054C]
-		.BYTE	<[byte_D05C5]
-		.BYTE	<[byte_D061E]
-		.BYTE	<[byte_D068B]
-		.BYTE	<[byte_D06BC]
-		.BYTE	<[byte_D06FD]
-		.BYTE	<[byte_D073E]
-		.BYTE	<[byte_D078F]
-		.BYTE	<[byte_D07FC]
-		.BYTE	<[byte_D0869]
-		.BYTE	<[byte_D08D2]
-		.BYTE	<[byte_D093B]
-		.BYTE	<[byte_D09B0]
-		.BYTE	<[byte_D0A19]
-		.BYTE	<[byte_D0A72]
-		.BYTE	<[byte_D0AB7]
-		.BYTE	<[byte_D0B00]
-		.BYTE	<[byte_D0B55]
-		.BYTE	<[byte_D0B8E]
-		.BYTE	<[byte_D0BC7]
-		.BYTE	<[byte_D0C20]
-		.BYTE	<[byte_D0C65]
-		.BYTE	<[byte_D0CAE]
-		.BYTE	<[byte_D0D03]
-		.BYTE	<[byte_D0D4C]
-		.BYTE	<[byte_D0D95]
-		.BYTE	<[byte_D0DFE]
-		.BYTE	<[byte_D0E6B]
-		.BYTE	<[byte_D0EE4]
-		.BYTE	<[byte_D0F61]
-		.BYTE	<[byte_D0F9A]
-		.BYTE	<[byte_D0FD7]
-		.BYTE	<[byte_D1054]
-		.BYTE	<[byte_D10BD]
-		.BYTE	<[byte_D1126]
-		.BYTE	<[byte_D1197]
-		.BYTE	<[byte_D11F0]
-		.BYTE	<[byte_D1249]
-		.BYTE	<[byte_D12A2]
-		.BYTE	<[byte_D12E7]
-		.BYTE	<[byte_D1330]
-		.BYTE	<[byte_D1385]
-		.BYTE	<[byte_D13EE]
-		.BYTE	<[byte_D1457]
-		.BYTE	<[byte_D14B0]
-		.BYTE	<[byte_D14F5]
-		.BYTE	<[byte_D153E]
-		.BYTE	<[byte_D1593]
-		.BYTE	<[byte_D15FC]
-		.BYTE	<[byte_D1669]
-		.BYTE	<[byte_D16D6]
-		.BYTE	<[byte_D1743]
-		.BYTE	<[byte_D17B8]
-		.BYTE	<[byte_D17E5]
-		.BYTE	<[byte_D1812]
-		.BYTE	<[byte_D1847]
-		.BYTE	<[byte_D187C]
-		.BYTE	<[byte_D18E9]
-		.BYTE	<[byte_D1946]
-		.BYTE	<[byte_D197B]
-		.BYTE	<[byte_D19B0]
-		.BYTE	<[byte_D19E1]
-		.BYTE	<[byte_D1A12]
-		.BYTE	<[byte_D1A43]
-		.BYTE	<[byte_D1A74]
-		.BYTE	<[byte_D1AA1]
-		.BYTE	<[byte_D1ACE]
-		.BYTE	<[byte_D1B1F]
-		.BYTE	<[byte_D1B64]
-		.BYTE	<[byte_D1BAD]
-		.BYTE	<[byte_D1C02]
-		.BYTE	<[byte_D1C02]
-		.BYTE	<[byte_D1C02]
-		.BYTE	<[byte_D1C53]
-		.BYTE	<[byte_D1C98]
-		.BYTE	<[byte_D1CE1]
-		.BYTE	<[byte_D1D36]
-		.BYTE	<[byte_D1D7B]
-		.BYTE	<[byte_D1DB8]
-		.BYTE	<[byte_D1DFD]
-		.BYTE	<[byte_D1E46]
-		.BYTE	<[byte_D1E8B]
-		.BYTE	<[byte_D1EC8]
-		.BYTE	<[byte_D1F0D]
-		.BYTE	0
-		.BYTE	0
+		.BYTE	<[_spr10]
+		.BYTE	<[_spr11]
+		.BYTE	<[_spr12]
+		.BYTE	<[_spr13]
+		.BYTE	<[_spr14]
+		.BYTE	<[_spr15]
+		.BYTE	<[_spr16]
+		.BYTE	<[_spr17]
+		.BYTE	<[_spr18]
+		.BYTE	<[_spr19]
+		.BYTE	<[_spr1A]
+		.BYTE	<[_spr1B]
+		.BYTE	<[_spr1C]
+		.BYTE	<[_spr1D]
+		.BYTE	<[_spr1E]
+		.BYTE	<[_spr1F]
+		.BYTE	<[_spr20]
+		.BYTE	<[_spr21]
+		.BYTE	<[_spr22]
+		.BYTE	<[_spr23]
+		.BYTE	<[_spr24]
+		.BYTE	<[_spr25]
+		.BYTE	<[_spr26]
+		.BYTE	<[_spr27]
+		.BYTE	<[_spr28]
+		.BYTE	<[_spr29]
+		.BYTE	<[_spr2A]
+		.BYTE	<[_spr2B]
+		.BYTE	<[_spr2C]
+		.BYTE	<[_spr2D]
+		.BYTE	<[_spr2E]
+		.BYTE	<[_spr2F]
+		.BYTE	<[_spr30]
+		.BYTE	<[_spr31]
+		.BYTE	<[_spr32]
+		.BYTE	<[_spr33]
+		.BYTE	<[_spr34]
+		.BYTE	<[_spr35]
+		.BYTE	<[_spr36]
+		.BYTE	<[_spr37]
+		.BYTE	<[_spr38]
+		.BYTE	<[_spr39]
+		.BYTE	<[_spr3A]
+		.BYTE	<[_spr3B]
+		.BYTE	<[_spr3C]
+		.BYTE	<[_spr3D]
+		.BYTE	<[_spr3E]
+		.BYTE	<[_spr3F]
+		.BYTE	<[_spr40]
+		.BYTE	<[_spr41]
+		.BYTE	<[_spr42]
+		.BYTE	<[_spr43]
+		.BYTE	<[_spr44]
+		.BYTE	<[_spr45]
+		.BYTE	<[_spr46]
+		.BYTE	<[_spr47]
+		.BYTE	<[_spr48]
+		.BYTE	<[_spr49]
+		.BYTE	<[_spr4A]
+		.BYTE	<[_spr4B]
+		.BYTE	<[_spr4C]
+		.BYTE	<[_spr4D]
+		.BYTE	<[_spr4E]
+		.BYTE	<[_spr4F]
+		.BYTE	<[_spr50]
+		.BYTE	<[_spr51]
+		.BYTE	<[_spr52]
+		.BYTE	<[_spr53]
+		.BYTE	<[_spr54]
+		.BYTE	<[_spr55]
+		.BYTE	<[_spr56]
+		.BYTE	<[_spr57]
+		.BYTE	<[_spr58]
+		.BYTE	<[_spr59]
+		.BYTE	<[_spr5A]
+		.BYTE	<[_spr5B]
+		.BYTE	<[_spr5C]
+		.BYTE	<[_spr5D]
+		.BYTE	<[_spr5E]
+		.BYTE	<[_spr5F]
+		.BYTE	<[_spr60]
+		.BYTE	<[_spr61]
+		.BYTE	<[_spr62]
+		.BYTE	<[_spr63]
+		.BYTE	<[_spr64]
+		.BYTE	<[_spr65]
+		.BYTE	<[_spr66]
+		.BYTE	<[_spr67]
+		.BYTE	<[_spr68]
+		.BYTE	<[_spr69]
+		.BYTE	<[_spr6A]
+		.BYTE	<[_spr6B]
+		.BYTE	<[_spr6C]
+		.BYTE	<[_spr6D]
+		.BYTE	<[_spr6E]
+		.BYTE	<[_spr6F]
+		.BYTE	<[_spr70]
+		.BYTE	<[_spr71]
+		.BYTE	<[_spr72]
+		.BYTE	<[_spr73]
+		.BYTE	<[_spr74]
+		.BYTE	<[_spr75]
+		.BYTE	<[_spr76]
+		.BYTE	<[_spr77]
+		.BYTE	<[_spr78]
+		.BYTE	<[_spr79]
+		.BYTE	<[_spr7A]
+		.BYTE	<[_spr7B]
+		.BYTE	<[_spr7B]
+		.BYTE	<[_spr7B]
+		.BYTE	<[_spr7E]
+		.BYTE	<[_spr7F]
+		.BYTE	<[_spr80]
+		.BYTE	<[_spr81]
+		.BYTE	<[_spr82]
+		.BYTE	<[_spr83]
+		.BYTE	<[_spr84]
+		.BYTE	<[_spr85]
+		.BYTE	<[_spr86]
+		.BYTE	<[_spr87]
+		.BYTE	<[_spr88]
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
-		.BYTE	<[byte_3FB61]
-		.BYTE	<[byte_3FB82]
-		.BYTE	<[byte_3FBA3]
-		.BYTE	<[byte_3FBC4]
-		.BYTE	<[byte_3FBE5]
-		.BYTE	<[byte_3FC06]
-		.BYTE	<[byte_3FC27]
-		.BYTE	<[byte_3FC48]
-		.BYTE	<[byte_3FC69]
-		.BYTE	<[byte_3FC8E]
-		.BYTE	<[byte_3FCB3]
-		.BYTE	<[byte_3FCC4]
-		.BYTE	<[byte_3FCD5]
-		.BYTE	<[byte_3FCE6]
-		.BYTE	<[byte_3FCEB]
-		.BYTE	<[byte_3FCFC]
-		.BYTE	<[byte_18BB6A]
-		.BYTE	<[byte_3FD0D]
-		.BYTE	<[byte_3FDA1]
-		.BYTE	<[byte_3FDC2]
-		.BYTE	<[byte_3FDC7]
-		.BYTE	<[byte_3FDD0]
-		.BYTE	<[byte_3FDD9]
-		.BYTE	<[byte_3FDE2]
-		.BYTE	<[byte_3FDE7]
+		.BYTE	0
+		.BYTE	0
+		.BYTE	<[_spr90]
+		.BYTE	<[_spr91]
+		.BYTE	<[_spr92]
+		.BYTE	<[_spr93]
+		.BYTE	<[_spr94]
+		.BYTE	<[_spr95]
+		.BYTE	<[_spr96]
+		.BYTE	<[_spr97]
+		.BYTE	<[_spr98]
+		.BYTE	<[_spr99]
+		.BYTE	<[_spr9A]
+		.BYTE	<[_spr9B]
+		.BYTE	<[_spr9C]
+		.BYTE	<[_spr9D]
+		.BYTE	<[_spr9E]
+		.BYTE	<[_spr9F]
+		.BYTE	<[_sprA0]
+		.BYTE	<[_sprA1]
+		.BYTE	<[_sprA2]
+		.BYTE	<[_sprA3]
+		.BYTE	<[_sprA4]
+		.BYTE	<[_sprA5]
+		.BYTE	<[_sprA6]
+		.BYTE	<[_sprA7]
+		.BYTE	<[_sprA8]
 _spr_lib_hi:
-		.BYTE	>[byte_18B019]
-		.BYTE	>[byte_18B02A]
-		.BYTE	>[byte_18B03B]
-		.BYTE	>[byte_18B04C]
-		.BYTE	>[byte_18B05D]
-		.BYTE	>[byte_18B06E]
-		.BYTE	>[byte_18B077]
-		.BYTE	>[byte_18B118]
-		.BYTE	>[byte_18B129]
-		.BYTE	>[byte_18B136]
-		.BYTE	>[byte_18B143]
-		.BYTE	>[byte_18B150]
-		.BYTE	>[byte_3FD1E]
-		.BYTE	>[byte_3FD3F]
-		.BYTE	>[byte_3FD60]
+		.BYTE	>[_spr00]
+		.BYTE	>[_spr01]
+		.BYTE	>[_spr02]
+		.BYTE	>[_spr03]
+		.BYTE	>[_spr04]
+		.BYTE	>[_spr05]
+		.BYTE	>[_spr06]
+		.BYTE	>[_spr07]
+		.BYTE	>[_spr08]
+		.BYTE	>[_spr09]
+		.BYTE	>[_spr0A]
+		.BYTE	>[_spr0B]
+		.BYTE	>[_spr0C]
+		.BYTE	>[_spr0D]
+		.BYTE	>[_spr0E]
 		.BYTE	0
-		.BYTE	>[byte_18B15D]
-		.BYTE	>[byte_18B1A2]
-		.BYTE	>[byte_18B1EB]
-		.BYTE	>[byte_18B258]
-		.BYTE	>[byte_18B2C5]
-		.BYTE	>[byte_18B332]
-		.BYTE	>[byte_18B3AF]
-		.BYTE	>[byte_18B41C]
-		.BYTE	>[byte_18B4A1]
-		.BYTE	>[byte_18B50E]
-		.BYTE	>[byte_18B57B]
-		.BYTE	>[byte_18B5E8]
-		.BYTE	>[byte_18B655]
-		.BYTE	>[byte_18B6C2]
-		.BYTE	>[byte_18B747]
-		.BYTE	>[byte_18B7B4]
-		.BYTE	>[byte_18B82D]
-		.BYTE	>[byte_18B8A6]
-		.BYTE	>[byte_18B913]
-		.BYTE	>[byte_18B96C]
-		.BYTE	>[byte_18B9F9]
-		.BYTE	>[byte_18BA52]
-		.BYTE	>[byte_18BA83]
-		.BYTE	>[byte_18BADC]
-		.BYTE	>[byte_18BB21]
-		.BYTE	>[byte_D0000]
-		.BYTE	>[byte_D0055]
-		.BYTE	>[byte_D00BE]
-		.BYTE	>[byte_D0143]
-		.BYTE	>[byte_D01B0]
-		.BYTE	>[byte_D021D]
-		.BYTE	>[byte_D0296]
-		.BYTE	>[byte_D031B]
-		.BYTE	>[byte_D03A8]
-		.BYTE	>[byte_D0415]
-		.BYTE	>[byte_D0472]
-		.BYTE	>[byte_D04DF]
-		.BYTE	>[byte_D054C]
-		.BYTE	>[byte_D05C5]
-		.BYTE	>[byte_D061E]
-		.BYTE	>[byte_D068B]
-		.BYTE	>[byte_D06BC]
-		.BYTE	>[byte_D06FD]
-		.BYTE	>[byte_D073E]
-		.BYTE	>[byte_D078F]
-		.BYTE	>[byte_D07FC]
-		.BYTE	>[byte_D0869]
-		.BYTE	>[byte_D08D2]
-		.BYTE	>[byte_D093B]
-		.BYTE	>[byte_D09B0]
-		.BYTE	>[byte_D0A19]
-		.BYTE	>[byte_D0A72]
-		.BYTE	>[byte_D0AB7]
-		.BYTE	>[byte_D0B00]
-		.BYTE	>[byte_D0B55]
-		.BYTE	>[byte_D0B8E]
-		.BYTE	>[byte_D0BC7]
-		.BYTE	>[byte_D0C20]
-		.BYTE	>[byte_D0C65]
-		.BYTE	>[byte_D0CAE]
-		.BYTE	>[byte_D0D03]
-		.BYTE	>[byte_D0D4C]
-		.BYTE	>[byte_D0D95]
-		.BYTE	>[byte_D0DFE]
-		.BYTE	>[byte_D0E6B]
-		.BYTE	>[byte_D0EE4]
-		.BYTE	>[byte_D0F61]
-		.BYTE	>[byte_D0F9A]
-		.BYTE	>[byte_D0FD7]
-		.BYTE	>[byte_D1054]
-		.BYTE	>[byte_D10BD]
-		.BYTE	>[byte_D1126]
-		.BYTE	>[byte_D1197]
-		.BYTE	>[byte_D11F0]
-		.BYTE	>[byte_D1249]
-		.BYTE	>[byte_D12A2]
-		.BYTE	>[byte_D12E7]
-		.BYTE	>[byte_D1330]
-		.BYTE	>[byte_D1385]
-		.BYTE	>[byte_D13EE]
-		.BYTE	>[byte_D1457]
-		.BYTE	>[byte_D14B0]
-		.BYTE	>[byte_D14F5]
-		.BYTE	>[byte_D153E]
-		.BYTE	>[byte_D1593]
-		.BYTE	>[byte_D15FC]
-		.BYTE	>[byte_D1669]
-		.BYTE	>[byte_D16D6]
-		.BYTE	>[byte_D1743]
-		.BYTE	>[byte_D17B8]
-		.BYTE	>[byte_D17E5]
-		.BYTE	>[byte_D1812]
-		.BYTE	>[byte_D1847]
-		.BYTE	>[byte_D187C]
-		.BYTE	>[byte_D18E9]
-		.BYTE	>[byte_D1946]
-		.BYTE	>[byte_D197B]
-		.BYTE	>[byte_D19B0]
-		.BYTE	>[byte_D19E1]
-		.BYTE	>[byte_D1A12]
-		.BYTE	>[byte_D1A43]
-		.BYTE	>[byte_D1A74]
-		.BYTE	>[byte_D1AA1]
-		.BYTE	>[byte_D1ACE]
-		.BYTE	>[byte_D1B1F]
-		.BYTE	>[byte_D1B64]
-		.BYTE	>[byte_D1BAD]
-		.BYTE	>[byte_D1C02]
-		.BYTE	>[byte_D1C02]
-		.BYTE	>[byte_D1C02]
-		.BYTE	>[byte_D1C53]
-		.BYTE	>[byte_D1C98]
-		.BYTE	>[byte_D1CE1]
-		.BYTE	>[byte_D1D36]
-		.BYTE	>[byte_D1D7B]
-		.BYTE	>[byte_D1DB8]
-		.BYTE	>[byte_D1DFD]
-		.BYTE	>[byte_D1E46]
-		.BYTE	>[byte_D1E8B]
-		.BYTE	>[byte_D1EC8]
-		.BYTE	>[byte_D1F0D]
-		.BYTE	0
-		.BYTE	0
+		.BYTE	>[_spr10]
+		.BYTE	>[_spr11]
+		.BYTE	>[_spr12]
+		.BYTE	>[_spr13]
+		.BYTE	>[_spr14]
+		.BYTE	>[_spr15]
+		.BYTE	>[_spr16]
+		.BYTE	>[_spr17]
+		.BYTE	>[_spr18]
+		.BYTE	>[_spr19]
+		.BYTE	>[_spr1A]
+		.BYTE	>[_spr1B]
+		.BYTE	>[_spr1C]
+		.BYTE	>[_spr1D]
+		.BYTE	>[_spr1E]
+		.BYTE	>[_spr1F]
+		.BYTE	>[_spr20]
+		.BYTE	>[_spr21]
+		.BYTE	>[_spr22]
+		.BYTE	>[_spr23]
+		.BYTE	>[_spr24]
+		.BYTE	>[_spr25]
+		.BYTE	>[_spr26]
+		.BYTE	>[_spr27]
+		.BYTE	>[_spr28]
+		.BYTE	>[_spr29]
+		.BYTE	>[_spr2A]
+		.BYTE	>[_spr2B]
+		.BYTE	>[_spr2C]
+		.BYTE	>[_spr2D]
+		.BYTE	>[_spr2E]
+		.BYTE	>[_spr2F]
+		.BYTE	>[_spr30]
+		.BYTE	>[_spr31]
+		.BYTE	>[_spr32]
+		.BYTE	>[_spr33]
+		.BYTE	>[_spr34]
+		.BYTE	>[_spr35]
+		.BYTE	>[_spr36]
+		.BYTE	>[_spr37]
+		.BYTE	>[_spr38]
+		.BYTE	>[_spr39]
+		.BYTE	>[_spr3A]
+		.BYTE	>[_spr3B]
+		.BYTE	>[_spr3C]
+		.BYTE	>[_spr3D]
+		.BYTE	>[_spr3E]
+		.BYTE	>[_spr3F]
+		.BYTE	>[_spr40]
+		.BYTE	>[_spr41]
+		.BYTE	>[_spr42]
+		.BYTE	>[_spr43]
+		.BYTE	>[_spr44]
+		.BYTE	>[_spr45]
+		.BYTE	>[_spr46]
+		.BYTE	>[_spr47]
+		.BYTE	>[_spr48]
+		.BYTE	>[_spr49]
+		.BYTE	>[_spr4A]
+		.BYTE	>[_spr4B]
+		.BYTE	>[_spr4C]
+		.BYTE	>[_spr4D]
+		.BYTE	>[_spr4E]
+		.BYTE	>[_spr4F]
+		.BYTE	>[_spr50]
+		.BYTE	>[_spr51]
+		.BYTE	>[_spr52]
+		.BYTE	>[_spr53]
+		.BYTE	>[_spr54]
+		.BYTE	>[_spr55]
+		.BYTE	>[_spr56]
+		.BYTE	>[_spr57]
+		.BYTE	>[_spr58]
+		.BYTE	>[_spr59]
+		.BYTE	>[_spr5A]
+		.BYTE	>[_spr5B]
+		.BYTE	>[_spr5C]
+		.BYTE	>[_spr5D]
+		.BYTE	>[_spr5E]
+		.BYTE	>[_spr5F]
+		.BYTE	>[_spr60]
+		.BYTE	>[_spr61]
+		.BYTE	>[_spr62]
+		.BYTE	>[_spr63]
+		.BYTE	>[_spr64]
+		.BYTE	>[_spr65]
+		.BYTE	>[_spr66]
+		.BYTE	>[_spr67]
+		.BYTE	>[_spr68]
+		.BYTE	>[_spr69]
+		.BYTE	>[_spr6A]
+		.BYTE	>[_spr6B]
+		.BYTE	>[_spr6C]
+		.BYTE	>[_spr6D]
+		.BYTE	>[_spr6E]
+		.BYTE	>[_spr6F]
+		.BYTE	>[_spr70]
+		.BYTE	>[_spr71]
+		.BYTE	>[_spr72]
+		.BYTE	>[_spr73]
+		.BYTE	>[_spr74]
+		.BYTE	>[_spr75]
+		.BYTE	>[_spr76]
+		.BYTE	>[_spr77]
+		.BYTE	>[_spr78]
+		.BYTE	>[_spr79]
+		.BYTE	>[_spr7A]
+		.BYTE	>[_spr7B]
+		.BYTE	>[_spr7B]
+		.BYTE	>[_spr7B]
+		.BYTE	>[_spr7E]
+		.BYTE	>[_spr7F]
+		.BYTE	>[_spr80]
+		.BYTE	>[_spr81]
+		.BYTE	>[_spr82]
+		.BYTE	>[_spr83]
+		.BYTE	>[_spr84]
+		.BYTE	>[_spr85]
+		.BYTE	>[_spr86]
+		.BYTE	>[_spr87]
+		.BYTE	>[_spr88]
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
-		.BYTE	>[byte_3FB61]
-		.BYTE	>[byte_3FB82]
-		.BYTE	>[byte_3FBA3]
-		.BYTE	>[byte_3FBC4]
-		.BYTE	>[byte_3FBE5]
-		.BYTE	>[byte_3FC06]
-		.BYTE	>[byte_3FC27]
-		.BYTE	>[byte_3FC48]
-		.BYTE	>[byte_3FC69]
-		.BYTE	>[byte_3FC8E]
-		.BYTE	>[byte_3FCB3]
-		.BYTE	>[byte_3FCC4]
-		.BYTE	>[byte_3FCD5]
-		.BYTE	>[byte_3FCE6]
-		.BYTE	>[byte_3FCEB]
-		.BYTE	>[byte_3FCFC]
-		.BYTE	>[byte_18BB6A]
-		.BYTE	>[byte_3FD0D]
-		.BYTE	>[byte_3FDA1]
-		.BYTE	>[byte_3FDC2]
-		.BYTE	>[byte_3FDC7]
-		.BYTE	>[byte_3FDD0]
-		.BYTE	>[byte_3FDD9]
-		.BYTE	>[byte_3FDE2]
-		.BYTE	>[byte_3FDE7]
-byte_18B019:
+		.BYTE	0
+		.BYTE	0
+		.BYTE	>[_spr90]
+		.BYTE	>[_spr91]
+		.BYTE	>[_spr92]
+		.BYTE	>[_spr93]
+		.BYTE	>[_spr94]
+		.BYTE	>[_spr95]
+		.BYTE	>[_spr96]
+		.BYTE	>[_spr97]
+		.BYTE	>[_spr98]
+		.BYTE	>[_spr99]
+		.BYTE	>[_spr9A]
+		.BYTE	>[_spr9B]
+		.BYTE	>[_spr9C]
+		.BYTE	>[_spr9D]
+		.BYTE	>[_spr9E]
+		.BYTE	>[_spr9F]
+		.BYTE	>[_sprA0]
+		.BYTE	>[_sprA1]
+		.BYTE	>[_sprA2]
+		.BYTE	>[_sprA3]
+		.BYTE	>[_sprA4]
+		.BYTE	>[_sprA5]
+		.BYTE	>[_sprA6]
+		.BYTE	>[_sprA7]
+		.BYTE	>[_sprA8]
+
+		SECTION_START 10F
+
+_spr00:
 		.BYTE	$00,$00,$01,$00
 		.BYTE	$00,$01,$01,$08
 		.BYTE	$08,$02,$01,$00
 		.BYTE	$08,$03,$01,$08
 		.BYTE	$80
-byte_18B02A:
+_spr01:
 		.BYTE	$FC,$04,$00,$FD
 		.BYTE	$FC,$05,$00,$04
 		.BYTE	$03,$06,$00,$FD
 		.BYTE	$03,$07,$00,$04
 		.BYTE	$80
-byte_18B03B:
+_spr02:
 		.BYTE	$FC,$04,$00,$FD
 		.BYTE	$FC,$05,$00,$0C
 		.BYTE	$0B,$06,$00,$FD
 		.BYTE	$0B,$07,$00,$0C
 		.BYTE	$80
-byte_18B04C:
+_spr03:
 		.BYTE	$FC,$04,$00,$FD
 		.BYTE	$FC,$05,$00,$14
 		.BYTE	$13,$06,$00,$FD
 		.BYTE	$13,$07,$00,$14
 		.BYTE	$80
-byte_18B05D:
+_spr04:
 		.BYTE	$FC,$04,$00,$FD
 		.BYTE	$FC,$05,$00,$1C
 		.BYTE	$1B,$06,$00,$FD
 		.BYTE	$1B,$07,$00,$1C
 		.BYTE	$80
-byte_18B06E:
+_spr05:
 		.BYTE	$00,$E5,$00,$00
 		.BYTE	$00,$E6,$00,$08
 		.BYTE	$80
-byte_18B077:
+_spr06:
 		.BYTE	$00,$90,$01,$08
 		.BYTE	$00,$91,$01,$10
 		.BYTE	$00,$92,$01,$18
@@ -2502,33 +2506,33 @@ byte_18B077:
 		.BYTE	$30,$A4,$01,$20
 		.BYTE	$30,$A7,$01,$28
 		.BYTE	$80
-byte_18B118:
+_spr07:
 		.BYTE	$FE,$9E,$01,$00
 		.BYTE	$FE,$9E,$41,$07
 		.BYTE	$06,$9E,$81,$00
 		.BYTE	$06,$9E,$C1,$07
 		.BYTE	$80
-byte_18B129:
+_spr08:
 		.BYTE	$00,$8B,$03,$00
 		.BYTE	$00,$8C,$03,$08
 		.BYTE	$08,$8D,$03,$04
 		.BYTE	$80
-byte_18B136:
+_spr09:
 		.BYTE	$00,$8D,$83,$04
 		.BYTE	$08,$8B,$83,$00
 		.BYTE	$08,$8C,$83,$08
 		.BYTE	$80
-byte_18B143:
+_spr0A:
 		.BYTE	$00,$8F,$43,$00
 		.BYTE	$08,$9F,$43,$00
 		.BYTE	$04,$8E,$43,$08
 		.BYTE	$80
-byte_18B150:
+_spr0B:
 		.BYTE	$04,$8E,$03,$00
 		.BYTE	$00,$8F,$03,$08
 		.BYTE	$08,$9F,$03,$08
 		.BYTE	$80
-byte_18B15D:
+_spr10:
 		.BYTE	$F8,$1B,$01,$08
 		.BYTE	$F8,$1A,$01,$00
 		.BYTE	$F8,$19,$01,$F8
@@ -2547,7 +2551,7 @@ byte_18B15D:
 		.BYTE	$18,$26,$02,$FE
 		.BYTE	$18,$25,$02,$F6
 		.BYTE	$80
-byte_18B1A2:
+_spr11:
 		.BYTE	$E8,$00,$01,$FE
 		.BYTE	$00,$0A,$01,$09
 		.BYTE	$00,$09,$01,$01
@@ -2567,7 +2571,7 @@ byte_18B1A2:
 		.BYTE	$18,$2C,$02,$F9
 		.BYTE	$18,$2B,$02,$F1
 		.BYTE	$80
-byte_18B1EB:
+_spr12:
 		.BYTE	$10,$96,$40,$08
 		.BYTE	$10,$96,$00,$F0
 		.BYTE	$08,$95,$40,$08
@@ -2596,7 +2600,7 @@ byte_18B1EB:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B258:
+_spr13:
 		.BYTE	$00,$6C,$00,$00
 		.BYTE	$00,$6B,$00,$F8
 		.BYTE	$10,$6F,$40,$08
@@ -2625,7 +2629,7 @@ byte_18B258:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B2C5:
+_spr14:
 		.BYTE	$00,$45,$01,$00
 		.BYTE	$00,$44,$01,$F8
 		.BYTE	$10,$6F,$40,$08
@@ -2654,7 +2658,7 @@ byte_18B2C5:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B332:
+_spr15:
 		.BYTE	$10,$4B,$42,$00
 		.BYTE	$10,$4B,$02,$F8
 		.BYTE	$08,$57,$40,$F0
@@ -2687,7 +2691,7 @@ byte_18B332:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B3AF:
+_spr16:
 		.BYTE	$F8,$68,$01,$00
 		.BYTE	$F8,$67,$01,$F8
 		.BYTE	$00,$45,$01,$00
@@ -2716,7 +2720,7 @@ byte_18B3AF:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B41C:
+_spr17:
 		.BYTE	$F8,$40,$01,$00
 		.BYTE	$F8,$3F,$01,$F8
 		.BYTE	$08,$48,$40,$00
@@ -2751,7 +2755,7 @@ byte_18B41C:
 		.BYTE	$10,$4B,$42,$00
 		.BYTE	$10,$4B,$02,$F8
 		.BYTE	$80
-byte_18B4A1:
+_spr18:
 		.BYTE	$10,$6F,$00,$F0
 		.BYTE	$08,$6D,$00,$F0
 		.BYTE	$10,$4A,$40,$08
@@ -2780,7 +2784,7 @@ byte_18B4A1:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B50E:
+_spr19:
 		.BYTE	$10,$4B,$42,$00
 		.BYTE	$F8,$BF,$01,$00
 		.BYTE	$F8,$3F,$01,$F8
@@ -2809,7 +2813,7 @@ byte_18B50E:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B57B:
+_spr1A:
 		.BYTE	$10,$6F,$00,$F0
 		.BYTE	$08,$6D,$00,$F0
 		.BYTE	$F8,$67,$01,$F8
@@ -2838,7 +2842,7 @@ byte_18B57B:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B5E8:
+_spr1B:
 		.BYTE	$10,$6F,$40,$08
 		.BYTE	$08,$6D,$40,$08
 		.BYTE	$10,$6F,$00,$F0
@@ -2867,7 +2871,7 @@ byte_18B5E8:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B655:
+_spr1C:
 		.BYTE	$00,$6C,$00,$00
 		.BYTE	$00,$6B,$00,$F8
 		.BYTE	$F8,$68,$01,$00
@@ -2896,7 +2900,7 @@ byte_18B655:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B6C2:
+_spr1D:
 		.BYTE	$F8,$40,$01,$00
 		.BYTE	$F8,$3F,$01,$F8
 		.BYTE	$00,$45,$01,$00
@@ -2931,7 +2935,7 @@ byte_18B6C2:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B747:
+_spr1E:
 		.BYTE	$F8,$40,$01,$00
 		.BYTE	$F8,$3F,$01,$F8
 		.BYTE	$00,$6C,$00,$00
@@ -2960,7 +2964,7 @@ byte_18B747:
 		.BYTE	$E8,$60,$01,$00
 		.BYTE	$E8,$5F,$01,$F8
 		.BYTE	$80
-byte_18B7B4:
+_spr1F:
 		.BYTE	$18,$4D,$02,$F8
 		.BYTE	$18,$4C,$02,$F0
 		.BYTE	$18,$5E,$02,$07
@@ -2992,7 +2996,7 @@ byte_18B7B4:
 		.BYTE	$E8,$39,$01,$FF
 		.BYTE	$E8,$38,$01,$F7
 		.BYTE	$80
-byte_18B82D:
+_spr20:
 		.BYTE	$00,$72,$00,$FF
 		.BYTE	$00,$71,$00,$F7
 		.BYTE	$18,$4D,$02,$F8
@@ -3024,7 +3028,7 @@ byte_18B82D:
 		.BYTE	$E8,$39,$01,$FF
 		.BYTE	$E8,$38,$01,$F7
 		.BYTE	$80
-byte_18B8A6:
+_spr21:
 		.BYTE	$08,$74,$00,$00
 		.BYTE	$08,$73,$00,$F8
 		.BYTE	$E8,$00,$01,$FD
@@ -3053,7 +3057,7 @@ byte_18B8A6:
 		.BYTE	$18,$4D,$02,$F8
 		.BYTE	$18,$4C,$02,$F0
 		.BYTE	$80
-byte_18B913:
+_spr22:
 		.BYTE	$18,$84,$42,$08
 		.BYTE	$18,$85,$42,$00
 		.BYTE	$18,$85,$02,$F8
@@ -3077,7 +3081,7 @@ byte_18B913:
 		.BYTE	$F0,$76,$01,$00
 		.BYTE	$F0,$75,$01,$F8
 		.BYTE	$80
-byte_18B96C:
+_spr23:
 		.BYTE	$F0,$87,$01,$00
 		.BYTE	$F0,$86,$01,$F8
 		.BYTE	$10,$94,$42,$00
@@ -3114,7 +3118,7 @@ byte_18B96C:
 		.BYTE	$E0,$60,$01,$00
 		.BYTE	$E0,$5F,$01,$F8
 		.BYTE	$80
-byte_18B9F9:
+_spr24:
 		.BYTE	$18,$84,$02,$F0
 		.BYTE	$18,$85,$02,$F8
 		.BYTE	$18,$85,$42,$00
@@ -3138,7 +3142,7 @@ byte_18B9F9:
 		.BYTE	$F0,$76,$41,$F8
 		.BYTE	$F0,$75,$41,$00
 		.BYTE	$80
-byte_18BA52:
+_spr25:
 		.BYTE	$10,$B9,$03,$18
 		.BYTE	$10,$B8,$03,$10
 		.BYTE	$08,$B7,$03,$18
@@ -3152,7 +3156,7 @@ byte_18BA52:
 		.BYTE	$08,$B7,$01,$E8
 		.BYTE	$08,$B6,$01,$E0
 		.BYTE	$80
-byte_18BA83:
+_spr26:
 		.BYTE	$E8,$00,$01,$FD
 		.BYTE	$10,$12,$02,$08
 		.BYTE	$10,$11,$00,$00
@@ -3176,7 +3180,7 @@ byte_18BA83:
 		.BYTE	$18,$14,$02,$FC
 		.BYTE	$18,$13,$02,$F4
 		.BYTE	$80
-byte_18BADC:
+_spr27:
 		.BYTE	$F8,$1B,$01,$08
 		.BYTE	$F8,$1A,$01,$00
 		.BYTE	$F8,$19,$01,$F8
@@ -3195,7 +3199,7 @@ byte_18BADC:
 		.BYTE	$18,$26,$02,$FE
 		.BYTE	$18,$25,$02,$F6
 		.BYTE	$80
-byte_18BB21:
+_spr28:
 		.BYTE	$E8,$00,$01,$FE
 		.BYTE	$00,$0A,$01,$09
 		.BYTE	$00,$09,$01,$01
@@ -3215,12 +3219,14 @@ byte_18BB21:
 		.BYTE	$18,$2C,$02,$F9
 		.BYTE	$18,$2B,$02,$F1
 		.BYTE	$80
-byte_18BB6A:
+_sprA0:
 		.BYTE	$F8,$DD,$00,$FF
 		.BYTE	$00,$DC,$00,$00
 		.BYTE	$00,$00,$00,$00
 		.BYTE	$00,$C0,$00,$FF
 		.BYTE	$80
+
+		SECTION_END	10F
 
 ; =============== S U B	R O U T	I N E =======================================
 _rand:

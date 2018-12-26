@@ -1067,7 +1067,7 @@ loc_1367C8:
 		LDA		byte_544
 		LDX		byte_545
 		STA		_ppu_queue_pos_head
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1186,7 +1186,7 @@ sub_1368BD:
 		STA		_tmp4
 		LDA		byte_7D
 		STA		_tmp5
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		byte_7E
 loc_1368DB:
 		PPUQMOVB	_tmp2,OP_NOP,0
@@ -1231,7 +1231,7 @@ loc_136920:
 		STA		_tmp3
 		BNE		loc_1368DB
 loc_136932:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1248,7 +1248,7 @@ sub_136935:
 		STA		_tmp4
 		LDA		byte_7D
 		STA		_tmp5
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		byte_7E
 loc_136956:
 		EXTQMOVB	_tmp2,OP_NOP,0
@@ -1293,7 +1293,7 @@ loc_13699B:
 		STA		_tmp3
 		BNE		loc_136956
 loc_1369AD:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1407,7 +1407,7 @@ loc_136A75:
 		STA		_ptr0
 		JMP		loc_136A2D
 loc_136A90:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1465,7 +1465,7 @@ loc_136AF2:
 		STA		_ptr0
 		JMP		loc_136AAA
 loc_136B0D:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1511,7 +1511,7 @@ loc_136B56:
 		LDA		byte_80
 		LDX		byte_81
 		STA		_ppu_queue_pos_head
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3271,7 +3271,7 @@ loc_1377F5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_nt_backup_queue0:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_wnd_cur_line_num
 		ASL
 		ASL
@@ -3307,12 +3307,12 @@ loc_13782A:
 		PPUQMOVB	_ptr0,OP_NOP,0
 		JMP		loc_13781D
 loc_137856:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_nt_backup_queue1:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_wnd_cur_line_num
 		ASL
 		ASL
@@ -3349,12 +3349,12 @@ loc_13788D:
 		PPUQMOVB	_ptr0,OP_ORA,#$80
 		JMP		loc_137880
 loc_1378B9:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_extnt_backup_queue0:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDA		_wnd_cur_line_num
 		ASL
 		ASL
@@ -3390,12 +3390,12 @@ loc_1378EE:
 		EXTQMOVB	_ptr0,OP_NOP,0
 		JMP		loc_1378E1
 loc_13791A:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_extnt_backup_queue1:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDA		_wnd_cur_line_num
 		ASL
 		ASL
@@ -3431,7 +3431,7 @@ loc_137951:
 		EXTQMOVB	_ptr0,OP_ORA,#$80
 		JMP		loc_137944
 loc_13797D:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3805,7 +3805,7 @@ sub_137C04:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_137C08:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	_tmp_extnt_dest_ofs,OP_NOP,0
 		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
 		LDA		byte_B6
@@ -3827,7 +3827,7 @@ loc_137C3E:
 loc_137C4C:
 		EXTQMOVB	#$02,OP_NOP,0
 		JSR		_ppu_extnt_word_queue
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 loc_137C58:
 		EXTQMOVB	#$01,OP_NOP,0
@@ -3862,7 +3862,7 @@ loc_137C96:
 		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
 		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

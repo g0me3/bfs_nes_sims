@@ -160,6 +160,7 @@ loc_240FD:
 ; used in this loop as max counts number, but also used inside draw
 ; routine as temporary var so erased inside it and loop will run for
 ; extra 250 cycles because of that.
+;
 ; FIX: it seems, they save wrong var before drawing routines: pushes
 ; _tmp2 instead of _tmp3 lol, fixed it
 ;
@@ -172,9 +173,9 @@ loc_240FF:
 		JSR		_scenario_closed_icon_draw		; draw
 loc_2410B:
 		JSR		_ppu_dequeue					; wait for buffers flush
-		JSR		_extnt_dequeue
-		JSR		_ppu_queue_empty_compare
-		BNE		loc_2410B
+		JSR		_extnt_dequeue					; TODO: there are a couple of
+		JSR		_ppu_queue_empty_compare		; 		similar routines copying around
+		BNE		loc_2410B						; 		they may be unified and merged
 		POPB	_tmp3							; restore cycle max count
 		PLA
 loc_2411A:
@@ -187,7 +188,7 @@ locret_2411B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_closed_icon_draw:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_scenario_closed_ppu_ofs_hi,Y
 		STA		_ptr0+1
 		LDA		_scenario_closed_ppu_ofs_lo,Y
@@ -207,9 +208,9 @@ loc_24144:
 		ADDW8	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24130
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		LDY		_tmp2
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDA		_scenario_closed_ppu_ofs_hi,Y
 		CLC
 		ADC		#$3C
@@ -231,7 +232,7 @@ loc_24188:
 		ADDW8	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24174
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 _scenario_closed_ppu_ofs_lo:
@@ -319,6 +320,7 @@ loc_24256:
 		INC		_game_setup_sub_idx
 locret_24273:
 		RTS
+
 byte_24274:
 		.BYTE	$4D,$8D,$CD
 byte_24277:
@@ -326,7 +328,8 @@ byte_24277:
 byte_2427B:
 		.BYTE	$5D,$A5
 byte_2427D:
-		.BYTE	$00,$01,$02,$06,$03,$04,$05,$07
+		.BYTE	$00,$01,$02,$06
+		.BYTE	$03,$04,$05,$07
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup07_scenario_intro_init:
@@ -422,7 +425,7 @@ loc_2433D:
 		RTS
 loc_24347:
 		PHA
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		_tmp6DA
 		LDA		_msg_print_out_ppu_pos_list_lo,Y
 		CLC
@@ -433,7 +436,7 @@ loc_24347:
 		PPUQMOVB	#$01,OP_NOP,0
 		PLA
 		PPUQMOVA
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		INC		_tmp6D9
 locret_2436F:
 		RTS
@@ -686,7 +689,7 @@ _game_setup01_name_input_init:
 		JSR		_name_input_char_nt_queue
 		JSR		_name_input_char_extnt_queue
 loc_24549:
-		JSR		_ppu_dequeue
+		JSR		_ppu_dequeue					; TODO: merge me
 		JSR		_extnt_dequeue
 		JSR		_ppu_queue_empty_compare
 		BNE		loc_24549
@@ -765,7 +768,7 @@ _name_input_clear_header_area:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_flush:
-		JSR		_wait_for_nmi
+		JSR		_wait_for_nmi					; TODO: merge me
 		JSR		_ppu_queue_empty_compare
 		BNE		_wait_for_flush
 locret_2460A:
@@ -1068,7 +1071,7 @@ _name_input_char_nt_queue:
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		byte_6DC+2
 		LDA		byte_248BF,Y
 		PPUQMOVA
@@ -1082,7 +1085,7 @@ loc_2486A:
 		INY
 		CPY		#$0B
 		BNE		loc_2486A
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1092,7 +1095,7 @@ _name_input_char_extnt_queue:
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		byte_6DC+2
 		LDA		byte_248BF,Y
 		EXTQMOVA
@@ -1116,7 +1119,7 @@ loc_248AE:
 		INY
 		CPY		#$0B
 		BNE		loc_248A2
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 off_248BD:
 		.BYTE	<[_city]
@@ -1221,7 +1224,7 @@ locret_2496C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _difficult_scr_cursor_draw:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		#$02
 loc_24971:
 		LDA		off_249B0,Y
@@ -1242,7 +1245,7 @@ loc_24991:
 		BNE		loc_24991
 		DEY
 		BPL		loc_24971
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		LDY		_city._difficult
 		LDA		byte_249B9,Y
 		STA		_tmp6CE
@@ -1300,7 +1303,7 @@ _rle_nt_res_queue:
 		STY		_ptr0+1
 		STX		_ptr0
 		LDY		#$00
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 loc_24A00:
 		LDA		(_ptr0),Y
 		BEQ		loc_24A28
@@ -1327,7 +1330,7 @@ loc_24A1D:
 		BNE		loc_24A00
 loc_24A28:
 		STA		_ppu_queue_buf,X
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1335,7 +1338,7 @@ _rle_extnt_res_queue:
 		STY		_ptr0+1
 		STX		_ptr0
 		LDY		#$00
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 loc_24A36:
 		LDA		(_ptr0),Y
 		BEQ		loc_24A5E
@@ -1362,11 +1365,10 @@ loc_24A53:
 		BNE		loc_24A36
 loc_24A5E:
 		STA		_extnt_queue_buf,X
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; WHAT?!
 _ppu_queue_empty_compare:
 		LDA		_ppu_queue_pos_tail
 		CMP		_ppu_queue_pos_head

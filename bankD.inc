@@ -146,7 +146,7 @@ loc_1500BA:
 		CLC
 		ADC		#$20
 		STA		_ptr0+1
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	_ptr0,OP_NOP,0
 		PPUQMOVB	_ptr0+1,OP_NOP,0
 		LDA		#$20
@@ -157,7 +157,7 @@ loc_1500E7:
 		PPUQMOVA
 		DEY
 		BNE		loc_1500E7
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -219,7 +219,7 @@ loc_15012B:
 		ADC		#$20
 		AND		#$1F
 		STA		byte_76
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	byte_77,OP_AND,#$E0
 		PPUQMOVB	byte_78,OP_NOP,0
 		PPUQMOVB	#$20,OP_NOP,0
@@ -238,7 +238,7 @@ loc_150178:
 loc_15018C:
 		TXA
 		PHA
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	byte_77,OP_AND,#$E0
 		EXTQMOVB	byte_78,OP_ADD,#$3C
 		EXTQMOVB	#$20,OP_NOP,0
@@ -256,7 +256,7 @@ loc_1501AB:
 		BEQ		loc_1501AB
 loc_1501BF:
 		POPB	_ppu_queue_pos_head
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 loc_1501C5:
 		LDA		_cur_map_wnd_pos._X
@@ -282,7 +282,7 @@ loc_1501C5:
 		ADC		#$1E
 loc_1501F9:
 		STA		byte_76
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	byte_77,OP_NOP,0
 		PPUQMOVB	byte_78,OP_NOP,0
 		LDA		#$1E
@@ -303,7 +303,7 @@ loc_150215:
 loc_150229:
 		TXA
 		PHA
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	byte_77,OP_NOP,0
 		EXTQMOVB	byte_78,OP_ADD,#$3C
 		LDA		#$1E
@@ -323,7 +323,7 @@ loc_150248:
 		BEQ		loc_150248
 loc_15025C:
 		POPB	_ppu_queue_pos_head
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2865,7 +2865,7 @@ loc_1513C9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _queue_wnd_header_extnt:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		_gui_ctrl_menu_press_idx
 loc_1513E8:
 		MOVW	_tmp6,_tmp2
@@ -2908,12 +2908,12 @@ loc_15142D:
 		STA		_tmp5
 		BEQ		loc_1513E8
 loc_151454:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _queue_wnd_header_nt:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		_gui_ctrl_menu_press_idx
 loc_15145B:
 		LDA		_tmp2
@@ -2959,7 +2959,7 @@ loc_1514A0:
 		STA		_tmp5
 		BEQ		loc_15145B
 loc_1514C7:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 byte_1514CA:
 		.BYTE	$82,$82,$82,$82,$82,$82
@@ -4081,7 +4081,7 @@ loc_151F6D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_flush_wait:
-		JSR		_ppu_dequeue
+		JSR		_ppu_dequeue					; TODO: merge me
 		JSR		_extnt_dequeue
 		JSR		_ppu_queue_empty_test_0
 		BCS		_ppu_flush_wait

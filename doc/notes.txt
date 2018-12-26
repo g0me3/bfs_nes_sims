@@ -1,6 +1,16 @@
 	NEW BUGS
 
-- Scenario closed icons are drawn incorrectly A FUCK!
+-
+
+	WHAT DONE
+
+- Removal of garbage data and commented all unreferenced data and code for further possible usage, if any.
+- Cleanup some portions of the code, minor optimizations on size logics.
+- Macrofication of the code for shorter and much easy readable listings.
+- Commented large portions of game logic and calcs.
+- Fixed extended scenario screen potentially crash, also fixed redundant cycles due to RAM address mistake there.
+- Fixed critical bug with ppu queue overflow in name entry screens.
+- Fixed attributes of the pressed buttons on the name entry screens (maybe they SHOULD be inverted upon press, but this looks odd actually. the only sign it may be done on purpose, no-sprite push button animations ("CL") uses attr switch as well as sprite animations).
 
 	CODES
 
@@ -99,9 +109,9 @@
 03	MORE ROADS REQUIRED							(R+C+I)>=10, (R+C+I)>ROADS	no			-
 04	INADEQUATE RAIL SYSTEM						(R+C+I)>=50, (R+C+I)>RAILS	no			-
 05	BUILD A POWER PLANT							(R+C+I)>10, POWER=0			no			*1 see BUGS sect.
-06	RESIDENTS DEMAND A STADIUM					RLEVEL>=500, STADIUM=0		yes			-
-07	INDUSTRY REQUIRES A SEA PORT				ILEVEL>=100, SEAPORT=0		yes			-
-08	COMMERCE REQUIRES AN AIRPORT				VLEVEL>=150, AIRPORT=0		yes			-
+06	RESIDENTS DEMAND A STADIUM					RLEVEL>=500fp, STADIUM=0	yes			-
+07	INDUSTRY REQUIRES A SEA PORT				ILEVEL>=100fp, SEAPORT=0	yes			-
+08	COMMERCE REQUIRES AN AIRPORT				VLEVEL>=150fp, AIRPORT=0	yes			-
 09	CITIZENS DEMAND A FIRE DEPARTMENT			W$672>=60, SPOLICE=0		no			-
 0A	CITIZENS DEMAND A POLICE DEPARTMENT			W$672>=60, SFIRE=0			no			-
 0B	BLACKOUTS REPORTED  CHECK POWER MAP			-unused-					-			-

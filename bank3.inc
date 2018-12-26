@@ -127,7 +127,7 @@ loc_580F2:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_str_queue:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_ptr0,OP_NOP,0
 		PPUQMOVB	_ptr0+1,OP_NOP,0
@@ -148,7 +148,7 @@ loc_58110:
 		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_58110
 loc_5813D:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -385,7 +385,7 @@ _game_msg_line_display:
 		POPB	_tmp6
 		PUSHB	_tmp4
 		PUSHB	_tmp5
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	_tmp2,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
@@ -403,10 +403,10 @@ loc_58371:
 		EXTQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_58371
 loc_5839E:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		POPB	_tmp5
 		POPB	_tmp4
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp2,OP_NOP,0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
@@ -434,7 +434,7 @@ loc_583CC:
 		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_583BE
 loc_583F7:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 loc_583FA:
 		LDA		(_tmp6),Y
@@ -554,7 +554,7 @@ loc_584C2:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_line_clear:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		#$0B
 		EXTQMOVB	_tmp2,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
@@ -579,8 +579,8 @@ loc_584FB:
 		EXTQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_584FB
 loc_58527:
-		STX		_extnt_queue_pos_head
-		LDX		_ppu_queue_pos_head
+		EXTQEND
+		PPUQSTART
 		LDY		#$20
 		PPUQMOVB	_tmp2,OP_NOP,0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
@@ -600,7 +600,7 @@ loc_58541:
 		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_58541
 loc_5856D:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1351,7 +1351,7 @@ _game_msg_wnd_line_draw:
 		LDX		_ptr0
 		LDY		byte_58BB7,X
 		STY		_tmp6+1
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_tmp3
 		STA		_tmp5
 		LDA		_tmp4
@@ -1377,7 +1377,7 @@ loc_58B38:
 loc_58B67:
 		LDY		_tmp6+1
 		STX		_tmp6+1
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	_ptr0+1,OP_NOP,0
 		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp3,OP_NOP,0
@@ -1399,7 +1399,7 @@ loc_58B81:
 loc_58BB0:
 		LDY		_tmp6+1
 		STY		_ppu_queue_pos_head
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 byte_58BB7:
 		.BYTE	$00,$19,$19,$32,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B
@@ -1426,7 +1426,7 @@ byte_58C49:
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_queue_empty_test:
-		LDA		_ppu_queue_pos_tail
+		LDA		_ppu_queue_pos_tail				; TODO: one more queue empty test lol
 		CMP		_ppu_queue_pos_head
 		BNE		loc_58CD4
 		LDA		_extnt_queue_pos_tail
@@ -1675,7 +1675,7 @@ loc_58EB5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_queue:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 		LDA		_tmp2
 		STA		_tmp4
@@ -1700,12 +1700,12 @@ loc_58EDA:
 		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_58EDA
 loc_58F09:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_unref_2:
-;		LDX		_extnt_queue_pos_head
+;		EXTQSTART
 ;		LDA		_ptr0
 ;		STA		_extnt_queue_buf,X
 ;		INX
@@ -1740,7 +1740,7 @@ loc_58F09:
 ;		INX
 ;		JMP		loc_58F22
 ;loc_58F4F:
-;		STX		_extnt_queue_pos_head
+;		EXTQEND
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3217,7 +3217,7 @@ loc_59B48:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_queue:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 		LDA		_ptr0
 
@@ -3242,7 +3242,7 @@ loc_59B66:
 		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_59B66
 loc_59B93:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

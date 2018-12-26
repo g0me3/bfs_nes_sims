@@ -1127,7 +1127,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		PUSHWI	$9001						; BUG! FIXME SWAP NIBBLES
+		PUSHWI	$9001						; BUG! SWAP NIBBLES
 		PUSHB	_R_hospitals_count
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1140,7 +1140,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		PUSHWI	$B80B						; BUG! FIXME SWAP NIBBLES
+		PUSHWI	$B80B						; BUG! SWAP NIBBLES
 		PUSHB	_stadiums_count
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1153,7 +1153,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		PUSHWI	$8813						; BUG! FIXME SWAP NIBBLES
+		PUSHWI	$8813						; BUG! SWAP NIBBLES
 		PUSHB	_sea_ports_count
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1166,7 +1166,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		PUSHWI	$1027						; BUG! FIXME SWAP NIBBLES
+		PUSHWI	$1027						; BUG! SWAP NIBBLES
 		PUSHB	_airports_count
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1179,7 +1179,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		PUSHWI	$B80B						; BUG! FIXME SWAP NIBBLES
+		PUSHWI	$B80B						; BUG! SWAP NIBBLES
 		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1192,7 +1192,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		PUSHWI	$7017						; BUG! FIXME SWAP NIBBLES
+		PUSHWI	$7017						; BUG! SWAP NIBBLES
 		PUSHB	_nuke_power_station_count
 		JSR		_mmc5_mul16to8
 		PLA
@@ -2340,7 +2340,7 @@ _scroll_msg05_test:
 		CMP		#$0A
 		BCC		nullsub_10
 loc_1052EA:
-		LDA		_tmp6CC						; FIXME! here is the total power stations value
+		LDA		_tmp6CC						; BUG! here is the total power stations value
 		BNE		nullsub_10					; may be wrong at some point of the game
 		JMP		_scroll_msg_start
 

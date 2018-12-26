@@ -55,7 +55,7 @@ loc_B8068:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_name_str_queue:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_ptr0,OP_NOP,0
 		PPUQMOVB	_ptr0+1,OP_NOP,0
@@ -83,7 +83,7 @@ loc_B8095:
 		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_B8086
 loc_B80BE:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1303,7 +1303,7 @@ loc_B8C1C:
 loc_B8C25:
 		STA		_ptr0
 		STX		_ptr0+1
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	#$F6,OP_NOP,0
 		PPUQMOVB	#$26,OP_NOP,0
 		PPUQMOVB	#$02,OP_NOP,0
@@ -1322,9 +1322,9 @@ loc_B8C25:
 		LDY		_ptr0
 		LDA		byte_B8CC3,Y
 		PPUQMOVA
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		INC		_tmp118+2
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		EXTQMOVB	#$F6,OP_NOP,0
 		EXTQMOVB	#$5E,OP_NOP,0
 		EXTQMOVB	#$02,OP_NOP,0
@@ -1335,7 +1335,7 @@ loc_B8C25:
 		EXTQMOVB	#$02,OP_NOP,0
 		EXTQMOVB	#$D8,OP_NOP,0
 		EXTQMOVA
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		JMP		_bank_scr_common_spr_draw_pos3F
 byte_B8CB7:
 		.BYTE	$CA,$CB,$CC,$CD,$CE,$CF,$EA,$EB,$EC,$ED,$EE,$EF
@@ -1362,7 +1362,7 @@ _bank_scr_return:
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_res_queue:
 		LDY		#$00
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 loc_B8CE4:
 		LDA		(_ptr0),Y
 		BNE		loc_B8CF0
@@ -1376,9 +1376,9 @@ loc_B8CF0:
 		INY
 		BNE		loc_B8CE4
 loc_B8CF7:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		LDY		#$00
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 loc_B8CFD:
 		LDA		(_tmp2),Y
 		BNE		loc_B8D09
@@ -1392,7 +1392,7 @@ loc_B8D09:
 		INY
 		BNE		loc_B8CFD
 loc_B8D10:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1709,7 +1709,7 @@ sub_B8F9E:
 		SBC		_ptr0
 		LSR
 		STA		_ptr0+1
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		byte_59B
 		CLC
 		ADC		#$08
@@ -1745,8 +1745,8 @@ loc_B8FE6:
 		DEY
 		BNE		loc_B8FE6
 loc_B8FED:
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		EXTQMOVB	_tmp4,OP_NOP,0
 		EXTQMOVB	#$5D,OP_NOP,0
 		EXTQMOVB	#$90,OP_NOP,0
@@ -1772,7 +1772,7 @@ loc_B901D:
 		DEY
 		BNE		loc_B901D
 loc_B9024:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		LDA		byte_598
 		CMP		#$04
 		BEQ		loc_B9034
@@ -1793,25 +1793,25 @@ loc_B9034:
 loc_B9046:
 		STY		_tmp3
 		STX		_tmp2
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	_tmp4,OP_NOP,0
 		PPUQMOVB	#$26,OP_NOP,0
 		PPUQMOVB	#$01,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		EXTQMOVB	_tmp4,OP_NOP,0
 		EXTQMOVB	#$5E,OP_NOP,0
 		EXTQMOVB	#$01,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_NOP,0
-		STX		_extnt_queue_pos_head
+		EXTQEND
 locret_B9082:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl1_A_graphs1:
 		JSR		_get_graphs_scr_period_range
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$02
 loc_B908A:
 		LDA		byte_B9117,Y
@@ -1847,8 +1847,8 @@ loc_B90C0:
 		DEC		_tmp4
 		BNE		loc_B90AD
 loc_B90D6:
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		LDY		#$02
 loc_B90DC:
 		LDA		byte_B9114,Y
@@ -1873,7 +1873,7 @@ loc_B9103:
 		DEC		_tmp4
 		BNE		loc_B90F5
 loc_B9111:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 byte_B9114:
 		.BYTE	$12,$5F,$2A
@@ -2430,7 +2430,7 @@ loc_B958B:
 		FJSRA	_txt_lib_printf,PRG7,PRG9
 		FJSRA	_history_year_printf,PRG7,PRG9
 		JSR		_buffers_force_flush
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		_tmp118+9
 		LDA		word_B95ED,Y
 		PPUQMOVA
@@ -2440,7 +2440,7 @@ loc_B958B:
 		INY
 		PPUQMOVB	#$01,OP_NOP,0
 		PPUQMOVB	#$3A,OP_NOP,0
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		STY		_tmp118+9
 		INC		_tmp118+7
 		INC		_tmp118+$A
@@ -2558,7 +2558,7 @@ byte_B96BB:
 _wnd_header_year_draw:
 		MOVW	_ptr0,_city._cur_year
 		JSR		_hex_to_dec9999999_0
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_scr_res_idx
 		AND		#$FE
 		CMP		#$04
@@ -2571,7 +2571,7 @@ _wnd_header_year_draw:
 		STA		_tmp4
 		LDA		#$87
 		JSR		sub_B9754
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		MOVWO	_tmp2,byte_B9774
 		JSR		_info_wnd_year_extnt_queue
 		RTS
@@ -2584,7 +2584,7 @@ loc_B96F9:
 		STA		_tmp4
 		LDA		#$86
 		JSR		_info_wnd_year_nt_queue
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		MOVWO	_tmp2,off_B9745
 		JSR		_info_wnd_year_extnt_queue
 		RTS
@@ -2636,7 +2636,7 @@ byte_B9774:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_wnd_year_extnt_queue:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		#$00
 loc_B9787:
 		LDA		(_tmp2),Y
@@ -2645,7 +2645,7 @@ loc_B9787:
 		INY
 		BNE		loc_B9787
 loc_B9792:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -984,7 +984,10 @@ _wnd_extnt0A:
 		.BYTE	$81,$0B,$0B,$41,$01,$01,$01,$01,$4A,$41,$81
 		.BYTE	$81,$0B,$0B,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
-byte_3FB61:
+
+		SECTION_START 102
+
+_spr90:
 		.BYTE	$F0,$C0,$03,$F0
 		.BYTE	$F0,$C1,$03,$F8
 		.BYTE	$F0,$C0,$43,$00
@@ -994,7 +997,7 @@ byte_3FB61:
 		.BYTE	$00,$C1,$83,$F8
 		.BYTE	$00,$C0,$C3,$00
 		.BYTE	$80
-byte_3FB82:
+_spr91:
 		.BYTE	$F0,$C3,$03,$F0
 		.BYTE	$F0,$C4,$03,$F8
 		.BYTE	$F0,$C3,$43,$00
@@ -1004,7 +1007,7 @@ byte_3FB82:
 		.BYTE	$00,$C4,$83,$F8
 		.BYTE	$00,$C3,$C3,$00
 		.BYTE	$80
-byte_3FBA3:
+_spr92:
 		.BYTE	$F0,$C6,$03,$F0
 		.BYTE	$F0,$C7,$03,$F8
 		.BYTE	$F0,$C6,$43,$00
@@ -1014,7 +1017,7 @@ byte_3FBA3:
 		.BYTE	$00,$C7,$83,$F8
 		.BYTE	$00,$C6,$C3,$00
 		.BYTE	$80
-byte_3FBC4:
+_spr93:
 		.BYTE	$F0,$C9,$03,$F0
 		.BYTE	$F0,$CA,$03,$F8
 		.BYTE	$F0,$C9,$43,$00
@@ -1024,7 +1027,7 @@ byte_3FBC4:
 		.BYTE	$00,$CA,$83,$F8
 		.BYTE	$00,$C9,$C3,$00
 		.BYTE	$80
-byte_3FBE5:
+_spr94:
 		.BYTE	$F0,$CC,$03,$F0
 		.BYTE	$F0,$CD,$03,$F8
 		.BYTE	$F0,$CC,$43,$00
@@ -1034,7 +1037,7 @@ byte_3FBE5:
 		.BYTE	$00,$CD,$83,$F8
 		.BYTE	$00,$CC,$C3,$00
 		.BYTE	$80
-byte_3FC06:
+_spr95:
 		.BYTE	$F0,$CF,$03,$F0
 		.BYTE	$F0,$D0,$03,$F8
 		.BYTE	$F0,$CF,$43,$00
@@ -1044,7 +1047,7 @@ byte_3FC06:
 		.BYTE	$00,$D0,$83,$F8
 		.BYTE	$00,$CF,$C3,$00
 		.BYTE	$80
-byte_3FC27:
+_spr96:
 		.BYTE	$F0,$D2,$03,$F0
 		.BYTE	$F0,$D3,$03,$F8
 		.BYTE	$F0,$D2,$43,$00
@@ -1054,7 +1057,7 @@ byte_3FC27:
 		.BYTE	$00,$D3,$83,$F8
 		.BYTE	$00,$D2,$C3,$00
 		.BYTE	$80
-byte_3FC48:
+_spr97:
 		.BYTE	$F0,$D5,$03,$F0
 		.BYTE	$F0,$D6,$03,$F8
 		.BYTE	$F0,$D5,$43,$00
@@ -1064,7 +1067,7 @@ byte_3FC48:
 		.BYTE	$00,$D6,$83,$F8
 		.BYTE	$00,$D5,$C3,$00
 		.BYTE	$80
-byte_3FC69:
+_spr98:
 		.BYTE	$F0,$DA,$03,$F0
 		.BYTE	$F0,$DA,$03,$F8
 		.BYTE	$F0,$DA,$43,$00
@@ -1075,7 +1078,7 @@ byte_3FC69:
 		.BYTE	$00,$DA,$83,$F8
 		.BYTE	$00,$DA,$C3,$00
 		.BYTE	$80
-byte_3FC8E:
+_spr99:
 		.BYTE	$F0,$DA,$03,$F0
 		.BYTE	$F0,$DA,$03,$F8
 		.BYTE	$F0,$DA,$43,$00
@@ -1086,46 +1089,46 @@ byte_3FC8E:
 		.BYTE	$00,$DA,$83,$F8
 		.BYTE	$00,$DA,$C3,$00
 		.BYTE	$80
-byte_3FCB3:
+_spr9A:
 		.BYTE	$F8,$E0,$03,$F8
 		.BYTE	$F8,$E1,$03,$00
 		.BYTE	$00,$F0,$03,$F8
 		.BYTE	$00,$F1,$03,$00
 		.BYTE	$80
-byte_3FCC4:
+_spr9B:
 		.BYTE	$F8,$E2,$03,$F8
 		.BYTE	$F8,$E3,$03,$00
 		.BYTE	$00,$F2,$03,$F8
 		.BYTE	$00,$F3,$03,$00
 		.BYTE	$80
-byte_3FCD5:
+_spr9C:
 		.BYTE	$F8,$E4,$03,$F8
 		.BYTE	$F8,$E5,$03,$00
 		.BYTE	$00,$F4,$03,$F8
 		.BYTE	$00,$F5,$03,$00
 		.BYTE	$80
-byte_3FCE6:
+_spr9D:
 		.BYTE	$F8,$D9,$03,$F8
 		.BYTE	$80
-byte_3FCEB:
+_spr9E:
 		.BYTE	$F8,$E6,$03,$F8
 		.BYTE	$F8,$E7,$03,$00
 		.BYTE	$00,$F6,$03,$F8
 		.BYTE	$00,$F7,$03,$00
 		.BYTE	$80
-byte_3FCFC:
+_spr9F:
 		.BYTE	$F8,$E8,$03,$F8
 		.BYTE	$F8,$E9,$03,$00
 		.BYTE	$00,$F8,$03,$F8
 		.BYTE	$00,$F9,$03,$00
 		.BYTE	$80
-byte_3FD0D:
+_sprA1:
 		.BYTE	$F8,$EA,$03,$F8
 		.BYTE	$F8,$EB,$03,$00
 		.BYTE	$00,$FA,$03,$F8
 		.BYTE	$00,$FB,$03,$00
 		.BYTE	$80
-byte_3FD1E:
+_spr0C:
 		.BYTE	$00,$D0,$00,$00
 		.BYTE	$00,$D1,$00,$08
 		.BYTE	$00,$D2,$00,$10
@@ -1135,7 +1138,7 @@ byte_3FD1E:
 		.BYTE	$08,$D6,$00,$10
 		.BYTE	$08,$D7,$00,$18
 		.BYTE	$80
-byte_3FD3F:
+_spr0D:
 		.BYTE	$00,$D8,$00,$00
 		.BYTE	$00,$D9,$00,$08
 		.BYTE	$00,$DA,$00,$10
@@ -1145,7 +1148,7 @@ byte_3FD3F:
 		.BYTE	$08,$DE,$00,$10
 		.BYTE	$08,$DF,$00,$18
 		.BYTE	$80
-byte_3FD60:
+_spr0E:
 		.BYTE	$00,$CA,$00,$00
 		.BYTE	$00,$CB,$00,$08
 		.BYTE	$00,$CB,$00,$10
@@ -1163,7 +1166,7 @@ byte_3FD60:
 		.BYTE	$16,$CB,$00,$20
 		.BYTE	$18,$CF,$00,$28
 		.BYTE	$80
-byte_3FDA1:
+_sprA2:
 		.BYTE	$00,$F0,$00,$08
 		.BYTE	$00,$F1,$00,$10
 		.BYTE	$08,$F2,$00,$08
@@ -1173,26 +1176,28 @@ byte_3FDA1:
 		.BYTE	$10,$F9,$00,$08
 		.BYTE	$18,$FE,$00,$10
 		.BYTE	$80
-byte_3FDC2:
+_sprA3:
 		.BYTE	$F3,$FD,$00,$F4
 		.BYTE	$80
-byte_3FDC7:
+_sprA4:
 		.BYTE	$F0,$FC,$00,$F0
 		.BYTE	$F2,$FD,$00,$F3
 		.BYTE	$80
-byte_3FDD0:
+_sprA5:
 		.BYTE	$EB,$FB,$00,$EB
 		.BYTE	$EF,$FC,$00,$EF
 		.BYTE	$80
-byte_3FDD9:
+_sprA6:
 		.BYTE	$E5,$FA,$00,$E8
 		.BYTE	$EB,$FB,$00,$EB
 		.BYTE	$80
-byte_3FDE2:
+_sprA7:
 		.BYTE	$E2,$FA,$00,$E6
 		.BYTE	$80
-byte_3FDE7:
+_sprA8:
 		.BYTE	$E4,$EF,$00,$E8
 		.BYTE	$80
+
+		SECTION_END 102
 
 		BANK_END F2,$C000

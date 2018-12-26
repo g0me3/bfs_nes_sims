@@ -206,7 +206,7 @@ loc_A017A:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_A0183:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDY		_maps_info_mode_idx
 		LDA		byte_A0435,Y
 		TAY
@@ -241,12 +241,12 @@ sub_A01A3:
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 sub_A01BC:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_A01BF:
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		CPY		#$FF
 		BEQ		loc_A01CC
 		TYA
@@ -256,7 +256,7 @@ sub_A01BF:
 loc_A01CC:
 		LDY		byte_598
 		BPL		loc_A01D4
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 loc_A01D4:
 		TYA
@@ -326,7 +326,7 @@ sub_A021E:
 ; !FALLTHROUGH!
 sub_A0234:
 		STA		_tmp2
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 loc_A0238:
 		LDA		byte_A0467,Y
 		BNE		loc_A0245
@@ -337,7 +337,7 @@ loc_A0245:
 		INY
 		CPY		#$FF
 		BNE		loc_A0238
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -366,7 +366,7 @@ loc_A0266:
 		LDA		_ppu_queue_pos_head
 		STA		_tmp4
 		JSR		_strcpy_ex
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		PLA
 		TAX
 		LDA		_info_screen_header_extnt_lib,X
@@ -377,18 +377,18 @@ loc_A0266:
 		LDA		_extnt_queue_pos_head
 		STA		_tmp4
 		JSR		_strcpy_ex
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		JSR		_flush_wait_0
 		MOVWO	_ptr0,off_A046F
 		MOVWO	_tmp2,_ppu_queue_buf
 		LDA		_ppu_queue_pos_head
 		JSR		_strcpy_lib_ex
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		MOVWO	_ptr0,off_A0479
 		MOVWO	_tmp2,_extnt_queue_buf
 		LDA		_extnt_queue_pos_head
 		JSR		_strcpy_lib_ex
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		JSR		_flush_wait_0
 		RTS
 
@@ -494,6 +494,7 @@ _scr_res_cursor_spr_insert_ex:
 		LDA		_cur_game_cursor_scr_pos._Y
 		STA		_spr_insert_args._pos._Y
 		JMP		_spr_lib_prg2_insert
+
 byte_A0374:
 		.BYTE	$FE,$02,$FE,$02
 byte_A0378:

@@ -416,7 +416,7 @@ loc_EA363:
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA366:
 		STA		_stack_upper
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		#$00
 loc_EA36D:
 		LDA		(_ptr0),Y
@@ -426,8 +426,8 @@ loc_EA36D:
 		INY
 		BNE		loc_EA36D
 loc_EA37B:
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		LDY		#$00
 loc_EA381:
 		LDA		(_tmp2),Y
@@ -437,7 +437,7 @@ loc_EA381:
 		INY
 		BNE		loc_EA381
 loc_EA38F:
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		RTS
 byte_EA392:
 		.BYTE	$F9,$24,$04,$AF,$AF,$AF,$AF,$19,$25,$04,$ED,$DE,$EE,$FD,$39,$25
@@ -866,7 +866,7 @@ loc_EA702:
 		STA		_tmp2
 		LDA		_info_maps_ppu_col_ofs_list+1,Y
 		STA		_tmp3
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDY		_extnt_queue_pos_head
 		LDA		_tmp2
 		STA		_ppu_queue_buf,X
@@ -1542,9 +1542,9 @@ loc_EAB8B:
 		JSR		sub_EA6A4
 loc_EABB8:
 		LDX		_tmp2
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		LDX		_tmp3
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		INC		_mmc5_operation_in_progress_flag
 		RTS
 
@@ -1670,7 +1670,7 @@ sub_EACE4:
 		LDA		#$00
 		STA		_info_maps_cur_row
 loc_EACE9:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_info_maps_cur_row
 		ASL
 		PHA
@@ -1697,8 +1697,8 @@ loc_EAD17:
 		PPUQMOVA
 		DEY
 		BNE		loc_EAD17
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		EXTQMOVB	_ptr0,OP_NOP,0
 		EXTQMOVB	_ptr0+1,OP_ADD,#$38
 		EXTQMOVB	#$13,OP_NOP,0
@@ -1708,7 +1708,7 @@ loc_EAD3A:
 		EXTQMOVA
 		DEY
 		BNE		loc_EAD3A
-		STX		_extnt_queue_pos_head
+		EXTQEND
 		LDA		_scr_res_idx
 		CMP		#$0D
 		BCC		loc_EAD58
@@ -1740,7 +1740,7 @@ _info_maps_date_draw_ex:
 		JSR		_hex_to_dec9999
 		LDA		#$15
 		JSR		_printf
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	#$7B,OP_NOP,0
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	#$03,OP_NOP,0
@@ -1756,7 +1756,7 @@ loc_EADA1:
 		INY
 		BNE		loc_EADA1
 loc_EADAF:
-		STX		_ppu_queue_pos_head
+		PPUQEND
 locret_EADB1:
 		RTS
 
@@ -1847,7 +1847,7 @@ sub_EAE37:
 		STY		_ptr0
 		STY		_ptr0+1
 		LDY		#$01
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	#$62,OP_NOP,0
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	_ptr0,OP_NOP,0
@@ -1857,8 +1857,8 @@ loc_EAE57:
 		INY
 		DEC		_ptr0
 		BNE		loc_EAE57
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		EXTQMOVB	#$62,OP_NOP,0
 		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
 		EXTQMOVB	_ptr0+1,OP_NOP,0
@@ -1867,7 +1867,7 @@ loc_EAE7B:
 		EXTQMOVA
 		DEC		_ptr0+1
 		BNE		loc_EAE7B
-		STX		_extnt_queue_pos_head
+		EXTQEND
 locret_EAE85:
 		RTS
 byte_EAE86:
@@ -2017,10 +2017,10 @@ _far_scr_res_hndl2_B_budget_input:
 
 ; =============== S U B	R O U T	I N E =======================================
 _buffers_force_flush:
-		JSR		_ppu_dequeue
-loc_EB043:
-		JSR		_extnt_dequeue
-		LDA		_ppu_queue_pos_tail
+		JSR		_ppu_dequeue					; TODO: not only duplicated code
+loc_EB043:										; 		but seems has a wrong branch
+		JSR		_extnt_dequeue					;		why else they check both queues,
+		LDA		_ppu_queue_pos_tail				;		but dequeues only extnt in loop?
 		CMP		_ppu_queue_pos_head
 		BNE		_buffers_force_flush
 		LDA		_extnt_queue_pos_tail
@@ -2926,7 +2926,7 @@ word_EB84A:
 _txt_lib_printf:
 		STA		_tmp6+1
 		STX		_tmp6
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		ASL
 		TAY
 		LDA		_txt_ppu_ofs_lib,Y
@@ -2963,8 +2963,8 @@ loc_EB897:
 		INY
 		DEC		_tmp5
 		BNE		loc_EB897
-		STX		_ppu_queue_pos_head
-		LDX		_extnt_queue_pos_head
+		PPUQEND
+		EXTQSTART
 		LDA		_tmp6+1
 		CMP		#$06
 		BCS		locret_EB8F3
@@ -3001,7 +3001,7 @@ loc_EB8E9:
 		EXTQMOVA
 		DEC		_tmp5
 		BNE		loc_EB8E9
-		STX		_extnt_queue_pos_head
+		EXTQEND
 locret_EB8F3:
 		RTS
 
@@ -3028,7 +3028,7 @@ loc_EB90E:
 		STA		_ptr0,Y
 		DEY
 		BPL		loc_EB90E
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		LDA		_tmp118
 		ASL
 		TAY
@@ -3046,9 +3046,9 @@ loc_EB93C:
 		PPUQMOVA
 		DEY
 		BPL		loc_EB93C
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		JSR		sub_EB980
-		LDX		_extnt_queue_pos_head
+		EXTQSTART
 		LDA		_tmp118
 		CMP		#$22
 		BCS		locret_EB97F
@@ -3070,7 +3070,7 @@ loc_EB973:
 		EXTQMOVA
 		DEY
 		BPL		loc_EB973
-		STX		_extnt_queue_pos_head
+		EXTQEND
 locret_EB97F:
 		RTS
 
@@ -3281,12 +3281,12 @@ loc_EBACC:
 		DEX
 		BNE		loc_EBACC
 loc_EBAD9:
-		LDX		_ppu_queue_pos_head
+		PPUQSTART
 		PPUQMOVB	#$AF,OP_NOP,0
 		PPUQMOVB	#$26,OP_NOP,0
 		PPUQMOVB	#$01,OP_NOP,0
 		PPUQMOVB	_tmp6,OP_NOP,0
-		STX		_ppu_queue_pos_head
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
