@@ -162,11 +162,6 @@ loc_88138:
 		LDY		_cur_obj_pos._Y
 		JMP		_far_fire_or_destroy_map_tile_ex
 loc_88149:
-;		LDA		_city._cur_year
-;		SEC
-;		SBC		#$9E
-;		LDA		_city._cur_year+1
-;		SBC		#$07
 		CMPWI	_city._cur_year,1950
 		BCS		loc_88121
 		LDA		_obj_spr_idx,Y
@@ -310,15 +305,18 @@ _obj_hndl04_ship_unused:
 		BEQ		loc_88260
 		JMP		_obj_animate
 loc_88260:
-		JSR		_obj_hndl04_ship_animate
+		JSR		_obj_hndl04_shipA
 		CMP		#$FF
-		BNE		loc_88260
-		JSR		_obj_hndl04_ship_subA
+		BNE		loc_88261							; FIX: let's copy train code
+		JSR		_obj_hndl04_shipB					; it seems here we have wrong one
+		JMP		_obj_draw							; -
+loc_88261:											; -
+		JSR		_cur_obj_move						; -
 loc_8826A:
 		JMP		_obj_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_animate:
+_obj_hndl04_shipA:
 		LDA		_obj_timer._ship._X
 		CMP		#$04
 		BNE		loc_8828E
@@ -338,7 +336,7 @@ loc_8828E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_subA:
+_obj_hndl04_shipB:
 		JSR		_get_cur_obj_map_ptr
 		LDA		#$00
 		STA		_tmp17
@@ -348,7 +346,7 @@ _obj_hndl04_ship_subA:
 		ADC		#$04
 		AND		#$07
 		STA		_tmp18
-		JSR		_obj_hndl04_ship_subA0
+		JSR		_obj_hndl04_shipB0
 		TXA
 		CMP		_obj_spr_idx._ship
 		BEQ		loc_882D1
@@ -387,7 +385,7 @@ loc_882D1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_subA0:
+_obj_hndl04_shipB0:
 		LDA		byte_88318,X
 		TAY
 		BPL		loc_882FB
@@ -400,7 +398,7 @@ loc_882FB:
 loc_882FD:
 		CMP		#$FE
 		BNE		loc_8830B
-		JSR		_obj_hndl04_ship_subA0_0
+		JSR		_obj_hndl04_shipB0_0
 		BCC		loc_8830B
 		CPX		_tmp18
 		BEQ		loc_8830B
@@ -411,7 +409,7 @@ loc_8830B:
 		AND		#$07
 		TAX
 		CMP		_obj_spr_idx._ship
-		BNE		_obj_hndl04_ship_subA0
+		BNE		_obj_hndl04_shipB0
 		LDX		_tmp18
 		RTS
 byte_88318:
@@ -742,12 +740,12 @@ byte_8858C:
 		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02
 
 ; =============== S U B	R O U T	I N E =======================================
-; DUMB DELAY HERE!
+; WARNING: DUMB DELAY HERE!
 ;
 ; also
 ;
-; should"ve change var0 at some timer point, but cmp test performed
-; aganst cur_obj_idx, not monster_var0,  shich seems should instead
+; should've change var0 at some timer basis, but cmp test performed
+; aganst cur_obj_idx, not monster_var0, which seems should instead
 ; probably makes difference on monster anim
 ;
 _obj_hndl10_monster:
@@ -1180,8 +1178,9 @@ loc_88891:
 		STA		_cur_obj_pos,Y
 locret_888A9:
 		RTS
-_unused_1:
-		.BYTE	$FF,$FD,$FB,$F7,$EF,$DF,$BF,$7F
+
+;_unused_1:
+;		.BYTE	$FF,$FD,$FB,$F7,$EF,$DF,$BF,$7F
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_create:
@@ -1209,172 +1208,178 @@ _obj_create:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_obj_map_ptr:
-		LDY		_cur_obj_pos._Y
-		LDA		off_888F5,Y
-		CLC
-		ADC		_cur_obj_pos._X
-		STA		_tmp15
-		LDA		off_88941,Y
-		ADC		#$00
-		STA		_tmp15+1
+;		LDY		_cur_obj_pos._Y
+;		LDA		off_888F5,Y
+;		CLC
+;		ADC		_cur_obj_pos._X
+;		STA		_tmp15
+;		LDA		off_88941,Y
+;		ADC		#$00
+;		STA		_tmp15+1
+; FIX: WRANING, make sure wram_map_buf is at the beginning of the page, instead
+; use full 16-bit addition
+;
+		BUFPOS	_tmp15,_cur_obj_pos._X,_cur_obj_pos._Y,#$4C,#>[_wram_map_buf]
 		RTS
-off_888F5:
-		.BYTE	<[_wram_map_buf]
-		.BYTE	<[_wram_map_buf+$4C]
-		.BYTE	<[_wram_map_buf+$98]
-		.BYTE	<[_wram_map_buf+$E4]
-		.BYTE	<[_wram_map_buf+$130]
-		.BYTE	<[_wram_map_buf+$17C]
-		.BYTE	<[_wram_map_buf+$1C8]
-		.BYTE	<[_wram_map_buf+$214]
-		.BYTE	<[_wram_map_buf+$260]
-		.BYTE	<[_wram_map_buf+$2AC]
-		.BYTE	<[_wram_map_buf+$2F8]
-		.BYTE	<[_wram_map_buf+$344]
-		.BYTE	<[_wram_map_buf+$390]
-		.BYTE	<[_wram_map_buf+$3DC]
-		.BYTE	<[_wram_map_buf+$428]
-		.BYTE	<[_wram_map_buf+$474]
-		.BYTE	<[_wram_map_buf+$4C0]
-		.BYTE	<[_wram_map_buf+$50C]
-		.BYTE	<[_wram_map_buf+$558]
-		.BYTE	<[_wram_map_buf+$5A4]
-		.BYTE	<[_wram_map_buf+$5F0]
-		.BYTE	<[_wram_map_buf+$63C]
-		.BYTE	<[_wram_map_buf+$688]
-		.BYTE	<[_wram_map_buf+$6D4]
-		.BYTE	<[_wram_map_buf+$720]
-		.BYTE	<[_wram_map_buf+$76C]
-		.BYTE	<[_wram_map_buf+$7B8]
-		.BYTE	<[_wram_map_buf+$804]
-		.BYTE	<[_wram_map_buf+$850]
-		.BYTE	<[_wram_map_buf+$89C]
-		.BYTE	<[_wram_map_buf+$8E8]
-		.BYTE	<[_wram_map_buf+$934]
-		.BYTE	<[_wram_map_buf+$980]
-		.BYTE	<[_wram_map_buf+$9CC]
-		.BYTE	<[_wram_map_buf+$A18]
-		.BYTE	<[_wram_map_buf+$A64]
-		.BYTE	<[_wram_map_buf+$AB0]
-		.BYTE	<[_wram_map_buf+$AFC]
-		.BYTE	<[_wram_map_buf+$B48]
-		.BYTE	<[_wram_map_buf+$B94]
-		.BYTE	<[_wram_map_buf+$BE0]
-		.BYTE	<[_wram_map_buf+$C2C]
-		.BYTE	<[_wram_map_buf+$C78]
-		.BYTE	<[_wram_map_buf+$CC4]
-		.BYTE	<[_wram_map_buf+$D10]
-		.BYTE	<[_wram_map_buf+$D5C]
-		.BYTE	<[_wram_map_buf+$DA8]
-		.BYTE	<[_wram_map_buf+$DF4]
-		.BYTE	<[_wram_map_buf+$E40]
-		.BYTE	<[_wram_map_buf+$E8C]
-		.BYTE	<[_wram_map_buf+$ED8]
-		.BYTE	<[_wram_map_buf+$F24]
-		.BYTE	<[_wram_map_buf+$F70]
-		.BYTE	<[_wram_map_buf+$FBC]
-		.BYTE	<[_wram_map_buf+$1008]
-		.BYTE	<[_wram_map_buf+$1054]
-		.BYTE	<[_wram_map_buf+$10A0]
-		.BYTE	<[_wram_map_buf+$10EC]
-		.BYTE	<[_wram_map_buf+$1138]
-		.BYTE	<[_wram_map_buf+$1184]
-		.BYTE	<[_wram_map_buf+$11D0]
-		.BYTE	<[_wram_map_buf+$121C]
-		.BYTE	<[_wram_map_buf+$1268]
-		.BYTE	<[_wram_map_buf+$12B4]
-		.BYTE	<[_wram_map_buf+$1300]
-		.BYTE	<[_wram_map_buf+$134C]
-		.BYTE	<[_wram_map_buf+$1398]
-		.BYTE	<[_wram_map_buf+$13E4]
-		.BYTE	<[_wram_map_buf+$1430]
-		.BYTE	<[_wram_map_buf+$147C]
-		.BYTE	<[_wram_map_buf+$14C8]
-		.BYTE	<[_wram_map_buf+$1514]
-		.BYTE	<[_wram_map_buf+$1560]
-		.BYTE	<[_wram_map_buf+$15AC]
-		.BYTE	<[_wram_map_buf+$15F8]
-		.BYTE	<[_wram_map_buf+$1644]
-off_88941:
-		.BYTE	>[_wram_map_buf]
-		.BYTE	>[_wram_map_buf+$4C]
-		.BYTE	>[_wram_map_buf+$98]
-		.BYTE	>[_wram_map_buf+$E4]
-		.BYTE	>[_wram_map_buf+$130]
-		.BYTE	>[_wram_map_buf+$17C]
-		.BYTE	>[_wram_map_buf+$1C8]
-		.BYTE	>[_wram_map_buf+$214]
-		.BYTE	>[_wram_map_buf+$260]
-		.BYTE	>[_wram_map_buf+$2AC]
-		.BYTE	>[_wram_map_buf+$2F8]
-		.BYTE	>[_wram_map_buf+$344]
-		.BYTE	>[_wram_map_buf+$390]
-		.BYTE	>[_wram_map_buf+$3DC]
-		.BYTE	>[_wram_map_buf+$428]
-		.BYTE	>[_wram_map_buf+$474]
-		.BYTE	>[_wram_map_buf+$4C0]
-		.BYTE	>[_wram_map_buf+$50C]
-		.BYTE	>[_wram_map_buf+$558]
-		.BYTE	>[_wram_map_buf+$5A4]
-		.BYTE	>[_wram_map_buf+$5F0]
-		.BYTE	>[_wram_map_buf+$63C]
-		.BYTE	>[_wram_map_buf+$688]
-		.BYTE	>[_wram_map_buf+$6D4]
-		.BYTE	>[_wram_map_buf+$720]
-		.BYTE	>[_wram_map_buf+$76C]
-		.BYTE	>[_wram_map_buf+$7B8]
-		.BYTE	>[_wram_map_buf+$804]
-		.BYTE	>[_wram_map_buf+$850]
-		.BYTE	>[_wram_map_buf+$89C]
-		.BYTE	>[_wram_map_buf+$8E8]
-		.BYTE	>[_wram_map_buf+$934]
-		.BYTE	>[_wram_map_buf+$980]
-		.BYTE	>[_wram_map_buf+$9CC]
-		.BYTE	>[_wram_map_buf+$A18]
-		.BYTE	>[_wram_map_buf+$A64]
-		.BYTE	>[_wram_map_buf+$AB0]
-		.BYTE	>[_wram_map_buf+$AFC]
-		.BYTE	>[_wram_map_buf+$B48]
-		.BYTE	>[_wram_map_buf+$B94]
-		.BYTE	>[_wram_map_buf+$BE0]
-		.BYTE	>[_wram_map_buf+$C2C]
-		.BYTE	>[_wram_map_buf+$C78]
-		.BYTE	>[_wram_map_buf+$CC4]
-		.BYTE	>[_wram_map_buf+$D10]
-		.BYTE	>[_wram_map_buf+$D5C]
-		.BYTE	>[_wram_map_buf+$DA8]
-		.BYTE	>[_wram_map_buf+$DF4]
-		.BYTE	>[_wram_map_buf+$E40]
-		.BYTE	>[_wram_map_buf+$E8C]
-		.BYTE	>[_wram_map_buf+$ED8]
-		.BYTE	>[_wram_map_buf+$F24]
-		.BYTE	>[_wram_map_buf+$F70]
-		.BYTE	>[_wram_map_buf+$FBC]
-		.BYTE	>[_wram_map_buf+$1008]
-		.BYTE	>[_wram_map_buf+$1054]
-		.BYTE	>[_wram_map_buf+$10A0]
-		.BYTE	>[_wram_map_buf+$10EC]
-		.BYTE	>[_wram_map_buf+$1138]
-		.BYTE	>[_wram_map_buf+$1184]
-		.BYTE	>[_wram_map_buf+$11D0]
-		.BYTE	>[_wram_map_buf+$121C]
-		.BYTE	>[_wram_map_buf+$1268]
-		.BYTE	>[_wram_map_buf+$12B4]
-		.BYTE	>[_wram_map_buf+$1300]
-		.BYTE	>[_wram_map_buf+$134C]
-		.BYTE	>[_wram_map_buf+$1398]
-		.BYTE	>[_wram_map_buf+$13E4]
-		.BYTE	>[_wram_map_buf+$1430]
-		.BYTE	>[_wram_map_buf+$147C]
-		.BYTE	>[_wram_map_buf+$14C8]
-		.BYTE	>[_wram_map_buf+$1514]
-		.BYTE	>[_wram_map_buf+$1560]
-		.BYTE	>[_wram_map_buf+$15AC]
-		.BYTE	>[_wram_map_buf+$15F8]
-		.BYTE	>[_wram_map_buf+$1644]
+
+; REDUNDANT: calcs used
+;off_888F5:
+;		.BYTE	<[_wram_map_buf]
+;		.BYTE	<[_wram_map_buf+$4C]
+;		.BYTE	<[_wram_map_buf+$98]
+;		.BYTE	<[_wram_map_buf+$E4]
+;		.BYTE	<[_wram_map_buf+$130]
+;		.BYTE	<[_wram_map_buf+$17C]
+;		.BYTE	<[_wram_map_buf+$1C8]
+;		.BYTE	<[_wram_map_buf+$214]
+;		.BYTE	<[_wram_map_buf+$260]
+;		.BYTE	<[_wram_map_buf+$2AC]
+;		.BYTE	<[_wram_map_buf+$2F8]
+;		.BYTE	<[_wram_map_buf+$344]
+;		.BYTE	<[_wram_map_buf+$390]
+;		.BYTE	<[_wram_map_buf+$3DC]
+;		.BYTE	<[_wram_map_buf+$428]
+;		.BYTE	<[_wram_map_buf+$474]
+;		.BYTE	<[_wram_map_buf+$4C0]
+;		.BYTE	<[_wram_map_buf+$50C]
+;		.BYTE	<[_wram_map_buf+$558]
+;		.BYTE	<[_wram_map_buf+$5A4]
+;		.BYTE	<[_wram_map_buf+$5F0]
+;		.BYTE	<[_wram_map_buf+$63C]
+;		.BYTE	<[_wram_map_buf+$688]
+;		.BYTE	<[_wram_map_buf+$6D4]
+;		.BYTE	<[_wram_map_buf+$720]
+;		.BYTE	<[_wram_map_buf+$76C]
+;		.BYTE	<[_wram_map_buf+$7B8]
+;		.BYTE	<[_wram_map_buf+$804]
+;		.BYTE	<[_wram_map_buf+$850]
+;		.BYTE	<[_wram_map_buf+$89C]
+;		.BYTE	<[_wram_map_buf+$8E8]
+;		.BYTE	<[_wram_map_buf+$934]
+;		.BYTE	<[_wram_map_buf+$980]
+;		.BYTE	<[_wram_map_buf+$9CC]
+;		.BYTE	<[_wram_map_buf+$A18]
+;		.BYTE	<[_wram_map_buf+$A64]
+;		.BYTE	<[_wram_map_buf+$AB0]
+;		.BYTE	<[_wram_map_buf+$AFC]
+;		.BYTE	<[_wram_map_buf+$B48]
+;		.BYTE	<[_wram_map_buf+$B94]
+;		.BYTE	<[_wram_map_buf+$BE0]
+;		.BYTE	<[_wram_map_buf+$C2C]
+;		.BYTE	<[_wram_map_buf+$C78]
+;		.BYTE	<[_wram_map_buf+$CC4]
+;		.BYTE	<[_wram_map_buf+$D10]
+;		.BYTE	<[_wram_map_buf+$D5C]
+;		.BYTE	<[_wram_map_buf+$DA8]
+;		.BYTE	<[_wram_map_buf+$DF4]
+;		.BYTE	<[_wram_map_buf+$E40]
+;		.BYTE	<[_wram_map_buf+$E8C]
+;		.BYTE	<[_wram_map_buf+$ED8]
+;		.BYTE	<[_wram_map_buf+$F24]
+;		.BYTE	<[_wram_map_buf+$F70]
+;		.BYTE	<[_wram_map_buf+$FBC]
+;		.BYTE	<[_wram_map_buf+$1008]
+;		.BYTE	<[_wram_map_buf+$1054]
+;		.BYTE	<[_wram_map_buf+$10A0]
+;		.BYTE	<[_wram_map_buf+$10EC]
+;		.BYTE	<[_wram_map_buf+$1138]
+;		.BYTE	<[_wram_map_buf+$1184]
+;		.BYTE	<[_wram_map_buf+$11D0]
+;		.BYTE	<[_wram_map_buf+$121C]
+;		.BYTE	<[_wram_map_buf+$1268]
+;		.BYTE	<[_wram_map_buf+$12B4]
+;		.BYTE	<[_wram_map_buf+$1300]
+;		.BYTE	<[_wram_map_buf+$134C]
+;		.BYTE	<[_wram_map_buf+$1398]
+;		.BYTE	<[_wram_map_buf+$13E4]
+;		.BYTE	<[_wram_map_buf+$1430]
+;		.BYTE	<[_wram_map_buf+$147C]
+;		.BYTE	<[_wram_map_buf+$14C8]
+;		.BYTE	<[_wram_map_buf+$1514]
+;		.BYTE	<[_wram_map_buf+$1560]
+;		.BYTE	<[_wram_map_buf+$15AC]
+;		.BYTE	<[_wram_map_buf+$15F8]
+;		.BYTE	<[_wram_map_buf+$1644]
+;off_88941:
+;		.BYTE	>[_wram_map_buf]
+;		.BYTE	>[_wram_map_buf+$4C]
+;		.BYTE	>[_wram_map_buf+$98]
+;		.BYTE	>[_wram_map_buf+$E4]
+;		.BYTE	>[_wram_map_buf+$130]
+;		.BYTE	>[_wram_map_buf+$17C]
+;		.BYTE	>[_wram_map_buf+$1C8]
+;		.BYTE	>[_wram_map_buf+$214]
+;		.BYTE	>[_wram_map_buf+$260]
+;		.BYTE	>[_wram_map_buf+$2AC]
+;		.BYTE	>[_wram_map_buf+$2F8]
+;		.BYTE	>[_wram_map_buf+$344]
+;		.BYTE	>[_wram_map_buf+$390]
+;		.BYTE	>[_wram_map_buf+$3DC]
+;		.BYTE	>[_wram_map_buf+$428]
+;		.BYTE	>[_wram_map_buf+$474]
+;		.BYTE	>[_wram_map_buf+$4C0]
+;		.BYTE	>[_wram_map_buf+$50C]
+;		.BYTE	>[_wram_map_buf+$558]
+;		.BYTE	>[_wram_map_buf+$5A4]
+;		.BYTE	>[_wram_map_buf+$5F0]
+;		.BYTE	>[_wram_map_buf+$63C]
+;		.BYTE	>[_wram_map_buf+$688]
+;		.BYTE	>[_wram_map_buf+$6D4]
+;		.BYTE	>[_wram_map_buf+$720]
+;		.BYTE	>[_wram_map_buf+$76C]
+;		.BYTE	>[_wram_map_buf+$7B8]
+;		.BYTE	>[_wram_map_buf+$804]
+;		.BYTE	>[_wram_map_buf+$850]
+;		.BYTE	>[_wram_map_buf+$89C]
+;		.BYTE	>[_wram_map_buf+$8E8]
+;		.BYTE	>[_wram_map_buf+$934]
+;		.BYTE	>[_wram_map_buf+$980]
+;		.BYTE	>[_wram_map_buf+$9CC]
+;		.BYTE	>[_wram_map_buf+$A18]
+;		.BYTE	>[_wram_map_buf+$A64]
+;		.BYTE	>[_wram_map_buf+$AB0]
+;		.BYTE	>[_wram_map_buf+$AFC]
+;		.BYTE	>[_wram_map_buf+$B48]
+;		.BYTE	>[_wram_map_buf+$B94]
+;		.BYTE	>[_wram_map_buf+$BE0]
+;		.BYTE	>[_wram_map_buf+$C2C]
+;		.BYTE	>[_wram_map_buf+$C78]
+;		.BYTE	>[_wram_map_buf+$CC4]
+;		.BYTE	>[_wram_map_buf+$D10]
+;		.BYTE	>[_wram_map_buf+$D5C]
+;		.BYTE	>[_wram_map_buf+$DA8]
+;		.BYTE	>[_wram_map_buf+$DF4]
+;		.BYTE	>[_wram_map_buf+$E40]
+;		.BYTE	>[_wram_map_buf+$E8C]
+;		.BYTE	>[_wram_map_buf+$ED8]
+;		.BYTE	>[_wram_map_buf+$F24]
+;		.BYTE	>[_wram_map_buf+$F70]
+;		.BYTE	>[_wram_map_buf+$FBC]
+;		.BYTE	>[_wram_map_buf+$1008]
+;		.BYTE	>[_wram_map_buf+$1054]
+;		.BYTE	>[_wram_map_buf+$10A0]
+;		.BYTE	>[_wram_map_buf+$10EC]
+;		.BYTE	>[_wram_map_buf+$1138]
+;		.BYTE	>[_wram_map_buf+$1184]
+;		.BYTE	>[_wram_map_buf+$11D0]
+;		.BYTE	>[_wram_map_buf+$121C]
+;		.BYTE	>[_wram_map_buf+$1268]
+;		.BYTE	>[_wram_map_buf+$12B4]
+;		.BYTE	>[_wram_map_buf+$1300]
+;		.BYTE	>[_wram_map_buf+$134C]
+;		.BYTE	>[_wram_map_buf+$1398]
+;		.BYTE	>[_wram_map_buf+$13E4]
+;		.BYTE	>[_wram_map_buf+$1430]
+;		.BYTE	>[_wram_map_buf+$147C]
+;		.BYTE	>[_wram_map_buf+$14C8]
+;		.BYTE	>[_wram_map_buf+$1514]
+;		.BYTE	>[_wram_map_buf+$1560]
+;		.BYTE	>[_wram_map_buf+$15AC]
+;		.BYTE	>[_wram_map_buf+$15F8]
+;		.BYTE	>[_wram_map_buf+$1644]
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_subA0_0:
+_obj_hndl04_shipB0_0:
 		LDA		_cur_obj_pos._X
 		BEQ		loc_889A8
 		CMP		#$4B
@@ -1921,10 +1926,6 @@ loc_88CEC:
 		AND		#$F8
 		STA		_spr_insert_raw_args._pos._Y
 		JMP		_spr_lib_raw_insert
-
-; =============== S U B	R O U T	I N E =======================================
-nullsub_8:
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; every	50 years the CHR bank for object are changes

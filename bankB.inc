@@ -233,6 +233,32 @@ loc_11E1F2:
 		LDA		_obj_active_flags				; no airports - no flying objects
 		AND		#$FC							; remove existing if airport destroyed
 		STA		_obj_active_flags
+; NEW: implement a ship starting procedures, not implemented here at all
+; -
+		LDA		_sea_ports_count
+		BEQ		._no_sea_ports
+		LDA		_obj_active_flags				; test if obj already deployed
+		AND		#$04
+		BNE		loc_11E230						; test if already deployed
+		ORA		#$04
+		STA		_obj_active_flags
+		LDY		_obj_pos._ship._X				; just assume port is at the right side shore
+		INY
+		INY
+		INY
+		INY
+		STY		_obj_pos._ship._X
+		STY		_obj_next_pos._ship._X
+		LDY		_obj_pos._ship._Y
+		STY		_obj_next_pos._ship._Y
+		LDA		#$03							; Y pos already set
+		STA		_obj_spr_idx._ship
+		BNE		loc_11E230						; test if already deployed
+._no_sea_ports:
+		LDA		_obj_active_flags				; no sea ports - no floating objects
+		AND		#$FB							; remove existing if airport destroyed
+		STA		_obj_active_flags
+; -
 loc_11E230:
 		LDA		_city._bank_flags				; test for bank states
 		BPL		loc_11E23D
@@ -252,20 +278,15 @@ loc_11E23D:
 		STA		_city._bank_flags
 .bank_break:
 		MADDW	_tmpE6,_RCI_counts._R,_RCI_counts._C
-;
-; BUG! seems copy-paste, second CLC seems wrong here!
-;-
-		LDA		_tmpE6
-		CLC
-		ADC		_RCI_counts._I
-		STA		_total_RCI_counts
-		LDA		_tmpE7
-		CLC
-		ADC		_RCI_counts._I+1
-		STA		_total_RCI_counts+1
-;-
-;		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I
-;-
+;		LDA		_tmpE6							; BUG! copy-paste, second CLC wrong here!
+;		CLC
+;		ADC		_RCI_counts._I
+;		STA		_total_RCI_counts
+;		LDA		_tmpE7
+;		CLC
+;		ADC		_RCI_counts._I+1
+;		STA		_total_RCI_counts+1
+		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I
 		LDA		_nuke_power_station_count
 		CLC
 		ADC		_coal_power_station_count
@@ -899,8 +920,8 @@ locret_11E7B7:
 _collect_other_buildings_stats:
 		CMP		#$60
 		BNE		loc_11E7CC
-		LDA		_coal_power_station_count
-		BMI		loc_11E7C4
+		LDA		_coal_power_station_count		; coal power station building
+		BMI		loc_11E7C4						; no greater than 128
 		INC		_coal_power_station_count
 loc_11E7C4:
 		FJSR	_power_stations_map_pos_list_insert,SRAM,PRGA
@@ -908,8 +929,8 @@ loc_11E7C4:
 loc_11E7CC:
 		CMP		#$61
 		BNE		loc_11E7E0
-		LDA		_nuke_power_station_count
-		BMI		loc_11E7D8
+		LDA		_nuke_power_station_count		; nuclear power stations
+		BMI		loc_11E7D8						; no greater than 128
 		INC		_nuke_power_station_count
 loc_11E7D8:
 		FJSR	_power_stations_map_pos_list_insert,SRAM,PRGA
@@ -917,8 +938,8 @@ loc_11E7D8:
 loc_11E7E0:
 		CMP		#$50
 		BNE		loc_11E803
-		LDA		_police_stations_count
-		CMP		#$63
+		LDA		_police_stations_count			; police stations
+		CMP		#$63							; no greater than 100
 		BCS		loc_11E7EE
 		INC		_police_stations_count
 loc_11E7EE:
@@ -935,13 +956,13 @@ loc_11E7FA:
 loc_11E803:
 		CMP		#$75
 		BNE		loc_11E80E
-		LDA		#$0F
+		LDA		#$0F							; new police station
 		STA		_tmpE7
 		JMP		loc_11E7FA
 loc_11E80E:
 		CMP		#$51
 		BNE		loc_11E831
-		LDA		_fire_stations_count
+		LDA		_fire_stations_count			; fire stations
 		CMP		#$63
 		BCS		loc_11E81C
 		INC		_fire_stations_count
@@ -959,13 +980,13 @@ loc_11E828:
 loc_11E831:
 		CMP		#$76
 		BNE		loc_11E83C
-		LDA		#$0F
+		LDA		#$0F							; new fire stations
 		STA		_tmpE7
 		JMP		loc_11E828
 loc_11E83C:
 		CMP		#$63
 		BNE		loc_11E854
-		LDA		_stadiums_count
+		LDA		_stadiums_count					; stadiums
 		BMI		loc_11E848
 		INC		_stadiums_count
 loc_11E848:
@@ -979,7 +1000,7 @@ loc_11E850:
 loc_11E854:
 		CMP		#$64
 		BNE		loc_11E86D
-		LDA		_airports_count
+		LDA		_airports_count					; airports count
 		BMI		loc_11E860
 		INC		_airports_count
 loc_11E860:
@@ -991,33 +1012,36 @@ loc_11E860:
 loc_11E86D:
 		CMP		#$62
 		BNE		loc_11E8AD
-		LDA		_sea_ports_count
+		LDA		_sea_ports_count				; sea ports count
 		BMI		loc_11E879
 		INC		_sea_ports_count
 loc_11E879:
 		LDA		_obj_active_flags
 		AND		#$04
 		BNE		locret_11E8AC
-		LDY		#>[_wram_map_buf]				; TODO: rearrange to macrocify
-		STY		_tmpE7
-		LDY		#<[_wram_map_buf]
-		STY		_tmpE6
-loc_11E888:
-		LDA		(_tmpE6),Y
-		CMP		#$FE
-		BEQ		loc_11E8A0
-		INC		_tmpE6
-		BNE		loc_11E894
-		INC		_tmpE7
-loc_11E894:
-		LDA		_tmpE6
-		CMP		#$90
-		LDA		_tmpE7
-		SBC		#$16
-		BNE		loc_11E888
-		BEQ		locret_11E8AC
-loc_11E8A0:
-		LDA		_tmp_map_pos._X
+; TODO: reimplement this
+;
+;		LDY		#>[_wram_map_buf]				; UNFINISHED very briefly written code
+;		STY		_tmpE7							; to search a special symbol in the sea
+;		LDY		#<[_wram_map_buf]				; which probably should be placed near
+;		STY		_tmpE6							; port building in sea to start ship animations
+;loc_11E888:
+;		LDA		(_tmpE6),Y
+;		CMP		#$FE							; special sea tile, never used.
+;		BEQ		loc_11E8A0
+;		INC		_tmpE6
+;		BNE		loc_11E894
+;		INC		_tmpE7
+;loc_11E894:
+;		LDA		_tmpE6
+;		CMP		#$90							; here test value not the end of the buffer ptr
+;		LDA		_tmpE7							; but buffer size
+;		SBC		#$16
+;		BNE		loc_11E888
+;		BEQ		locret_11E8AC
+;loc_11E8A0:
+; -
+		LDA		_tmp_map_pos._X					; let's try to show something at least for now.
 		STA		_obj_pos._ship._X
 		LDA		_tmp_map_pos._Y
 		STA		_obj_pos._ship._Y
