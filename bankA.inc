@@ -459,6 +459,8 @@ loc_104428:
 		DEX
 		BNE		loc_104476							; game mode 2, scenario
 		MOVWI	_city._money,20000					; fixed money
+; BUG: there is no data for 8th scenario "FREEDOM" at all.
+;
 		LDY		_scenario_idx
 		LDA		_scenario_start_year_lo,Y			; different starting years
 		STA		_city._cur_year+1

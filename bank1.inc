@@ -130,40 +130,59 @@ _scenario_closed_screen_update:
 		LDY		#$00
 		LDX		#$06
 		LDA		_city._all_scenarios_are_clear_ram_flag
-		BEQ		loc_240FA
-		LDY		#$06
-		LDX		#$08
-		LDA		_city._scenarios_clear_flags
-		LSR
-		LSR
-		LSR
-		LSR
-		LSR
-		LSR
-		BPL		loc_240FD
-loc_240FA:
+		BEQ		locret_2411B					; FIX: lets just exit here
+;		BEQ		loc_240FA
+; BUG: by this logic, when you complete all scenarios, the extra scenario
+; screen reset all cleared pictures and planned to draw a new ones only for
+; two extra scenarios lol, BUT, there are no offsets not only for a rearranged
+; icons set (4x2 instead of 3x2), but there are no 7th and 8th offsets in
+; table. if you ever manage to beat all scenarios, then beat one of the extra
+; scenarios, you'll get an error screen. but you actually just can't beat
+;
+; FIX: disable extra code for this special options, anyway they aren't working
+;
+;		LDY		#$06
+;		LDX		#$08
+;		LDA		_city._scenarios_clear_flags
+;		LSR
+;		LSR
+;		LSR
+;		LSR
+;		LSR
+;		LSR
+;		BPL		loc_240FD
+;loc_240FA:
 		LDA		_city._scenarios_clear_flags
 loc_240FD:
-		STX		_tmp3
+		STX		_tmp3							; store cycle max idx
+; BUG: _tmp2 here used as a cycle counter, also used inside the draw
+; routine but nothing is modify it there as against _tmp3 which is
+; used in this loop as max counts number, but also used inside draw
+; routine as temporary var so erased inside it and loop will run for
+; extra 250 cycles because of that.
+; FIX: it seems, they save wrong var before drawing routines: pushes
+; _tmp2 instead of _tmp3 lol, fixed it
+;
 loc_240FF:
-		STY		_tmp2
-		LSR
-		BCC		loc_2411A
-		PHA
-		PUSHB	_tmp2
-		JSR		_scenario_closed_icon_draw
+		STY		_tmp2							; store for convinience
+		LSR										; here is the bitflags in A
+		BCC		loc_2411A						; skip if flag clear
+		PHA										; save current shifted flags
+		PUSHB	_tmp3							; save cycles max idx
+		JSR		_scenario_closed_icon_draw		; draw
 loc_2410B:
-		JSR		_ppu_dequeue
+		JSR		_ppu_dequeue					; wait for buffers flush
 		JSR		_extnt_dequeue
 		JSR		_ppu_queue_empty_compare
 		BNE		loc_2410B
-		POPB	_tmp2
+		POPB	_tmp3							; restore cycle max count
 		PLA
 loc_2411A:
-		LDY		_tmp2
-		INY
+		LDY		_tmp2							; get cur cycle idx
+		INY										; next (will be saved at the loop start)
 		CPY		_tmp3
-		BNE		loc_240FF
+		BNE		loc_240FF						; test if loops is over
+locret_2411B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -177,15 +196,12 @@ _scenario_closed_icon_draw:
 loc_24130:
 		PPUQMOVB	_ptr0,OP_NOP,0
 		PPUQMOVB	_ptr0+1,OP_NOP,0
-		LDA		#$06
-		STA		_ppu_queue_buf,X
+		PPUQMOVB	#$06,OP_NOP,0
 		STA		_tmp3
-		INX
 loc_24144:
 		LDA		_tlm_scenario_closed_nt,Y
-		STA		_ppu_queue_buf,X
 		INY
-		INX
+		PPUQMOVA
 		DEC		_tmp3
 		BNE		loc_24144
 		ADDW8	_ptr0,#$20
@@ -204,15 +220,12 @@ loc_24144:
 loc_24174:
 		EXTQMOVB	_ptr0,OP_NOP,0
 		EXTQMOVB	_ptr0+1,OP_NOP,0
-		LDA		#$06
-		STA		_extnt_queue_buf,X
+		EXTQMOVB	#$06,OP_NOP,0
 		STA		_tmp3
-		INX
 loc_24188:
 		LDA		_tlm_scenario_closed_extnt,Y
-		STA		_extnt_queue_buf,X
 		INY
-		INX
+		EXTQMOVA
 		DEC		_tmp3
 		BNE		loc_24188
 		ADDW8	_ptr0,#$20
@@ -220,6 +233,7 @@ loc_24188:
 		BNE		loc_24174
 		STX		_extnt_queue_pos_head
 		RTS
+
 _scenario_closed_ppu_ofs_lo:
 		.BYTE	$E5,$ED,$F5,$05,$0D,$15
 _scenario_closed_ppu_ofs_hi:
@@ -466,7 +480,7 @@ _scenario_map_load:
 loc_243F1:
 		LDA		_scenario_town_names_list,X
 		BMI		loc_243FD
-		STA		_city,Y
+		STA		_city._name,Y
 		INX
 		INY
 		BNE		loc_243F1
@@ -480,126 +494,143 @@ loc_243FD:
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_map_unpack:
 		LDY		#$00
-		LDA		_PPU_DATA
+		LDA		_PPU_DATA						; read code
 		STA		_tmp6
 		AND		#$F0
 		CMP		#$80
 		BNE		loc_24449
 		LDA		_tmp6
 		CMP		#$8F
-		BNE		loc_2442D
-		LDX		_PPU_DATA
-		LDA		_PPU_DATA
+		BNE		loc_2442D						; 8F, RLE code next two bytes are
+		LDX		_PPU_DATA						; counter
+		LDA		_PPU_DATA						; building or tile to insert
 loc_24424:
-		JSR		_scenario_map_block_unpack
+		JSR		_scenario_map_put_block
 		DEX
 		BNE		loc_24424
 		JMP		_scenario_map_unpack
 loc_2442D:
-		LDA		_tmp6
-		SEC
-		SBC		#$80
+		LDA		_tmp6							; 80-8E, DICT codes (as inused special tiles)
+		SEC										; every scenario has a DICT of 2x1 tiles, 15 each
+		SBC		#$80							; extract DICT entry idx
 		ASL
+		PHA
 		TAY
 		LDA		(_tmp2),Y
-		JSR		_scenario_map_block_unpack
-		LDA		_tmp6
-		SEC
-		SBC		#$80
-		ASL
-		TAY
+		JSR		_scenario_map_put_block
+;		LDA		_tmp6							; REDUNDANT
+;		SEC										; -
+;		SBC		#$80							; -
+;		ASL										; -
+;		TAY										; -
+		PLA										; OPTIMIZE
+		TAY										; -
 		INY
 		LDA		(_tmp2),Y
-		JSR		_scenario_map_block_unpack
+		JSR		_scenario_map_put_block
 		JMP		_scenario_map_unpack
 loc_24449:
-		LDA		_tmp6
-		JSR		_scenario_map_block_unpack
+		LDA		_tmp6							; raw tiles 00-7F, 90-FF
+		JSR		_scenario_map_put_block
 		JMP		_scenario_map_unpack
 
 ; =============== S U B	R O U T	I N E =======================================
-_scenario_map_block_unpack:
+_scenario_map_put_block:
 		STA		_tmp6+1
 loc_24453:
 		LDY		#$00
-		LDA		(_tmp4),Y
+		LDA		(_tmp4),Y						; put only on buldozered ground
 		CMP		#$90
 		BEQ		loc_2446F
 		INCW	_tmp4
-loc_24461:
 		LDA		_tmp4
 		CMP		#<[_power_grid_map_buf]
 		BNE		loc_24453
 		LDA		_tmp5
 		CMP		#>[_power_grid_map_buf]
-		BNE		loc_24453
-		BEQ		loc_244EC
+		BNE		loc_24453						; try again
+		BEQ		loc_244EC						; end of map, break unpack
 loc_2446F:
+		TXA										; OPTIMIZE: we need X here now
+		PHA
 		LDA		_tmp6+1
-		BMI		loc_244D6
-		CMP		#$64
-		BNE		loc_2449E
-		LDY		#$03
-		LDA		#$8E
-		STA		(_tmp4),Y
-		LDY		#$4F
-		LDA		#$8D
-		STA		(_tmp4),Y
-		LDY		#$9B
-		LDA		#$8C
-		STA		(_tmp4),Y
-		LDY		#$E4
-		LDA		#$88
-		STA		(_tmp4),Y
-		INY
-		LDA		#$89
-		STA		(_tmp4),Y
-		INY
-		LDA		#$8A
-		STA		(_tmp4),Y
-		INY
-		LDA		#$8B
-		STA		(_tmp4),Y
+		BMI		loc_244D9						; all tiles above 80 are single
+		LDX		#$0F							; OPTIMIZE
+		CMP		#$64							; the reset are a large buildings
+		BEQ		loc_244D6						; OPTIMIZE
+; REDUNDANT
+;		BNE		loc_2449E						; draw airport 4x4 special tiles
+;		LDY		#$03							; xxxxxx8E (03)
+;		LDA		#$8E							; xxxxxx8D (4F)
+;		STA		(_tmp4),Y						; xxxxxx8C (9B)
+;		LDY		#$4F							; 88898A8B
+;		LDA		#$8D							; E4E5E6E7
+;		STA		(_tmp4),Y
+;		LDY		#$9B
+;		LDA		#$8C
+;		STA		(_tmp4),Y
+;		LDY		#$E4
+;		LDA		#$88
+;		STA		(_tmp4),Y
+;		INY
+;		LDA		#$89
+;		STA		(_tmp4),Y
+;		INY
+;		LDA		#$8A
+;		STA		(_tmp4),Y
+;		INY
+;		LDA		#$8B
+;		STA		(_tmp4),Y
 loc_2449E:
+		LDX		#$03							; OPTIMIZE
 		CMP		#$60
-		BCC		loc_244BE
-		LDY		#$02
-		LDA		#$87
-		STA		(_tmp4),Y
-		LDY		#$4E
-		LDA		#$86
-		STA		(_tmp4),Y
-		LDY		#$98
-		LDA		#$83
-		STA		(_tmp4),Y
-		INY
-		LDA		#$84
-		STA		(_tmp4),Y
-		INY
-		LDA		#$85
-		STA		(_tmp4),Y
-loc_244BE:
-		LDY		#$00
-		LDA		_tmp6+1
-		STA		(_tmp4),Y
-		INY
-		LDA		#$82
-		STA		(_tmp4),Y
-		LDA		#$80
-		LDY		#$4C
-		STA		(_tmp4),Y
-		INY
-		LDA		#$81
-		STA		(_tmp4),Y
-		BNE		loc_244DA
+		BCC		loc_244D6						; draw 3x3 buildings tiles
+		LDX		#$08							; OPTIMIZE
+; REDUNDANT
+;		LDY		#$02							; xxxx87
+;		LDA		#$87							; xxxx86
+;		STA		(_tmp4),Y						; 838485
+;		LDY		#$4E
+;		LDA		#$86
+;		STA		(_tmp4),Y
+;		LDY		#$98
+;		LDA		#$83
+;		STA		(_tmp4),Y
+;		INY
+;		LDA		#$84
+;		STA		(_tmp4),Y
+;		INY
+;		LDA		#$85
+;		STA		(_tmp4),Y
+;loc_244BE:
+;		LDY		#$00							; the rest is 2x2 buildings
+;		LDA		_tmp6+1							; ID82
+;		STA		(_tmp4),Y						; 8081
+;		INY
+;		LDA		#$82
+;		STA		(_tmp4),Y
+;		LDA		#$80
+;		LDY		#$4C
+;		STA		(_tmp4),Y
+;		INY
+;		LDA		#$81
+;		STA		(_tmp4),Y
+;		BNE		loc_244DA
 loc_244D6:
-		LDY		#$00
+		LDA		_special_tiles_ofs_list,X		; OPTIMIZE
+		TAY										; -
+		LDA		_special_tiles_list,X			; -
+		STA		(_tmp4),Y						; -
+		DEX										; -
+		BNE		loc_244D6						; -
+		LDA		_tmp6+1
+loc_244D9:
+		LDY		$00
 		STA		(_tmp4),Y
-loc_244DA:
-		INC		_tmp4
-		BNE		loc_244E0
-		INC		_tmp5
-loc_244E0:
+		PLA										; restore X back
+		TAX										; -
+;loc_244DA:
+		INCW	_tmp4
 		LDA		_tmp4
 		CMP		#<[_power_grid_map_buf]
 		BNE		loc_244EE
@@ -612,6 +643,11 @@ loc_244EC:
 loc_244EE:
 		LDA		_tmp6+1
 		RTS
+
+_special_tiles_ofs_list:
+		.BYTE	$00,$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
+_special_tiles_list:
+		.BYTE	$00,$80,$81,$82,$83,$84,$85,$86,$87,$88,$89,$8A,$8B,$8C,$8D,$8E
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_unref_19:
@@ -771,57 +807,65 @@ loc_2464A:
 		JMP		_spr_finish
 
 ; =============== S U B	R O U T	I N E =======================================
+; BUG: all tlm queue functions here when used frequently overflows the buffer
+; (use turbo button for example), to fix it just add some flush wait.
+;
 _name_input_button_push_draw:
-		LDA		byte_6DC+3
-		BEQ		locret_2460A
-		DEC		byte_6DC+3
-		LDY		byte_6DC+6
+		LDA		byte_6DC+3						; push anim counter
+		BEQ		locret_2460A					; draw if non-zero
+		DEC		byte_6DC+3						; decrease
+		LDY		byte_6DC+6						; get pressed button type
 		CPY		#$21
-		BCS		loc_2469A
+		BCS		.draw_simple_button_press		; all above TAB is simple letters
 		CPY		#$08
-		BEQ		loc_2469A
+		BEQ		.draw_simple_button_press		; BACK button simple to
 		CMP		#$10
-		BNE		loc_24688
-		CPY		#$20
-		BNE		loc_24676
-		JSRXY	_rle_nt_res_queue,byte_24C5D
-		JMPXY	_rle_extnt_res_queue,byte_24C6A
+		BNE		.push_wait						; if anim already started, skip
+		CPY		#$20							; else anim frame, draw push
+		BNE		loc_24676						; two special buttons here
+		JSRXY	_rle_nt_res_queue,_tlm_nt_space_press
+		JSRXY	_rle_extnt_res_queue,_tlm_extnt_space_press
+		JMP		_wait_for_flush					; FIX
 loc_24676:
 		CPY		#$0C
 		BNE		locret_246DB
-		JSRXY	_rle_nt_res_queue,byte_24C45
-		JMPXY	_rle_extnt_res_queue,byte_24C51
-loc_24688:
-		CMP		#$01
-		BNE		locret_246DB
-		JSRXY	_rle_nt_res_queue,byte_24CA5
-		JMPXY	_rle_extnt_res_queue,byte_24CD1
-loc_2469A:
-		CMP		#$10
-		BNE		loc_246AC
-		JSRXY	_rle_nt_res_queue,byte_24CA5
-		JSRXY	_rle_extnt_res_queue,byte_24CD1
+		JSRXY	_rle_nt_res_queue,_tlm_nt_back_button_press
+		JSRXY	_rle_extnt_res_queue,_tlm_extnt_back_button_press
+		JMP		_wait_for_flush					; FIX
+.push_wait:
+		CMP		#$01							; last anim frame, release buttons
+		BNE		locret_246DB					; all at once.
+		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
+		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
+		JMP		_wait_for_flush					; FIX
+.draw_simple_button_press:
+		CMP		#$10							; if you press buttons fast, you may
+		BNE		loc_246AC						; reset the nt buttons animation and it won't release
+		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
+		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
+		JSR		_wait_for_flush					; so force all nt buttons to clear first
 loc_246AC:
-		LDA		#$A0
+		LDA		#$A0							; this is a sprite effect
 		STA		_spr_insert_args._idx
 		LDA		byte_6DC+4
 		STA		_spr_insert_args._pos._X
 		LDA		byte_6DC+5
 		STA		_spr_insert_args._pos._Y
-		JSR		_spr_lib_prg2_insert
-		LDX		#$FD
-		LDA		byte_6DC+6
-		CMP		#$08
-		BEQ		loc_246C9
-		ORA		#$80
+		JSR		_spr_lib_prg2_insert			; draw common button frame sprite
+		LDX		#$FD							; then manually hack its
+		LDA		byte_6DC+6						; middle tile to display a corresponding
+		CMP		#$08							; letter in it
+		BEQ		loc_246C9						; test for BACK button tile
+		ORA		#$80							; regular tiles in ascii+80
 		TAX
 loc_246C9:
-		STX		_spr_buf+$19
-		LDA		byte_6DC+6
-		SEC
+		STX		_spr_buf+$19					; hacky hacky. they know that sprite here
+		LDA		byte_6DC+6						; always at fixed position
+		SEC										; extract number buttons with another attr
 		SBC		#$30
 		CMP		#$0A
-		BCS		locret_246DB
+;		BCS		locret_246DB					; WHY? why toggle attrs? why not keep them?
+		BCC		locret_246DB					; FIX: same attrs (only CL swapped, because it not sprite)
 		LDA		#$02
 		STA		_spr_buf+$1A
 locret_246DB:
@@ -941,10 +985,10 @@ _name_input_button_push_control:
 		STY		_apu_se_flags
 		LDA		#$08
 		STA		byte_6DC+3
-		JSRXY	_rle_nt_res_queue,byte_24C77
-		JSRXY	_rle_extnt_res_queue,byte_24C8E
-		JSR		_wait_for_flush					; FIXME: seems need wait for flush first
-		JMP		_name_input_next_scr			; to avoid buffers overflow
+		JSRXY	_rle_nt_res_queue,_tlm_nt_end_press
+		JSRXY	_rle_extnt_res_queue,_tlm_extnt_end_press
+		JSR		_wait_for_flush
+		JMP		_name_input_next_scr
 loc_247A1:
 		LDA		_tmp6CC
 		SEC
@@ -1527,25 +1571,25 @@ _game_setup10_all_complete_input:
 locret_24C44:
 		RTS
 
-byte_24C45:
+_tlm_nt_back_button_press:
 		.BYTE	$0A,$1A,$22,$02,$C0,$C0,$3A,$22,$02,$C4,$DA,$00
-byte_24C51:
+_tlm_extnt_back_button_press:
 		.BYTE	$0A,$1A,$5E,$02,$0A,$0A,$3A,$5E,$02,$0A,$0A,$00
-byte_24C5D:
+_tlm_nt_space_press:
 		.BYTE	$0B,$58,$22,$04,$C2,$C3,$C2,$C2,$78,$22,$01,$C1,$00
-byte_24C6A:
+_tlm_extnt_space_press:
 		.BYTE	$0B,$58,$5E,$04,$0A,$0A,$0A,$0A,$78,$5E,$01,$0A,$00
-byte_24C77:
+_tlm_nt_end_press:
 		.BYTE	$15,$B8,$22,$04,$C0,$C0,$C0,$C0,$D8,$22,$04,$B0,$B1,$B2,$B3,$F8
 		.BYTE	$22,$04,$C0,$C1,$C2,$C3,$00
-byte_24C8E:
+_tlm_extnt_end_press:
 		.BYTE	$15,$B8,$5E,$04,$0A,$0A,$0A,$0A,$D8,$5E,$04,$C8,$C8,$C8,$C8,$F8
 		.BYTE	$5E,$04,$C8,$C8,$C8,$C8,$00
-byte_24CA5:
+_tlm_nt_all_buttons_release:
 		.BYTE	$2A,$1A,$22,$02,$C1,$C1,$3A,$22,$02,$43,$4C,$58,$22,$04,$2A,$4E
 		.BYTE	$2A,$2A,$78,$22,$01,$DD,$B8,$22,$04,$C1,$C1,$C1,$C1,$D8,$22,$04
 		.BYTE	$A1,$A2,$A3,$A4,$F8,$22,$04,$B1,$B2,$B3,$B4,$00
-byte_24CD1:
+_tlm_extnt_all_buttons_release:
 		.BYTE	$2A,$1A,$5E,$02,$06,$06,$3A,$5E,$02,$8B,$8B,$58,$5E,$04,$07,$07
 		.BYTE	$07,$07,$78,$5E,$01,$89,$B8,$5E,$04,$06,$06,$06,$06,$D8,$5E,$04
 		.BYTE	$CA,$CA,$CA,$CA,$F8,$5E,$04,$CA,$CA,$CA,$CA,$00

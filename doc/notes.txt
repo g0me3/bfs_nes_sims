@@ -1,3 +1,6 @@
+	NEW BUGS
+
+- Scenario closed icons are drawn incorrectly A FUCK!
 
 	CODES
 
@@ -11,6 +14,8 @@
 	UNFINISHED
 
 - There are 6 scenarios available from the beginning. Don't know wether you can beat any of them, but there is a handler with message about beating all scenarios which raises flag (0x5EC = 1) and now there are two special scenarios available: "Las Vegas UFO" and "Freedom", both have no briefing texts, only blank windows. One special scenario map is used for Practice. So there are total 9 map resources, all used.
+- Freedom scenario data not exists, when loading it reads just garbage and portions of the other scenarios bytes, so the game is glitches in this mode.
+- There are no proper data for setting the "CLEAR" icon on the extra scenarios screen. However, there is a code with attempt to do this, won't work anyway.
 - There is no UFO object in game, only CHR sprites left: two frames of UFO, a tractor beam and a shadow fof the ground.
 - There are 5 name buffers inside
 	- first is your town name, default name "SIMCITY"
@@ -29,7 +34,7 @@
 
 	BUGS
 
-- Use the turbo button A on name input screens to glitch the screen (most probably because of ppu queue buffer overflow due to some reasons).
+- Use the turbo button A on name input screens to glitch the screen because of ppu queue buffer overflow due to lack of proper sync.
 - First briefing message in Practice mode has a typo with missing colon and space "..., iron out traffic snarls[, ]control environmental pollution..."
 - There is an unused disabled branch in Practice mode to check if you go well or bad during this game. This branch should check your town population after some years, then send a message if you did it well or you need more practice. For some reason, they set the game period only for 5 years and population to 30000, so virtually impossible on a such small land for Practice. So it's seems they just decided to disable it by now. To re-enable it use GG GESLGPTZ.
 - There is non-critical bug in present items free slot search routine. In case you have no free slots, it will run for 256 loops of dummy cycle instead of just exit. No side effects in this except missed cycles.
