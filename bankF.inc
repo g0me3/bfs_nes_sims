@@ -39,8 +39,8 @@ loc_18A033:
 		LDY		#>[_pre_ppu_buf]
 		STY		_ptr0+1
 		LDY		#<[_pre_ppu_buf]
-		STY		_ptr0
-		TYA
+		STY		_ptr0								; CAUTION! Y here = 0 because addr = 700
+		TYA											; clear Y manually if address changes
 loc_18A03C:
 		STA		(_ptr0),Y
 		DEY
@@ -1315,10 +1315,7 @@ _pal_buf_fade_in:
 		LDA		#>[_pal_bg_lib]
 		ADC		_tmp3
 		STA		_tmp3
-		LDA		#<[_pal_bg_buf]
-		STA		_tmp4
-		LDA		#>[_pal_bg_buf]
-		STA		_tmp5
+		MOVWO	_tmp4,_pal_bg_buf
 		JSR		__pal_buf_fade_in
 		LDA		_screen_pal_cur_spr_idx
 		ASL
@@ -1331,10 +1328,7 @@ _pal_buf_fade_in:
 		LDA		#>[_pal_spr_lib]
 		ADC		#$00
 		STA		_tmp3
-		LDA		#<[_pal_spr_buf]
-		STA		_tmp4
-		LDA		#>[_pal_spr_buf]
-		STA		_tmp5
+		MOVWO	_tmp4,_pal_spr_buf
 		JMP		__pal_buf_fade_in
 
 ; =============== S U B	R O U T	I N E =======================================

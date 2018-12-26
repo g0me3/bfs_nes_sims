@@ -1387,25 +1387,8 @@ loc_BB84:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$01
-		ADC		_ptr0+1
-		CMP		#$1E
-		BCC		loc_BBBC
-		SBC		#$1E
-loc_BBBC:
-		STA		_tmp4
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		_tmp2
-		CMP		#$20
-		BCC		loc_BBCA
-		SBC		#$20
-loc_BBCA:
-		STA		_tmp5
+		CIADDB	_tmp4,_cur_screen_tile._Y,#$01,_ptr0+1,#$1E	; tmp4=((Y/2)+1)%$1E
+		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,  #$20	; tmp5= (X/2)   %$20
 		LDA		#$20
 		SEC
 		SBC		_tmp5
@@ -1425,10 +1408,7 @@ loc_BBE0:
 loc_BBE8:
 		LDA		_tmp4
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_tmp5
 		STA		_tmp4
@@ -1441,21 +1421,13 @@ loc_BBE8:
 _wnd_header_queue:
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp5
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp4,OP_NOP,0
+		PPUQMOVB	_tmp5,OP_ORA,#$20
+		PPUQMOVB	_tmp6,OP_NOP,0
 loc_BC1B:
 		LDA		(_tmp2),Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp6
 		BNE		loc_BC1B
 		LDA		_tmp6+1
@@ -1463,21 +1435,14 @@ loc_BC1B:
 		STA		_tmp6
 		LDA		#$00
 		STA		_tmp6+1
-		LDA		_tmp4
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp5
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp4,OP_AND,#$E0
+		PPUQMOVB	_tmp5,OP_ORA,#$20
+		PPUQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_BC1B
 loc_BC49:
 		STX		_ppu_queue_pos_head
 		RTS
+
 _wnd_pos_ofs_X:
 		.BYTE	$10,$11,$11,$10,$0E,$0E,$0E,$0E,$11,$0C,$0E,$10,$0E,$10,$10,$10
 		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$0F,$0F,$0F,$0F,$0E
@@ -1486,6 +1451,8 @@ _wnd_pos_ofs_Y:
 		.BYTE	$08,$04,$04,$07,$0A,$0B,$0B,$0B,$05,$0E,$0A,$07,$0B,$07,$07,$07
 		.BYTE	$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$08,$08,$08,$08,$0B
 		.BYTE	$04,$05,$09,$07
+
+;		DELTA	-0x40			0				+0x40
 _wnd_header_tlm_lo:
 		.BYTE	<[byte_BD6C],	<[aGoodjob],	<[byte_BE90]
 		.BYTE	<[byte_BD74],	<[aTown],		<[byte_BE98]
@@ -1560,6 +1527,12 @@ _wnd_header_tlm_hi:
 		.BYTE	>[byte_BDE9],	>[aFlood],		>[byte_BF0D]
 		.BYTE	>[byte_BDEE],	>[aAircrash],	>[byte_BF12]
 		.BYTE	>[byte_BDF7],	>[aTornade],	>[byte_BF1B]
+
+; FIXME: here is three rows of the same message in 24x8 letters,
+; middle row indexes are the same as corresponding ASCII codes,
+; but upper and lower are shifted, but it is the same letters
+; may be optimized to keep only single headers table.
+
 byte_BD6C:
 		.BYTE	$07,$2F,$2F,$24,$00,$2A,$2F,$22
 byte_BD74:

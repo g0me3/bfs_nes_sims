@@ -380,11 +380,7 @@ loc_104368:
 ; =============== S U B	R O U T	I N E =======================================
 _power_grid_map_bit_set:
 		LDA		_tmp_map_pos._Y
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$4C
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$4C
 		LDA		_MMC5_MUL0
 		CLC
 		ADC		_tmp_map_pos._X
@@ -520,12 +516,9 @@ loc_1044A3:
 		STA		_cur_population_dencity
 		STA		_cur_population_dencity+1
 		JSR		_sram_on
-		LDA		#<[_power_grid_map_buf]				; clear power grid + traffic maps
-		STA		_tmpE6								; for some reason, the size of clear here is
-		LDA		#>[_power_grid_map_buf]				; 1392, when both bufs should be 1444
-		STA		_tmpE7
-		LDX		#$05
-		LDY		#$00
+		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
+		LDX		#$05								; for some reason, the size of clear here is
+		LDY		#$00								; 1392, when both bufs should be 1444
 		TYA
 loc_1044D0:
 		STA		(_tmpE6),Y
@@ -539,11 +532,8 @@ loc_1044DA:
 		INY
 		CPY		#$70
 		BNE		loc_1044DA
-		LDA		#<[_land_value_map_buf]				; clear the rest of the statistic maps
-		STA		_tmpE6								; size is correct this time
-		LDA		#>[_land_value_map_buf]
-		STA		_tmpE7
-		LDX		#$03
+		MOVWO	_tmpE6,_land_value_map_buf			; clear the rest of the statistic maps
+		LDX		#$03								; size is correct this time
 		LDY		#$00
 		TYA
 loc_1044EE:
@@ -2260,10 +2250,7 @@ _scroll_msg_test:
 		STA		_tmpE8
 		LDA		_scroll_msg_test_lib+1,Y
 		STA		_tmpE9
-		LDA		_total_RIC_areas
-		STA		_tmpE6
-		LDA		_total_RIC_areas+1
-		STA		_tmpE7
+		MOVW	_tmpE6,_total_RCI_counts
 		JMP		(_tmpE8)
 _scroll_msg_test_lib:
 		.WORD	_scroll_msg00_test
@@ -2291,10 +2278,7 @@ _scroll_msg00_test:
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		LDA		_tmpE6
-		CMP		_RIC_areas._R
-		LDA		_tmpE7
-		SBC		_RIC_areas._R+1
+		CMPW	_tmpE6,_RCI_counts._R		; C_R < C_RCI / 4
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
@@ -2308,10 +2292,7 @@ _scroll_msg01_test:
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		LDA		_tmpE6
-		CMP		_RIC_areas._C
-		LDA		_tmpE7
-		SBC		_RIC_areas._C+1
+		CMPW	_tmpE6,_RCI_counts._C		; C_C < C_RCI / 8
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
@@ -2325,24 +2306,15 @@ _scroll_msg02_test:
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		LDA		_tmpE6
-		CMP		_RIC_areas._I
-		LDA		_tmpE7
-		SBC		_RIC_areas._I+1
+		CMPW	_tmpE6,_RCI_counts._I		; C_I < C_RCI / 8
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg03_test:
-		LDA		_total_RIC_areas
-		CMP		#$0A
-		LDA		_total_RIC_areas+1
-		SBC		#$00
+		CMPWI	_total_RCI_counts,10
 		BCC		nullsub_10
-		LDA		_roads_count
-		CMP		_total_RIC_areas
-		LDA		_roads_count+1
-		SBC		_total_RIC_areas+1
+		CMPW	_roads_count,_total_RCI_counts
 		BCS		nullsub_10
 		JMP		_scroll_msg_start
 
@@ -2352,38 +2324,29 @@ nullsub_10:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg04_test:
-		LDA		_total_RIC_areas
-		CMP		#$32
-		LDA		_total_RIC_areas+1
-		SBC		#$00
+		CMPWI	_total_RCI_counts,50
 		BCC		nullsub_10
-		LDA		_rails_count
-		CMP		_total_RIC_areas
-		LDA		_rails_count+1
-		SBC		_total_RIC_areas+1
+		CMPW	_rails_count,_total_RCI_counts
 		BCS		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg05_test:
-		LDA		_total_RIC_areas+1
+		LDA		_total_RCI_counts+1
 		BNE		loc_1052EA
-		LDA		_total_RIC_areas
+		LDA		_total_RCI_counts
 		CMP		#$0A
 		BCC		nullsub_10
 loc_1052EA:
-		LDA		_tmp6CC
-		BNE		nullsub_10
+		LDA		_tmp6CC						; FIXME! here is the total power stations value
+		BNE		nullsub_10					; may be wrong at some point of the game
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg06_test:
 		LDA		#$00
 		STA		_required_flags._stadium
-		LDA		_city._level._R.FRAC
-		CMP		#$F4
-		LDA		_city._level._R.INT
-		SBC		#$01
+		CMPWI	_city._level._R,$01F4		; here is the fixed point value, 1.F4fp
 		BCC		nullsub_10
 		LDA		_stadiums_count
 		BNE		nullsub_10
@@ -2395,10 +2358,7 @@ _scroll_msg06_test:
 _scroll_msg07_test:
 		LDA		#$00
 		STA		_required_flags._airport
-		LDA		_city._level._I.FRAC
-		CMP		#$64
-		LDA		_city._level._I.INT
-		SBC		#$00
+		CMPWI	_city._level._I,$0064		; 0.64fp
 		BCC		nullsub_10
 		LDA		_sea_ports_count
 		BNE		nullsub_10
@@ -2410,10 +2370,7 @@ _scroll_msg07_test:
 _scroll_msg08_test:
 		LDA		#$00
 		STA		_required_flags._seaport
-		LDA		_city._level._C.FRAC
-		CMP		#$96
-		LDA		_city._level._C.INT
-		SBC		#$00
+		CMPWI	_city._level._C,$0096		; 0.96fp
 		BCC		nullsub_10
 		LDA		_airports_count
 		BNE		nullsub_5
@@ -2423,10 +2380,7 @@ _scroll_msg08_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg09_test:
-		LDA		_cur_RCI_levels_sum.FRAC
-		CMP		#$3C
-		LDA		_cur_RCI_levels_sum.INT
-		SBC		#$00
+		CMPWI	_cur_RCI_levels_sum,$003C	; 0.3Cfp
 		BCC		nullsub_5
 		LDA		_fire_stations_count
 		BNE		nullsub_5
@@ -2434,10 +2388,7 @@ _scroll_msg09_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0A_test:
-		LDA		_cur_RCI_levels_sum.FRAC
-		CMP		#$3C
-		LDA		_cur_RCI_levels_sum.INT
-		SBC		#$00
+		CMPWI	_cur_RCI_levels_sum,$003C	; 0.3Cfp
 		BCC		nullsub_5
 		LDA		_police_stations_count
 		BNE		nullsub_5
@@ -2445,7 +2396,7 @@ _scroll_msg0A_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_6:
-		RTS
+		RTS									; FIXME: redundant
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0C_test:
@@ -2459,10 +2410,7 @@ _scroll_msg0D_test:
 		LDA		_road_fund_rate
 		CMP		#$16
 		BCS		nullsub_5
-		LDA		_roads_count
-		CMP		#$1E
-		LDA		_roads_count+1
-		SBC		#$00
+		CMPWI	_roads_count,30
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
@@ -2471,10 +2419,7 @@ _scroll_msg0E_test:
 		LDA		_fire_fund_rate
 		CMP		#$0B
 		BCS		nullsub_5
-		LDA		_cur_RCI_levels_sum.FRAC
-		CMP		#$14
-		LDA		_cur_RCI_levels_sum.INT
-		SBC		#$00
+		CMPWI	_cur_RCI_levels_sum,$0014	; 0.14fp
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
@@ -2483,16 +2428,14 @@ _scroll_msg0F_test:
 		LDA		_police_fund_rate
 		CMP		#$0B
 		BCS		nullsub_5
-		LDA		_cur_RCI_levels_sum.FRAC
-		CMP		#$14
-		LDA		_cur_RCI_levels_sum.INT
-		SBC		#$00
+		CMPWI	_cur_RCI_levels_sum,$0014	; 0.14fp
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_5:
 		RTS
+
 _tlm_res_scenario_complete:
 		.WORD	$2000
 		.BYTE	1

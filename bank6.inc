@@ -277,7 +277,7 @@ sub_A01DB:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_A01E9:
-		LDY		#<[byte_A03A5]
+		LDY		#<[byte_A03A5]					; TODO rearrange to use macro
 		STY		_ptr0
 		LDY		#>[byte_A03A5]
 		STY		_ptr0+1
@@ -295,17 +295,12 @@ sub_A01F8:
 loc_A01FC:
 		LDA		(_ptr0),Y
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp5
 		BNE		loc_A01FC
 		INY
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_NOP,0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -335,13 +330,10 @@ sub_A0234:
 loc_A0238:
 		LDA		byte_A0467,Y
 		BNE		loc_A0245
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
 		LDY		#$FE
 loc_A0245:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		CPY		#$FF
 		BNE		loc_A0238
@@ -368,10 +360,7 @@ loc_A0266:
 		STA		_ptr0
 		LDA		_info_screen_header_nt_lib+1,X
 		STA		_ptr0+1
-		LDA		#<[_ppu_queue_buf]
-		STA		_tmp2
-		LDA		#>[_ppu_queue_buf]
-		STA		_tmp3
+		MOVWO	_tmp2,_ppu_queue_buf
 		TXA
 		PHA
 		LDA		_ppu_queue_pos_head
@@ -384,28 +373,19 @@ loc_A0266:
 		STA		_ptr0
 		LDA		_info_screen_header_extnt_lib+1,X
 		STA		_ptr0+1
-		LDA		#<[_extnt_queue_buf]
-		STA		_tmp2
-		LDA		#>[_extnt_queue_buf]
-		STA		_tmp3
+		MOVWO	_tmp2,_extnt_queue_buf
 		LDA		_extnt_queue_pos_head
 		STA		_tmp4
 		JSR		_strcpy_ex
 		STX		_extnt_queue_pos_head
 		JSR		_flush_wait_0
 		MOVWO	_ptr0,off_A046F
-		LDA		#<[_ppu_queue_buf]
-		STA		_tmp2
-		LDA		#>[_ppu_queue_buf]
-		STA		_tmp3
+		MOVWO	_tmp2,_ppu_queue_buf
 		LDA		_ppu_queue_pos_head
 		JSR		_strcpy_lib_ex
 		STX		_ppu_queue_pos_head
 		MOVWO	_ptr0,off_A0479
-		LDA		#<[_extnt_queue_buf]
-		STA		_tmp2
-		LDA		#>[_extnt_queue_buf]
-		STA		_tmp3
+		MOVWO	_tmp2,_extnt_queue_buf
 		LDA		_extnt_queue_pos_head
 		JSR		_strcpy_lib_ex
 		STX		_extnt_queue_pos_head

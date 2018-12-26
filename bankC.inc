@@ -1073,30 +1073,14 @@ loc_1367C8:
 ; =============== S U B	R O U T	I N E =======================================
 sub_1367D3:
 		LDX		byte_544
-		LDA		byte_7A
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_7A,OP_AND,#$E0
+		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	#$20,OP_NOP,0
 		STX		byte_544
 		LDX		byte_545
-		LDA		byte_7A
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7B
-		CLC
-		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_AND,#$E0
+		EXTQMOVB	byte_7B,OP_ADD,#$3C
+		EXTQMOVB	#$20,OP_NOP,0
 		STX		byte_545
 		STA		byte_546
 		LDA		byte_542
@@ -1113,14 +1097,10 @@ sub_1367D3:
 loc_136823:
 		JSR		sub_137E6E
 		LDX		byte_544
-		LDA		word_6C
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	word_6C,OP_NOP,0
 		STX		byte_544
 		LDX		byte_545
-		LDA		word_6C+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	word_6C+1,OP_NOP,0
 		STX		byte_545
 		DEC		byte_546
 		BEQ		locret_136857
@@ -1147,10 +1127,7 @@ sub_136858:
 loc_136862:
 		PHA
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_ptr0
 		LDA		_cur_screen_tile._X
 		LSR
@@ -1212,20 +1189,13 @@ sub_1368BD:
 		LDX		_ppu_queue_pos_head
 		LDY		byte_7E
 loc_1368DB:
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_NOP,0
+		PPUQMOVB	_tmp3,OP_NOP,0
+		PPUQMOVB	#$20,OP_NOP,0
 		STA		_tmp6
 loc_1368EF:
 		LDA		(_ptr0),Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		CPY		#$20
 		BCC		loc_1368FC
@@ -1281,20 +1251,13 @@ sub_136935:
 		LDX		_extnt_queue_pos_head
 		LDY		byte_7E
 loc_136956:
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_NOP,0
+		EXTQMOVB	#$20,OP_NOP,0
 		STA		_tmp6
 loc_13696A:
 		LDA		(_ptr0),Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		CPY		#$20
 		BCC		loc_136977
@@ -1338,10 +1301,7 @@ sub_1369B0:
 		LDA		_cur_screen_tile._Y
 		LSR
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_ptr0
 		LDA		_cur_screen_tile._X
 		LSR
@@ -1407,40 +1367,28 @@ sub_136A19:
 		LDA		byte_7F
 		STA		_tmp3
 loc_136A2D:
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
 		LDA		byte_7C
 		STA		_tmp4
 		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		byte_7D
 		STA		_tmp5
 loc_136A47:
 		LDA		byte_15175E,Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_136A47
 		LDA		_tmp5
 		BEQ		loc_136A75
-		LDA		_ptr0
-		AND		#$1F
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_AND,#$1F
+		PPUQMOVB	#$20,OP_NOP,0
 		LDA		_tmp5
 		STA		_tmp4
 		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		#$00
 		STA		_tmp5
 		BEQ		loc_136A47
@@ -1477,40 +1425,28 @@ sub_136A93:
 		LDA		byte_7F
 		STA		_tmp3
 loc_136AAA:
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_NOP,0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
 		LDA		byte_7C
 		STA		_tmp4
 		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		byte_7D
 		STA		_tmp5
 loc_136AC4:
 		LDA		byte_1517F1,Y
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp4
 		BNE		loc_136AC4
 		LDA		_tmp5
 		BEQ		loc_136AF2
-		LDA		_ptr0
-		AND		#$1F
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_AND,#$1F
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
 		LDA		_tmp5
 		STA		_tmp4
 		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		#$00
 		STA		_tmp5
 		BEQ		loc_136AC4
@@ -1581,31 +1517,17 @@ loc_136B56:
 ; =============== S U B	R O U T	I N E =======================================
 sub_136B5F:
 		LDX		byte_80
-		LDA		byte_7A
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7C
-		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_7A,OP_NOP,0
+		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	byte_7C,OP_ORA,#$80
 		STX		byte_80
 		LDX		byte_81
-		LDA		byte_7A
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7B
-		CLC
-		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_NOP,0
+		EXTQMOVB	byte_7B,OP_ADD,#$3C
 		LDA		byte_7C
 		STA		byte_82
 		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		STX		byte_81
 		LDA		byte_7D
 		STA		byte_83
@@ -1613,14 +1535,10 @@ loc_136B98:
 		SEC
 		JSR		sub_137E6E
 		LDX		byte_80
-		LDA		word_6C
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	word_6C,OP_NOP,0
 		STX		byte_80
 		LDX		byte_81
-		LDA		word_6C+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	word_6C+1,OP_NOP,0
 		STX		byte_81
 		INC		_tmp_tile_pos._Y
 		CLC
@@ -1632,30 +1550,14 @@ loc_136B98:
 		LDA		#$00
 		STA		byte_83
 		LDX		byte_80
-		LDA		byte_7A
-		AND		#$1F
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_82
-		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_7A,OP_AND,#$1F
+		PPUQMOVB	#$20,OP_NOP,0
+		PPUQMOVB	byte_82,OP_ORA,#$80
 		STX		byte_80
 		LDX		byte_81
-		LDA		byte_7A
-		AND		#$1F
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_82
-		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_AND,#$1F
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
+		EXTQMOVB	byte_82,OP_ORA,#$80
 		STX		byte_81
 		JMP		loc_136B98
 locret_136BF8:
@@ -1699,10 +1601,7 @@ loc_136C37:
 		LDA		byte_136C5F,Y
 loc_136C3A:
 		LDX		#$0C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		byte_D7
 		JSR		sub_136CB8
 		JSR		sub_136D06
@@ -1726,10 +1625,7 @@ sub_136C6F:
 		ADC		#$1E
 loc_136C79:
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		byte_7A
 		TXA
 		CLC
@@ -1769,20 +1665,13 @@ sub_136CB8:
 		STA		_tmp2
 		LDA		byte_7F
 		STA		_tmp3
-		LDA		byte_7A
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_7A,OP_NOP,0
+		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 		LDY		byte_D7
 loc_136CD6:
 		LDA		byte_3E6CF,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_tmp2
 		BNE		loc_136CD6
@@ -1791,16 +1680,9 @@ loc_136CD6:
 		STA		_tmp2
 		LDA		#$00
 		STA		_tmp3
-		LDA		byte_7A
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_7A,OP_AND,#$E0
+		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_136CD6
 loc_136D03:
 		STX		_ptr0
@@ -1809,22 +1691,13 @@ loc_136D03:
 ; =============== S U B	R O U T	I N E =======================================
 sub_136D06:
 		LDX		_ptr0+1
-		LDA		byte_7A
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7B
-		CLC
-		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7E
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_NOP,0
+		EXTQMOVB	byte_7B,OP_ADD,#$3C
+		EXTQMOVB	byte_7E,OP_NOP,0
 		LDY		byte_D7
 loc_136D1F:
 		LDA		byte_3E79B,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		DEC		byte_7E
 		BNE		loc_136D1F
@@ -1833,18 +1706,9 @@ loc_136D1F:
 		STA		byte_7E
 		LDA		#$00
 		STA		byte_7F
-		LDA		byte_7A
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7B
-		CLC
-		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7E
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_AND,#$E0
+		EXTQMOVB	byte_7B,OP_ADD,#$3C
+		EXTQMOVB	byte_7E,OP_NOP,0
 		JMP		loc_136D1F
 loc_136D4F:
 		STX		_ptr0+1
@@ -1989,10 +1853,7 @@ _power_build_wnd_draw:
 ;		SBC		#$1E
 ;loc_136E44:
 ;		LDX		#$20
-;		STX		_MMC5_MUL1
-;		STA		_MMC5_MUL0
-;		LDA		_MMC5_MUL0
-;		LDX		_MMC5_MUL1
+;		MUXA
 ;		STA		byte_7A
 ;		TXA
 ;		CLC
@@ -2140,19 +2001,11 @@ loc_136F43:
 		STA		_tmp4
 		LDA		byte_7F
 		STA		_tmp5
-		LDA		byte_7A
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_NOP,0
+		EXTQMOVB	byte_7B,OP_NOP,0
+		EXTQMOVB	_tmp4,OP_NOP,0
 loc_136F5D:
-		LDA		#$41
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$41,OP_NOP,0
 		INY
 		DEC		_tmp4
 		BNE		loc_136F5D
@@ -2161,16 +2014,9 @@ loc_136F5D:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		byte_7A
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_7B
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_7A,OP_AND,#$E0
+		EXTQMOVB	byte_7B,OP_NOP,0
+		EXTQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_136F5D
 loc_136F89:
 		LDA		byte_7A
@@ -3060,10 +2906,7 @@ _wnd_prequeue_data_line:
 		LDA		_wnd_width,X
 		STA		_tmp4
 		LDY		_wnd_cur_line_num
-		STY		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDY		_MMC5_MUL1
+		MULYA
 		TAY
 		TXA
 		PHA
@@ -3087,7 +2930,7 @@ _wnd_ppu_ofs_calc0:
 		BEQ		loc_137597
 		JMP		loc_1375F0
 loc_137597:
-		LDA		_cur_screen_tile._X
+		LDA		_cur_screen_tile._X			; TODO: CIADDB but with ,X indexation
 		LSR
 		CLC
 		ADC		_wnd_left_tile,X
@@ -3111,10 +2954,7 @@ loc_1375AF:
 		SBC		#$1E
 loc_1375BA:
 		LDY		#$20
-		STY		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDY		_MMC5_MUL1
+		MULYA
 		CLC
 		ADC		_ptr0
 		STA		_wnd_line_tmp_ppu_ofs
@@ -3145,10 +2985,7 @@ loc_1375F0:
 		CLC
 		ADC		_wnd_cur_line_num
 		LDY		#$20
-		STY		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDY		_MMC5_MUL1
+		MULYA
 		CLC
 		ADC		_ptr0
 		STA		_wnd_line_tmp_ppu_ofs
@@ -3197,10 +3034,7 @@ loc_137643:
 loc_13764C:
 		PHA
 		LDY		#$20
-		STY		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDY		_MMC5_MUL1
+		MULYA
 		CLC
 		ADC		_ptr0
 		STA		_wnd_line_tmp_ppu_ofs
@@ -3230,10 +3064,7 @@ loc_137681:
 		STA		_ptr0
 		LDA		_wnd_top_tile,X
 		LDY		#$20
-		STY		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDY		_MMC5_MUL1
+		MULYA
 		CLC
 		ADC		_ptr0
 		STA		_wnd_line_tmp_ppu_ofs
@@ -3451,16 +3282,9 @@ _wnd_nt_backup_queue0:
 		STA		_ptr0
 		LDA		_wnd_line_tmp_height
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_wnd_line_tmp_ppu_ofs+1
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_NOP,0
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#$20
+		PPUQMOVB	_ptr0,OP_NOP,0
 loc_13781D:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_137827
@@ -3470,8 +3294,7 @@ loc_137827:
 		LDA		_nt_backup_buf0,Y
 loc_13782A:
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_ptr0
 		BNE		loc_13781D
 		LDA		_ptr0+1
@@ -3479,17 +3302,9 @@ loc_13782A:
 		STA		_ptr0
 		LDA		#$00
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_wnd_line_tmp_ppu_ofs+1
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$E0
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#$20
+		PPUQMOVB	_ptr0,OP_NOP,0
 		JMP		loc_13781D
 loc_137856:
 		STX		_ppu_queue_pos_head
@@ -3508,17 +3323,9 @@ _wnd_nt_backup_queue1:
 		STA		_ptr0
 		LDA		_wnd_line_tmp_height
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_wnd_line_tmp_ppu_ofs+1
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0
-		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_NOP,0
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#$20
+		PPUQMOVB	_ptr0,OP_ORA,#$80
 loc_137880:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_13788A
@@ -3529,8 +3336,7 @@ loc_13788A:
 		LDA		_nt_backup_buf0,Y
 loc_13788D:
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_ptr0
 		BNE		loc_137880
 		LDA		_ptr0+1
@@ -3538,17 +3344,9 @@ loc_13788D:
 		STA		_ptr0
 		LDA		#$00
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		AND		#$1F
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0
-		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$1F
+		PPUQMOVB	#$20,OP_NOP,0
+		PPUQMOVB	_ptr0,OP_ORA,#$80
 		JMP		loc_137880
 loc_1378B9:
 		STX		_ppu_queue_pos_head
@@ -3567,16 +3365,9 @@ _wnd_extnt_backup_queue0:
 		STA		_ptr0
 		LDA		_wnd_line_tmp_height
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_wnd_line_tmp_ppu_ofs+1
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_NOP,0
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_ptr0,OP_NOP,0
 loc_1378E1:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_1378EB
@@ -3586,8 +3377,7 @@ loc_1378EB:
 		LDA		_extnt_backup0,Y
 loc_1378EE:
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_ptr0
 		BNE		loc_1378E1
 		LDA		_ptr0+1
@@ -3595,17 +3385,9 @@ loc_1378EE:
 		STA		_ptr0
 		LDA		#$00
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_wnd_line_tmp_ppu_ofs+1
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$E0
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_ptr0,OP_NOP,0
 		JMP		loc_1378E1
 loc_13791A:
 		STX		_extnt_queue_pos_head
@@ -3624,17 +3406,9 @@ _wnd_extnt_backup_queue1:
 		STA		_ptr0
 		LDA		_wnd_line_tmp_height
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_wnd_line_tmp_ppu_ofs+1
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0
-		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_NOP,0
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs+1,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_ptr0,OP_ORA,#$80
 loc_137944:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_13794E
@@ -3644,8 +3418,7 @@ loc_13794E:
 		LDA		_extnt_backup0,Y
 loc_137951:
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_ptr0
 		BNE		loc_137944
 		LDA		_ptr0+1
@@ -3653,17 +3426,9 @@ loc_137951:
 		STA		_ptr0
 		LDA		#$00
 		STA		_ptr0+1
-		LDA		_wnd_line_tmp_ppu_ofs
-		AND		#$1F
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0
-		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_wnd_line_tmp_ppu_ofs,OP_AND,#$1F
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
+		EXTQMOVB	_ptr0,OP_ORA,#$80
 		JMP		loc_137944
 loc_13797D:
 		STX		_extnt_queue_pos_head
@@ -3792,15 +3557,7 @@ loc_137A35:
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$0F
-		CMP		#$1E
-		BCC		loc_137A4E
-		SBC		#$1E
-loc_137A4E:
-		STA		_ptr0+1
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$0F,NONE,#$1E
 		CLC
 		ADC		#$04
 		CMP		#$1E
@@ -3818,15 +3575,7 @@ loc_137A64:
 		LDA		#$00
 		STA		_tmp3
 loc_137A6C:
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$02
-		CMP		#$20
-		BCC		loc_137A78
-		SBC		#$20
-loc_137A78:
-		STA		_ptr0
+		CIADDB	_ptr0,_cur_screen_tile._X,#$02,NONE,#$20
 		CLC
 		ADC		#$02
 		CMP		#$20
@@ -3846,10 +3595,7 @@ loc_137A8E:
 loc_137A96:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_ptr0
 		BCC		loc_137AAC
@@ -4017,10 +3763,7 @@ sub_137BB2:
 		SBC		#$1E
 loc_137BC6:
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_ptr0+1
 		PLA
 		AND		#$01
@@ -4063,62 +3806,35 @@ sub_137C04:
 ; =============== S U B	R O U T	I N E =======================================
 sub_137C08:
 		LDX		_extnt_queue_pos_head
-		LDA		_tmp_extnt_dest_ofs
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp_extnt_dest_ofs+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp_extnt_dest_ofs,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
 		LDA		byte_B6
 		AND		#$02
 		BNE		loc_137C58
-		LDA		#$02
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$02,OP_NOP,0
 		JSR		_ppu_extnt_word_queue
 		LDA		byte_B6
 		LSR
 		BCS		loc_137C3E
-		LDA		_tmp_extnt_dest_ofs
-		CLC
-		ADC		#$20
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp_extnt_dest_ofs,OP_ADD,#$20
 		LDA		_tmp_extnt_dest_ofs+1
 		ADC		#$00
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		JMP		loc_137C4C
 loc_137C3E:
-		LDA		_tmp_extnt_dest_ofs
-		AND		#$1F
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp_extnt_dest_ofs,OP_AND,#$1F
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
 loc_137C4C:
-		LDA		#$02
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$02,OP_NOP,0
 		JSR		_ppu_extnt_word_queue
 		STX		_extnt_queue_pos_head
 		RTS
 loc_137C58:
-		LDA		#$01
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
-		LDA		_tmp_extnt_dest_ofs
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp_extnt_dest_ofs+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp_extnt_dest_ofs,OP_AND,#$E0
+		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
 		LDA		byte_B6
 		LSR
@@ -4138,26 +3854,13 @@ loc_137C8C:
 		LDA		#>[_MMC5_EXRAM]
 		STA		_tmp_extnt_dest_ofs+1
 loc_137C96:
-		LDA		_tmp_extnt_dest_ofs
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp_extnt_dest_ofs+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp_extnt_dest_ofs,OP_NOP,0
+		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
-		LDA		_tmp_extnt_dest_ofs
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp_extnt_dest_ofs+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp_extnt_dest_ofs,OP_AND,#$E0
+		EXTQMOVB	_tmp_extnt_dest_ofs+1,OP_NOP,0
+		EXTQMOVB	#$01,OP_NOP,0
 		JSR		_ppu_extnt_byte_queue
 		STX		_extnt_queue_pos_head
 		RTS
@@ -4166,15 +3869,13 @@ loc_137C96:
 _ppu_extnt_word_queue:
 		LDA		(word_B2),Y
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_extnt_byte_queue:
 		LDA		(word_B2),Y
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4308,10 +4009,7 @@ sub_137D82:
 		SBC		#$1E
 loc_137D8E:
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_ptr0
 		LDA		_cur_screen_tile._X
 		LSR
@@ -4361,40 +4059,24 @@ loc_137DDF:
 ; =============== S U B	R O U T	I N E =======================================
 sub_137DE8:
 		LDX		byte_62
-		LDA		byte_66
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_67
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_6A
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_66,OP_NOP,0
+		PPUQMOVB	byte_67,OP_NOP,0
+		PPUQMOVB	byte_6A,OP_NOP,0
 		STX		byte_62
 		LDX		byte_63
-		LDA		byte_68
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_69
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_6A
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_68,OP_NOP,0
+		EXTQMOVB	byte_69,OP_NOP,0
+		EXTQMOVB	byte_6A,OP_NOP,0
 		STX		byte_63
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_137E15:
 		LDX		byte_62
-		LDA		word_6C
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	word_6C,OP_NOP,0
 		STX		byte_62
 		LDX		byte_63
-		LDA		word_6C+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	word_6C+1,OP_NOP,0
 		STX		byte_63
 		RTS
 
@@ -4409,28 +4091,14 @@ sub_137E2A:
 		LDA		#$00
 		STA		byte_6B
 		LDX		byte_62
-		LDA		byte_66
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_67
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_6A
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_66,OP_AND,#$E0
+		PPUQMOVB	byte_67,OP_NOP,0
+		PPUQMOVB	byte_6A,OP_NOP,0
 		STX		byte_62
 		LDX		byte_63
-		LDA		byte_68
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_69
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_6A
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_68,OP_AND,#$E0
+		EXTQMOVB	byte_69,OP_NOP,0
+		EXTQMOVB	byte_6A,OP_NOP,0
 		STX		byte_63
 loc_137E6A:
 		CLC
@@ -4462,10 +4130,7 @@ loc_137E86:
 loc_137E93:
 		LDA		_tmp_tile_pos._Y
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_tmp_tile_pos._X
 		STA		_tmp6E

@@ -140,30 +140,21 @@ _game_msg_wnd_pos_calc:
 		SBC		#$1E
 loc_1500BA:
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_ptr0
 		TXA
 		CLC
 		ADC		#$20
 		STA		_ptr0+1
 		LDX		_ppu_queue_pos_head
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
 		LDA		#$20
 		TAY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		#$DF
 loc_1500E7:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BNE		loc_1500E7
 		STX		_ppu_queue_pos_head
@@ -219,15 +210,7 @@ loc_15012B:
 		LDA		_cur_screen_tile._X
 		LSR
 		STA		byte_74
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		byte_73
-		CMP		#$1E
-		BCC		loc_15014D
-		SBC		#$1E
-loc_15014D:
-		STA		byte_75
+		CIADDB	byte_75,_cur_screen_tile._Y,byte_73,NONE,#$1E
 		JSR		sub_1502A2
 		LDA		_cur_screen_tile._X
 		LSR
@@ -237,22 +220,14 @@ loc_15014D:
 		AND		#$1F
 		STA		byte_76
 		LDX		_ppu_queue_pos_head
-		LDA		byte_77
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_78
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_77,OP_AND,#$E0
+		PPUQMOVB	byte_78,OP_NOP,0
+		PPUQMOVB	#$20,OP_NOP,0
 		STA		_ptr0
 		LDY		byte_76
 loc_150178:
 		LDA		_pre_ppu_buf,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_ptr0
 		BEQ		loc_15018C
@@ -264,24 +239,14 @@ loc_15018C:
 		TXA
 		PHA
 		LDX		_extnt_queue_pos_head
-		LDA		byte_77
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_78
-		CLC
-		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$20
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_77,OP_AND,#$E0
+		EXTQMOVB	byte_78,OP_ADD,#$3C
+		EXTQMOVB	#$20,OP_NOP,0
 		STA		_ptr0
 		LDY		byte_76
 loc_1501AB:
 		LDA		_pre_ppu_buf+$20,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		DEC		_ptr0
 		BEQ		loc_1501BF
@@ -303,15 +268,7 @@ loc_1501C5:
 		SBC		#$07
 		STA		_tmp_tile_pos._Y
 		JSR		sub_150282
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		byte_73
-		CMP		#$20
-		BCC		loc_1501E2
-		SBC		#$20
-loc_1501E2:
-		STA		byte_74
+		CIADDB	byte_74,_cur_screen_tile._X,byte_73,NONE,#$20
 		LDA		#$00
 		STA		byte_75
 		JSR		sub_1502A2
@@ -326,22 +283,16 @@ loc_1501E2:
 loc_1501F9:
 		STA		byte_76
 		LDX		_ppu_queue_pos_head
-		LDA		byte_77
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		byte_78
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	byte_77,OP_NOP,0
+		PPUQMOVB	byte_78,OP_NOP,0
 		LDA		#$1E
 		STA		_ptr0
 		ORA		#$80
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDY		byte_76
 loc_150215:
 		LDA		_pre_ppu_buf,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_ptr0
 		BEQ		loc_150229
@@ -353,24 +304,16 @@ loc_150229:
 		TXA
 		PHA
 		LDX		_extnt_queue_pos_head
-		LDA		byte_77
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		byte_78
-		CLC
-		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	byte_77,OP_NOP,0
+		EXTQMOVB	byte_78,OP_ADD,#$3C
 		LDA		#$1E
 		STA		_ptr0
 		ORA		#$80
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDY		byte_76
 loc_150248:
 		LDA		_pre_ppu_buf+$20,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		DEC		_ptr0
 		BEQ		loc_15025C
@@ -431,10 +374,7 @@ loc_150288:
 sub_1502A2:
 		LDA		byte_75
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_74
 		STA		byte_77
@@ -927,10 +867,7 @@ sub_1505E3:
 		CMP		#$4C
 		BCS		loc_150634
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_511
 		STA		word_D2
@@ -1559,10 +1496,7 @@ _get_cur_constr_cursor_map_ofs:
 		ADC		_constr_cursor_tile._Y
 		STA		_cur_constr_cursor_map_pos._Y
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_cur_constr_cursor_map_pos._X
 		STA		word_C1
@@ -2795,10 +2729,7 @@ _traffic_dencity_area_read:
 		LDA		_tmp_tile_pos._Y
 		LSR
 		LDY		#$13
-		STY		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDY		_MMC5_MUL1
+		MULYA
 		STA		_ptr0
 		LDA		_tmp_tile_pos._X
 		LSR
@@ -2889,15 +2820,7 @@ byte_151375:
 
 ; =============== S U B	R O U T	I N E =======================================
 _calc_wnd_pos:
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		_tmp4
-		CMP		#$20
-		BCC		loc_151387
-		SBC		#$20
-loc_151387:
-		STA		_ptr0
+		CIADDB	_ptr0,_cur_screen_tile._X,_tmp4,NONE,#$20
 		LDA		#$20
 		SEC
 		SBC		_ptr0
@@ -2916,15 +2839,7 @@ loc_15139F:
 		LDA		#$00
 		STA		_tmp3
 loc_1513A7:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		_tmp5
-		CMP		#$1E
-		BCC		loc_1513B3
-		SBC		#$1E
-loc_1513B3:
-		STA		_ptr0+1
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,_tmp5,NONE,#$1E
 		CMP		#$1D
 		BNE		loc_1513C1
 		LDA		#$01
@@ -2939,10 +2854,7 @@ loc_1513C1:
 loc_1513C9:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_ptr0
 		STA		_ptr0
@@ -2956,43 +2868,26 @@ _queue_wnd_header_extnt:
 		LDX		_extnt_queue_pos_head
 		LDY		_gui_ctrl_menu_press_idx
 loc_1513E8:
-		LDA		_tmp2
-		STA		_tmp6
-		LDA		_tmp3
-		STA		_tmp6+1
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		MOVW	_tmp6,_tmp2
+		EXTQMOVB	_ptr0,OP_NOP,0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
+		EXTQMOVB	_tmp6,OP_NOP,0
 loc_151402:
 		LDA		byte_1514CA,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp6
 		BNE		loc_151402
 		LDA		_tmp6+1
 		BEQ		loc_15142D
 		STA		_tmp6
-		LDA		_ptr0
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_AND,#$E0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
+		EXTQMOVB	_tmp6,OP_NOP,0
 		LDA		#$00
 		STA		_tmp6+1
 		BEQ		loc_151402
 loc_15142D:
-		LDA		_ptr0
+		LDA		_ptr0							; TODO: optimize, this is ADDW8 opcode actually
 		CLC
 		ADC		#$20
 		STA		_ptr0
@@ -3025,34 +2920,20 @@ loc_15145B:
 		STA		_tmp6
 		LDA		_tmp3
 		STA		_tmp6+1
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_NOP,0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
+		EXTQMOVB	_tmp6,OP_NOP,0
 loc_151475:
 		LDA		byte_1514D0,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp6
 		BNE		loc_151475
 		LDA		_tmp6+1
 		BEQ		loc_1514A0
 		STA		_tmp6
-		LDA		_ptr0
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_AND,#$E0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
+		EXTQMOVB	_tmp6,OP_NOP,0
 		LDA		#$00
 		STA		_tmp6+1
 		BEQ		loc_151475

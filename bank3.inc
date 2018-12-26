@@ -92,24 +92,8 @@ _hex_to_dec_9999999_tbl2:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_str_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$1C
-		CMP		#$1E
-		BCC		loc_580B0
-		SBC		#$1E
-loc_580B0:
-		STA		_ptr0+1
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$16
-		CMP		#$20
-		BCC		loc_580BE
-		SBC		#$20
-loc_580BE:
-		STA		_ptr0
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1C,NONE,#$1E
+		CIADDB	_ptr0,  _cur_screen_tile._X,#$16,NONE,#$20
 		CLC
 		ADC		#$07
 		CMP		#$20
@@ -129,10 +113,7 @@ loc_580D4:
 loc_580DC:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_ptr0
 		BCC		loc_580F2
@@ -148,20 +129,13 @@ loc_580F2:
 _cur_money_str_queue:
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 loc_58110:
 		LDA		_pre_ppu_buf,Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp2
 		BNE		loc_58110
 		LDA		_tmp3
@@ -169,16 +143,9 @@ loc_58110:
 		STA		_tmp2
 		LDA		#$00
 		STA		_tmp3
-		LDA		_ptr0
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_58110
 loc_5813D:
 		STX		_ppu_queue_pos_head
@@ -234,7 +201,7 @@ loc_581A4:
 		JSR		_game_msg_wnd_animB
 		JSR		_game_msg_wnd_animC
 		JSR		_spr_finish
-		JSR		_game_msg_bonus_item_clear
+		JSR		_game_msg_presents_clear
 		JSR		_msg_wnd_cheat_test
 		POPB	_ptr0
 		LDA		byte_524
@@ -349,7 +316,7 @@ loc_5829C:
 		CMP		(_tmp2),Y
 		BCC		loc_5829C
 		JSR		_game_msg_hints_extra_icons_draw
-		JSR		_game_msg_bonus_item_icon_draw
+		JSR		_game_msg_presents_icon_draw
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -359,25 +326,8 @@ _far_wnd_header_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_line_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$04
-		ADC		_ptr0+1
-		CMP		#$1E
-		BCC		loc_582E4
-		SBC		#$1E
-loc_582E4:
-		STA		_tmp2
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$08
-		CMP		#$20
-		BCC		loc_582F2
-		SBC		#$20
-loc_582F2:
-		STA		_tmp3
+		CIADDB	_tmp2,_cur_screen_tile._Y,#$04,_ptr0+1,#$1E
+		CIADDB	_tmp3,_cur_screen_tile._X,#$08,NONE,   #$20
 		LDA		#$20
 		SEC
 		SBC		_tmp3
@@ -397,10 +347,7 @@ loc_58308:
 loc_58310:
 		LDA		_tmp2
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_tmp3
 		STA		_tmp2
@@ -437,20 +384,11 @@ _game_msg_line_display:
 		PUSHB	_tmp4
 		PUSHB	_tmp5
 		LDX		_extnt_queue_pos_head
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp4,OP_NOP,0
 loc_58371:
-		LDA		#$0B
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$0B,OP_NOP,0
 		DEC		_tmp4
 		BNE		loc_58371
 		LDA		_tmp5
@@ -458,17 +396,9 @@ loc_58371:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_AND,#$E0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_58371
 loc_5839E:
 		STX		_extnt_queue_pos_head
@@ -476,16 +406,9 @@ loc_5839E:
 		POPB	_tmp4
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_NOP,0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 loc_583BE:
 		LDA		(_tmp6),Y
 		INY
@@ -496,8 +419,7 @@ loc_583BE:
 		DEY
 		LDA		#$20
 loc_583CC:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_583BE
 		LDA		_tmp5
@@ -505,17 +427,9 @@ loc_583CC:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_AND,#$E0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_583BE
 loc_583F7:
 		STX		_ppu_queue_pos_head
@@ -588,7 +502,7 @@ locret_5846D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_bonus_item_clear:
+_game_msg_presents_clear:
 		LDA		byte_528
 		CMP		#$02
 		BEQ		loc_58476
@@ -597,34 +511,17 @@ loc_58476:
 		LDA		#$02
 		STA		_ptr0+1
 loc_5847A:
-		JSR		_game_msg_bonus_item_pos_calc
-		JSR		_game_msg_bonus_item_line_clear
+		JSR		_game_msg_presents_pos_calc
+		JSR		_game_msg_presents_line_clear
 		DEC		_ptr0+1
 		BPL		loc_5847A
 		INC		byte_528
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_bonus_item_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$0C
-		ADC		_ptr0+1
-		CMP		#$1E
-		BCC		loc_58496
-		SBC		#$1E
-loc_58496:
-		STA		_tmp2
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$11
-		CMP		#$20
-		BCC		loc_584A4
-		SBC		#$20
-loc_584A4:
-		STA		_tmp3
+_game_msg_presents_pos_calc:
+		CIADDB	_tmp2,_cur_screen_tile._Y,#$0C,_ptr0+1,#$1E
+		CIADDB	_tmp3,_cur_screen_tile._X,#$11,NONE,   #$20
 		LDA		#$20
 		SEC
 		SBC		_tmp3
@@ -644,10 +541,7 @@ loc_584BA:
 loc_584C2:
 		LDA		_tmp2
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_tmp3
 		STA		_tmp2
@@ -657,16 +551,11 @@ loc_584C2:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_bonus_item_line_clear:
+_game_msg_presents_line_clear:
 		LDX		_extnt_queue_pos_head
 		LDY		#$0B
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		LDA		_tmp4
 		STA		_extnt_queue_buf,X
 		STA		_tmp6
@@ -675,8 +564,7 @@ _game_msg_bonus_item_line_clear:
 		INX
 loc_584FB:
 		TYA
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp6
 		BNE		loc_584FB
 		LDA		_tmp6+1
@@ -684,36 +572,20 @@ loc_584FB:
 		STA		_tmp6
 		LDA		#$00
 		STA		_tmp6+1
-		LDA		_tmp2
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_AND,#$E0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_584FB
 loc_58527:
 		STX		_extnt_queue_pos_head
 		LDX		_ppu_queue_pos_head
 		LDY		#$20
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_NOP,0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58541:
 		TYA
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_58541
 		LDA		_tmp5
@@ -721,17 +593,9 @@ loc_58541:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_AND,#$E0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_58541
 loc_5856D:
 		STX		_ppu_queue_pos_head
@@ -1130,8 +994,7 @@ loc_58896:
 loc_5889A:
 		LDA		(word_DA),Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_588C5
 		LDA		_tmp5
@@ -1139,17 +1002,9 @@ loc_5889A:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_AND,#$E0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 loc_588C5:
 		DEC		byte_51A
 		BNE		loc_5889A
@@ -1234,8 +1089,7 @@ loc_58950:
 loc_58961:
 		LDA		#$30
 loc_58963:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		#$00
 		STA		byte_51B
 		DEC		_tmp4
@@ -1245,17 +1099,11 @@ loc_58963:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+
+		PPUQMOVB	_tmp2,OP_AND,#$E0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
+
 loc_58990:
 		CPY		#$FF
 		BNE		loc_58950
@@ -1375,6 +1223,7 @@ byte_58A31:
 ; event	19 item	D
 ; event	1A item	E
 ;
+; TODO: too complex, replace with table.
 ;
 _present_put_in_list:
 		LDX		#$0F
@@ -1465,24 +1314,8 @@ loc_58AA8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		_ptr0
-		CMP		#$1E
-		BCC		loc_58ACC
-		SBC		#$1E
-loc_58ACC:
-		STA		_ptr0+1
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$07
-		CMP		#$20
-		BCC		loc_58ADA
-		SBC		#$20
-loc_58ADA:
-		STA		_tmp2
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,_ptr0,NONE,#$1E
+		CIADDB	_tmp2,_cur_screen_tile._X,#$07,NONE,#$20
 		LDA		#$20
 		SEC
 		SBC		_tmp2
@@ -1502,10 +1335,7 @@ loc_58AF0:
 loc_58AF8:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_tmp2
 		STA		_ptr0+1
@@ -1524,21 +1354,13 @@ _game_msg_wnd_line_draw:
 		STA		_tmp5
 		LDA		_tmp4
 		STA		_tmp6
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp5
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_ORA,#$20
+		PPUQMOVB	_tmp5,OP_NOP,0
 loc_58B38:
 		LDA		byte_58C49,Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp5
 		BNE		loc_58B38
 		LDA		_tmp6
@@ -1546,37 +1368,21 @@ loc_58B38:
 		STA		_tmp5
 		LDA		#$00
 		STA		_tmp6
-		LDA		_ptr0+1
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp5
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0+1,OP_AND,#$E0
+		PPUQMOVB	_tmp2,OP_ORA,#$20
+		PPUQMOVB	_tmp5,OP_NOP,0
 		JMP		loc_58B38
 loc_58B67:
 		LDY		_tmp6+1
 		STX		_tmp6+1
 		LDX		_extnt_queue_pos_head
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp2
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0+1,OP_NOP,0
+		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp3,OP_NOP,0
 loc_58B81:
 		LDA		byte_58BCC,Y
 		INY
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp3
 		BNE		loc_58B81
 		LDA		_tmp4
@@ -1584,17 +1390,9 @@ loc_58B81:
 		STA		_tmp3
 		LDA		#$00
 		STA		_tmp4
-		LDA		_ptr0+1
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp2
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0+1,OP_AND,#$E0
+		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp3,OP_NOP,0
 		JMP		loc_58B81
 loc_58BB0:
 		LDY		_tmp6+1
@@ -1701,10 +1499,7 @@ loc_58D3D:
 		SBC		#$1E
 loc_58D49:
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_tmp17
 		LDA		_scroll_msg_start_pos
 		AND		#$1F
@@ -1722,15 +1517,9 @@ loc_58D49:
 		DEX
 		STX		_ppu_queue_pos_tail
 		LDY		_scroll_msg_end_char
-		LDA		_tmp17
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp18
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp17,OP_NOP,0
+		PPUQMOVB	_tmp18,OP_NOP,0
+		PPUQMOVB	#$01,OP_NOP,0
 		LDA		(_tmp15),Y
 		CMP		#$FF
 		BEQ		loc_58D9E
@@ -1851,24 +1640,8 @@ _months_lib:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$1A
-		CMP		#$1E
-		BCC		loc_58E73
-		SBC		#$1E
-loc_58E73:
-		STA		_ptr0+1
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$16
-		CMP		#$20
-		BCC		loc_58E81
-		SBC		#$20
-loc_58E81:
-		STA		_ptr0
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_ptr0,_cur_screen_tile._X,#$16,NONE,#$20
 		CLC
 		ADC		#$07
 		CMP		#$20
@@ -1888,10 +1661,7 @@ loc_58E97:
 loc_58E9F:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_ptr0
 		BCC		loc_58EB5
@@ -1909,21 +1679,13 @@ _cur_date_str_queue:
 		STA		_tmp4
 		LDA		_tmp3
 		STA		_tmp5
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58EDA:
 		LDA		_pre_ppu_buf,Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_58EDA
 		LDA		_tmp5
@@ -1931,17 +1693,9 @@ loc_58EDA:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_ptr0
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_58EDA
 loc_58F09:
 		STX		_ppu_queue_pos_head
@@ -2044,10 +1798,7 @@ _sram_data_save:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_on
 		MOVWO	_ptr0,_wram_map_buf
-		LDA		#<[_sram_map_buf]
-		STA		_tmp2
-		LDA		#>[_sram_map_buf]
-		STA		_tmp3
+		MOVWO	_tmp2,_sram_map_buf
 		LDY		#$00
 loc_58FD3:
 		LDA		(_ptr0),Y
@@ -2255,10 +2006,7 @@ _sram_data_load:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_on
 		MOVWO	_ptr0,_sram_map_buf
-		LDA		#<[_wram_map_buf]
-		STA		_tmp2
-		LDA		#>[_wram_map_buf]
-		STA		_tmp3
+		MOVWO	_tmp2,_wram_map_buf
 		LDY		#$00
 loc_5915A:
 		LDA		(_ptr0),Y
@@ -2390,7 +2138,7 @@ loc_5924A:
 		BNE		loc_59248
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		LDA		#>[_MMC5_EXRAM]
+		LDA		#>[_MMC5_EXRAM]				; TODO: rearrange to use macros
 		STA		_ptr0+1
 		LDA		#<[_MMC5_EXRAM]
 		STA		_ptr0
@@ -2624,10 +2372,7 @@ _isle_map_tile_write:
 		PHA
 		LDA		byte_574
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_573
 		STA		_ptr0
@@ -2790,10 +2535,7 @@ loc_5957F:
 		BCS		locret_595BA
 		LDA		byte_578
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_577
 		STA		_ptr0
@@ -2996,10 +2738,7 @@ _generate_new_map_sub1:
 		BCS		loc_597C7
 		LDA		byte_578
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_577
 		STA		_ptr0
@@ -3074,10 +2813,7 @@ _generate_new_map_sub5:
 loc_5980A:
 		LDA		byte_576
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_575
 		STA		_ptr0
@@ -3107,10 +2843,7 @@ loc_59835:
 		BCS		loc_5987B
 		LDA		byte_578
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_577
 		STA		_tmp2
@@ -3164,10 +2897,7 @@ _generate_new_mapD:
 loc_598C5:
 		LDA		byte_576
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_575
 		STA		_ptr0
@@ -3215,10 +2945,7 @@ loc_598FC:
 		ADC		byte_576
 		STA		byte_578
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_577
 		STA		_tmp2
@@ -3233,10 +2960,7 @@ loc_598FC:
 loc_59957:
 		LDA		byte_578
 		LDX		#$4C
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		byte_577
 		STA		_tmp2
@@ -3306,7 +3030,7 @@ loc_599E6:
 		STA		(_ptr0),Y
 loc_599E8:
 		INCW	_ptr0
-		LDA		_ptr0+1
+		LDA		_ptr0+1							; TODO: rearrange to use macro
 		CMP		#>[_power_grid_map_buf]
 		BCC		loc_599D3
 		LDA		_ptr0
@@ -3368,10 +3092,7 @@ loc_59A4D:
 ; =============== S U B	R O U T	I N E =======================================
 _mul_rand:
 		JSR		_rand
-		STA		_MMC5_MUL1
-		STX		_MMC5_MUL0
-		LDX		_MMC5_MUL0
-		LDA		_MMC5_MUL1
+		MULAX
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3459,24 +3180,8 @@ byte_59AF4:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_pos_set:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$1A
-		CMP		#$1E
-		BCC		loc_59B06
-		SBC		#$1E
-loc_59B06:
-		STA		_ptr0+1
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$0E
-		CMP		#$20
-		BCC		loc_59B14
-		SBC		#$20
-loc_59B14:
-		STA		_ptr0
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_ptr0,_cur_screen_tile._X,#$0E,NONE,#$20
 		CLC
 		ADC		#$05
 		CMP		#$20
@@ -3496,10 +3201,7 @@ loc_59B2A:
 loc_59B32:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_ptr0
 		BCC		loc_59B48
@@ -3516,19 +3218,16 @@ _cur_popul_str_queue:
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
 		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+
+
+		PPUQMOVA
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
+
 loc_59B66:
 		LDA		_pre_ppu_buf,Y
 		INY
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp2
 		BNE		loc_59B66
 		LDA		_tmp3
@@ -3536,16 +3235,9 @@ loc_59B66:
 		STA		_tmp2
 		LDA		#$00
 		STA		_tmp3
-		LDA		_ptr0
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_59B66
 loc_59B93:
 		STX		_ppu_queue_pos_head
@@ -3620,7 +3312,7 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		RTS
 loc_59C0E:
-		LDA		#>[_land_value_map_buf]
+		LDA		#>[_land_value_map_buf]			; TODO: rearrange to use macro!
 		STA		_ptr0+1
 		LDA		#<[_land_value_map_buf]
 		STA		_ptr0

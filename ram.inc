@@ -898,10 +898,10 @@ _worst_problem_percents:
 
 byte_674:
 		.BYTE	0
-_total_RIC_areas:
+_total_RCI_counts:
 		.BYTE	0,0
 
-		_trciw	_RIC_areas
+		_trciw	_RCI_counts
 
 _wrong_var:
 		.BYTE	0,0

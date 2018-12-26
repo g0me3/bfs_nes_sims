@@ -243,10 +243,7 @@ sub_EA1C5:
 		LDA		byte_15B
 		BNE		locret_EA1F3
 		MOVWO	_ptr0,byte_EA3D8
-		LDA		#<[byte_EA3EE]
-		STA		_tmp2
-		LDA		#>[byte_EA3EE]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_EA3EE
 		LDA		#$00
 		JSR		sub_EA366
 		JSR		sub_EA405
@@ -373,10 +370,7 @@ sub_EA2E5:
 		LDA		byte_15B
 		BNE		loc_EA363
 		MOVWO	_ptr0,byte_EA392
-		LDA		#<[byte_EA3A7]
-		STA		_tmp2
-		LDA		#>[byte_EA3A7]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_EA3A7
 		LDA		#$00
 		JSR		sub_EA366
 		JSR		_wait_for_nmi
@@ -413,10 +407,7 @@ loc_EA342:
 		JSR		sub_EA433
 		JSR		sub_EA29D
 		MOVWO	_ptr0,byte_EA3B5
-		LDA		#<[byte_EA3CA]
-		STA		_tmp2
-		LDA		#>[byte_EA3CA]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_EA3CA
 		LDA		#$00
 		JMP		sub_EA366
 loc_EA363:
@@ -431,8 +422,7 @@ loc_EA36D:
 		LDA		(_ptr0),Y
 		CMP		_stack_upper
 		BEQ		loc_EA37B
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		BNE		loc_EA36D
 loc_EA37B:
@@ -443,8 +433,7 @@ loc_EA381:
 		LDA		(_tmp2),Y
 		CMP		_stack_upper
 		BEQ		loc_EA38F
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		BNE		loc_EA381
 loc_EA38F:
@@ -1701,34 +1690,22 @@ loc_EACFD:
 		STA		_ppu_queue_buf,X
 		STA		_ptr0+1
 		INX
-		LDA		#$13
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$13,OP_NOP,0
 		TAY
 		LDA		#$DF
 loc_EAD17:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BNE		loc_EAD17
 		STX		_ppu_queue_pos_head
 		LDX		_extnt_queue_pos_head
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		CLC
-		ADC		#$38
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$13
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_NOP,0
+		EXTQMOVB	_ptr0+1,OP_ADD,#$38
+		EXTQMOVB	#$13,OP_NOP,0
 		TAY
 		LDA		#$01
 loc_EAD3A:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEY
 		BNE		loc_EAD3A
 		STX		_extnt_queue_pos_head
@@ -1764,15 +1741,9 @@ _info_maps_date_draw_ex:
 		LDA		#$15
 		JSR		_printf
 		LDX		_ppu_queue_pos_head
-		LDA		#$7B
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$24
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$03
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$7B,OP_NOP,0
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	#$03,OP_NOP,0
 		LDA		_city._cur_month
 		ASL
 		ASL
@@ -1781,8 +1752,7 @@ loc_EADA1:
 		LDA		byte_EB6B8,Y
 		CMP		#$80
 		BEQ		loc_EADAF
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		BNE		loc_EADA1
 loc_EADAF:
@@ -1878,37 +1848,23 @@ sub_EAE37:
 		STY		_ptr0+1
 		LDY		#$01
 		LDX		_ppu_queue_pos_head
-		LDA		#$62
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$24
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$62,OP_NOP,0
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	_ptr0,OP_NOP,0
 loc_EAE57:
 		LDA		_city,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_ptr0
 		BNE		loc_EAE57
 		STX		_ppu_queue_pos_head
 		LDX		_extnt_queue_pos_head
-		LDA		#$62
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$62,OP_NOP,0
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
 		LDA		#$59
 loc_EAE7B:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_ptr0+1
 		BNE		loc_EAE7B
 		STX		_extnt_queue_pos_head
@@ -1996,27 +1952,18 @@ loc_EAEEC:
 		BIT		_city._bank_flags
 		BPL		loc_EAFD0
 		MOVWO	_ptr0,byte_EB7C3
-		LDA		#<[word_EB80C]
-		STA		_tmp2
-		LDA		#>[word_EB80C]
-		STA		_tmp3
+		MOVWO	_tmp2,word_EB80C
 		LDA		#$FF
 		JSR		sub_EA366
 		JSR		_buffers_force_flush
 		BIT		_city._bank_flags
 		BVC		loc_EAFBB
 		MOVWO	_ptr0,word_EB801
-		LDA		#<[word_EB84A]
-		STA		_tmp2
-		LDA		#>[word_EB84A]
-		STA		_tmp3
+		MOVWO	_tmp2,word_EB84A
 		JMP		loc_EAFCB
 loc_EAFBB:
 		MOVWO	_ptr0,word_EB7FC
-		LDA		#<[word_EB845]
-		STA		_tmp2
-		LDA		#>[word_EB845]
-		STA		_tmp3
+		MOVWO	_tmp2,word_EB845
 loc_EAFCB:
 		LDA		#$FF
 		JSR		sub_EA366
@@ -2325,7 +2272,7 @@ loc_EB226:
 		TYA
 		PHA
 		LDX		#$64
-		JSR		_mmc5_mul16to8_unsafe
+		JSR		_mmc5_mul16to8_fast
 		LDX		#$02
 loc_EB230:
 		LDA		_ptr0,X
@@ -2364,9 +2311,9 @@ _get_constr_count_by_idx:
 		STX		_ptr0
 		RTS
 off_EB26C:
-		.WORD	_RIC_areas._R
-		.WORD	_RIC_areas._I
-		.WORD	_RIC_areas._C
+		.WORD	_RCI_counts._R
+		.WORD	_RCI_counts._I
+		.WORD	_RCI_counts._C
 		.WORD	_stats._developed
 		.WORD	_stats._undeveloped
 		.WORD	_stats._other
@@ -2660,7 +2607,7 @@ loc_EB450:
 		DEY
 		LDA		_funding_level,Y
 		TAX
-		JSR		_mmc5_mul16to8_unsafe
+		JSR		_mmc5_mul16to8_fast
 		LDY		#$02
 loc_EB478:
 		LDA		_ptr0,Y
@@ -2699,7 +2646,7 @@ _funding_rate_calc:
 		LDA		_tax_alloc+1,Y
 		STA		_ptr0+1
 		LDX		#byte_64
-		JSR		_mmc5_mul16to8_unsafe
+		JSR		_mmc5_mul16to8_fast
 		LDY		#$02
 loc_EB4C6:
 		LDA		_ptr0,Y
@@ -2983,11 +2930,9 @@ _txt_lib_printf:
 		ASL
 		TAY
 		LDA		_txt_ppu_ofs_lib,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		_txt_ppu_ofs_lib+1,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDY		_tmp6+1
 		LDA		byte_EBB49,Y
 		STA		_ppu_queue_buf,X
@@ -3014,8 +2959,7 @@ loc_EB896:
 		TAY
 loc_EB897:
 		LDA		(_ptr0),Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_tmp5
 		BNE		loc_EB897
@@ -3027,13 +2971,11 @@ loc_EB897:
 		ASL
 		TAY
 		LDA		_txt_ppu_ofs_lib,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		_txt_ppu_ofs_lib+1,Y
 		CLC
 		ADC		#$38
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDY		_tmp6+1
 		LDA		byte_EBB49,Y
 		STA		_extnt_queue_buf,X
@@ -3056,8 +2998,7 @@ loc_EB897:
 loc_EB8E7:
 		LDA		(_ptr0),Y
 loc_EB8E9:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp5
 		BNE		loc_EB8E9
 		STX		_extnt_queue_pos_head
@@ -3092,21 +3033,17 @@ loc_EB90E:
 		ASL
 		TAY
 		LDA		byte_EBD8A,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		byte_EBD8A+1,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDY		_tmp118
 		LDA		byte_EBE28,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		TAY
 		DEY
 loc_EB93C:
 		LDA		_ptr0,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BPL		loc_EB93C
 		STX		_ppu_queue_pos_head
@@ -3118,23 +3055,19 @@ loc_EB93C:
 		ASL
 		TAY
 		LDA		byte_EBD8A,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		byte_EBD8A+1,Y
 		CLC
 		ADC		#$38
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDY		_tmp118
 		LDA		byte_EBE28,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		TAY
 		DEY
 loc_EB973:
 		LDA		_ptr0,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEY
 		BPL		loc_EB973
 		STX		_extnt_queue_pos_head
@@ -3296,10 +3229,9 @@ byte_EBA77:
 		.BYTE	$0A,$64,$E8,$10,$A0,$40,$80
 
 ; =============== S U B	R O U T	I N E =======================================
-; unsafe with no stack version of mul16to8 on MMC5 hw
 ; input args: 16bit _ptr0 * reg X, store 24bit _ptr0/tmp2
 ;
-_mmc5_mul16to8_unsafe:
+_mmc5_mul16to8_fast:
 		LDA		_ptr0+1
 		STA		_MMC5_MUL0
 		STX		_MMC5_MUL1
@@ -3309,7 +3241,7 @@ _mmc5_mul16to8_unsafe:
 		STA		_tmp3
 		LDA		_ptr0
 		STA		_MMC5_MUL0
-		LDA		#$64					; WTF LDA $64?
+		LDA		#$64					; FIXME: WTF LDA $64?
 		LDA		_MMC5_MUL0
 		STA		_ptr0
 		LDA		_MMC5_MUL1
@@ -3350,18 +3282,10 @@ loc_EBACC:
 		BNE		loc_EBACC
 loc_EBAD9:
 		LDX		_ppu_queue_pos_head
-		LDA		#$AF
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$26
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$AF,OP_NOP,0
+		PPUQMOVB	#$26,OP_NOP,0
+		PPUQMOVB	#$01,OP_NOP,0
+		PPUQMOVB	_tmp6,OP_NOP,0
 		STX		_ppu_queue_pos_head
 		RTS
 

@@ -113,24 +113,8 @@ _game_msg_extra_icons_set_tmp3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		_ptr0+1
-		CMP		#$1E
-		BCC		loc_700B9
-		SBC		#$1E
-loc_700B9:
-		STA		_ptr0+1
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		_tmp2
-		CMP		#$20
-		BCC		loc_700C7
-		SBC		#$20
-loc_700C7:
-		STA		_tmp2
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,_ptr0+1,NONE,#$1E
+		CIADDB	_tmp2,_cur_screen_tile._X,_tmp2,NONE,#$20
 		LDA		#$20
 		SEC
 		SBC		_tmp2
@@ -150,10 +134,7 @@ loc_700DD:
 loc_700E5:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_tmp2
 		STA		_tmp2
@@ -166,13 +147,8 @@ loc_700E5:
 _game_msg_extra_icons_draw:
 		STY		_ptr0+1
 		LDX		_extnt_queue_pos_head
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		LDA		_tmp4
 		STA		_extnt_queue_buf,X
 		STA		_tmp6
@@ -181,8 +157,7 @@ _game_msg_extra_icons_draw:
 		INX
 loc_7011E:
 		LDA		byte_70199,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		DEC		_tmp6
 		BNE		loc_7011E
@@ -191,36 +166,20 @@ loc_7011E:
 		STA		_tmp6
 		LDA		#$00
 		STA		_tmp6+1
-		LDA		_tmp2
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_AND,#$E0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_7011E
 loc_7014D:
 		STX		_extnt_queue_pos_head
 		LDY		_ptr0+1
 		LDX		_ppu_queue_pos_head
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_NOP,0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 loc_70167:
 		LDA		byte_701B1,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_tmp4
 		BNE		loc_70167
@@ -229,17 +188,9 @@ loc_70167:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_AND,#$E0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_70167
 loc_70196:
 		STX		_ppu_queue_pos_head
@@ -254,9 +205,9 @@ byte_701B1:
 		.BYTE	$00,$01,$02,$03,$10,$11,$12,$13
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_bonus_item_icon_draw:
+_game_msg_presents_icon_draw:
 		LDX		_game_msg_idx
-		LDA		_game_msg_bonus_items_list,X
+		LDA		_game_msg_presentss_list,X
 		BPL		loc_701D1
 		RTS
 loc_701D1:
@@ -265,51 +216,43 @@ loc_701D1:
 loc_701D5:
 		PHA
 		LDX		#$09
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		STA		_tmp2
 		CLC
-		ADC		#<[_tlm_nt_game_msg_bonus_items_icons_lib]
+		ADC		#<[_tlm_nt_game_msg_presentss_icons_lib]
 		STA		word_C1
 		TXA
-		ADC		#>[_tlm_nt_game_msg_bonus_items_icons_lib]
+		ADC		#>[_tlm_nt_game_msg_presentss_icons_lib]
 		STA		word_C1+1
 		LDA		_tmp2
 		CLC
-		ADC		#<[_tlm_extnt_game_msg_bonus_items_icons_lib]
+		ADC		#<[_tlm_extnt_game_msg_presentss_icons_lib]
 		STA		word_C3
 		TXA
-		ADC		#>[_tlm_extnt_game_msg_bonus_items_icons_lib]
+		ADC		#>[_tlm_extnt_game_msg_presentss_icons_lib]
 		STA		word_C3+1
-		JSR		_game_msg_bonus_item_pos_calc
+		JSR		_game_msg_presents_pos_calc
 		LDX		_ptr0+1
 		LDY		byte_7020D,X
-		JSR		_game_msg_bonus_item_icon_line_draw
+		JSR		_game_msg_presents_icon_line_draw
 		PLA
 		DEC		_ptr0+1
 		BPL		loc_701D5
 		RTS
 byte_7020D:
 		.BYTE	$00,$03,$06
-_game_msg_bonus_items_list:
+_game_msg_presentss_list:
 		.BYTE	$80,$80,$00,$80,$80,$80,$80,$80,$80,$80,$80,$01,$80,$02,$03,$04
 		.BYTE	$05,$06,$07,$08,$09,$80,$0A,$0B,$0C,$0D,$0E,$80,$80,$80,$80,$80
 		.BYTE	$80,$80,$80,$80
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_bonus_item_icon_line_draw:
+_game_msg_presents_icon_line_draw:
 		TYA
 		PHA
 		LDX		_extnt_queue_pos_head
-		LDA		_tmp2
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		LDA		_tmp4
 		STA		_extnt_queue_buf,X
 		STA		_tmp6
@@ -318,8 +261,7 @@ _game_msg_bonus_item_icon_line_draw:
 		INX
 loc_70252:
 		LDA		(word_C3),Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		DEC		_tmp6
 		BNE		loc_70252
@@ -328,37 +270,21 @@ loc_70252:
 		STA		_tmp6
 		LDA		#$00
 		STA		_tmp6+1
-		LDA		_tmp2
-		AND		#$E0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#>[_MMC5_EXRAM]
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp6
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp2,OP_AND,#$E0
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp6,OP_NOP,0
 		JMP		loc_70252
 loc_70280:
 		STX		_extnt_queue_pos_head
 		PLA
 		TAY
 		LDX		_ppu_queue_pos_head
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_NOP,0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 loc_7029A:
 		LDA		(word_C1),Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_tmp4
 		BNE		loc_7029A
@@ -367,22 +293,14 @@ loc_7029A:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-		LDA		_tmp2
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp3
-		ORA		#$20
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp2,OP_AND,#$E0
+		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
 		JMP		loc_7029A
 loc_702C8:
 		STX		_ppu_queue_pos_head
 		RTS
-_tlm_nt_game_msg_bonus_items_icons_lib:
+_tlm_nt_game_msg_presentss_icons_lib:
 		.BYTE	$3A,$3B,$3C
 		.BYTE	$4A,$4B,$4C
 		.BYTE	$5A,$5B,$5C
@@ -428,7 +346,7 @@ _tlm_nt_game_msg_bonus_items_icons_lib:
 		.BYTE	$37,$38,$39
 		.BYTE	$47,$48,$49
 		.BYTE	$57,$58,$59
-_tlm_extnt_game_msg_bonus_items_icons_lib:
+_tlm_extnt_game_msg_presentss_icons_lib:
 		.BYTE	 $0D2,$D2,$D2
 		.BYTE	$D2,$92,$D2
 		.BYTE	$D2,$D2,$D2

@@ -103,9 +103,10 @@ I_AREA_WIDX	EQU 4
 {1}._tax_rate:							.BYTE	0
 {1}._game_flags:						.BYTE	0
 	; bit0 - auto buldozer
-	; bit1 - auto budget
+	; bit1 - auto budget (unused)
 	; bit2 - auto goto
-	; bit3 - music on
+	; bit3 - music on/off
+	; bit4 - debug mode (free construction)
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
 {1}._year_to_build_bank:				.WORD	0
@@ -115,11 +116,6 @@ I_AREA_WIDX	EQU 4
 {1}._history_list:						.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 {1}._bank_flags:						.BYTE	0
 	; bit0 - bank built, wait for loan message
-	; -
-	; -
-	; -
-	; -
-	; -
 	; bit6 - money loaned, wait for end of period
 	; bit7 - loan message enabled, may loan now
 {1}._tax_year_rate:						.WORD	0
@@ -222,6 +218,47 @@ OTHER_WIDX			EQU 4
 
 ;---------G-A-M-E--S-P-E-C-I-F-I-C--------------
 
+	; \t\tSTX\t\t_MMC5_MUL1\n\t\tSTA\t\t_MMC5_MUL0\n\t\tLDA\t\t_MMC5_MUL0\n\t\tLDX\t\t_MMC5_MUL1\n
+	; \t\tMULXA\n
+	;
+	MAC	MULXA
+		STX		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDX		_MMC5_MUL1
+	ENDM
+
+	; \t\tSTA\t\t_MMC5_MUL1\n\t\tSTX\t\t_MMC5_MUL0\n\t\tLDX\t\t_MMC5_MUL0\n\t\tLDA\t\t_MMC5_MUL1\n
+	; \t\tMULXA\n
+	;
+	MAC	MULAX
+		STA		_MMC5_MUL1
+		STX		_MMC5_MUL0
+		LDX		_MMC5_MUL0
+		LDA		_MMC5_MUL1
+	ENDM
+
+	; \t\tSTY\t\t_MMC5_MUL1\n\t\tSTA\t\t_MMC5_MUL0\n\t\tLDA\t\t_MMC5_MUL0\n\t\tLDY\t\t_MMC5_MUL1\n
+	; \t\tMULYA\n
+	;
+	MAC	MULYA
+		STY		_MMC5_MUL1
+		STA		_MMC5_MUL0
+		LDA		_MMC5_MUL0
+		LDY		_MMC5_MUL1
+	ENDM
+
+	; \t\tSTA\t\t_mmc5_mul1_shadow\n\t\tSTA\t\t_MMC5_MUL1\n\t\tLDA\t\t(.*)\n\t\tSTA\t\t_mmc5_mul0_shadow\n\t\tSTA\t\t_MMC5_MUL0\n
+	; \t\tMULAI\t\1\n
+	;
+	MAC	MULAI
+		STA		_mmc5_mul1_shadow
+		STA		_MMC5_MUL1
+		LDA		{0}
+		STA		_mmc5_mul0_shadow
+		STA		_MMC5_MUL0
+	ENDM
+
 	MAC	FJSRA
 		JSR		_farcall_argsAXY_safe
 		.BYTE	{2},{3}
@@ -271,6 +308,83 @@ OTHER_WIDX			EQU 4
 		JSR		_mmc5_mul8to8
 		POPB	{1}
 		POPB	{1}+1
+	ENDM
+
+NONE	EQU		-1
+
+	;\t\tLDA\t\t(.*)\n\t\tLSR\n\t\tCLC\n\t\tADC\t\t(.*)\n\t\tCMP\t\t(.*)\n\t\tBCC\t\t(.*)\n\t\tSBC\t\t\3\n\4:\n\t\tSTA\t\t(.*)\n
+	;\t\tCIADDB\t\5,\1,\2,NONE,\3\n
+	;
+	; add mem to mem with extra immediate, clamp/wrap and store
+	;
+	MAC	CIADDB
+		LDA		{2}
+		LSR
+		CLC
+	#if {3}!=NONE
+		ADC		{3}
+	#endif
+	#if {4}!=NONE
+		ADC		{4}
+	#endif
+		CMP		{5}
+		BCC		.1
+		SBC		{5}
+.1:
+		STA		{1}
+	ENDM
+
+	;\t\tSTA\t\t_ppu_queue_buf\,X\n\t\tINX\n
+	;\t\tPPUQMOVA\n
+	;
+	; TODO: macrocify non-standart usage of such opcodes by rearrange
+	; to the regular pattern types without logic changes
+	;
+	MAC	PPUQMOVA
+		STA		_ppu_queue_buf,X
+		INX
+	ENDM
+
+OP_NOP	EQU	-1
+OP_ORA	EQU	1
+OP_AND	EQU	2
+
+	MAC	PPUQMOVB
+		LDA		{1}
+	#if {2}==OP_ORA
+		ORA		{3}
+	#endif
+	#if {2}==OP_AND
+		AND		{3}
+	#endif
+		STA		_ppu_queue_buf,X
+		INX
+	ENDM
+
+	MAC	EXTQMOVA
+		STA		_extnt_queue_buf,X
+		INX
+	ENDM
+
+OP_NOP	EQU	-1
+OP_ORA	EQU	1
+OP_AND	EQU	2
+OP_ADD	EQU	3
+
+	MAC	EXTQMOVB
+		LDA		{1}
+	#if {2}==OP_ORA
+		ORA		{3}
+	#endif
+	#if {2}==OP_AND
+		AND		{3}
+	#endif
+	#if {2}==OP_ADD
+		CLC
+		ADC		{3}
+	#endif
+		STA		_extnt_queue_buf,X
+		INX
 	ENDM
 
 ;-----------------C-O-M-M-O-N-------------------

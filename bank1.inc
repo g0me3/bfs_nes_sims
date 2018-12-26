@@ -175,12 +175,8 @@ _scenario_closed_icon_draw:
 		STA		_ptr0
 		LDY		#$00
 loc_24130:
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
 		LDA		#$06
 		STA		_ppu_queue_buf,X
 		STA		_tmp3
@@ -206,12 +202,8 @@ loc_24144:
 		STA		_ptr0
 		LDY		#$00
 loc_24174:
-		LDA		_ptr0
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_ptr0,OP_NOP,0
+		EXTQMOVB	_ptr0+1,OP_NOP,0
 		LDA		#$06
 		STA		_extnt_queue_buf,X
 		STA		_tmp3
@@ -421,17 +413,12 @@ loc_24347:
 		LDA		_msg_print_out_ppu_pos_list_lo,Y
 		CLC
 		ADC		_tmp6D9
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		_msg_print_out_ppu_pos_list_hi,Y
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
+		PPUQMOVB	#$01,OP_NOP,0
 		PLA
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		STX		_ppu_queue_pos_head
 		INC		_tmp6D9
 locret_2436F:
@@ -466,10 +453,7 @@ _scenario_map_load:
 		STA		_tmp2
 		LDA		off_251AC,Y
 		STA		_tmp3
-		LDA		#<[_wram_map_buf]
-		STA		_tmp4
-		LDA		#>[_wram_map_buf]
-		STA		_tmp5
+		MOVWO	_tmp4,_wram_map_buf
 		JSR		_sram_on
 		JSR		_scenario_map_unpack
 		JSR		_sram_off
@@ -541,9 +525,7 @@ loc_24453:
 		LDA		(_tmp4),Y
 		CMP		#$90
 		BEQ		loc_2446F
-		INC		_tmp4
-		BNE		loc_24461
-		INC		_tmp5
+		INCW	_tmp4
 loc_24461:
 		LDA		_tmp4
 		CMP		#<[_power_grid_map_buf]
@@ -961,8 +943,8 @@ _name_input_button_push_control:
 		STA		byte_6DC+3
 		JSRXY	_rle_nt_res_queue,byte_24C77
 		JSRXY	_rle_extnt_res_queue,byte_24C8E
-		JSR		_wait_for_flush
-		JMP		_name_input_next_scr
+		JSR		_wait_for_flush					; FIXME: seems need wait for flush first
+		JMP		_name_input_next_scr			; to avoid buffers overflow
 loc_247A1:
 		LDA		_tmp6CC
 		SEC
@@ -1045,19 +1027,14 @@ _name_input_char_nt_queue:
 		LDX		_ppu_queue_pos_head
 		LDY		byte_6DC+2
 		LDA		byte_248BF,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDA		byte_248C1,Y
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$0A
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
+		PPUQMOVB	#$0A,OP_NOP,0
 		LDY		#$01
 loc_2486A:
 		LDA		(_ptr0),Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		CPY		#$0B
 		BNE		loc_2486A
@@ -1074,16 +1051,12 @@ _name_input_char_extnt_queue:
 		LDX		_extnt_queue_pos_head
 		LDY		byte_6DC+2
 		LDA		byte_248BF,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		byte_248C1,Y
 		CLC
 		ADC		#$3C
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$0A
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
+		EXTQMOVB	#$0A,OP_NOP,0
 		LDY		#$01
 loc_248A2:
 		STX		_tmp3
@@ -1095,8 +1068,7 @@ loc_248A2:
 loc_248AE:
 		TXA
 		LDX		_tmp3
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		CPY		#$0B
 		BNE		loc_248A2
@@ -1209,11 +1181,9 @@ _difficult_scr_cursor_draw:
 		LDY		#$02
 loc_24971:
 		LDA		off_249B0,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		off_249B3,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		LDA		byte_249B6,Y
 		STA		_extnt_queue_buf,X
 		STA		_tmp2
@@ -1223,8 +1193,7 @@ loc_24971:
 		BNE		loc_24991
 		LDA		#$4B
 loc_24991:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp2
 		BNE		loc_24991
 		DEY
@@ -1296,8 +1265,7 @@ loc_24A00:
 		STA		_tmp2
 loc_24A09:
 		LDA		(_ptr0),Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		DEC		_tmp2
 		BNE		loc_24A09
@@ -1308,8 +1276,7 @@ loc_24A16:
 		STA		_tmp2
 		LDA		(_ptr0),Y
 loc_24A1D:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp2
 		BNE		loc_24A1D
 		INY
@@ -1333,8 +1300,7 @@ loc_24A36:
 		STA		_tmp2
 loc_24A3F:
 		LDA		(_ptr0),Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		DEC		_tmp2
 		BNE		loc_24A3F
@@ -1345,8 +1311,7 @@ loc_24A4C:
 		STA		_tmp2
 		LDA		(_ptr0),Y
 loc_24A53:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEC		_tmp2
 		BNE		loc_24A53
 		INY
@@ -1386,7 +1351,7 @@ _game_setup09_practice_msg_init:
 		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
 		MOVWO	_ptr0,_tlm_practice_wnd_header
 		JSR		_tlm_transfer
-		LDY		#<[_practice_msg0]
+		LDY		#<[_practice_msg0]				; TODO: rearrange me to use common macros!
 		LDX		#>[_practice_msg0]
 		LDA		_tmp6D5
 		BEQ		loc_24AB0

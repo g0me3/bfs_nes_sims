@@ -20,24 +20,8 @@ _get_city_name_str:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_name_str_pos_set:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$1A
-		CMP		#$1E
-		BCC		loc_B8026
-		SBC		#$1E
-loc_B8026:
-		STA		_ptr0+1
-		LDA		_cur_screen_tile._X
-		LSR
-		CLC
-		ADC		#$02
-		CMP		#$20
-		BCC		loc_B8034
-		SBC		#$20
-loc_B8034:
-		STA		_ptr0
+		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_ptr0,_cur_screen_tile._X,#$02,NONE,#$20
 		CLC
 		ADC		#$09
 		CMP		#$20
@@ -57,10 +41,7 @@ loc_B804A:
 loc_B8052:
 		LDA		_ptr0+1
 		LDX		#$20
-		STX		_MMC5_MUL1
-		STA		_MMC5_MUL0
-		LDA		_MMC5_MUL0
-		LDX		_MMC5_MUL1
+		MULXA
 		CLC
 		ADC		_ptr0
 		BCC		loc_B8068
@@ -76,15 +57,9 @@ loc_B8068:
 _city_name_str_queue:
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
-		LDA		_ptr0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 loc_B8086:
 		LDA		byte_51A
 		BNE		loc_B808F
@@ -95,8 +70,7 @@ loc_B808F:
 		DEC		byte_51A
 		INY
 loc_B8095:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp2
 		BNE		loc_B8086
 		LDA		_tmp3
@@ -104,16 +78,9 @@ loc_B8095:
 		STA		_tmp2
 		LDA		#$00
 		STA		_tmp3
-		LDA		_ptr0
-		AND		#$E0
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_ptr0+1
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 		JMP		loc_B8086
 loc_B80BE:
 		STX		_ppu_queue_pos_head
@@ -1224,10 +1191,7 @@ loc_B8AF7:
 		JSR		_bank_scr_common_spr_draw
 		INC		_tmp118+2
 		MOVWO	_ptr0,byte_B8DC8
-		LDA		#<[byte_B8DFF]
-		STA		_tmp2
-		LDA		#>[byte_B8DFF]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_B8DFF
 		JMP		_ppu_res_queue
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1250,31 +1214,19 @@ _bank_scr_sub4_loan_done_animate:
 		CPX		#$42
 		BNE		locret_B8B91
 		MOVWO	_ptr0,byte_B8DD3
-		LDA		#<[byte_B8E0A]
-		STA		_tmp2
-		LDA		#>[byte_B8E0A]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_B8E0A
 		JMP		_ppu_res_queue
 loc_B8B50:
 		MOVWO	_ptr0,byte_B8DBD
-		LDA		#<[byte_B8DF4]
-		STA		_tmp2
-		LDA		#>[byte_B8DF4]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_B8DF4
 		JMP		_ppu_res_queue
 loc_B8B63:
 		MOVWO	_ptr0,byte_B8DA7
-		LDA		#<[byte_B8DDE]
-		STA		_tmp2
-		LDA		#>[byte_B8DDE]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_B8DDE
 		JMP		_ppu_res_queue
 loc_B8B76:
 		MOVWO	_ptr0,byte_B8DB2
-		LDA		#<[byte_B8DE9]
-		STA		_tmp2
-		LDA		#>[byte_B8DE9]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_B8DE9
 		JMP		_ppu_res_queue
 loc_B8B89:
 		LDA		#$3F
@@ -1352,71 +1304,37 @@ loc_B8C25:
 		STA		_ptr0
 		STX		_ptr0+1
 		LDX		_ppu_queue_pos_head
-		LDA		#$F6
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$26
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$02
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$F6,OP_NOP,0
+		PPUQMOVB	#$26,OP_NOP,0
+		PPUQMOVB	#$02,OP_NOP,0
 		LDY		_ptr0+1
 		LDA		byte_B8CB7,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDY		_ptr0
 		LDA		byte_B8CB7,Y
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$16
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$27
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$02
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
+		PPUQMOVB	#$16,OP_NOP,0
+		PPUQMOVB	#$27,OP_NOP,0
+		PPUQMOVB	#$02,OP_NOP,0
 		LDY		_ptr0+1
 		LDA		byte_B8CC3,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDY		_ptr0
 		LDA		byte_B8CC3,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		STX		_ppu_queue_pos_head
 		INC		_tmp118+2
 		LDX		_extnt_queue_pos_head
-		LDA		#$F6
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$5E
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$02
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$D8
-		STA		_extnt_queue_buf,X
-		INX
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$16
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$5F
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$02
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$D8
-		STA		_extnt_queue_buf,X
-		INX
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$F6,OP_NOP,0
+		EXTQMOVB	#$5E,OP_NOP,0
+		EXTQMOVB	#$02,OP_NOP,0
+		EXTQMOVB	#$D8,OP_NOP,0
+		EXTQMOVA
+		EXTQMOVB	#$16,OP_NOP,0
+		EXTQMOVB	#$5F,OP_NOP,0
+		EXTQMOVB	#$02,OP_NOP,0
+		EXTQMOVB	#$D8,OP_NOP,0
+		EXTQMOVA
 		STX		_extnt_queue_pos_head
 		JMP		_bank_scr_common_spr_draw_pos3F
 byte_B8CB7:
@@ -1454,8 +1372,7 @@ loc_B8CE4:
 		DEY
 		LDA		(_ptr0),Y
 loc_B8CF0:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		BNE		loc_B8CE4
 loc_B8CF7:
@@ -1471,8 +1388,7 @@ loc_B8CFD:
 		DEY
 		LDA		(_tmp2),Y
 loc_B8D09:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		BNE		loc_B8CFD
 loc_B8D10:
@@ -1798,20 +1714,14 @@ sub_B8F9E:
 		CLC
 		ADC		#$08
 		STA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$25
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$90
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
+		PPUQMOVB	#$25,OP_NOP,0
+		PPUQMOVB	#$90,OP_NOP,0
 		LDY		_ptr0+1
 		BEQ		loc_B8FCF
 		LDA		#$DD
 loc_B8FC8:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BNE		loc_B8FC8
 loc_B8FCF:
@@ -1822,8 +1732,7 @@ loc_B8FCF:
 		LDA		_tmp2
 		CLC
 		ADC		#$02
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		TYA
 		BNE		loc_B8FE4
 loc_B8FE1:
@@ -1832,28 +1741,20 @@ loc_B8FE1:
 loc_B8FE4:
 		LDA		_tmp2
 loc_B8FE6:
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BNE		loc_B8FE6
 loc_B8FED:
 		STX		_ppu_queue_pos_head
 		LDX		_extnt_queue_pos_head
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$5D
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$90
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp4,OP_NOP,0
+		EXTQMOVB	#$5D,OP_NOP,0
+		EXTQMOVB	#$90,OP_NOP,0
 		LDY		_ptr0+1
 		BEQ		loc_B9010
 		LDA		#$81
 loc_B9009:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEY
 		BNE		loc_B9009
 loc_B9010:
@@ -1867,8 +1768,7 @@ loc_B9018:
 		TAY
 		LDA		_tmp3
 loc_B901D:
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEY
 		BNE		loc_B901D
 loc_B9024:
@@ -1894,32 +1794,16 @@ loc_B9046:
 		STY		_tmp3
 		STX		_tmp2
 		LDX		_ppu_queue_pos_head
-		LDA		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$26
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		_tmp2
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	_tmp4,OP_NOP,0
+		PPUQMOVB	#$26,OP_NOP,0
+		PPUQMOVB	#$01,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
 		STX		_ppu_queue_pos_head
 		LDX		_extnt_queue_pos_head
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$5E
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		#$01
-		STA		_extnt_queue_buf,X
-		INX
-		LDA		_tmp3
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	_tmp4,OP_NOP,0
+		EXTQMOVB	#$5E,OP_NOP,0
+		EXTQMOVB	#$01,OP_NOP,0
+		EXTQMOVB	_tmp3,OP_NOP,0
 		STX		_extnt_queue_pos_head
 locret_B9082:
 		RTS
@@ -1931,8 +1815,7 @@ _scr_res_hndl1_A_graphs1:
 		LDY		#$02
 loc_B908A:
 		LDA		byte_B9117,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BPL		loc_B908A
 		LDA		#$09
@@ -1947,11 +1830,8 @@ loc_B908A:
 		JSR		sub_B914A
 		JMP		loc_B90C0
 loc_B90AD:
-		LDA		#$DD
-		STA		_ppu_queue_buf,X
-		INX
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$DD,OP_NOP,0
+		PPUQMOVA
 		LDA		#$02
 		JSR		sub_B9147
 		DEC		_tmp4
@@ -1960,12 +1840,10 @@ loc_B90C0:
 		LDA		_ptr0+1
 		CLC
 		ADC		#$B0
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		LDY		_ptr0
 		LDA		byte_B9163,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_B90AD
 loc_B90D6:
@@ -1974,8 +1852,7 @@ loc_B90D6:
 		LDY		#$02
 loc_B90DC:
 		LDA		byte_B9114,Y
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		DEY
 		BPL		loc_B90DC
 		LDA		#$09
@@ -1986,19 +1863,13 @@ loc_B90DC:
 		LSR
 		BCS		loc_B9103
 loc_B90F5:
-		LDA		#$81
-		STA		_extnt_queue_buf,X
-		INX
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$81,OP_NOP,0
+		EXTQMOVA
 		DEC		_tmp4
 		BEQ		loc_B9111
 loc_B9103:
-		LDA		#$06
-		STA		_extnt_queue_buf,X
-		INX
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVB	#$06,OP_NOP,0
+		EXTQMOVA
 		DEC		_tmp4
 		BNE		loc_B90F5
 loc_B9111:
@@ -2044,18 +1915,18 @@ sub_B9147:
 ; =============== S U B	R O U T	I N E =======================================
 sub_B914A:
 		CLC
-		ADC		_ptr0,Y
+		ADC		$00,Y
 		CMP		#$0A
 		BCC		loc_B915F
 		LDA		#$00
-		STA		_ptr0,Y
+		STA		$00,Y
 		LDA		#$01
 		INY
 		CPY		#$04
 		BCC		sub_B914A
 		RTS
 loc_B915F:
-		STA		_ptr0,Y
+		STA		$00,Y
 		RTS
 byte_B9163:
 		.BYTE	$BA,$DD,$BB,$DD,$BC,$DD,$BD,$DD,$BE,$DD
@@ -2562,19 +2433,13 @@ loc_B958B:
 		LDX		_ppu_queue_pos_head
 		LDY		_tmp118+9
 		LDA		word_B95ED,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
 		LDA		word_B95ED,Y
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		INY
-		LDA		#$01
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$3A
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVB	#$01,OP_NOP,0
+		PPUQMOVB	#$3A,OP_NOP,0
 		STX		_ppu_queue_pos_head
 		STY		_tmp118+9
 		INC		_tmp118+7
@@ -2707,10 +2572,7 @@ _wnd_header_year_draw:
 		LDA		#$87
 		JSR		sub_B9754
 		STX		_ppu_queue_pos_head
-		LDA		#<[byte_B9774]
-		STA		_tmp2
-		LDA		#>[byte_B9774]
-		STA		_tmp3
+		MOVWO	_tmp2,byte_B9774
 		JSR		_info_wnd_year_extnt_queue
 		RTS
 loc_B96F9:
@@ -2723,23 +2585,15 @@ loc_B96F9:
 		LDA		#$86
 		JSR		_info_wnd_year_nt_queue
 		STX		_ppu_queue_pos_head
-		LDA		#<[off_B9745]
-		STA		_tmp2
-		LDA		#>[off_B9745]
-		STA		_tmp3
+		MOVWO	_tmp2,off_B9745
 		JSR		_info_wnd_year_extnt_queue
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_wnd_year_nt_queue:
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$24
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$04
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	#$04,OP_NOP,0
 		LDY		#$03
 loc_B972B:
 		LDA		_ptr0,Y
@@ -2752,8 +2606,7 @@ loc_B972B:
 		ADC		#$36
 loc_B973B:
 		ADC		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BPL		loc_B972B
 		RTS
@@ -2766,21 +2619,15 @@ off_B9745:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B9754:
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$24
-		STA		_ppu_queue_buf,X
-		INX
-		LDA		#$04
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	#$04,OP_NOP,0
 		LDY		#$03
 loc_B9766:
 		LDA		_ptr0,Y
 		CLC
 		ADC		_tmp4
-		STA		_ppu_queue_buf,X
-		INX
+		PPUQMOVA
 		DEY
 		BPL		loc_B9766
 		RTS
@@ -2794,8 +2641,7 @@ _info_wnd_year_extnt_queue:
 loc_B9787:
 		LDA		(_tmp2),Y
 		BEQ		loc_B9792
-		STA		_extnt_queue_buf,X
-		INX
+		EXTQMOVA
 		INY
 		BNE		loc_B9787
 loc_B9792:

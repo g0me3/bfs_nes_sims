@@ -251,20 +251,20 @@ loc_11E23D:
 .bank_re_set:
 		STA		_city._bank_flags
 .bank_break:
-		MADDW	_tmpE6,_RIC_areas._R,_RIC_areas._C
+		MADDW	_tmpE6,_RCI_counts._R,_RCI_counts._C
 ;
 ; BUG! seems copy-paste, second CLC seems wrong here!
 ;-
 		LDA		_tmpE6
 		CLC
-		ADC		_RIC_areas._I
-		STA		_total_RIC_areas
+		ADC		_RCI_counts._I
+		STA		_total_RCI_counts
 		LDA		_tmpE7
 		CLC
-		ADC		_RIC_areas._I+1
-		STA		_total_RIC_areas+1
+		ADC		_RCI_counts._I+1
+		STA		_total_RCI_counts+1
 ;-
-;		MADDW	_total_RIC_areas,_tmpE6, _RIC_areas._I
+;		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I
 ;-
 		LDA		_nuke_power_station_count
 		CLC
@@ -584,7 +584,7 @@ locret_11E558:
 ; =============== S U B	R O U T	I N E =======================================
 _R_areas_develop:
 		LDX		#R_AREA_WIDX
-		JSR		_inc_RCI_areas
+		JSR		_inc_RCI_counts
 		LDY		_last_map_tile_read
 		LDA		_R_area_develop_states_list,Y
 		STA		_cur_R_area_develop_state
@@ -687,7 +687,7 @@ locret_11E623:
 ; =============== S U B	R O U T	I N E =======================================
 _C_areas_develop:
 		LDX		#C_AREA_WIDX
-		JSR		_inc_RCI_areas
+		JSR		_inc_RCI_counts
 		LDA		_last_map_tile_read
 		SEC
 		SBC		#$20
@@ -835,7 +835,7 @@ _R_twin_idx_test_list:
 ; =============== S U B	R O U T	I N E =======================================
 _I_areas_develop:
 		LDX		#I_AREA_WIDX
-		JSR		_inc_RCI_areas
+		JSR		_inc_RCI_counts
 		LDA		_last_map_tile_read
 		SEC
 		SBC		#$40
@@ -998,7 +998,7 @@ loc_11E879:
 		LDA		_obj_active_flags
 		AND		#$04
 		BNE		locret_11E8AC
-		LDY		#>[_wram_map_buf]
+		LDY		#>[_wram_map_buf]				; TODO: rearrange to macrocify
 		STY		_tmpE7
 		LDY		#<[_wram_map_buf]
 		STY		_tmpE6
@@ -1034,10 +1034,10 @@ locret_11E8B9:
 
 
 ; =============== S U B	R O U T	I N E =======================================
-_inc_RCI_areas:
-		INC		_RIC_areas,X
+_inc_RCI_counts:
+		INC		_RCI_counts,X
 		BNE		locret_11E8C2
-		INC		_RIC_areas+1,X
+		INC		_RCI_counts+1,X
 locret_11E8C2:
 		RTS
 
@@ -1050,7 +1050,7 @@ locret_11E8CB:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; add fixed point value < 0 to livel meters
+; add fixed point value 0.XXfp to livel meters
 ;
 _adc_RCI_level:
 		CLC
@@ -2352,7 +2352,7 @@ _overall_stats_clear:
 		LDX		#$00
 		TXA
 loc_11F242:
-		STA		_total_RIC_areas,X
+		STA		_total_RCI_counts,X
 		INX
 		CPX		#$2C
 		BNE		loc_11F242
@@ -2467,7 +2467,7 @@ _map_corruption_tiles_animate:
 		LDA		_corruption_anim_flag
 		BEQ		loc_11F33A
 		JSR		_sram_on
-		LDY		#>[_wram_map_buf]
+		LDY		#>[_wram_map_buf]				; TODO: rearrange to macrocify
 		STY		_tmpE7
 		LDY		#<[_wram_map_buf]
 		STY		_tmpE6
@@ -3007,11 +3007,7 @@ _read_buf_pos_div4_mul13_4bit_nibble:
 		LDA		_tmp_map_pos._Y
 		LSR
 		LSR
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$13
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$13
 		LDA		_tmp_map_pos._X
 		LSR
 		LSR
@@ -3026,11 +3022,7 @@ _read_traffic_dencity_map_nibble:
 		PHA
 		LDA		_tmp_map_pos._Y
 		LSR
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$26
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$26
 		LDA		_tmp_map_pos._X
 		LSR
 		JMP		_read_buf_pos_4bit_nibble_ex
@@ -3066,11 +3058,7 @@ _read_buf_pos_div8_mulA_4bit_nibble:
 		LSR
 		LSR
 		LSR
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$0A
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$0A
 		LDA		_tmp_map_pos._X
 		LSR
 		LSR
@@ -3227,11 +3215,16 @@ loc_11F801:
 		LDA		_tmp_map_pos._Y
 		LSR
 		LSR
+; BUG!
+; -
 		STA		_mmc5_mul1_shadow
 		STA		_MMC5_MUL1
 		LDA		#$13
-		STA		_mmc5_mul1_shadow
+		STA		_mmc5_mul1_shadow				; TODO: FIXME
 		STA		_MMC5_MUL0
+;-
+;		MULAI	#$13							; CORRECT
+;-
 		LDA		_tmp_map_pos._X
 		LSR
 		LSR
@@ -3251,11 +3244,7 @@ loc_11F82C:
 		PHA
 		LDA		_tmp_map_pos._Y
 		LSR
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$26
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$26
 		LDA		_tmp_map_pos._X
 		LSR
 		JMP		_write_buf_pos_4bit_nibble_ex
@@ -3296,11 +3285,7 @@ loc_11F869:
 		LSR
 		LSR
 		LSR
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$0A
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$0A
 		LDA		_tmp_map_pos._X
 		LSR
 		LSR
@@ -3451,11 +3436,7 @@ _test_map_tile_if_powered_up:
 		CMP		#$61
 		BEQ		loc_11F9DA
 		LDA		_tmp_map_pos._Y
-		STA		_mmc5_mul1_shadow
-		STA		_MMC5_MUL1
-		LDA		#$4C
-		STA		_mmc5_mul0_shadow
-		STA		_MMC5_MUL0
+		MULAI	#$4C
 		LDA		_MMC5_MUL0
 		CLC
 		ADC		_tmp_map_pos._X
