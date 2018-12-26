@@ -5,24 +5,18 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD1_MAIN:
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_RCI_meters_recalc
+		FJSR	_RCI_meters_recalc,$00,$FA
 		JSR		_overall_stats_clear
 		JSR		_overall_stats_recalc
 		JSR		_interpolate_police_fire_maps
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_power_grid_recalc
-		JSR		_pollution_recalc
+		FJSR	_power_grid_recalc,$00,$FA
+		JSR		_land_value_pollution_recalc
 		JSR		_crime_level_recalc
 		JSR		_population_dencity_recalc
 		LDA		#$FF
 		STA		_thread1_flags
 		STA		_thread1_flags+1
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_stats_recalc
+		FJSR	_city_stats_recalc,$00,$FA
 		LDA		#$00
 		STA		_city._cur_week
 
@@ -33,17 +27,13 @@ _THREAD1_LOOP:
 		LDA		_city._cur_week
 		LSR
 		BCC		loc_11E047
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_RCI_meters_recalc
+		FJSR	_RCI_meters_recalc,$00,$FA
 loc_11E047:
 		JSR		_map_corruption_tiles_animate
 		LDA		_frames_counter
 		STA		_rand_seed
 		ADDW8	_city._tax_year_rate,_city._tax_rate
-		LDA		#$00
-		STA		_power_stations_list_pos
-		STA		_power_stations_list_pos+1
+		MOVWI	_power_stations_list_pos,$0000
 		LDA		#$07
 		STA		_thread0_flags+1
 		JSR		_overall_stats_clear
@@ -74,33 +64,21 @@ loc_11E047:
 loc_11E0A9:
 		INCW	_city._cur_year
 loc_11E0B1:
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_graphs_10_year_data_update
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_fiscal_year_over_calculations
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_stats_recalc
+		FJSR	_graphs_10_year_data_update,$00,$FA
+		FJSR	_fiscal_year_over_calculations,$00,$FA
+		FJSR	_city_stats_recalc,$00,$FA
 		JSR		_map_corruption_tiles_animate
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_year_to_str
+		FJSR	_year_to_str,$00,$FA
 		LDA		_tmpE6
 		BNE		loc_11E0DB
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_graphs_100_year_data_update
+		FJSR	_graphs_100_year_data_update,$00,$FA
 loc_11E0DB:
 		JSR		_population_growth_map_recalc
 		JSR		_map_corruption_tiles_animate
 loc_11E0E1:
 		JSR		_traffic_dencity_recalc
 		JSR		_map_corruption_tiles_animate
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_events_manager
+		FJSR	_events_manager,$00,$FA
 _game_stop_loop:
 		LDY		_city._game_speed
 		CPY		#$03
@@ -113,9 +91,7 @@ _game_core_calc:
 		BNE		loc_11E117
 		LDA		#$02
 		JSR		_critical_section_enter
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_power_grid_recalc
+		FJSR	_power_grid_recalc,$00,$FA
 		LDA		#$02
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -127,7 +103,7 @@ loc_11E117:
 		BNE		loc_11E135
 		LDA		#$A0
 		JSR		_critical_section_enter
-		JSR		_pollution_recalc
+		JSR		_land_value_pollution_recalc
 		LDA		#$A0
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -314,17 +290,10 @@ loc_11E24F:
 		ADC		_city._level._R+1
 		STA		_tmpE7
 		PHA
-		LDA		_tmpE6
-		PHA
-		LDA		#$14
-		PHA
+		PUSHB	_tmpE6
+		PUSHB	#$14
 		JSR		_mmc5_mul16to8
-		PLA
-		STA		_popul_cur
-		PLA
-		STA		_popul_cur+1
-		PLA
-		STA		_popul_cur+2
+		POPD	_popul_cur
 		LDA		_stats._developed
 		CLC
 		ADC		_stats._undeveloped
@@ -458,13 +427,11 @@ _do_flood:
 		JSR		_rand
 		AND		#$07
 		BNE		loc_11E3FF
-		LDA		_tmp_map_pos._X
-		PHA
+		PUSHB	_tmp_map_pos._X
 		CLC
 		ADC		byte_11FC26,Y
 		STA		_tmp_map_pos._X
-		LDA		_tmp_map_pos._Y
-		PHA
+		PUSHB	_tmp_map_pos._Y
 		CLC
 		ADC		byte_11FC2A,Y
 		STA		_tmp_map_pos._Y
@@ -477,10 +444,8 @@ _do_flood:
 		BEQ		loc_11E3F7
 		JSR		_flood_cur_map_tile
 loc_11E3F7:
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 loc_11E3FF:
 		PLA
 		TAY
@@ -679,13 +644,12 @@ loc_11E590:
 		BNE		locret_11E5FA
 loc_11E59F:
 		JSR		_rand
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_city._delta._R
 		CLC
 		ADC		#$80
 		PHA
-		LDA		#$96
-		PHA
+		PUSHB	#$96
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
@@ -705,11 +669,11 @@ loc_11E5C8:
 		CMP		#$7F
 		BCC		loc_11E5E8
 		SBC		#$67
-		CMP		_tmpE8+1
+		CMP		_tmpE9
 		BCC		loc_11E5E8
 		LDA		_cur_R_area_develop_state
 		BNE		loc_11E5E2
-		LDA		_tmpE8+1
+		LDA		_tmpE9
 		AND		#$03
 		BNE		loc_11E5E2
 		JMP		loc_11E5FB
@@ -721,7 +685,7 @@ loc_11E5E8:
 		CMP		#$82
 		BCS		locret_11E5FA
 		ADC		#$67
-		CMP		_tmpE8+1
+		CMP		_tmpE9
 		BCS		locret_11E5FA
 		JSR		_get_area_pollution_to_land_value_ratio
 		JMP		sub_11F4A5
@@ -783,7 +747,7 @@ loc_11E661:
 		AND		#$03
 		BNE		locret_11E6A1
 		JSR		_rand
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		#$00
 		CLC
 		ADC		_city._delta._C
@@ -797,7 +761,7 @@ loc_11E67D:
 		CMP		#$7F
 		BCC		loc_11E68F
 		SBC		#$67
-		CMP		_tmpE8+1
+		CMP		_tmpE9
 		BCC		loc_11E68F
 		JSR		_get_area_pollution_to_land_value_ratio
 		JMP		sub_11F40E
@@ -806,7 +770,7 @@ loc_11E68F:
 		CMP		#$82
 		BCS		locret_11E6A1
 		ADC		#$67
-		CMP		_tmpE8+1
+		CMP		_tmpE9
 		BCS		locret_11E6A1
 		JSR		_get_area_pollution_to_land_value_ratio
 		JMP		sub_11F551
@@ -930,7 +894,7 @@ loc_11E776:
 		AND		#$03
 		BNE		locret_11E7B7
 		JSR		_rand
-		STA		_tmpE8+1
+		STA		_tmpE9
 		JSR		sub_11F362
 		CLC
 		ADC		_city._delta._I
@@ -944,7 +908,7 @@ loc_11E793:
 		CMP		#$7F
 		BCC		loc_11E7A5
 		SBC		#$67
-		CMP		_tmpE8+1
+		CMP		_tmpE9
 		BCC		loc_11E7A5
 		JSR		_get_area_pollution_to_land_value_ratio
 		JMP		sub_11F48D
@@ -953,7 +917,7 @@ loc_11E7A5:
 		CMP		#$81
 		BCS		locret_11E7B7
 		ADC		#$67
-		CMP		_tmpE8+1
+		CMP		_tmpE9
 		BCS		locret_11E7B7
 		JSR		_get_area_pollution_to_land_value_ratio
 		JMP		sub_11F5F5
@@ -968,9 +932,7 @@ _collect_other_buildings_stats:
 		BMI		loc_11E7C4
 		INC		_coal_power_station_count
 loc_11E7C4:
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_power_stations_map_pos_list_insert
+		FJSR	_power_stations_map_pos_list_insert,$00,$FA
 		RTS
 loc_11E7CC:
 		CMP		#$61
@@ -979,9 +941,7 @@ loc_11E7CC:
 		BMI		loc_11E7D8
 		INC		_nuke_power_station_count
 loc_11E7D8:
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_power_stations_map_pos_list_insert
+		FJSR	_power_stations_map_pos_list_insert,$00,$FA
 		RTS
 loc_11E7E0:
 		CMP		#$50
@@ -1128,13 +1088,9 @@ locret_11E8D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; BUGBUGBUG
-;$0A3B6	is a inv_bitflags array	at BANKA
 _test_power_grid_map_bit:
-		LDA		_tmp_map_pos._Y
-		PHA
-		LDA		#$4C
-		PHA
+		PUSHB	_tmp_map_pos._Y
+		PUSHB	#$4C
 		JSR		_mmc5_mul8to8
 		PLA
 		CLC
@@ -1162,7 +1118,9 @@ _test_power_grid_map_bit:
 		TAX
 		LDY		#$00
 		LDA		(_tmpE6),Y
-		AND		_inv_bitmasks,X
+; BUG!
+; here $0A3B6 is a inv_bitmasks array at BANKA
+		AND		_inv_bitmasks,X					; FIXED: all bitmasks now in system bank
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1423,7 +1381,7 @@ _4x4_building_surrond_tiles_ofsY_list:
 		.BYTE	$00,$01,$FF,$02,$FF,$02,$00,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-_pollution_recalc:
+_land_value_pollution_recalc:
 		JSR		_clear_tmp_recalc_bufB5
 		LDA		#$00
 		STA		_tmp6CC
@@ -1528,21 +1486,15 @@ loc_11EB8A:
 loc_11EB9A:
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
-		LDA		_tmp6CC
-		STA		_tmpE7
-		LDA		_tmp6CC+1
-		STA		_tmpE8
-		LDA		_tmp6CE
-		STA		_tmpEA
-		LDA		_tmp6CE+1
-		STA		_tmpEB
-		JSR		_div_16to16
+		STA		_tmpE9
+		MOVW	_tmp6CC,_tmpE7
+		MOVW	_tmp6CE,_tmpEA
+		JSR		_div_32to16
 loc_11EBB7:
 		LDA		_tmpE6
 		STA		_city._var_5F8
 		LDA		_tmpE7
-		STA		_city._var_5F9
+		STA		_city._var_5F8+1
 		LDA		#$00
 		STA		_tmp6C4
 		STA		_tmp6D0
@@ -1582,7 +1534,7 @@ loc_11EBFE:
 		BCC		loc_11EBDA
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_tmp6D2
 		STA		_tmpE7
 		LDA		_tmp6D3
@@ -1591,7 +1543,7 @@ loc_11EBFE:
 		STA		_tmpEA
 		LDA		_tmp6D0+1
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		BCC		loc_11EC3B
 		LDA		#$00
 		STA		_tmpE6
@@ -1690,7 +1642,7 @@ loc_11ECF4:
 		JSR		_interpolate_recalc_with_select_poll_popg_popd_crime_land_to_recalc_map
 		JSR		_interpolate_recalc_to_select_poll_popg_popd_crime_land_maps
 		LDA		#$04
-		JSR		_critical_section_leave
+		JSR		_critical_section_leave			; BUG! this section set and leave outside of this proc
 		LDA		_tmp6D0
 		ORA		_tmp6D0+1
 		BEQ		loc_11ED64
@@ -1704,8 +1656,8 @@ loc_11ECF4:
 		STA		_tmpEB
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
-		JSR		_div_16to16
+		STA		_tmpE9
+		JSR		_div_32to16
 		LDA		_tmpE7
 		STA		_cur_population_dencity
 		LDA		_tmp6CE
@@ -1718,8 +1670,8 @@ loc_11ECF4:
 		STA		_tmpEB
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
-		JSR		_div_16to16
+		STA		_tmpE9
+		JSR		_div_32to16
 		LDA		_tmpE7
 		STA		_cur_population_dencity+1
 		RTS
@@ -1830,12 +1782,12 @@ loc_11EE02:
 		STA		_tmpE8
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_tmp6D0
 		STA		_tmpEA
 		LDA		_tmp6D0+1
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		BCC		loc_11EE3B
 		LDA		#$00
 		STA		_tmpE6
@@ -2321,10 +2273,8 @@ _internal_building_tile_deltaY_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_read:
-		LDA		_tmp_map_pos._Y
-		PHA
-		LDA		#$4C
-		PHA
+		PUSHB	_tmp_map_pos._Y
+		PUSHB	#$4C
 		JSR		_mmc5_mul8to8
 		PLA
 		CLC
@@ -2340,10 +2290,8 @@ _map_tile_read:
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_write:
 		PHA
-		LDA		_tmp_map_pos._Y
-		PHA
-		LDA		#$4C
-		PHA
+		PUSHB	_tmp_map_pos._Y
+		PUSHB	#$4C
 		JSR		_mmc5_mul8to8
 		PLA
 		CLC
@@ -2603,8 +2551,7 @@ sub_11F341:
 		LDA		#$00
 loc_11F350:
 		PHA
-		LDA		#$07
-		PHA
+		PUSHB	#$07
 		JSR		_mmc5_mul8to8
 		PLA
 		TAX
@@ -3022,11 +2969,11 @@ sub_11F647:
 		JMP		_write_pop_growth_map_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-; POLLUTION-LAND_VALUE
-;  if <	2      ratio 0
-;  if 2	to 4   ratio 1
-;  if 5	to 8   ratio 2
-;  if >	8      ratio 3
+; a = POLLUTION - LAND_VALUE
+;  if a < 2    ratio 0
+;  if a 2 to 4 ratio 1
+;  if a 5 to 8 ratio 2
+;  if a > 8    ratio 3
 ;
 _get_area_pollution_to_land_value_ratio:
 		JSR		_read_pollution_map_nibble
@@ -3503,20 +3450,13 @@ _tmp_area_pos_to_tmp_map_pos_calc:
 
 ; =============== S U B	R O U T	I N E =======================================
 _heavy_traffic_report_test:
-		LDA		_tmp_map_pos._X
-		PHA
-		LDA		_tmp_map_pos._Y
-		PHA
-		LDA		word_EE
-		PHA
-		LDA		word_EE+1
-		PHA
-		LDA		_tmpE6
-		PHA
-		LDA		_mmc5_mul1_shadow
-		PHA
-		LDA		_mmc5_mul0_shadow
-		PHA
+		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._Y
+		PUSHB	word_EE
+		PUSHB	word_EE+1
+		PUSHB	_tmpE6
+		PUSHB	_mmc5_mul1_shadow
+		PUSHB	_mmc5_mul0_shadow
 		STX		_tmp_map_pos._X
 		STY		_tmp_map_pos._Y
 		JSR		_read_traffic_dencity_map_nibble
@@ -3531,44 +3471,31 @@ _heavy_traffic_report_test:
 		LDA		#$02
 		STA		_apu_se_flags+1
 loc_11F93E:
-		PLA
-		STA		_mmc5_mul0_shadow
-		PLA
-		STA		_mmc5_mul1_shadow
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		word_EE+1
-		PLA
-		STA		word_EE
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_mmc5_mul0_shadow
+		POPB	_mmc5_mul1_shadow
+		POPB	_tmpE6
+		POPB	word_EE+1
+		POPB	word_EE
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_select_map_tile_if_powered_up:
-		LDA		_tmp_map_pos._X
-		PHA
-		LDA		_tmp_map_pos._Y
-		PHA
+		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._Y
 		LDX		_tmp6D0+1
 		JSR		_set_tmp_map_pos_to_surrounding_tile
 		BCS		loc_11F977
 		JSR		_test_map_tile_if_powered_up
 		BCS		loc_11F977
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		CLC
 		RTS
 loc_11F977:
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		SEC
 		RTS
 
@@ -3714,9 +3641,7 @@ loc_11FB73:
 		AND		#$FE
 		STA		_disasters_flags
 		LDY		#$06
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		FJSR	_city_history_write,$00,$FA
 		LDA		#$20
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3746,13 +3671,11 @@ loc_11FB9A:
 loc_11FBB9:
 		TYA
 		PHA
-		LDA		_tmp_map_pos._X
-		PHA
+		PUSHB	_tmp_map_pos._X
 		CLC
 		ADC		byte_11FC26,Y
 		STA		_tmp_map_pos._X
-		LDA		_tmp_map_pos._Y
-		PHA
+		PUSHB	_tmp_map_pos._Y
 		CLC
 		ADC		byte_11FC2A,Y
 		STA		_tmp_map_pos._Y
@@ -3771,10 +3694,8 @@ loc_11FBB9:
 		LDA		#$1E
 		STA		_disaster_tiles_to_flood_count
 loc_11FBF2:
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		PLA
 		TAY
 		LDA		_tmp6CC
@@ -3790,9 +3711,7 @@ loc_11FC04:
 		BNE		loc_11FB9A
 loc_11FC0E:
 		LDY		#$07
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		FJSR	_city_history_write,$00,$FA
 		LDA		#$21
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3843,9 +3762,7 @@ loc_11FC6E:
 		LDA		byte_674
 		BNE		loc_11FC6E
 		LDY		#$0A
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		FJSR	_city_history_write,$00,$FA
 		LDA		#$0A
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3893,9 +3810,7 @@ _tornado_disaster_start:
 		AND		#$F7
 		STA		_disasters_flags
 		LDY		#$09
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		FJSR	_city_history_write,$00,$FA
 		LDA		#$23
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3955,9 +3870,7 @@ _force_monster_disaster:
 		LDA		#$01
 		STA		byte_6CA
 		LDY		#$0B
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		FJSR	_city_history_write,$00,$FA
 		LDA		#$09
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3969,22 +3882,14 @@ locret_11FD73:
 
 ; =============== S U B	R O U T	I N E =======================================
 _fire_or_destroy_map_tile_ex:
-		LDA		_tmp_map_pos._X
-		PHA
-		LDA		_tmp_map_pos._Y
-		PHA
-		LDA		word_EC
-		PHA
-		LDA		word_EC+1
-		PHA
-		LDA		_backup_var
-		PHA
-		LDA		_mmc5_mul1_shadow
-		PHA
-		LDA		_mmc5_mul0_shadow
-		PHA
-		LDA		_tmp6CC+1
-		PHA
+		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._Y
+		PUSHB	word_EC
+		PUSHB	word_EC+1
+		PUSHB	_backup_var
+		PUSHB	_mmc5_mul1_shadow
+		PUSHB	_mmc5_mul0_shadow
+		PUSHB	_tmp6CC+1
 		STX		_tmp_map_pos._X
 		STY		_tmp_map_pos._Y
 		LDY		#$E7
@@ -4000,22 +3905,14 @@ loc_11FDA3:
 		INY
 loc_11FDAC:
 		STY		byte_6CA
-		PLA
-		STA		_tmp6CC+1
-		PLA
-		STA		_mmc5_mul0_shadow
-		PLA
-		STA		_mmc5_mul1_shadow
-		PLA
-		STA		_backup_var
-		PLA
-		STA		word_EC+1
-		PLA
-		STA		word_EC
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp6CC+1
+		POPB	_mmc5_mul0_shadow
+		POPB	_mmc5_mul1_shadow
+		POPB	_backup_var
+		POPB	word_EC+1
+		POPB	word_EC
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4092,22 +3989,18 @@ loc_11FE3A:
 loc_11FE3C:
 		TXA
 		PHA
-		LDA		_tmp_map_pos._X
-		PHA
+		PUSHB	_tmp_map_pos._X
 		CLC
 		ADC		_internal_building_tile_deltaX_list,X
 		STA		_tmp_map_pos._X
-		LDA		_tmp_map_pos._Y
-		PHA
+		PUSHB	_tmp_map_pos._Y
 		CLC
 		ADC		_internal_building_tile_deltaY_list,X
 		STA		_tmp_map_pos._Y
 		LDA		_tmp6CC+1
 		JSR		_map_tile_write
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		PLA
 		TAX
 		DEX
@@ -4160,10 +4053,8 @@ loc_11FEB4:
 loc_11FEB9:
 		TXA
 		PHA
-		LDA		_tmp_map_pos._X
-		PHA
-		LDA		_tmp_map_pos._Y
-		PHA
+		PUSHB	_tmp_map_pos._X
+		PUSHB	_tmp_map_pos._Y
 		LDA		#$1F
 		JSR		_rand_clamp
 		CLC
@@ -4182,19 +4073,15 @@ loc_11FEB9:
 		STA		_tmp_map_pos._Y
 		JSR		_pollute_cur_map_tile
 loc_11FEEA:
-		PLA
-		STA		_tmp_map_pos._Y
-		PLA
-		STA		_tmp_map_pos._X
+		POPB	_tmp_map_pos._Y
+		POPB	_tmp_map_pos._X
 		PLA
 		TAX
 		INX
 		CPX		#$50
 		BNE		loc_11FEB9
 		LDY		#$0C
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		FJSR	_city_history_write,$00,$FA
 
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
@@ -4307,26 +4194,18 @@ loc_11FFBB:
 		BCC		loc_11FF97
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_tmp6CC
 		STA		_tmpE7
 		LDA		_tmp6CC+1
 		STA		_tmpE8
-		JSR		_div_16to16
-		LDA		#$02
-		PHA
-		LDA		#$66
-		PHA
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		JSR		_div_32to16
+		PUSHWI	$0266
+		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
-		PLA
-		STA		_traffic_level_value
-		PLA
-		STA		_traffic_level_value+1
+		POPB	_traffic_level_value
+		POPB	_traffic_level_value+1
 		PLA
 		RTS
 

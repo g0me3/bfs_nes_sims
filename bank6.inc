@@ -393,7 +393,7 @@ loc_A0266:
 		JSR		_strcpy_ex
 		STX		_extnt_queue_pos_head
 		JSR		_flush_wait_0
-		MOVO	_ptr0,off_A046F
+		MOVWO	_ptr0,off_A046F
 		LDA		#<[_ppu_queue_buf]
 		STA		_tmp2
 		LDA		#>[_ppu_queue_buf]
@@ -401,7 +401,7 @@ loc_A0266:
 		LDA		_ppu_queue_pos_head
 		JSR		_strcpy_lib_ex
 		STX		_ppu_queue_pos_head
-		MOVO	_ptr0,off_A0479
+		MOVWO	_ptr0,off_A0479
 		LDA		#<[_extnt_queue_buf]
 		STA		_tmp2
 		LDA		#>[_extnt_queue_buf]
@@ -496,8 +496,7 @@ _scr_res_cursor_draw:
 		BEQ		_scr_res_cursor_spr_insert_ex
 		PHA
 		JSR		_scr_res_cursor_spr_insert_ex_0
-		PLA
-		STA		_spr_buf_pos
+		POPB	_spr_buf_pos
 locret_A0360:
 		RTS
 
@@ -777,12 +776,12 @@ _scr_common_draw:
 		STA		_cur_game_cursor_scr_pos._X
 		LDA		#$62
 		STA		_cur_game_cursor_scr_pos._Y
-		MOVO	_ptr0,byte_A0B6A
+		MOVWO	_ptr0,byte_A0B6A
 		JSR		_tlm_transfer
 		LDX		#$2C
 		LDA		#$01
 		JSR		_ppu_area_fill
-		MOVO	_ptr0,byte_A0BE3
+		MOVWO	_ptr0,byte_A0BE3
 		JMP		_tlm_transfer
 loc_A0A9A:
 		CMP		#$02
@@ -815,74 +814,49 @@ loc_A0AC4:
 locret_A0ACB:
 		RTS
 _scr_res1_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_scr1]
-		LDY		#>[_tlm_res_scr1]
-		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_scr1
+		POPB	_MMC5_NT_MODE
 		RTS
 _scr_res2_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_scr2]
-		LDY		#>[_tlm_res_scr2]
-		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_scr2
+		POPB	_MMC5_NT_MODE
 		RTS
 _scr_res3_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_scr3]
-		LDY		#>[_tlm_res_scr3]
-		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_scr3
+		POPB	_MMC5_NT_MODE
 		RTS
 _scr_res4_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_scr4]
-		LDY		#>[_tlm_res_scr4]
-		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_scr4
+		POPB	_MMC5_NT_MODE
 		RTS
 _scr_res5_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_scr5]
-		LDY		#>[_tlm_res_scr5]
-		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_scr5
+		POPB	_MMC5_NT_MODE
 		RTS
 _scr_res7_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_scr7]
-		LDY		#>[_tlm_res_scr7]
-		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_scr7
+		POPB	_MMC5_NT_MODE
 		RTS
 _scr_res6_draw:
-		LDA		_mmc5_nt_mode_shadow
-		PHA
+		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
 		STA		_MMC5_NT_MODE
 		BIT		_city._bank_flags
@@ -895,8 +869,7 @@ loc_A0B5E:
 		LDY		#>[_tlm_res_scr6B]
 loc_A0B62:
 		JSR		_tlm_res_unpack
-		PLA
-		STA		_MMC5_NT_MODE
+		POPB	_MMC5_NT_MODE
 		RTS
 byte_A0B6A:
 		.BYTE	$24,$6D,$01,$AF,$24,$E1,$08,$D0,$D1,$D1,$D1,$D1,$D2,$DF,$D0,$24

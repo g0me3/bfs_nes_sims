@@ -5,10 +5,7 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _year_to_str:
-		LDA		_city._cur_year
-		STA		_tmpE6
-		LDA		_city._cur_year+1
-		STA		_tmpE7
+		MOVW	_tmpE6,_city._cur_year
 		LDY		#$02
 loc_10400C:
 		LDA		_tmpE6
@@ -29,11 +26,17 @@ loc_104028:
 		LDA		_tmpE6
 		RTS
 byte_10402E:
-		.BYTE	$0A,$64,$E8
+		.BYTE	<[10]
+		.BYTE	<[100]
+		.BYTE	<[1000]
 byte_104031:
-		.BYTE	$00,$00,$03
+		.BYTE	>[10]
+		.BYTE	>[100]
+		.BYTE	>[1000]
 
 ; =============== S U B	R O U T	I N E =======================================
+; city_level_R/8
+; city_level_C+city_level_I
 _RCI_meters_recalc:
 		LDA		_city._level._R
 		STA		_tmp6AA
@@ -44,8 +47,8 @@ _RCI_meters_recalc:
 		ROR		_tmp6AA
 		LSR
 		ROR		_tmp6AA
-		STA		_tmp6AA+1
-		MOVM16	_prev_RCI_levels_sum,_cur_RCI_levels_sum
+		STA		_tmp6AA+1						; 6AA = L_R/8
+		MOVW	_prev_RCI_levels_sum,_cur_RCI_levels_sum
 		LDA		_city._level._I
 		CLC
 		ADC		_city._level._C
@@ -53,140 +56,91 @@ _RCI_meters_recalc:
 		STA		_tmpE7
 		LDA		_city._level._I+1
 		ADC		_city._level._C+1
-		STA		_tmp6AC+1
-		STA		_tmpE8
+		STA		_tmp6AC+1						; 6AC = L_I+L_C
+		STA		_tmpE8							; dividend = L_I+L_C
 		LDA		_tmp6AA
-		STA		_tmpEA
+		STA		_tmpEA							; divider = L_R/8
 		CLC
 		ADC		_tmpE7
 		STA		_cur_RCI_levels_sum
 		LDA		_tmp6AA+1
 		STA		_tmpEB
 		ADC		_tmpE8
-		STA		_cur_RCI_levels_sum+1
+		STA		_cur_RCI_levels_sum+1			; RCI_S = L_I+L_C+(L_R/8)
 		LDA		#$00
-		STA		_tmpE8+1
+		STA		_tmpE9
 		STA		_tmpE6
-		JSR		_div_16to16
+		JSR		_div_32to16						; E6 = dividend / divider
 		BCC		loc_10409D
 		LDA		#$00
-		STA		_tmpE8
-		STA		_tmpE8+1
+		STA		_tmpE8							; TODO: optimize me
+		STA		_tmpE9
 		LDA		#$01
 		STA		_tmpE7
 		LDA		#$4D
-		STA		_tmpE6
+		STA		_tmpE6							; if divider = 0, then result 1.4D
 loc_10409D:
-		LDA		_tmpE6
-		CLC
-		ADC		#$05
-		STA		_tmpE6
-		BCC		loc_1040A8
-		INC		_tmpE7
-loc_1040A8:
+		ADDW8	_tmpE6,#$05
 		LDX		#$00
-		JSR		_RCI_meter_recalc
-		LDA		_tmp6AA
-		STA		_tmpE7
-		LDA		_tmp6AA+1
-		STA		_tmpE8
-		LDA		_tmp6AC
-		STA		_tmpEA
-		LDA		_tmp6AC+1
-		STA		_tmpEB
+		JSR		_RCI_meter_recalc				; R recalc
+		MOVW	_tmpE7,_tmp6AA					; dividend = L_R/8
+		MOVW	_tmpEA,_tmp6AC					; divider = L_I+L_C
 		LDA		#$00
-		STA		_tmpE8+1
+		STA		_tmpE9
 		STA		_tmpE6
-		JSR		_div_16to16
+		JSR		_div_32to16
 		BCC		loc_1040D8
 		LDA		#$01
-		STA		_tmpE7
+		STA		_tmpE7							; TODO OPTIMIZE ME
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE8
-		STA		_tmpE8+1
+		STA		_tmpE9							; if divider = 0, then result 1.00
 loc_1040D8:
-		LDA		_tmpE6
-		CMP		#$4C
-		LDA		_tmpE7
-		SBC		#$01
+		CMPWI	_tmpE6,$014C
 		BCC		loc_1040EA
-		LDA		#$4C
-		STA		_tmpE6
-		LDA		#$01
-		STA		_tmpE7
+		MOVWI	_tmpE6,$014C
 loc_1040EA:
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
-		MOVIW	_tmpE8,$0133
-		LDA		_tmpE8+1
-		PHA
-		LDA		_tmpE8
-		PHA
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6							; backup now
+		MOVWI	_tmpE8,$0133					; TODO: optimize me
+		PUSHW	_tmpE8
+		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
+		POPW	_tmpE6							; get result
 		PLA
 		LDX		#$02
-		JSR		_RCI_meter_recalc
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
-		MOVM16	_tmpE8,_cur_RCI_levels_sum
-		LDA		_tmpE8+1
-		PHA
-		LDA		_tmpE8
-		PHA
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		JSR		_RCI_meter_recalc				; I recalc
+		POPW	_tmpE6							; restore backup
+		MOVW	_tmpE8,_cur_RCI_levels_sum		; TODO: optimize me
+		PUSHW	_tmpE8
+		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
-		LDA		#$45
-		PHA
-		JSR		_mmc5_mul32to8
+		PUSHB	#$45
+		JSR		_mmc5_mul32to8					; here 32bit arg already in stack
 		PLA
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
-		PLA
-		STA		_tmpE8
-		PLA
-		STA		_tmpE8+1
-		LDA		_city._level._C
-		STA		_tmpEA
-		LDA		_city._level._C+1
-		STA		_tmpEB
+		POPW	_tmpE6
+		POPW	_tmpE8
+		MOVW	_tmpEA,_city._level._C
 loc_104150:
-		JSR		_div_16to16
+		JSR		_div_32to16
 		BCC		loc_10415F
-		LDA		#$00
+		LDA		#$00							; TODO, optimize me
 		STA		_tmpEB
 		LDA		#$01
 		STA		_tmpEA
 		BEQ		loc_104150
 loc_10415F:
-		LDX		#$01
+		LDX		#$01							; C recalc
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meter_recalc:
 		LDA		_city._delta,X
-		BMI		loc_10416D
+		BMI		.RCI_meter_negative_delta
 		LDA		#$00
 		LDY		_required_flags,X
 		BNE		loc_1041BD
-loc_10416D:
+.RCI_meter_negative_delta:
 		LDA		_tmpE6
 		LDY		_tmpE7
 		BNE		loc_10417B
@@ -237,14 +191,13 @@ loc_1041BB:
 		LDA		#$7F
 loc_1041BD:
 		STA		_city._delta,X
-		LDA		_city._delta,X
+		LDA		_city._delta,X					; TODO optimize me
 		BPL		loc_1041DB
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		PHA
-		LDA		#$1B
-		PHA
+		PUSHB	#$1B
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
@@ -254,8 +207,7 @@ loc_1041BD:
 		JMP		loc_1041E4
 loc_1041DB:
 		PHA
-		LDA		#$1B
-		PHA
+		PUSHB	#$1B
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
@@ -272,8 +224,8 @@ _power_grid_recalc:
 		LDA		#$00
 		TAY
 loc_104203:
-		STA		_power_grid_map_buf,Y
-		STA		_power_grid_map_buf+$100,Y
+		STA		_power_grid_map_buf,Y			; clear power grid map
+		STA		_power_grid_map_buf+$100,Y		; TODO: merge clear code in one proc
 		INY
 		BNE		loc_104203
 		LDA		#$00
@@ -284,25 +236,12 @@ loc_10420F:
 		CPY		#$D2
 		BNE		loc_10420F
 		JSR		_sram_off
-		LDA		#$02
-		PHA
-		LDA		#$BC
-		PHA
-		LDA		_coal_power_station_count
-		PHA
+		PUSHWI	$02BC							; E6 = COL * 700
+		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
-		PLA
-		STA		_tmpE8
-		LDA		#$07
-		PHA
-		LDA		#$D0
-		PHA
-		LDA		_nuke_power_station_count
-		PHA
+		POPD	_tmpE6
+		PUSHWI	$07D0
+		PUSHB	_nuke_power_station_count		; E6 = E6 + NUCLEAR * 2000
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -313,18 +252,13 @@ loc_10420F:
 		STA		_tmpE7
 		PLA
 		ADC		_tmpE8
-		BEQ		loc_104253
-		LDA		#$FF
+		BEQ		loc_104253						; if E6 > $FFFF
+		LDA		#$FF							; E6 = E6 | $FFFF
 		STA		_tmpE6
 		STA		_tmpE7
 loc_104253:
-		LDA		_tmpE6
-		STA		_tmp6CC
-		LDA		_tmpE7
-		STA		_tmp6CC+1
-		LDA		#$00
-		STA		_tmp6CE
-		STA		_tmp6CE+1
+		MOVW	_tmp6CC,_tmpE6
+		MOVWI	_tmp6CE,$0000
 loc_104265:
 		LDA		_power_stations_list_pos
 		ORA		_power_stations_list_pos+1
@@ -353,13 +287,10 @@ loc_104296:
 		STA		_tmp6D0
 loc_10429B:
 		INCW	_tmp6CE
-		LDA		_tmp6CE
-		CMP		_tmp6CC
-		LDA		_tmp6CE+1
-		SBC		_tmp6CC+1
+		CMPW	_tmp6CE,_tmp6CC
 		BCS		locret_1042F9
 		LDX		_tmp6D0
-		JSR		_tmp_map_pos_clockwise_next_set
+		JSR		_tmp_map_surrounding_tile_pos_select
 		JSR		_power_grid_map_bit_set
 		LDA		#$00
 		STA		_tmp6D2
@@ -371,9 +302,7 @@ loc_1042C2:
 		LDA		_tmp6D2
 		CMP		#$02
 		BCS		loc_1042E7
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FB
-		.WORD	_test_select_map_tile_if_powered_up
+		FJSR	_test_select_map_tile_if_powered_up,$00,$FB
 		BCS		loc_1042E2
 		INC		_tmp6D2
 		LDA		_tmp6D0+1
@@ -389,12 +318,12 @@ loc_1042E7:
 loc_1042F1:
 		LDA		_tmp6D2
 		BNE		loc_10429B
-		JMP		loc_104265
+		JMP		loc_104265						; TODO: optimize me
 locret_1042F9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tmp_map_pos_clockwise_next_set:
+_tmp_map_surrounding_tile_pos_select:
 		CPX		#$00
 		BNE		loc_104307
 		LDA		_tmp_map_pos._Y
@@ -500,55 +429,55 @@ _game_vars_init:
 		LDX		#$00
 		TXA
 loc_1043C4:
-		STA		_wram_graphs,X
+		STA		_wram_graphs,X						; graphs data clear
 		INX
 		CPX		#$78
 		BNE		loc_1043C4
 		JSR		_sram_off
 		LDX		#$00
 loc_1043D1:
-		STA		_city._level,X
+		STA		_city._level,X						; part of the city vars clear
 		INX
 		CPX		#$DF
 		BNE		loc_1043D1
 		STA		_obj_active_flags
 		LDA		#$FF
-		STA		_city._year_to_build_bank
+		STA		_city._year_to_build_bank			; special game vars clear
 		STA		_city._year_to_build_bank+1
 		STA		_city._year_to_expo
 		STA		_city._year_to_expo+1
 		STA		_city._year_to_liberty
 		STA		_city._year_to_liberty+1
-		LDX		_cur_game_mode
+		LDX		_cur_game_mode						; dependent from the game mode
 		BNE		loc_1043FF
-		FJSR	_sram_data_load,$00,$F3
-		JMP		loc_104494
+		FJSRA	_sram_data_load,$00,$F3				; game mode 0, load saved city data
+		JMP		.complete_game_setup				; skip to the final inits
 loc_1043FF:
 		DEX
 		BNE		loc_104428
-		LDY		_city._difficult
+		LDY		_city._difficult					; game mode 1, new city
 		LDA		_difficult_money_list_lo,Y
 		STA		_city._money
 		LDA		_difficult_money_list_hi,Y
 		STA		_city._money+1
-		MOVIW	_city._cur_year,$076C
+		MOVWI	_city._cur_year,1900				; start 1900 year only
 		LDA		#$09
-		STA		_city._game_flags
+		STA		_city._game_flags					; setup default game settings
 		LDA		#$00
-		STA		_city._city_type
-		JMP		loc_104494
+		STA		_city._city_type					; city initial type (town)
+		JMP		.complete_game_setup
 loc_104428:
 		DEX
-		BNE		loc_104476
-		MOVIW	_city._money,$4E20
+		BNE		loc_104476							; game mode 2, scenario
+		MOVWI	_city._money,20000					; fixed money
 		LDY		_scenario_idx
-		LDA		_scenario_start_year_lo,Y
+		LDA		_scenario_start_year_lo,Y			; different starting years
 		STA		_city._cur_year+1
 loc_10443E:
-		LDA		_scenario_start_year_hi,Y
-		STA		_city._cur_year
-		CLC
-		ADC		_scenario_sdisaster_years_delay_list,Y
+		LDA		_scenario_start_year_hi,Y			; init special disasters parameters
+		STA		_city._cur_year						; starting year for first disaster,
+		CLC											; and disasters treshold after that
+		ADC		_scenario_disaster_years_delay_list,Y
 		STA		_scenario_disaster_year_pending
 		LDA		_scenario_disaster_delays_list,Y
 		STA		_scenario_disaster_delay
@@ -560,47 +489,47 @@ loc_10443E:
 		TAY
 		LDX		#$00
 loc_10445D:
-		LDA		_scenario_special_events_flags_lib,Y
-		STA		_city._events_used_flags,X
+		LDA		_scenario_special_events_flags_lib,Y; disable already accepted special
+		STA		_city._events_used_flags,X			; buildings to stop it's appearance
 		INY
 		INX
 		CPX		#$04
 		BNE		loc_10445D
 		LDA		#$02
-		STA		_city._game_speed
+		STA		_city._game_speed					; default speed "slow"
 		LDA		#$09
-		STA		_city._game_flags
-		JMP		loc_104494
+		STA		_city._game_flags					; default game settings
+		JMP		.complete_game_setup
 loc_104476:
-		MOVIW	_city._money,$4E20
-		MOVIW	_city._cur_year,$076C
+		MOVWI	_city._money,$4E20					; game mode 3, practice
+		MOVWI	_city._cur_year,1900				; starting year fixed
 		LDA		#$00
 		STA		_city._city_type
 		LDA		#$09
 		STA		_city._game_flags
-loc_104494:
-		LDY		_city._city_type
-		LDA		_city._game_flags
-		AND		#$08
-		BEQ		loc_1044A3
-		LDA		_bg_music_list,Y
-		STA		_apu_mus_idx_req
+.complete_game_setup:
+		LDY		_city._city_type					; there is no city type setting for
+		LDA		_city._game_flags					; scenario mode here, it will be set
+		AND		#$08								; automatically after first recalc ingame
+		BEQ		loc_1044A3							; so this music select just redundant,
+		LDA		_bg_music_list,Y					; it will always select the default music
+		STA		_apu_mus_idx_req					; anyway, this list actually empty by itself
 loc_1044A3:
 		LDA		#$07
-		STA		_city._tax_rate
+		STA		_city._tax_rate						; default tax rate always 7
 		STA		_tax_alloc._tax
 		LDA		#$0F
-		STA		_police_fund_rate
-		STA		_fire_fund_rate
+		STA		_police_fund_rate					; def funding rate, will be recalculated anyways
+		STA		_fire_fund_rate						; mostly redundant here too
 		LDA		#$20
 		STA		_road_fund_rate
 		LDA		#$26
 		STA		_cur_population_dencity
 		STA		_cur_population_dencity+1
 		JSR		_sram_on
-		LDA		#<[_power_grid_map_buf]
-		STA		_tmpE6
-		LDA		#>[_power_grid_map_buf]
+		LDA		#<[_power_grid_map_buf]				; clear power grid + traffic maps
+		STA		_tmpE6								; for some reason, the size of clear here is
+		LDA		#>[_power_grid_map_buf]				; 1392, when both bufs should be 1444
 		STA		_tmpE7
 		LDX		#$05
 		LDY		#$00
@@ -617,8 +546,8 @@ loc_1044DA:
 		INY
 		CPY		#$70
 		BNE		loc_1044DA
-		LDA		#<[_land_value_map_buf]
-		STA		_tmpE6
+		LDA		#<[_land_value_map_buf]				; clear the rest of the statistic maps
+		STA		_tmpE6								; size is correct this time
 		LDA		#>[_land_value_map_buf]
 		STA		_tmpE7
 		LDX		#$03
@@ -638,18 +567,35 @@ loc_1044F8:
 		BNE		loc_1044F8
 		JSR		_sram_off
 		JMP		_city_stats_reset
+
 _difficult_money_list_lo:
-		.BYTE	$20,$10,$88
+		.BYTE	<[20000]
+		.BYTE	<[10000]
+		.BYTE	<[5000]
 _difficult_money_list_hi:
-		.BYTE	$4E,$27,$13
+		.BYTE	>[20000]
+		.BYTE	>[10000]
+		.BYTE	>[5000]
 _scenario_start_year_hi:
-		.BYTE	$72,$AD,$B4,$A9,$DA,$FF,$34
+		.BYTE	<[1906]
+		.BYTE	<[1965]
+		.BYTE	<[1972]
+		.BYTE	<[1961]
+		.BYTE	<[2010]
+		.BYTE	<[2047]
+		.BYTE	<[2100]
 _scenario_start_year_lo:
-		.BYTE	$07,$07,$07,$07,$07,$07,$08
+		.BYTE	>[1906]
+		.BYTE	>[1965]
+		.BYTE	>[1972]
+		.BYTE	>[1961]
+		.BYTE	>[2010]
+		.BYTE	>[2047]
+		.BYTE	>[2100]
 _scenario_disaster_delays_list:
 		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
-_scenario_sdisaster_years_delay_list:
-		.BYTE	$05, $0A,$0A, $05,$05, $0A,$0A
+_scenario_disaster_years_delay_list:
+		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
 _scenario_special_events_flags_lib:
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
@@ -696,17 +642,17 @@ loc_10457D:
 		CPX		#$09
 		BNE		loc_104559
 		LDA		_tmpE6
-		STA		_RCI_max_range_10_years
-		LDA		_city._level._R
-		STA		_tmpE6
+		STA		_RCI_max_range_10_years			; TODO: fixme! never used for scaling!
+		LDA		_city._level._R					; BUG! _tmpE6 writeen twice, low nibble
+		STA		_tmpE6							; of _R lost, further calcs are correct
 		LDA		_city._level._R+1
 		STA		_tmpE6
 		ASL		_tmpE6
 		ROL
 		STA		_wram_graphs._10y._R+9
-		LDA		_city._level._C+1
-		STA		_tmpE6
-		LDA		_city._level._C
+		LDA		_city._level._C+1				; TODO: fixme, differnt order of low/hi
+		STA		_tmpE6							; nibbles are in different orders
+		LDA		_city._level._C					; unificato to make a common macro for it
 		LSR		_tmpE6
 		ROR
 		LSR		_tmpE6
@@ -837,10 +783,10 @@ loc_104689:
 		CPX		#$09
 		BNE		loc_104665
 		LDA		_tmpE6
-		STA		_RCI_max_range_100_years
-		LDA		_wram_graphs._10y._R+9
-		STA		_wram_graphs._100y._R+9
-		LDA		_wram_graphs._10y._C+9
+		STA		_RCI_max_range_100_years		; TODO: fixme, the same unused max value
+		LDA		_wram_graphs._10y._R+9			; TODO: simple copy cur data for year,
+		STA		_wram_graphs._100y._R+9			; may be not so much relevant. maybe need
+		LDA		_wram_graphs._10y._C+9			; an interpolation of all 10years graphs instead?
 		STA		_wram_graphs._100y._C+9
 		LDA		_wram_graphs._10y._I+9
 		STA		_wram_graphs._100y._I+9
@@ -856,10 +802,8 @@ loc_104689:
 _fiscal_year_over_calculations:
 		LDA		#$00
 		STA		_taxes_income
-		MOVM16	_tmp6CC,_city._tax_year_rate
-		LDA		#$00
-		STA		_city._tax_year_rate
-		STA		_city._tax_year_rate+1
+		MOVW	_tmp6CC,_city._tax_year_rate
+		MOVWI	_city._tax_year_rate,$0000
 		LDA		_fiscal_year_results_draw_req
 		BEQ		loc_1046EB
 		RTS
@@ -875,10 +819,7 @@ loc_1046EB:
 		LDA		_tmpE7
 		ADC		_roads_counter+1
 		STA		_tmpE7
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6
 		LDY		_city._difficult
 		LDA		byte_104958,Y
 		PHA
@@ -887,46 +828,13 @@ loc_1046EB:
 		PHA
 		JSR		_mmc5_mul16to16
 		PLA
+		POPW	_fund_request_trans
 		PLA
-		STA		_fund_request_trans
-		PLA
-		STA		_fund_request_trans+1
-		PLA
-		LDA		_police_stations_count
-		PHA
-		LDA		#$64
-		PHA
-		JSR		_mmc5_mul8to8
-		PLA
-		STA		_fund_request_police
-		PLA
-		STA		_fund_request_police+1
-		LDA		_fire_stations_count
-		PHA
-		LDA		#$64
-		PHA
-		JSR		_mmc5_mul8to8
-		PLA
-		STA		_fund_request_fire
-		PLA
-		STA		_fund_request_fire+1
-		LDA		_R_schools_count
-		PHA
-		LDA		#$32
-		PHA
-		JSR		_mmc5_mul8to8
-		PLA
-		STA		_fund_request_education
-		PLA
-		STA		_fund_request_education+1
-		LDA		_cur_RCI_levels_sum+1
-		PHA
-		LDA		_cur_RCI_levels_sum
-		PHA
-		LDA		_city._var_5F9
-		PHA
-		LDA		_city._var_5F8
-		PHA
+		MMULB8	_fund_request_police,_police_stations_count,#$64
+		MMULB8	_fund_request_fire,_fire_stations_count,#$64
+		MMULB8	_fund_request_education,_R_schools_count,#$32
+		PUSHW	_cur_RCI_levels_sum
+		PUSHW	_city._var_5F8
 		JSR		_mmc5_mul16to16
 		PLA
 		PLA
@@ -954,22 +862,13 @@ loc_1046EB:
 		PHA
 		TXA
 		PHA
-		LDA		#$B6
-		PHA
+		PUSHB	#$B6
 		JSR		_mmc5_mul16to8
 		PLA
-		LDA		_tmp6CC+1
-		PHA
-		LDA		_tmp6CC
-		PHA
+		PUSHW	_tmp6CC
 		JSR		_mmc5_mul16to16
 		PLA
-		PLA
-		STA		_taxes_collected
-		PLA
-		STA		_taxes_collected+1
-		PLA
-		STA		_taxes_collected+2
+		POPD	_taxes_collected
 		LDA		_cur_RCI_levels_sum
 		ORA		_cur_RCI_levels_sum+1
 		BNE		loc_1047BF
@@ -1066,6 +965,7 @@ loc_10486C:
 		LDA		_tmpE7
 		SBC		_fund_request_fire+1
 		STA		_tmpE7
+
 		LDA		_tmpE6
 		SEC
 		SBC		_fund_request_police
@@ -1073,6 +973,7 @@ loc_10486C:
 		LDA		_tmpE7
 		SBC		_fund_request_police+1
 		STA		_taxes_income+1
+
 		LDA		_fund_request_trans
 		ORA		_fund_request_trans+1
 		BNE		loc_1048A9
@@ -1081,7 +982,7 @@ loc_10486C:
 loc_1048A9:
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_road_fund_alloc
 		STA		_tmpE7
 		LDA		_road_fund_alloc+1
@@ -1090,13 +991,9 @@ loc_1048A9:
 		STA		_tmpEA
 		LDA		_fund_request_trans+1
 		STA		_tmpEB
-		JSR		_div_16to16
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
-		LDA		#$21
-		PHA
+		JSR		_div_32to16
+		PUSHW	_tmpE6
+		PUSHB	#$21
 		JSR		_mmc5_mul16to8
 		PLA
 		PLA
@@ -1113,7 +1010,7 @@ loc_1048D7:
 loc_1048E6:
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_police_fund_alloc
 		STA		_tmpE7
 		LDA		_police_fund_alloc+1
@@ -1122,15 +1019,14 @@ loc_1048E6:
 		STA		_tmpEA
 		LDA		_fund_request_police+1
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		LDA		_tmpE6
 		LDY		_tmpE7
 		BEQ		loc_10490B
 		LDA		#$FF
 loc_10490B:
 		PHA
-		LDA		#$10
-		PHA
+		PUSHB	#$10
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
@@ -1144,7 +1040,7 @@ loc_104914:
 loc_104923:
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_fire_fund_alloc
 		STA		_tmpE7
 		LDA		_fire_fund_alloc+1
@@ -1153,15 +1049,14 @@ loc_104923:
 		STA		_tmpEA
 		LDA		_fund_request_fire+1
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		LDA		_tmpE6
 		LDY		_tmpE7
 		BEQ		loc_104948
 		LDA		#$FF
 loc_104948:
 		PHA
-		LDA		#$10
-		PHA
+		PUSHB	#$10
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
@@ -1211,30 +1106,17 @@ _city_stats_reset:
 		STA		_assessed_value
 		STA		_annual_score_change
 		STA		_annual_score_change+1
-		MOVIW	_city._score,$01F4
+		MOVWI	_city._score,500
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_assessed_value_recalc:
-		LDA		_roads_counter+1
-		PHA
-		LDA		_roads_counter
-		PHA
-		LDA		#$05
-		PHA
+		PUSHW	_roads_counter
+		PUSHB	#$05
 		JSR		_mmc5_mul16to8
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
-		PLA
-		STA		_tmpE8
-		LDA		_rails_count+1
-		PHA
-		LDA		_rails_count
-		PHA
-		LDA		#$0A
-		PHA
+		POPD	_tmpE6
+		PUSHW	_rails_count
+		PUSHB	#$0A
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1246,13 +1128,10 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$03
-		PHA
-		LDA		#$E8
-		PHA
+		PUSHWI	$03E8
 		LDA		_police_stations_count
 		CLC
-		ADC		_wrong_var
+		ADC		_wrong_var					; BUG! unknown unused var
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1265,12 +1144,8 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$90
-		PHA
-		LDA		#$01
-		PHA
-		LDA		_R_hospitals_count
-		PHA
+		PUSHWI	$9001						; BUG! FIXME SWAP NIBBLES
+		PUSHB	_R_hospitals_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1282,12 +1157,8 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$B8
-		PHA
-		LDA		#$0B
-		PHA
-		LDA		_stadiums_count
-		PHA
+		PUSHWI	$B80B						; BUG! FIXME SWAP NIBBLES
+		PUSHB	_stadiums_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1299,12 +1170,8 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$88
-		PHA
-		LDA		#$13
-		PHA
-		LDA		_sea_ports_count
-		PHA
+		PUSHWI	$8813						; BUG! FIXME SWAP NIBBLES
+		PUSHB	_sea_ports_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1316,12 +1183,8 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$10
-		PHA
-		LDA		#$27
-		PHA
-		LDA		_airports_count
-		PHA
+		PUSHWI	$1027						; BUG! FIXME SWAP NIBBLES
+		PUSHB	_airports_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1333,12 +1196,8 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$B8
-		PHA
-		LDA		#$0B
-		PHA
-		LDA		_coal_power_station_count
-		PHA
+		PUSHWI	$B80B						; BUG! FIXME SWAP NIBBLES
+		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1350,12 +1209,8 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#$70
-		PHA
-		LDA		#$17
-		PHA
-		LDA		_nuke_power_station_count
-		PHA
+		PUSHWI	$7017						; BUG! FIXME SWAP NIBBLES
+		PUSHB	_nuke_power_station_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1381,7 +1236,7 @@ _city_popul_relalc:
 		LDA		_popul_cur+2
 		SBC		_popul_last_year+2
 		STA		_popul_net_migration+2
-		MOVM16	_popul_last_year,_popul_cur
+		MOVW	_popul_last_year,_popul_cur
 		LDA		_popul_cur+2
 		STA		_popul_last_year+2
 		LDY		#$05
@@ -1417,31 +1272,14 @@ _city_problems_list_recalc:
 		LDA		_city._var_5FD
 		AND		#$7F
 		STA		_tmp6D0+1
-		LDA		_city._var_5F9
-		PHA
-		LDA		_city._var_5F8
-		PHA
-		LDA		#$A0
-		PHA
+		PUSHW	_city._var_5F8
+		PUSHB	#$A0
 		JSR		_mmc5_mul16to8
 		PLA
-		PLA
-		STA		_tmp6D2
-		PLA
-		STA		_tmp6D3
-		LDA		_city._tax_rate
-		PHA
-		LDA		#$0A
-		PHA
-		JSR		_mmc5_mul8to8
-		PLA
-		STA		_tmp6D4
-		PLA
-		STA		_tmp6D5
-		JSR		_farcall_argsXY_safe
-		.BYTE	$00,$FB
-		.WORD	_traffic_jam_recalc
-		MOVM16	_tmp6D6,_traffic_level_value
+		POPW	_tmp6D2
+		MMULB8	_tmp6D4,_city._tax_rate,#$0A
+		FJSR	_traffic_jam_recalc,$00,$FB
+		MOVW	_tmp6D6,_traffic_level_value
 		JSR		sub_104C2B
 		STA		_tmp6D8
 		JSR		_wrong_var_mul5
@@ -1498,22 +1336,16 @@ loc_104BD1:
 		CPY		#$07
 		BNE		loc_104BD1
 		STA		_tmpE8
-		STA		_tmpE8+1
+		STA		_tmpE9
 		STA		_tmpEA
 		STA		_tmpEB
 loc_104BE1:
-		LDA		#$01
-		PHA
-		LDA		#$90
-		PHA
+		PUSHWI	$0190
 		JSR		_rand
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
+		POPW	_tmpE6
 		LDA		_tmpE8
 		ASL
 		TAX
@@ -1524,7 +1356,7 @@ loc_104BE1:
 		BCS		loc_104C0C
 		LDX		_tmpE8
 		INC		byte_6E3,X
-		INC		_tmpE8+1
+		INC		_tmpE9
 loc_104C0C:
 		INC		_tmpE8
 		LDA		_tmpE8
@@ -1540,7 +1372,7 @@ loc_104C1E:
 		LDA		_tmpEB
 		CMP		#$02
 		BCS		locret_104C2A
-		LDA		_tmpE8+1
+		LDA		_tmpE9
 		CMP		#$64
 		BCC		loc_104BE1
 locret_104C2A:
@@ -1568,12 +1400,12 @@ sub_104C2B:
 loc_104C4C:
 		LDA		#$00
 		STA		_tmpE6
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_city._level._R
 		STA		_tmpE7
 		LDA		_city._level._R+1
 		STA		_tmpE8
-		JSR		_div_16to16
+		JSR		_div_32to16
 		LDA		_tmpE6
 		LDY		_tmpE7
 		BEQ		locret_104C67
@@ -1595,12 +1427,12 @@ locret_104C75:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_score_recalc:
-		MOVM16	_prev_city_score,_city._score
+		MOVW	_prev_city_score,_city._score
 		LDY		#$00
 		STY		_tmpE6
 		STY		_tmpE7
 		STY		_tmpE8
-		STY		_tmpE8+1
+		STY		_tmpE9
 		STY		_tmpEA
 loc_104C8E:
 		LDA		_tmp6CE,Y
@@ -1615,7 +1447,7 @@ loc_104C8E:
 		BNE		loc_104C8E
 		LDA		#$03
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		LDA		_tmpE7
 		BEQ		loc_104CB1
 		LDA		#$FF
@@ -1717,12 +1549,9 @@ loc_104D6A:
 loc_104D6D:
 		LDA		_popul_net_migration+2
 		BMI		loc_104DAE
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6
 		LDA		#$00
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_popul_net_migration
 		STA		_tmpE6
 		LDA		_popul_net_migration+1
@@ -1733,27 +1562,18 @@ loc_104D6D:
 		STA		_tmpEA
 		LDA		_popul_cur+2
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		INC		_tmpE7
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
-		PLA
-		STA		_tmpE8
-		PLA
-		STA		_tmpE8+1
+		POPW	_tmpE8
 		PLA
 		JMP		loc_104DF9
 loc_104DAE:
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6
 		LDA		#$00
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		#$00
 		SEC
 		SBC		_popul_net_migration
@@ -1768,7 +1588,7 @@ loc_104DAE:
 		STA		_tmpEA
 		LDA		_popul_cur+2
 		STA		_tmpEB
-		JSR		_div_16to16
+		JSR		_div_32to16
 		LDA		#$01
 		SEC
 		SBC		_tmpE7
@@ -1776,16 +1596,10 @@ loc_104DAE:
 		LDA		#$00
 		SBC		_tmpE6
 		STA		_tmpE6
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
-		PLA
-		STA		_tmpE8
-		PLA
-		STA		_tmpE8+1
+		POPW	_tmpE8
 		PLA
 loc_104DF9:
 		LDA		_tmpE7
@@ -1825,18 +1639,11 @@ loc_104E17:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmpE6_multiply_217:
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
-		LDA		#$D9
-		PHA
+		PUSHW	_tmpE6
+		PUSHB	#$D9
 		JSR		_mmc5_mul16to8
 		PLA
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
+		POPW	_tmpE6
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1844,18 +1651,12 @@ sub_104E54:
 		CLC
 		ADC		#$F1
 		TAX
-		LDA		_tmpE7
-		PHA
-		LDA		_tmpE6
-		PHA
+		PUSHW	_tmpE6
 		TXA
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
+		POPW	_tmpE6
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1865,18 +1666,12 @@ _city_votes_recalc:
 		STA		_doing_a_bad_job_votes
 		LDY		#$64
 loc_104E75:
-		LDA		#$03
-		PHA
-		LDA		#$E8
-		PHA
+		PUSHWI	$03E8
 		JSR		_rand
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
-		PLA
-		STA		_tmpE6
-		PLA
-		STA		_tmpE7
+		POPW	_tmpE6
 		LDA		_tmpE6
 		CMP		_city._score
 		LDA		_tmpE7
@@ -2174,8 +1969,12 @@ _new_event_set:
 		STY		_game_msg_idx
 
 ; =============== S U B	R O U T	I N E =======================================
-; BUGBUGBUG
 _new_event_break:
+; BUG! Y here is not the same after _new_event_register_flag branch, than
+; from previous !FALLTHROUGH! entry lol, will fail always, whey event idx
+; is pow of 2^3, so it will be 0 and test with 0, then never appear
+; automatically
+;
 		CPY		_prev_game_msg_idx
 		BEQ		loc_105059
 		LDA		#$01
@@ -2188,17 +1987,17 @@ loc_105059:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; BUGBUGBUG
 _check_for_free_special_biulding_slot:
 		LDX		#$02
-		LDA		_city._events_used_flags
+		LDA		_city._events_used_flags			; test if city status acquired
 		AND		#$04
-		BEQ		loc_105069
+		BEQ		loc_105069							; if no, only 3 slots are available
 		LDX		#$03
 loc_105069:
-		LDA		_city._special_buildings_list,X
-		BEQ		locret_105071
-		DEY
+		LDA		_city._special_buildings_list,X		; technically calc here is correct
+; BUG! loop not needed.
+		BEQ		locret_105071						; it'll always get last slot
+		DEY											; but then DEY loop not needed here then
 		BPL		loc_105069
 locret_105071:
 		RTS
@@ -2398,40 +2197,43 @@ loc_10519E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _practice_mode_events_handler:
-		LDA		_cur_game_mode
+		LDA		_cur_game_mode					; Practice game mode
 		CMP		#$03
 		BNE		_exit
-		LDA		_city._cur_week
+		LDA		_city._cur_week					; end of month
 		AND		#$03
 		BNE		_exit
-		LDA		_city._cur_year+1
+		LDA		_city._cur_year+1				; high nibble of 190x year
 		CMP		#$07
 		BNE		_exit
-		LDA		_city._cur_month
+		LDA		_city._cur_month				; end of JAN
 		CMP		#$01
 		BNE		_exit
-		LDA		_city._cur_year
+		LDA		_city._cur_year					; low nibble for 1900 year
 		CMP		#$6C
 		BNE		loc_1051D1
-		LDX		#$1B
+		LDX		#$1B							; first practice hint message
 		BNE		loc_1051F4
 loc_1051D1:
-		CMP		#$6D
+		CMP		#$6D							; low nibble for 1901 year
 		BNE		_exit
-		LDX		#$1C
+		LDX		#$1C							; second practice hint message
 		BNE		loc_1051F4
-		LDA		_city._cur_year
+; BUG! never executed
+; -
+		LDA		_city._cur_year					; test for year 1905
 		CMP		#$71
 		BNE		_exit
-		LDX		#$1D
-		LDA		_popul_cur+2
+		LDX		#$1D							; message for good practice result
+		LDA		_popul_cur+2					; test for population level
 		BNE		loc_1051F4
-		LDA		_popul_cur
+		LDA		_popul_cur						; should be above 30000 to win
 		CMP		#$30
 		LDA		_popul_cur+1
 		SBC		#$75
 		BCS		loc_1051F4
-		INX
+		INX										; if less, use fail practice message
+; -
 loc_1051F4:
 		STX		_game_msg_idx
 		LDA		#$01
@@ -2466,7 +2268,7 @@ _scroll_msg_test:
 		LDA		_scroll_msg_test_lib,Y
 		STA		_tmpE8
 		LDA		_scroll_msg_test_lib+1,Y
-		STA		_tmpE8+1
+		STA		_tmpE9
 		LDA		_total_RIC_areas
 		STA		_tmpE6
 		LDA		_total_RIC_areas+1
@@ -2790,9 +2592,9 @@ _total_free	SET	_bankAA_free
 _total_free SET _total_free+_bankAA_free
 		#endif
 		#if .>$A000
-		ECHO	"]","exceeded by=",[0-_bankAA_free]
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bankAA_free]
 		#else
-		ECHO	"]","free =",_bankAA_free
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bankAA_free
 		#endif
 		#if .<$A000-1
 		RORG	$A000-1

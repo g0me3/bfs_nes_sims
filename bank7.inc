@@ -15,7 +15,7 @@ _get_city_name_str:
 		LDX		_city._name
 		DEX
 		STX		byte_51A
-		MOVO	word_DA,_city._name+1
+		MOVWO	word_DA,_city._name+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -181,7 +181,7 @@ loc_B8110:
 		BNE		loc_B8129
 		RTS
 loc_B8129:
-		MOVM16	_constr_palette_flags,_ptr0
+		MOVW	_constr_palette_flags,_ptr0
 		LDA		_tmp2
 		STA		_constr_palette_flags+2
 		LDA		_tmp3
@@ -759,9 +759,7 @@ _title_screen:
 		LDA		#$08
 		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
-		LDX		#<[_tlm_res_title_main]
-		LDY		#>[_tlm_res_title_main]
-		JSR		_tlm_res_unpack
+		JSRXY	_tlm_res_unpack,_tlm_res_title_main
 		JSR		_wait_for_nmi
 		JSR		_ppu_reset
 		LDX		#$00
@@ -800,7 +798,7 @@ loc_B8514:
 		AND		#$CA
 		CMP		#$CA
 		BNE		loc_B8526
-		FJSR	_sram_reset,$00,$F3
+		FJSRA	_sram_reset,$00,$F3
 loc_B8526:
 		JSR		_title_sub_exec
 		BIT		_title_sub_idx
@@ -970,7 +968,7 @@ loc_B864D:
 		LDA		#$00
 		STA		_tmp3
 		STA		_tmp4
-		MOVO	_ptr0,_spr_raw_title_cursor
+		MOVWO	_ptr0,_spr_raw_title_cursor
 		JMP		_spr_raw_send
 _spr_raw_title_cursor:
 		.BYTE	$00,$F4,$03,$20
@@ -1165,7 +1163,7 @@ loc_B8A8A:
 		BNE		loc_B8AA2
 		LDA		#$15
 		STA		_city._bank_loan_period
-		MOVIW	_tax_alloc._bank_loan_year,$01F4
+		MOVWI	_tax_alloc._bank_loan_year,$01F4
 		INC		_tmp118+2
 		RTS
 loc_B8AA2:
@@ -1227,7 +1225,7 @@ loc_B8AF7:
 		LDA		#$58
 		JSR		_bank_scr_common_spr_draw
 		INC		_tmp118+2
-		MOVO	_ptr0,byte_B8DC8
+		MOVWO	_ptr0,byte_B8DC8
 		LDA		#<[byte_B8DFF]
 		STA		_tmp2
 		LDA		#>[byte_B8DFF]
@@ -1253,28 +1251,28 @@ _bank_scr_sub4_loan_done_animate:
 		BEQ		loc_B8B50
 		CPX		#$42
 		BNE		locret_B8B91
-		MOVO	_ptr0,byte_B8DD3
+		MOVWO	_ptr0,byte_B8DD3
 		LDA		#<[byte_B8E0A]
 		STA		_tmp2
 		LDA		#>[byte_B8E0A]
 		STA		_tmp3
 		JMP		_ppu_res_queue
 loc_B8B50:
-		MOVO	_ptr0,byte_B8DBD
+		MOVWO	_ptr0,byte_B8DBD
 		LDA		#<[byte_B8DF4]
 		STA		_tmp2
 		LDA		#>[byte_B8DF4]
 		STA		_tmp3
 		JMP		_ppu_res_queue
 loc_B8B63:
-		MOVO	_ptr0,byte_B8DA7
+		MOVWO	_ptr0,byte_B8DA7
 		LDA		#<[byte_B8DDE]
 		STA		_tmp2
 		LDA		#>[byte_B8DDE]
 		STA		_tmp3
 		JMP		_ppu_res_queue
 loc_B8B76:
-		MOVO	_ptr0,byte_B8DB2
+		MOVWO	_ptr0,byte_B8DB2
 		LDA		#<[byte_B8DE9]
 		STA		_tmp2
 		LDA		#>[byte_B8DE9]
@@ -1295,10 +1293,10 @@ sub_B8B92:
 		STA		_tmp3
 		LDA		_tmp118+4
 		BNE		loc_B8BAA
-		MOVO	_ptr0,byte_B8BB5
+		MOVWO	_ptr0,byte_B8BB5
 		JMP		_spr_raw_send
 loc_B8BAA:
-		MOVO	_ptr0,byte_B8BD6
+		MOVWO	_ptr0,byte_B8BD6
 		JMP		_spr_raw_send
 byte_B8BB5:
 		.BYTE	$CF,$D0,$02,$88
@@ -1493,11 +1491,11 @@ _bank_scr_common_spr_draw:
 		LDX		#$20
 loc_B8D1F:
 		STX		_tmp3
-		MOVO	_ptr0,byte_B8D5C
+		MOVWO	_ptr0,byte_B8D5C
 		JSR		_spr_raw_send
 		LDA		#$00
 		STA		_tmp3
-		MOVO	_ptr0,byte_B8D75
+		MOVWO	_ptr0,byte_B8D75
 		JSR		_spr_raw_send
 		LDA		_tmp2
 		CMP		#$47
@@ -1668,7 +1666,7 @@ loc_B8EB4:
 		STA		_graphs_scr_period_mode
 		LDA		#$80
 		STA		_scr_res_control_flags
-		FJSR	sub_A021E,$F6,$F7
+		FJSRA	sub_A021E,$F6,$F7
 		JMP		_scr_res_hndl1_A_graphs1
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1681,7 +1679,7 @@ sub_B8ED8:
 		STX		byte_598
 		LDA		#$80
 		STA		_scr_res_control_flags
-		FJSR	sub_A01BF,$F6,$F7
+		FJSRA	sub_A01BF,$F6,$F7
 		LDA		#$00
 		STA		byte_59B
 
@@ -2169,7 +2167,7 @@ loc_B9221:
 		LDA		_tmp584
 		CMP		#$0A
 		BCS		loc_B9238
-		FJSR	_budget_funds_recalc,$F7,$F9
+		FJSRA	_budget_funds_recalc,$F7,$F9
 		RTS
 loc_B9238:
 		BNE		loc_B9243
@@ -2234,10 +2232,10 @@ loc_B9298:
 _save_taxes_data:
 		LDA		_tax_alloc._tax
 		STA		_city._tax_rate
-		MOVM16	_fire_fund_alloc,_tax_alloc._fire
-		MOVM16	_police_fund_alloc,_tax_alloc._police
-		MOVM16	_road_fund_alloc,_tax_alloc._trans
-		MOVM16	_education_fund_alloc,_tax_alloc._education
+		MOVW	_fire_fund_alloc,_tax_alloc._fire
+		MOVW	_police_fund_alloc,_tax_alloc._police
+		MOVW	_road_fund_alloc,_tax_alloc._trans
+		MOVW	_education_fund_alloc,_tax_alloc._education
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2443,10 +2441,10 @@ loc_B948A:
 		BEQ		loc_B94A9
 		CPX		#$06
 		BEQ		loc_B94A9
-		MOVO	_ptr0,byte_B94B5
+		MOVWO	_ptr0,byte_B94B5
 		JMP		_spr_raw_send_0
 loc_B94A9:
-		MOVO	_ptr0,byte_B94BE
+		MOVWO	_ptr0,byte_B94BE
 		JMP		_spr_raw_send_0
 locret_B94B4:
 		RTS
@@ -2469,7 +2467,7 @@ _map_info_spr_rect_draw:
 		STA		_tmp2
 		LDA		byte_139
 		STA		_tmp4
-		MOVO	_ptr0,_spr_map_info_rect
+		MOVWO	_ptr0,_spr_map_info_rect
 		JMP		_spr_raw_send_0
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2480,7 +2478,7 @@ _map_info_spr_arrows_draw:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp3
-		MOVO	_ptr0,_spr_map_info_arrows
+		MOVWO	_ptr0,_spr_map_info_arrows
 
 ; =============== S U B	R O U T	I N E =======================================
 _spr_raw_send_0:
@@ -2560,8 +2558,8 @@ loc_B958B:
 		LDA		_tmp118+$A
 		CLC
 		ADC		#$06
-		FJSR	_txt_lib_printf,$F7,$F9
-		FJSR	_history_year_printf,$F7,$F9
+		FJSRA	_txt_lib_printf,$F7,$F9
+		FJSRA	_history_year_printf,$F7,$F9
 		JSR		_buffers_force_flush
 		LDX		_ppu_queue_pos_head
 		LDY		_tmp118+9
@@ -2695,7 +2693,7 @@ byte_B96BB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_year_draw:
-		MOVM16	_ptr0,_city._cur_year
+		MOVW	_ptr0,_city._cur_year
 		JSR		_hex_to_dec9999999_0
 		LDX		_ppu_queue_pos_head
 		LDA		_scr_res_idx

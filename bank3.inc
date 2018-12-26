@@ -218,7 +218,7 @@ loc_58144:
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSR	_game_msg_chr_setup,$F2,$F2
+		FJSRA	_game_msg_chr_setup,$F2,$F2
 		LDA		#$00
 		STA		_ptr0
 		JSR		_game_msg_display
@@ -226,8 +226,7 @@ loc_58144:
 		STA		byte_525
 		STA		byte_524
 loc_581A4:
-		LDA		_ptr0
-		PHA
+		PUSHB	_ptr0
 		JSR		_wait_for_nmi
 		LDA		#$00
 		STA		_spr_buf_pos
@@ -237,8 +236,7 @@ loc_581A4:
 		JSR		_spr_finish
 		JSR		_game_msg_bonus_item_clear
 		JSR		_msg_wnd_cheat_test
-		PLA
-		STA		_ptr0
+		POPB	_ptr0
 		LDA		byte_524
 		CMP		#$1E
 		BCS		loc_581EC
@@ -327,23 +325,17 @@ _game_msg_apu_types_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_display:
-		LDA		_ptr0
-		PHA
+		PUSHB	_ptr0
 		JSR		_far_wnd_header_draw
-		PLA
-		STA		_ptr0
+		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
 loc_5829C:
-		LDA		_ptr0
-		PHA
-		LDA		_ptr0+1
-		PHA
+		PUSHB	_ptr0
+		PUSHB	_ptr0+1
 		JSR		_wait_for_nmi
-		PLA
-		STA		_ptr0+1
-		PLA
-		STA		_ptr0
+		POPB	_ptr0+1
+		POPB	_ptr0
 		JSR		_game_msg_line_pos_calc
 		JSR		_game_msg_line_display
 		INC		_ptr0+1
@@ -362,7 +354,7 @@ loc_5829C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_wnd_header_draw:
-		FJSR	_wnd_header_draw,$F0,$F0
+		FJSRA	_wnd_header_draw,$F0,$F0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -432,8 +424,7 @@ _game_msg_line_display:
 		PHA
 		LDA		(_tmp6),Y
 		STA		_tmp6+1
-		PLA
-		STA		_tmp6
+		POPB	_tmp6
 		LDA		_ptr0+1
 		ASL
 		TAY
@@ -442,12 +433,9 @@ _game_msg_line_display:
 		PHA
 		LDA		(_tmp6),Y
 		STA		_tmp6+1
-		PLA
-		STA		_tmp6
-		LDA		_tmp4
-		PHA
-		LDA		_tmp5
-		PHA
+		POPB	_tmp6
+		PUSHB	_tmp4
+		PUSHB	_tmp5
 		LDX		_extnt_queue_pos_head
 		LDA		_tmp2
 		STA		_extnt_queue_buf,X
@@ -484,10 +472,8 @@ loc_58371:
 		JMP		loc_58371
 loc_5839E:
 		STX		_extnt_queue_pos_head
-		PLA
-		STA		_tmp5
-		PLA
-		STA		_tmp4
+		POPB	_tmp5
+		POPB	_tmp4
 		LDX		_ppu_queue_pos_head
 		LDY		#$00
 		LDA		_tmp2
@@ -1193,35 +1179,35 @@ loc_588E4:
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVO	word_DA,_city._name+1
+		MOVWO	word_DA,_city._name+1
 		RTS
 loc_588F6:
 		LDA		_city._sister_name
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVO	word_DA,_city._sister_name+1
+		MOVWO	word_DA,_city._sister_name+1
 		RTS
 loc_58908:
 		LDA		_city._bank_name
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVO	word_DA,_city._bank_name+1
+		MOVWO	word_DA,_city._bank_name+1
 		RTS
 loc_5891A:
 		LDA		_city._unused_name3
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVO	word_DA,_city._unused_name3+1
+		MOVWO	word_DA,_city._unused_name3+1
 		RTS
 loc_5892C:
 		LDA		_city._unused_name4
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVO	word_DA,_city._unused_name4+1
+		MOVWO	word_DA,_city._unused_name4+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1290,12 +1276,12 @@ _get_select_popul_num:
 		CMP		#$01
 		BEQ		loc_589B9
 loc_589A4:
-		MOVM16	_tmp_popul_hex,_popul_cur
+		MOVW	_tmp_popul_hex,_popul_cur
 		LDA		_popul_cur+2
 		STA		_tmp_popul_hex+2
 		JMP		loc_589C8
 loc_589B9:
-		MOVID	_tmp_popul_hex,$002710
+		MOVDI	_tmp_popul_hex,$002710
 loc_589C8:
 		TYA
 		PHA
@@ -1452,13 +1438,11 @@ _game_msg_wnd_draw:
 		LDA		#$00
 		STA		_ptr0
 loc_58AA8:
-		LDA		_ptr0
-		PHA
+		PUSHB	_ptr0
 		JSR		_game_msg_wnd_line_pos_calc
 		JSR		_game_msg_wnd_line_draw
 		JSR		_wait_for_nmi
-		PLA
-		STA		_ptr0
+		POPB	_ptr0
 		INC		_ptr0
 		LDA		_ptr0
 		CMP		#$15
@@ -2003,24 +1987,24 @@ _game_menu_exec:
 		BNE		loc_58F72
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSR	_game_save_menu,$00,$F3
+		FJSRA	_game_save_menu,$00,$F3
 		JMP		_game_menu_break
 loc_58F72:
 		DEX
 		BNE		loc_58F7F
-		FJSR	_game_load_menu,$00,$F3
+		FJSRA	_game_load_menu,$00,$F3
 		JMP		_game_menu_break
 loc_58F7F:
 		DEX
 		BNE		loc_58F90
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSR	_game_title_return,$00,$F3
+		FJSRA	_game_title_return,$00,$F3
 		JMP		_game_menu_break
 loc_58F90:
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSR	_game_quit,$00,$F3
+		FJSRA	_game_quit,$00,$F3
 _game_menu_break:
 		LDA		#$00
 		STA		_scr_mode_idx
@@ -2033,7 +2017,7 @@ _game_save_menu:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSR	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		SEC
 		RTS
@@ -2045,7 +2029,7 @@ loc_58FBA:
 _sram_data_save:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_on
-		MOVO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_wram_map_buf
 		LDA		#<[_sram_map_buf]
 		STA		_tmp2
 		LDA		#>[_sram_map_buf]
@@ -2109,7 +2093,7 @@ _common_yes_no_question_menu:
 		STA		_mmc5_operation_in_progress_flag
 		LDA		#$00
 		STA		_common_yes_no_menu_cursor_pos
-		FJSR	_wnd_draw,$FC,$FD
+		FJSRA	_wnd_draw,$FC,$FD
 loc_59047:
 		LDA		#$00
 		STA		_spr_buf_pos
@@ -2151,12 +2135,10 @@ loc_5908E:
 		CLC
 		RTS
 loc_59097:
-		LDA		#$00
-		PHA
+		PUSHB	#$00
 		BEQ		loc_5909F
 loc_5909C:
-		LDA		#$FF
-		PHA
+		PUSHB	#$FF
 loc_5909F:
 		JSR		_spr_clear
 		JSR		_common_yes_no_menu_no_push_draw
@@ -2166,7 +2148,7 @@ loc_5909F:
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		JSR		_wait_for_nmi
-		FJSR	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		PLA
 		SEC
@@ -2229,7 +2211,7 @@ loc_59103:
 		JSR		_sram_data_load
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSR	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		JSR		_pal_fade_out
 		TSX
@@ -2258,7 +2240,7 @@ _load_menu_exec:
 _sram_data_load:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_on
-		MOVO	_ptr0,_sram_map_buf
+		MOVWO	_ptr0,_sram_map_buf
 		LDA		#<[_wram_map_buf]
 		STA		_tmp2
 		LDA		#>[_wram_map_buf]
@@ -2308,7 +2290,7 @@ loc_591A1:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSR	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		JSR		_pal_fade_out
 loc_591B7:
@@ -2326,7 +2308,7 @@ loc_591C5:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSR	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 loc_591D8:
 		LDA		#$00
@@ -2416,7 +2398,7 @@ loc_59272:
 
 ; =============== S U B	R O U T	I N E =======================================
 _turn_off_power_draw:
-		MOVO	_ptr0,aTurnOffPowerSwitch
+		MOVWO	_ptr0,aTurnOffPowerSwitch
 		LDY		#$00
 		LDA		#$21
 		LDX		#$E6
@@ -2497,7 +2479,7 @@ byte_5930F:
 _generate_new_map:
 		LDA		#$FF
 		STA		_mmc5_operation_in_progress_flag
-		MOVM16	_rand_seed,_new_map_number
+		MOVW	_rand_seed,_new_map_number
 		ROL		_rand_seed
 		ROL		_rand_seed+1
 		ROL
@@ -2645,7 +2627,7 @@ _isle_map_tile_write:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wram_map_clear:
-		MOVO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_wram_map_buf
 		LDY		#$00
 loc_5946A:
 		LDA		#$00
@@ -3292,7 +3274,7 @@ byte_599B9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapG:
-		MOVO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_wram_map_buf
 		LDY		#$00
 loc_599D3:
 		LDA		(_ptr0),Y
@@ -3327,7 +3309,7 @@ loc_599FB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapE:
-		MOVO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_wram_map_buf
 		LDY		#$00
 loc_59A11:
 		LDA		(_ptr0),Y
@@ -3388,7 +3370,7 @@ _cur_popul_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_popul:
-		MOVM16	_ptr0,_popul_cur
+		MOVW	_ptr0,_popul_cur
 		LDA		_popul_cur+2
 		STA		_tmp2
 		RTS

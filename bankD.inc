@@ -43,7 +43,7 @@ _game_state14_special_build_menu:
 		LDA		#$0D
 		STA		_wnd_top_tile
 		JSR		_wnd_draw
-		FJSR	_special_build_menu,$FC,$F2
+		FJSRA	_special_build_menu,$FC,$F2
 		JSR		_wnd_erase
 		LDA		#$00
 		STA		_special_build_menu_req
@@ -290,8 +290,7 @@ loc_1501AB:
 		LDY		#$00
 		BEQ		loc_1501AB
 loc_1501BF:
-		PLA
-		STA		_ppu_queue_pos_head
+		POPB	_ppu_queue_pos_head
 		STX		_extnt_queue_pos_head
 		RTS
 loc_1501C5:
@@ -380,8 +379,7 @@ loc_150248:
 		LDY		#$00
 		BEQ		loc_150248
 loc_15025C:
-		PLA
-		STA		_ppu_queue_pos_head
+		POPB	_ppu_queue_pos_head
 		STX		_extnt_queue_pos_head
 		RTS
 
@@ -803,7 +801,7 @@ _special_buildings_cost_idx_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1504FD:
-		JSR		sub_150A20
+		JSR		_get_cur_constr_cursor_map_ofs
 		JSR		sub_150BB3
 		LDY		#$00
 		LDA		(word_C1),Y
@@ -918,13 +916,13 @@ byte_1505C2:
 sub_1505E3:
 		INY
 		CLC
-		ADC		byte_50F
+		ADC		_cur_constr_cursor_map_pos._X
 		STA		byte_511
 		CMP		#$4C
 		BCS		loc_150634
 		LDA		(word_D0),Y
 		CLC
-		ADC		byte_510
+		ADC		_cur_constr_cursor_map_pos._Y
 		STA		byte_512
 		CMP		#$4C
 		BCS		loc_150634
@@ -1101,7 +1099,7 @@ loc_150722:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_150725:
-		MOVM16	_tmp6,word_D2
+		MOVW	_tmp6,word_D2
 		JSR		sub_150817
 		JSR		sub_150863
 		BCS		loc_150745
@@ -1117,7 +1115,7 @@ loc_150744:
 		SEC
 loc_150745:
 		ROL		byte_D5
-		MOVM16	_tmp6,word_D2
+		MOVW	_tmp6,word_D2
 		JSR		sub_150852
 		JSR		sub_150863
 		BCS		loc_150767
@@ -1133,7 +1131,7 @@ loc_150766:
 		SEC
 loc_150767:
 		ROL		byte_D5
-		MOVM16	_tmp6,word_D2
+		MOVW	_tmp6,word_D2
 		JSR		sub_150833
 		JSR		sub_150863
 		BCS		loc_150789
@@ -1149,7 +1147,7 @@ loc_150788:
 		SEC
 loc_150789:
 		ROL		byte_D5
-		MOVM16	_tmp6,word_D2
+		MOVW	_tmp6,word_D2
 		JSR		sub_15084D
 		JSR		sub_150863
 		BCS		loc_1507AB
@@ -1355,7 +1353,7 @@ loc_1508BA:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1508BC:
-		JSR		sub_150A20
+		JSR		_get_cur_constr_cursor_map_ofs
 		JSR		sub_1508E6
 		JSR		sub_15096E
 		BCS		locret_1508E5
@@ -1481,7 +1479,7 @@ loc_1509B5:
 		LDX		#$BD
 loc_1509B7:
 		STX		byte_CB
-		FJSR	_money_recalc,$F7,$F3
+		FJSRA	_money_recalc,$F7,$F3
 		BCS		loc_1509C3
 		RTS
 loc_1509C3:
@@ -1551,25 +1549,25 @@ loc_150A15:
 		JMP		sub_1500F1
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150A20:
+_get_cur_constr_cursor_map_ofs:
 		LDA		_cur_map_wnd_pos._X
 		CLC
 		ADC		_constr_cursor_tile._X
-		STA		byte_50F
+		STA		_cur_constr_cursor_map_pos._X
 		LDA		_cur_map_wnd_pos._Y
 		CLC
 		ADC		_constr_cursor_tile._Y
-		STA		byte_510
+		STA		_cur_constr_cursor_map_pos._Y
 		LDX		#$4C
 		STX		_MMC5_MUL1
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		LDX		_MMC5_MUL1
 		CLC
-		ADC		byte_50F
+		ADC		_cur_constr_cursor_map_pos._X
 		STA		word_C1
 		TXA
-		ADC		#$60
+		ADC		#>[_wram_map_buf]
 		STA		word_C1+1
 		RTS
 
@@ -2465,7 +2463,7 @@ sub_151061:
 		LDX		byte_534
 		CPX		#$00
 		BNE		nullsub_7
-		MOVIW	word_6C,$0287
+		MOVWI	word_6C,$0287
 nullsub_7:
 		RTS
 
@@ -4183,10 +4181,10 @@ loc_151F3B:
 		JSR		_ppu_flush_wait
 		JSR		_special_constr_palette_draw
 		JSR		_RCI_meters_draw
-		FJSR	_cur_date_draw,$F7,$F3
-		FJSR	_cur_money_draw,$FC,$F3
-		FJSR	_cur_popul_draw,$F7,$F3
-		FJSR	_city_name_draw,$F7,$F3
+		FJSRA	_cur_date_draw,$F7,$F3
+		FJSRA	_cur_money_draw,$FC,$F3
+		FJSRA	_cur_popul_draw,$F7,$F3
+		FJSRA	_city_name_draw,$F7,$F3
 		JSR		_ppu_flush_wait
 loc_151F6D:
 		JSR		_ppu_flush_wait
@@ -4214,7 +4212,7 @@ _far_heavy_traffic_report_test:
 		BNE		locret_151FA1
 		LDX		_obj_pos._heli._X
 		LDY		_obj_pos._heli._Y
-		FJSR	_heavy_traffic_report_test,$00,$FB
+		FJSRA	_heavy_traffic_report_test,$00,$FB
 locret_151FA1:
 		RTS
 

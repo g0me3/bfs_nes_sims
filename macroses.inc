@@ -4,6 +4,19 @@ DEBUG	EQU		1
 
 ;------------S-T-R-U-C-T-U-R-E-S----------------
 
+	MAC	_tfix16_16
+{1}		SET	.
+{1}.FRAC	.WORD	0
+{1}.INT		.WORD	0
+	ENDM
+
+	MAC	_tfix8_8
+{1}		SET	.
+{1}.FRAC	.BYTE	0
+{1}.INT		.BYTE	0
+	ENDM
+
+
 	MAC	_tpos
 {1}		SET	.
 {1}._X:		.BYTE	0
@@ -34,12 +47,6 @@ DEBUG	EQU		1
 {1}._var3:	.BYTE	{7}
 	ENDM
 
-; _game_flags
-; bit0 - auto buldozer
-; bit1 - auto budget
-; bit2 - auto goto
-; bit3 - music on
-
 	MAC	_tcity
 {1}		SET	.
 {1}._name:								.BYTE	0,0,0,0,0,0,0,0,0,0,0
@@ -53,8 +60,7 @@ DEBUG	EQU		1
 		_trci							{1}._delta
 {1}._var_5F6:							.BYTE	0
 {1}._var_5F7:							.BYTE	0
-{1}._var_5F8:							.BYTE	0
-{1}._var_5F9:							.BYTE	0
+{1}._var_5F8:							.WORD	0
 {1}._crime_level:						.WORD	0
 {1}._var_5FC:							.BYTE	0
 {1}._var_5FD:							.BYTE	0
@@ -67,6 +73,10 @@ DEBUG	EQU		1
 {1}._cur_week:							.BYTE	0
 {1}._tax_rate:							.BYTE	0
 {1}._game_flags:						.BYTE	0
+	; bit0 - auto buldozer
+	; bit1 - auto budget
+	; bit2 - auto goto
+	; bit3 - music on
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
 {1}._year_to_build_bank:				.WORD	0
@@ -165,10 +175,38 @@ DEBUG	EQU		1
 
 ;---------G-A-M-E--S-P-E-C-I-F-I-C--------------
 
-	MAC	FJSR
+	MAC	FJSRA
 		JSR		_farcall_argsAXY_safe
 		.BYTE	{2},{3}
 		.WORD	{1}
+	ENDM
+
+	MAC	FJSR
+		JSR		_farcall_argsXY_safe
+		.BYTE	{2},{3}
+		.WORD	{1}
+	ENDM
+
+	; \t\tLDX\t\t#<\[(.*)\]\n\t\tLDY\t\t#>\[\1\]\n\t\tJSR\t\t(.*)\n
+	; \t\tJSRXY\t\2,\1\n
+	;
+	MAC JSRXY
+		LDX		#<[{2}]
+		LDY		#>[{2}]
+		JSR		{1}
+	ENDM
+
+	; \t\tPUSHB\t(.*)\n\t\tPUSHB\t(.*)\n\t\tJSR\t\t_mmc5_mul8to8\n\t\tPOPB\t(.*)\n\t\tPOPB\t\3\+1\n
+	; \t\tMMULB8\t\3,\1,\2\n
+	;
+	; store-multiply, input args are 8bit, result is 16bit
+	;
+	MAC	MMULB8
+		PUSHB	{2}
+		PUSHB	{3}
+		JSR		_mmc5_mul8to8
+		POPB	{1}
+		POPB	{1}+1
 	ENDM
 
 ;-----------------C-O-M-M-O-N-------------------
@@ -176,7 +214,7 @@ DEBUG	EQU		1
 	MAC BANK_START
 CUR_PRG_BANK	SET {1}
 CUR_BANK_START	SET .
-		ECHO	"bank",{1},"start ["
+;		ECHO	"bank",{1},"start ["
 	ENDM
 
 	MAC	BANK_END
@@ -187,9 +225,9 @@ _total_free	SET	_bank{1}_free
 _total_free	SET _total_free+_bank{1}_free
 	#endif
 	#if .>{2}
-		ECHO	"]","exceeded by=",[0-_bank{1}_free]
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
 	#else
-		ECHO	"]","free =",_bank{1}_free
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
 	#endif
 	#if .<{2}-1
 		ORG		{2}-1
@@ -209,7 +247,11 @@ _{1}_end	SET .
 	MAC	LAST_BANK_END
 _bank{1}_free	SET	[{2}-.-6]
 _total_free	SET _total_free+_bank{1}_free
-		ECHO	"]","free =",_bank{1}_free
+	#if .>[{2}-6]
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
+	#else
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
+	#endif
 		ECHO	"-------------";
 		ECHO	"total free =",_total_free
 		ECHO	""
@@ -235,10 +277,47 @@ _total_free	SET _total_free+_bank{1}_free
 
 ;---------------A-R-I-T-H-M---------------------
 
-	; \t\tLDA\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\1\+1\n\t\tSTA\t\t\2\+1\n
-	; \t\tMOVM16\t\2,\1\n
+	; \t\tLDA\t\t([^\,^\n]*)\n\t\tPHA\n
+	; \t\tPUSHB\t\1\n
 	;
-	MAC	MOVM16
+	MAC	PUSHB
+		LDA		{1}
+		PHA
+	ENDM
+
+	MAC	PUSHWI
+		PUSHB	#[[{1}>>8]&$FF]
+		PUSHB	#[[{1}>>0]&$FF]
+	ENDM
+
+	MAC PUSHW
+		PUSHB	{1}+1
+		PUSHB	{1}
+	ENDM
+
+	; \t\tPLA\n\t\tSTA\t\t([^\,^\n]*)\n
+	; \t\tPOPB\t\1\n
+	;
+	MAC	POPB
+		PLA
+		STA		{1}
+	ENDM
+
+	MAC	POPW
+		POPB	{1}
+		POPB	{1}+1
+	ENDM
+
+	MAC	POPD
+		POPB	{1}
+		POPB	{1}+1
+		POPB	{1}+2
+	ENDM
+
+	; \t\tLDA\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\1\+1\n\t\tSTA\t\t\2\+1\n
+	; \t\tMOVW\t\2,\1\n
+	;
+	MAC	MOVW
 		LDA		{2}
 		STA		{1}
 		LDA		{2}+1
@@ -246,9 +325,9 @@ _total_free	SET _total_free+_bank{1}_free
 	ENDM
 
 	; \t\tLDA\t\t#<\[(.*)\]\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t#>\[\1\]\n\t\tSTA\t\t\2\+1\n
-	; \t\tMOVO\t\2,\1\n
+	; \t\tMOVWO\t\2,\1\n
 	;
-	MAC	MOVO
+	MAC	MOVWO
 		LDA		#<[{2}]
 		STA		{1}
 		LDA		#>[{2}]
@@ -256,19 +335,25 @@ _total_free	SET _total_free+_bank{1}_free
 	ENDM
 
 	; \t\tLDA\t\t#\$(..)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t#\$(..)\n\t\tSTA\t\t\2\+1\n
-	; \t\tMOVIW\t\2,$\3\1\n
+	; \t\tMOVWI\t\2,$\3\1\n
 	;
-	MAC	MOVIW
-		LDA		#<[{2}]
+	MAC	MOVWI
+	#if {2}==0
+		LDA		#0
 		STA		{1}
-		LDA		#>[{2}]
 		STA		{1}+1
+	#else
+		LDA		#[[{2}>>0]&$FF]
+		STA		{1}
+		LDA		#[[{2}>>8]&$FF]
+		STA		{1}+1
+	#endif
 	ENDM
 
 	; \t\tLDA\t\t#\$(..)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t#\$(..)\n\t\tSTA\t\t\2\+1\n\t\tLDA\t\t#\$(..)\n\t\tSTA\t\t\2\+2\n
-	; \t\tMOVID\t\2,$\4\3\1\n
+	; \t\tMOVDI\t\2,$\4\3\1\n
 	;
-	MAC	MOVID
+	MAC	MOVDI
 		LDA		#[[{2}>>0 ]&$FF]
 		STA		{1}
 		LDA		#[[{2}>>8 ]&$FF]
@@ -298,4 +383,18 @@ _total_free	SET _total_free+_bank{1}_free
 		BCC		.1
 		INC		{1}+1
 .1:
+	ENDM
+
+	MAC CMPW
+		LDA		{1}
+		CMP		{2}
+		LDA		{1}+1
+		SBC		{2}+1
+	ENDM
+
+	MAC CMPWI
+		LDA		{1}
+		CMP		#[[{2}>>0]&$FF]
+		LDA		{1}+1
+		SBC		#[[{2}>>8]&$FF]
 	ENDM

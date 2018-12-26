@@ -98,15 +98,13 @@ _game_setup05_scenario_init:
 		STA		_mmc5_nt_mode_shadow
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		loc_240A5
-		LDX		#<[_tlm_res_scenario_normal]
-		LDY		#>[_tlm_res_scenario_normal]
-		JSR		_tlm_res_unpack
+		JSRXY	_tlm_res_unpack,_tlm_res_scenario_normal
 		LDY		#$03
 		BNE		loc_240B2
 loc_240A5:
 		LDX		#<[_tlm_res_scenario_complete]
 		LDY		#>[_tlm_res_scenario_complete]
-		FJSR	_tlm_res_unpack,$00,$FA
+		FJSRA	_tlm_res_unpack,$00,$FA
 		LDY		#$04
 loc_240B2:
 		STY		_tmp6D4
@@ -153,16 +151,14 @@ loc_240FF:
 		LSR
 		BCC		loc_2411A
 		PHA
-		LDA		_tmp2
-		PHA
+		PUSHB	_tmp2
 		JSR		_scenario_closed_icon_draw
 loc_2410B:
 		JSR		_ppu_dequeue
 		JSR		_extnt_dequeue
 		JSR		_ppu_queue_empty_compare
 		BNE		loc_2410B
-		PLA
-		STA		_tmp2
+		POPB	_tmp2
 		PLA
 loc_2411A:
 		LDY		_tmp2
@@ -334,9 +330,7 @@ _game_setup07_scenario_intro_init:
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		LDX		#<[_tlm_res_fullscreen_wnd]
-		LDY		#>[_tlm_res_fullscreen_wnd]
-		JSR		_tlm_res_unpack
+		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
 		LDY		_scenario_idx
 		LDA		_scenario_intro_header_lib_lo,Y
 		STA		_ptr0
@@ -666,17 +660,13 @@ _game_setup01_name_input_init:
 		JSR		_spr_clear
 		LDX		#<[_tlm_res_name_init]
 		LDY		#>[_tlm_res_name_init]
-		FJSR	_tlm_res_unpack,$00,$FA
+		FJSRA	_tlm_res_unpack,$00,$FA
 		LDA		#$00
 		STA		byte_6DC+2
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		LDX		#<[_rle_tlm_nt_input_name]
-		LDY		#>[_rle_tlm_nt_input_name]
-		JSR		_rle_nt_res_queue
-		LDX		#<[_rle_tlm_extnt_input_name]
-		LDY		#>[_rle_tlm_extnt_input_name]
-		JSR		_rle_extnt_res_queue
+		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
+		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
 		JSR		_name_input_char_nt_queue
 		JSR		_name_input_char_extnt_queue
 loc_24549:
@@ -729,12 +719,8 @@ _name_input_next_scr:
 		INC		byte_6DC+2
 		JSR		_ppu_queues_reset
 		JSR		_name_input_clear_header_area
-		LDX		#<[_rle_tlm_nt_input_word]
-		LDY		#>[_rle_tlm_nt_input_word]
-		JSR		_rle_nt_res_queue
-		LDX		#<[_rle_tlm_extnt_input_word]
-		LDY		#>[_rle_tlm_extnt_input_word]
-		JSR		_rle_extnt_res_queue
+		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_word
+		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_word
 		JMP		_wait_for_flush
 loc_245C9:
 		LDA		#$0D
@@ -748,12 +734,8 @@ _name_input_previous_scr:
 		DEC		byte_6DC+2
 		JSR		_ppu_queues_reset
 		JSR		_name_input_clear_header_area
-		LDX		#<[_rle_tlm_nt_input_name]
-		LDY		#>[_rle_tlm_nt_input_name]
-		JSR		_rle_nt_res_queue
-		LDX		#<[_rle_tlm_extnt_input_name]
-		LDY		#>[_rle_tlm_extnt_input_name]
-		JSR		_rle_extnt_res_queue
+		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
+		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
 		JMP		_wait_for_flush
 loc_245EE:
 		LDA		#$00
@@ -762,12 +744,8 @@ loc_245EE:
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_clear_header_area:
-		LDX		#<[_rle_tlm_nt_clear_area]
-		LDY		#>[_rle_tlm_nt_clear_area]
-		JSR		_rle_nt_res_queue
-		LDX		#<[_rle_tlm_extnt_clear_area]
-		LDY		#>[_rle_tlm_extnt_clear_area]
-		JSR		_rle_extnt_res_queue
+		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_clear_area
+		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
 
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_flush:
@@ -826,39 +804,29 @@ _name_input_button_push_draw:
 		BNE		loc_24688
 		CPY		#$20
 		BNE		loc_24676
-		LDX		#<[byte_24C5D]
-		LDY		#>[byte_24C5D]
-		JSR		_rle_nt_res_queue
+		JSRXY	_rle_nt_res_queue,byte_24C5D
 		LDX		#<[byte_24C6A]
 		LDY		#>[byte_24C6A]
 		JMP		_rle_extnt_res_queue
 loc_24676:
 		CPY		#$0C
 		BNE		locret_246DB
-		LDX		#<[byte_24C45]
-		LDY		#>[byte_24C45]
-		JSR		_rle_nt_res_queue
+		JSRXY	_rle_nt_res_queue,byte_24C45
 		LDX		#<[byte_24C51]
 		LDY		#>[byte_24C51]
 		JMP		_rle_extnt_res_queue
 loc_24688:
 		CMP		#$01
 		BNE		locret_246DB
-		LDX		#<[byte_24CA5]
-		LDY		#>[byte_24CA5]
-		JSR		_rle_nt_res_queue
+		JSRXY	_rle_nt_res_queue,byte_24CA5
 		LDX		#<[byte_24CD1]
 		LDY		#>[byte_24CD1]
 		JMP		_rle_extnt_res_queue
 loc_2469A:
 		CMP		#$10
 		BNE		loc_246AC
-		LDX		#<[byte_24CA5]
-		LDY		#>[byte_24CA5]
-		JSR		_rle_nt_res_queue
-		LDX		#<[byte_24CD1]
-		LDY		#>[byte_24CD1]
-		JSR		_rle_extnt_res_queue
+		JSRXY	_rle_nt_res_queue,byte_24CA5
+		JSRXY	_rle_extnt_res_queue,byte_24CD1
 loc_246AC:
 		LDA		#$A0
 		STA		_spr_insert_args._idx
@@ -999,12 +967,8 @@ _name_input_button_push_control:
 		STY		_apu_se_flags
 		LDA		#$08
 		STA		byte_6DC+3
-		LDX		#<[byte_24C77]
-		LDY		#>[byte_24C77]
-		JSR		_rle_nt_res_queue
-		LDX		#<[byte_24C8E]
-		LDY		#>[byte_24C8E]
-		JSR		_rle_extnt_res_queue
+		JSRXY	_rle_nt_res_queue,byte_24C77
+		JSRXY	_rle_extnt_res_queue,byte_24C8E
 		JSR		_wait_for_flush
 		JMP		_name_input_next_scr
 loc_247A1:
@@ -1160,9 +1124,7 @@ _game_setup0D_difficult_init:
 		JSR		_pal_fade_out
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
-		LDX		#<[_tlm_res_game_play_level]
-		LDY		#>[_tlm_res_game_play_level]
-		JSR		_tlm_res_unpack
+		JSRXY	_tlm_res_unpack,_tlm_res_game_play_level
 		JSR		_difficult_scr_cursor_draw
 		LDA		#$00
 		STA		_tmp6D0+1
@@ -1319,7 +1281,7 @@ _game_setup00_new_city_gen:
 		STA		_scr_res_idx
 		LDA		#$00
 		STA		_scr_res_control_flags
-		FJSR	_scr_res_common,$00,$F9
+		FJSRA	_scr_res_common,$00,$F9
 		LDA		_title_sub_idx
 		BEQ		loc_249F4
 		DEC		_main_sub_idx
@@ -1429,10 +1391,8 @@ _game_setup09_practice_msg_init:
 		JSR		_spr_clear
 		LDA		#$08
 		STA		_MMC5_NT_MODE
-		LDX		#<[_tlm_res_fullscreen_wnd]
-		LDY		#>[_tlm_res_fullscreen_wnd]
-		JSR		_tlm_res_unpack
-		MOVO	_ptr0,_tlm_practice_wnd_header
+		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
+		MOVWO	_ptr0,_tlm_practice_wnd_header
 		JSR		_tlm_transfer
 		LDY		#<[_practice_msg0]
 		LDX		#>[_practice_msg0]
@@ -1502,13 +1462,11 @@ _game_setup0B_scenario_over_init:
 		LDA		#$08
 		STA		_MMC5_NT_MODE
 		JSR		_spr_clear
-		LDX		#<[_tlm_res_fullscreen_wnd]
-		LDY		#>[_tlm_res_fullscreen_wnd]
-		JSR		_tlm_res_unpack
+		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
 		LDA		_scenario_result_idx
 		CMP		#$01
 		BEQ		loc_24B49
-		MOVO	_ptr0,_tlm_scenario_loose_header
+		MOVWO	_ptr0,_tlm_scenario_loose_header
 		JSR		_tlm_transfer
 loc_24B49:
 		LDA		_scenario_result_idx
@@ -1520,7 +1478,7 @@ loc_24B49:
 		ORA		_bitmasks,Y
 		STA		_city._scenarios_clear_flags
 		STA		_sram_vars._scenarios_clear_flags
-		FJSR	_sram_sum_reinit,$00,$F3
+		FJSRA	_sram_sum_reinit,$00,$F3
 		JSR		_sram_off
 loc_24B6C:
 		LDY		_scenario_result_idx
@@ -1577,12 +1535,10 @@ _game_setup0F_all_complete_init:
 		LDA		#$08
 		STA		_MMC5_NT_MODE
 		JSR		_spr_clear
-		LDX		#<[_tlm_res_fullscreen_wnd]
-		LDY		#>[_tlm_res_fullscreen_wnd]
-		JSR		_tlm_res_unpack
-		MOVO	_ptr0,_tlm_all_complete_
+		JSRXY	_tlm_res_unpack,_tlm_res_fullscreen_wnd
+		MOVWO	_ptr0,_tlm_all_complete_
 		JSR		_tlm_transfer
-		MOVO	_tmp6D6,_all_scenarios_clear_msg
+		MOVWO	_tmp6D6,_all_scenarios_clear_msg
 		LDY		#$00
 		STY		_tmp6DA
 		STY		_tmp6D9
@@ -1592,7 +1548,7 @@ _game_setup0F_all_complete_init:
 		LDA		#$01
 		STA		_city._all_scenarios_are_clear_ram_flag
 		STA		_sram_vars._all_scenarios_are_clear_ram_flag
-		FJSR	_sram_sum_reinit,$00,$F3
+		FJSRA	_sram_sum_reinit,$00,$F3
 		JSR		_sram_off
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
@@ -2013,7 +1969,7 @@ _practice_msg0:
 		.BYTE	"adjust ",_the," budget,",$A
 		.BYTE	"lower skyrocket",_in,"g  crime",$A
 		.BYTE	"rates, iron out traffic",$A
-		.BYTE	"snarls",_con,"trol enviro-",$A
+		.BYTE	"snarls",_con,"trol enviro-",$A					; BUG! snarls[, ]control
 		.BYTE	"nmental pollution, ",_and,$A
 		.BYTE	"many o",_the,"r elements that",$A
 		.BYTE	"require ",_your," attention.",$A

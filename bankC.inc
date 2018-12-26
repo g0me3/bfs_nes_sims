@@ -53,7 +53,7 @@ _game_state_common:
 		JSR		_game_cursor_input_control
 		JSR		_spr_finish
 		JSR		_auto_goto_test
-		FJSR	_constr_palette_state_update,$F7,$F3
+		FJSRA	_constr_palette_state_update,$F7,$F3
 		LDA		_ppu_queue_pos_tail
 		SEC
 		SBC		_ppu_queue_pos_head
@@ -103,8 +103,7 @@ _switch_0:
 		INY
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
-		PLA
-		STA		_ptr0
+		POPB	_ptr0
 		JMP		(_ptr0)
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -345,8 +344,7 @@ _game_state07:
 		STA		_game_msg_wnd_active_flag
 		JMP		_game_state_common
 loc_13626D:
-		LDA		_cur_const_palette_press_idx
-		PHA
+		PUSHB	_cur_const_palette_press_idx
 		JSR		_is_constr_palette_item_active
 		PLA
 		BCS		_j_apu_se_error
@@ -377,7 +375,7 @@ loc_1362A9:
 		CPX		#$0D
 		BNE		_j_game_state_common
 		STA		_special_build_menu_req
-		FJSR	_special_items_wnd_draw,$FC,$F2
+		FJSRA	_special_items_wnd_draw,$FC,$F2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -409,7 +407,7 @@ loc_1362DC:
 		LDA		#$FF
 		STA		_special_constr_palette_redraw_req
 		STA		_special_build_menu_req
-		FJSR	_special_items_wnd_draw,$FC,$F2
+		FJSRA	_special_items_wnd_draw,$FC,$F2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -466,7 +464,7 @@ loc_13632C:
 loc_136346:
 		JSR		sub_150498
 		JSR		sub_1504FD
-		FJSR	sub_B8183,$F7,$FD
+		FJSRA	sub_B8183,$F7,$FD
 		BCC		loc_136358
 		JMP		loc_1363EF
 loc_136358:
@@ -495,7 +493,7 @@ loc_136375:
 loc_136389:
 		JSR		sub_150498
 		JSR		sub_1504FD
-		FJSR	sub_B83A7,$F7,$FD
+		FJSRA	sub_B83A7,$F7,$FD
 		BCS		loc_1363EF
 		JSR		sub_15050A
 		JSR		sub_15055A
@@ -517,7 +515,7 @@ loc_1363AE:
 loc_1363BE:
 		JSR		sub_150498
 		JSR		sub_1504FD
-		FJSR	sub_B83A7,$F7,$FD
+		FJSRA	sub_B83A7,$F7,$FD
 		BCS		loc_1363EF
 		JSR		sub_15050A
 		JSR		sub_15055A
@@ -663,7 +661,7 @@ loc_1364DA:
 		LDA		#$02
 		STA		_scr_mode_idx
 		JSR		_pal_fade_out
-		FJSR	_scr_res_common,$00,$F9
+		FJSRA	_scr_res_common,$00,$F9
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JSR		_game_msg_chr_common_load
@@ -687,7 +685,7 @@ _game_msg_wnd_display:
 		LDA		#$05
 		STA		_gui_ctrl_menu_press_idx
 		JSR		_draw_wnd_header_nt
-		FJSR	_game_msg_handler,$F4,$F3
+		FJSRA	_game_msg_handler,$F4,$F3
 		JSR		_draw_wnd_header_extnt
 		JSR		_scroll_msg_reset
 		LDA		_debug_scroll_msg_flags
@@ -714,7 +712,7 @@ loc_136548:
 _game_state0D_cur_date_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_13655C
-		FJSR	_cur_date_draw,$F7,$F3
+		FJSRA	_cur_date_draw,$F7,$F3
 		LDA		#$00
 		STA		_cur_date_redraw_req
 loc_13655C:
@@ -746,7 +744,7 @@ loc_136582:
 _game_state0F_cur_money_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136595
-		FJSR	_cur_money_draw,$FC,$F3
+		FJSRA	_cur_money_draw,$FC,$F3
 		LDA		#$00
 		STA		_cur_money_redraw_req
 loc_136595:
@@ -760,7 +758,7 @@ _game_state10_fiscal_year_draw:
 		STA		_scr_res_idx
 		STA		_scr_mode_idx
 		JSR		_pal_fade_out
-		FJSR	_scr_res_common,$00,$F9
+		FJSRA	_scr_res_common,$00,$F9
 		JSR		_game_hud_full_draw
 		LDA		#$00
 		STA		_scr_mode_idx
@@ -778,7 +776,7 @@ loc_1365C8:
 _game_state11_cur_popul_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_1365DC
-		FJSR	_cur_popul_draw,$F7,$F3
+		FJSRA	_cur_popul_draw,$F7,$F3
 		LDA		#$00
 		STA		_cur_popul_redraw_req
 loc_1365DC:
@@ -798,7 +796,7 @@ loc_1365EC:
 _game_state16_city_name_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136600
-		FJSR	_city_name_draw,$F7,$F3
+		FJSRA	_city_name_draw,$F7,$F3
 		LDA		#$00
 		STA		_city_name_redraw_req
 loc_136600:
@@ -1201,7 +1199,7 @@ loc_1368BA:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1368BD:
-		MOVO	_ptr0,byte_1514D6
+		MOVWO	_ptr0,byte_1514D6
 		LDA		byte_7A
 		AND		#$E0
 		STA		_tmp2
@@ -1268,7 +1266,7 @@ loc_136932:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136935:
-		MOVO	_ptr0,byte_1515B7
+		MOVWO	_ptr0,byte_1515B7
 		LDA		byte_7A
 		AND		#$E0
 		STA		_tmp2
@@ -1665,8 +1663,7 @@ locret_136BF8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _special_constr_palette_draw:
-		LDA		_prg_prgA000_shadow
-		PHA
+		PUSHB	_prg_prgA000_shadow
 		LDA		#$F2
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
@@ -1713,8 +1710,7 @@ loc_136C3A:
 		STA		_ppu_queue_pos_head
 		LDA		_ptr0+1
 		STA		_extnt_queue_pos_head
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		RTS
 byte_136C5F:
@@ -2745,7 +2741,7 @@ loc_137326:
 		RTS
 loc_137331:
 		LDX		_tmp5
-		FJSR	_game_menu_exec,$F7,$F3
+		FJSRA	_game_menu_exec,$F7,$F3
 		LDA		#$00
 		STA		_wnd_lvl_idx
 		RTS
@@ -3209,8 +3205,7 @@ loc_13764C:
 		ADC		_ptr0
 		STA		_wnd_line_tmp_ppu_ofs
 		STY		_wnd_line_tmp_ppu_ofs+1
-		PLA
-		STA		_ptr0
+		POPB	_ptr0
 		LDA		#$1E
 		SEC
 		SBC		_ptr0
@@ -3982,7 +3977,7 @@ sub_137B70:
 		JSR		sub_137BB2
 		LDA		_tmp3
 		JSR		sub_137C04
-		MOVO	word_B2,byte_151698
+		MOVWO	word_B2,byte_151698
 		JSR		sub_137C08
 		RTS
 
@@ -3992,7 +3987,7 @@ sub_137B86:
 		JSR		sub_137BB2
 		LDA		_tmp3
 		JSR		sub_137C04
-		MOVO	word_B2,byte_1516D0
+		MOVWO	word_B2,byte_1516D0
 		JSR		sub_137C08
 		RTS
 
@@ -4002,7 +3997,7 @@ sub_137B9C:
 		JSR		sub_137BB2
 		LDA		_tmp3
 		JSR		sub_137C04
-		MOVO	word_B2,byte_151708
+		MOVWO	word_B2,byte_151708
 		JSR		sub_137C08
 		RTS
 
@@ -4460,7 +4455,7 @@ loc_137E7C:
 loc_137E86:
 		LDA		#$00
 		STA		_tmp6E+1
-		MOVIW	word_6C,$01DF
+		MOVWI	word_6C,$01DF
 		RTS
 loc_137E93:
 		LDA		_tmp_tile_pos._Y

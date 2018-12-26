@@ -96,22 +96,11 @@ loc_3E104:
 ; =============== S U B	R O U T	I N E =======================================
 _special_item_icon_pos_adjust:
 		ADDW8	_ptr0,#$05
-		LDA		_tmp4
-		CLC
-		ADC		#$05
-		STA		_tmp4
-		BCC		loc_3E12C
-		INC		_tmp5
-loc_3E12C:
-		LDA		_tmp2
-		CLC
-		ADC		#$0F
-		STA		_tmp2
-		BCC		loc_3E137
-		INC		_tmp3
-loc_3E137:
+		ADDW8	_tmp4,#$05
+		ADDW8	_tmp2,#$0F
 		ADDW8	_tmp6,#$0F
 		RTS
+
 byte_3E143:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$00,$00,$74,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D6

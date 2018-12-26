@@ -82,32 +82,20 @@ _airplane_crash_start:
 		STA		_obj_active_flags
 		LDA		#$04
 		STA		_apu_se_flags+1
-		LDA		_ptr0
-		PHA
-		LDA		_ptr0+1
-		PHA
-		LDA		_tmp2
-		PHA
-		LDA		_tmp3
-		PHA
-		LDA		_tmp4
-		PHA
-		LDA		_tmp5
-		PHA
+		PUSHB	_ptr0
+		PUSHB	_ptr0+1
+		PUSHB	_tmp2
+		PUSHB	_tmp3
+		PUSHB	_tmp4
+		PUSHB	_tmp5
 		LDY		#$08
-		FJSR	_city_history_write,$00,$FA
-		PLA
-		STA		_tmp5
-		PLA
-		STA		_tmp4
-		PLA
-		STA		_tmp3
-		PLA
-		STA		_tmp2
-		PLA
-		STA		_ptr0+1
-		PLA
-		STA		_ptr0
+		FJSRA	_city_history_write,$00,$FA
+		POPB	_tmp5
+		POPB	_tmp4
+		POPB	_tmp3
+		POPB	_tmp2
+		POPB	_ptr0+1
+		POPB	_ptr0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -699,8 +687,7 @@ loc_8852F:
 loc_88531:
 		LDA		byte_571
 		BNE		loc_8858A
-		LDA		_tmp18
-		PHA
+		PUSHB	_tmp18
 		TXA
 		PHA
 		CPY		#$80
@@ -735,8 +722,7 @@ loc_88570:
 		STA		_word15_v_h_selector
 		PLA
 		TAX
-		PLA
-		STA		_tmp18
+		POPB	_tmp18
 		LDA		_word15_v_h_selector
 		CMP		#$7D
 		BEQ		loc_8857F
@@ -1672,8 +1658,7 @@ _obj_spr_insert_ex:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_spr_clipC_insert:
 		DEY
-		LDA		#$2F
-		PHA
+		PUSHB	#$2F
 		TYA
 		AND		#$FC
 		TAY
@@ -1848,31 +1833,19 @@ _map_scr_obj_spr_deltaX:
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_fire_or_destroy_map_tile_ex:
-		LDA		_ptr0
-		PHA
-		LDA		_ptr0+1
-		PHA
-		LDA		_tmp2
-		PHA
-		LDA		_tmp3
-		PHA
-		LDA		_tmp4
-		PHA
-		LDA		_tmp5
-		PHA
-		FJSR	_fire_or_destroy_map_tile_ex,$00,$FB
-		PLA
-		STA		_tmp5
-		PLA
-		STA		_tmp4
-		PLA
-		STA		_tmp3
-		PLA
-		STA		_tmp2
-		PLA
-		STA		_ptr0+1
-		PLA
-		STA		_ptr0
+		PUSHB	_ptr0
+		PUSHB	_ptr0+1
+		PUSHB	_tmp2
+		PUSHB	_tmp3
+		PUSHB	_tmp4
+		PUSHB	_tmp5
+		FJSRA	_fire_or_destroy_map_tile_ex,$00,$FB
+		POPB	_tmp5
+		POPB	_tmp4
+		POPB	_tmp3
+		POPB	_tmp2
+		POPB	_ptr0+1
+		POPB	_ptr0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

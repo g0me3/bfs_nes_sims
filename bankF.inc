@@ -82,7 +82,7 @@ loc_18A053:
 		STA		_PAD1_REG
 		LDA		#$00
 		STA		byte_4084+$F8C
-		FJSR	_apu_init,$00,$F0
+		FJSRA	_apu_init,$00,$F0
 		LDA		#$80
 		STA		_apu_mus_idx_req
 		LDX		#$1F
@@ -129,7 +129,7 @@ loc_18A0F0:
 		DEX
 		BPL		loc_18A0F0
 		JSR		_sram_on
-		FJSR	_sram_init,$00,$F3
+		FJSRA	_sram_init,$00,$F3
 		JSR		_sram_off
 		LDA		#$FF
 		STA		_game_core_state
@@ -155,20 +155,20 @@ _THREAD0_MAIN:
 		LDA		#$00
 		STA		_scr_res_idx
 		JSR		_ppu_queues_reset
-		FJSR	_title_screen,$F7,$F9
+		FJSRA	_title_screen,$F7,$F9
 		INC		_main_sub_idx
 		RTS
 _game_setup_mode:
 		DEX
 		BNE		_ingame_mode
 		JSR		_ppu_queues_reset
-		FJSR	_game_setup,$00,$F1
+		FJSRA	_game_setup,$00,$F1
 		RTS
 _ingame_mode:
 		JSR		_ppu_queues_reset
-		FJSR	_game_vars_init,$00,$FA
+		FJSRA	_game_vars_init,$00,$FA
 		JSR		_thread1_init
-		FJSR	_game_start,$FC,$FD
+		FJSRA	_game_start,$FC,$FD
 		RTS
 aIshi:
 		.BYTE	"ISHI",$FF
@@ -248,7 +248,7 @@ loc_18A1F3:
 		JSR		_ppu_scrolls_reload
 		LDA		_main_sub_idx
 		BNE		loc_18A213
-		MOVM16	_MMC5_CHR_BANKSA,_mmc5_chr_banks_shadow
+		MOVW	_MMC5_CHR_BANKSA,_mmc5_chr_banks_shadow
 		LDA		_mmc5_chr_banks_shadow+2
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		_mmc5_chr_banks_shadow+3
@@ -285,10 +285,8 @@ loc_18A213:
 		LDA		_maps_info_mode_idx
 		BNE		loc_18A2A1
 loc_18A258:
-		LDA		_prg_prg8000_shadow
-		PHA
-		LDA		_prg_prgA000_shadow
-		PHA
+		PUSHB	_prg_prg8000_shadow
+		PUSHB	_prg_prgA000_shadow
 		LDA		#$F5
 		STA		_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
@@ -317,11 +315,9 @@ loc_18A28D:
 		BNE		loc_18A295
 		JSR		_spr_finish
 loc_18A295:
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		PLA
-		STA		_prg_prg8000_shadow
+		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
 loc_18A2A1:
 		LDA		_game_wnd_spr_mode_flag
@@ -790,8 +786,7 @@ loc_18A5D9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _spr_lib_prg2_insert:
-		LDA		_prg_prgA000_shadow
-		PHA
+		PUSHB	_prg_prgA000_shadow
 		LDA		#$F2
 		STA		_MMC5_PRG_PAGES+2
 		LDX		_spr_insert_args._idx
@@ -843,15 +838,13 @@ loc_18A639:
 		JMP		loc_18A603
 loc_18A643:
 		STX		_spr_buf_pos
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _spr_lib_prg8_insert:
-		LDA		_prg_prg8000_shadow
-		PHA
+		PUSHB	_prg_prg8000_shadow
 		LDA		#$F8
 		STA		_MMC5_PRG_PAGES+1
 		LDX		_spr_insert_args._idx
@@ -901,8 +894,7 @@ loc_18A69D:
 		JMP		loc_18A666
 loc_18A6A4:
 		STX		_spr_buf_pos
-		PLA
-		STA		_prg_prg8000_shadow
+		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
 		RTS
 
@@ -1065,21 +1057,16 @@ _farcall_argsAXY_safe:
 		STA		_tmp3
 		STX		_tmp4
 		STY		_tmp5
-		PLA
-		STA		_ptr0
+		POPB	_ptr0
 		CLC
 		ADC		#$04
 		STA		_tmp2
-		PLA
-		STA		_ptr0+1
+		POPB	_ptr0+1
 		ADC		#$00
 		PHA
-		LDA		_tmp2
-		PHA
-		LDA		_prg_prg8000_shadow
-		PHA
-		LDA		_prg_prgA000_shadow
-		PHA
+		PUSHB	_tmp2
+		PUSHB	_prg_prg8000_shadow
+		PUSHB	_prg_prgA000_shadow
 		LDY		#$01
 		LDA		(_ptr0),Y
 		INY
@@ -1093,11 +1080,9 @@ _farcall_argsAXY_safe:
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
 		STX		_ptr0
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		PLA
-		STA		_prg_prg8000_shadow
+		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
 		LDA		_tmp3
 		LDX		_tmp4
@@ -1108,11 +1093,9 @@ _farcall_argsAXY_safe:
 		STA		_tmp3
 		STX		_tmp4
 		STY		_tmp5
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		PLA
-		STA		_prg_prg8000_shadow
+		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
 		LDA		_tmp3
 		LDX		_tmp4
@@ -1129,21 +1112,17 @@ _farcall_argsXY_safe:
 		STX		word_EE
 		STY		word_EE+1
 		DEC		_mmc5_operation_in_progress_flag
-		PLA
-		STA		_ptrDC
+		POPB	_ptrDC
 		CLC
 		ADC		#$04
 		TAX
-		PLA
-		STA		_ptrDC+1
+		POPB	_ptrDC+1
 		ADC		#$00
 		PHA
 		TXA
 		PHA
-		LDA		_prg_prg8000_shadow
-		PHA
-		LDA		_prg_prgA000_shadow
-		PHA
+		PUSHB	_prg_prg8000_shadow
+		PUSHB	_prg_prgA000_shadow
 		CMP		#$FB
 		LDY		#$01
 		LDA		(_ptrDC),Y
@@ -1158,21 +1137,17 @@ _farcall_argsXY_safe:
 		LDA		(_ptrDC),Y
 		STA		_ptrDC+1
 		STX		_ptrDC
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		PLA
-		STA		_prg_prg8000_shadow
+		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
 		LDX		word_EE
 		LDY		word_EE+1
 		JSR		_jmp_ptrDC
 		DEC		_mmc5_operation_in_progress_flag
-		PLA
-		STA		_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		PLA
-		STA		_prg_prg8000_shadow
+		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
 		INC		_mmc5_operation_in_progress_flag
 		RTS
@@ -1281,8 +1256,7 @@ loc_18A8E3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_fade_in:
-		LDA		_game_core_state
-		PHA
+		PUSHB	_game_core_state
 		LDA		#$01
 		STA		_game_core_state
 		LDA		_screen_pal_cur_bg_idx
@@ -1305,8 +1279,7 @@ loc_18A916:
 		JSR		_pal_buf_fade_in
 		DEC		_ptr0
 		BNE		loc_18A90D
-		PLA
-		STA		_game_core_state
+		POPB	_game_core_state
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1378,8 +1351,7 @@ loc_18A986:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_fade_out:
-		LDA		_game_core_state
-		PHA
+		PUSHB	_game_core_state
 		LDA		#$01
 		STA		_game_core_state
 		JSR		_pal_buf_fade_out
@@ -1397,8 +1369,7 @@ loc_18A9A4:
 		JSR		_pal_buf_fade_out
 		DEC		_ptr0
 		BNE		loc_18A99B
-		PLA
-		STA		_game_core_state
+		POPB	_game_core_state
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1463,7 +1434,7 @@ _ppu_set_vert_increment:
 _map_buf_init:
 		JSR		_sram_on
 		LDX		#$00
-		MOVO	_ptr0,_wram_map_buf
+		MOVWO	_ptr0,_wram_map_buf
 		LDA		#$90
 		LDX		#$16
 		STA		_tmp2
@@ -3391,7 +3362,13 @@ _rand_clamp:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_div_16to16:
+; input:
+; dividend fixed point 16.16 (integer E8/E9, fraction E6/E7)
+; divider  fixed point 8.8   (integer EB, fraction EA)
+; result:
+; fixed point 8.8 (integer E7, fraction E6)
+;
+_div_32to16:
 		LDA		_tmpEB
 		ORA		_tmpEA
 		BNE		loc_18BE0B
@@ -3403,22 +3380,22 @@ loc_18BE0D:
 		ROL		_tmpE6
 		ROL		_tmpE7
 		ROL		_tmpE8
-		ROL		_tmpE8+1
+		ROL		_tmpE9
 		LDA		_tmpE8
 		SEC
 		SBC		_tmpEA
 		STA		_tmpE8
-		LDA		_tmpE8+1
+		LDA		_tmpE9
 		SBC		_tmpEB
-		STA		_tmpE8+1
+		STA		_tmpE9
 		BCS		loc_18BE32
 		LDA		_tmpE8
 		CLC
 		ADC		_tmpEA
 		STA		_tmpE8
-		LDA		_tmpE8+1
+		LDA		_tmpE9
 		ADC		_tmpEB
-		STA		_tmpE8+1
+		STA		_tmpE9
 		CLC
 loc_18BE32:
 		DEY
@@ -3429,6 +3406,8 @@ loc_18BE32:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; integer multiply 8bit args, result 16 bit
+;
 _mmc5_mul8to8:
 		STX		_backup_var
 		TSX
@@ -3458,13 +3437,13 @@ _mmc5_mul16to8:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$105,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
@@ -3485,33 +3464,33 @@ _mmc5_mul32to8:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$105,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$105,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$107,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$106,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
@@ -3532,17 +3511,17 @@ _mmc5_mul16to16:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
-		STA		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		byte_5A6
+		STA		_mmc5_tmp_mul_data
 		LDA		$104,X
 		STA		_mmc5_mul1_shadow
 		STA		_MMC5_MUL1
@@ -3551,23 +3530,23 @@ _mmc5_mul16to16:
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
-		ADC		byte_5A6
-		STA		byte_5A6
+		ADC		_mmc5_tmp_mul_data
+		STA		_mmc5_tmp_mul_data
 		LDA		#$00
 		ADC		#$00
-		STA		byte_5A7
+		STA		_mmc5_tmp_mul_data+1
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		byte_5A6
+		ADC		_mmc5_tmp_mul_data
 		STA		$105,X
 		LDA		_MMC5_MUL1
-		ADC		byte_5A7
+		ADC		_mmc5_tmp_mul_data+1
 		STA		$106,X
 		LDX		_backup_var
 		RTS
