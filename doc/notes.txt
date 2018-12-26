@@ -1,6 +1,6 @@
 	NEW BUGS
 
-- new ship object can stuck in a pond forever sometimes, need to float under the bridges sometimes!
+- Ship object can stuck in a pond or at the map side forever sometimes. Also may be invisible because of that.
 
 	WHAT DONE
 
@@ -10,7 +10,8 @@
 - Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
 - Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
 - Fixed BUGS#1
-- Fixed BUGS#2
+- Fixed BUGS#2.1
+- TODO BUGS#2.2
 - Fixed BUGS#3
 - TODO BUGS#4
 - Fixed BUGS#5, also removed redundant CPU cycles at Scenario select screen due to RAM address mistake there.
@@ -97,7 +98,9 @@
 	BUGS
 
 1. Var at $6CC RAM address is a temporary variable used in many places of the program to store intermediate calc data. However, most of the time it has a value of POWER STATIONS counter, which is calculated every game iteration. This var used exactly as a POWER STATIONS count for the warning scrolled messages tests. Although it used for calculations at the end of the fiscal year and has a semi-random value immediately after the year budget screen is closed, this has no really significant effect to the game and message triggering except the case this semi random value gets ZERO, which is rarely possible.
-2. Use the turbo button A on name input screens to glitch the screen because of ppu queue buffer overflow due to lack of proper sync. CANNOT BE PATCHED
+2. Use the turbo button A on some input screens to glitch the screen because of ppu queue buffer overflow due to lack of proper sync. CANNOT BE PATCHED
+	2.1 Name input screen.
+	2.2 Budget money adjust screen.
 3. There is an unused disabled branch in Practice mode to check if you go well or bad during this game. This branch should check your town population after year 1906 (should be 30000), then send a message if you did it well or you need more practice. For some reason they decided to disable it. Or just make bug in a selection logic. FIX GG: GESLGPTZ.
 4. Some events haven't appear automatically when you get it (see table below) due to some sort of hardly visible bug with indexes comparisons. In case you get this bug, you need to go open Hints menu manually in order to obtain a Special item. Most of events works just fine, there only 2 of them which are affected. With this bug you may loose your current present if any other message appear before you go to the Hint screen.
 5. The extra scenarios selecting screen code trying to draw "CLEAR" icons on unlocked scenarios, but there aren't proper icon position data for that, so if you manage to beat at least one of them, the scenarios select screen will glitch, if you beat both, game will hang. This is not really important at all, because you just can't beat any of extra scenarios. NO PATCH NEEDED

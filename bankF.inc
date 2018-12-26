@@ -917,6 +917,22 @@ loc_18A74F:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+_inc_word15_v_h:
+		LDA		_ptr18+1
+		BNE		loc_18A866
+		INCW	_tmp15
+		RTS
+loc_18A866:
+		LDA		_tmp15
+		CLC
+		ADC		#$20
+		STA		_tmp15
+		LDA		_tmp15+1
+		ADC		#$00
+		STA		_tmp15+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _ppu_queues_reset:
 		LDA		#$00
 		STA		_ppu_queue_pos_tail
@@ -1106,54 +1122,54 @@ _sram_off:
 
 ; =============== S U B	R O U T	I N E =======================================
 _farcall_argsAXY_safe:
-		DEC		_mmc5_operation_in_progress_flag
-		STA		_tmp3
+		DEC		_mmc5_operation_in_progress_flag	; raise busy flag
+		STA		_tmp3								; backup registers
 		STX		_tmp4
 		STY		_tmp5
-		POPB	_ptr0
+		POPB	_ptr0								; get the data offset from stack
 		CLC
 		ADC		#$04
-		STA		_tmp2
+		STA		_tmp2								; adjust offset to next valid opcode
 		POPB	_ptr0+1
 		ADC		#$00
-		PHA
-		PUSHB	_tmp2
-		PUSHB	_prg_prg8000_shadow
+		PHA											; and push it back, not will return
+		PUSHB	_tmp2								; as usual by RTS
+		PUSHB	_prg_prg8000_shadow					; backup previous prg banks
 		PUSHB	_prg_prgA000_shadow
 		LDY		#$01
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y							; fetch prg banks, store to stack for now
 		INY
 		PHA
 		LDA		(_ptr0),Y
 		INY
 		PHA
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y							; fetch routine offset
 		INY
 		TAX
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
 		STX		_ptr0
-		POPB	_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow					; apply new prg banks
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-		LDA		_tmp3
+		LDA		_tmp3								; load registers / arguments
 		LDX		_tmp4
 		LDY		_tmp5
-		INC		_mmc5_operation_in_progress_flag
-		JSR		_jmp_ptr0
-		DEC		_mmc5_operation_in_progress_flag
-		STA		_tmp3
+		INC		_mmc5_operation_in_progress_flag	; busy off
+		JSR		_jmp_ptr0							; far jump
+		DEC		_mmc5_operation_in_progress_flag	; busy again
+		STA		_tmp3								; store result regs
 		STX		_tmp4
 		STY		_tmp5
-		POPB	_prg_prgA000_shadow
+		POPB	_prg_prgA000_shadow					; restore prg for caller
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-		LDA		_tmp3
+		LDA		_tmp3								; load results in regs
 		LDX		_tmp4
 		LDY		_tmp5
-		INC		_mmc5_operation_in_progress_flag
+		INC		_mmc5_operation_in_progress_flag	; busy off, exit
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1161,6 +1177,10 @@ _jmp_ptr0:
 		JMP		(_ptr0)
 
 ; =============== S U B	R O U T	I N E =======================================
+; little bit simpler routine, no interferences with tmp0-tmp5, isolated
+; tmp vars, but only X,Y stored as arguments, without returning results
+; at all...
+;
 _farcall_argsXY_safe:
 		STX		word_EE
 		STY		word_EE+1
@@ -1176,7 +1196,13 @@ _farcall_argsXY_safe:
 		PHA
 		PUSHB	_prg_prg8000_shadow
 		PUSHB	_prg_prgA000_shadow
-		CMP		#$FB
+; REDUNDANT, there were some additional check before, but for some reasons
+; they forgot to remove the compare value. this routine used only for
+; far call between banks A/B so there must be some optimization check before
+; or unfinished.
+;
+;		CMP		#$FB
+; -
 		LDY		#$01
 		LDA		(_ptrDC),Y
 		INY
@@ -1196,6 +1222,7 @@ _farcall_argsXY_safe:
 		STA		_MMC5_PRG_PAGES+1
 		LDX		word_EE
 		LDY		word_EE+1
+		INC		_mmc5_operation_in_progress_flag
 		JSR		_jmp_ptrDC
 		DEC		_mmc5_operation_in_progress_flag
 		POPB	_prg_prgA000_shadow
@@ -1207,37 +1234,20 @@ _farcall_argsXY_safe:
 
 ; =============== S U B	R O U T	I N E =======================================
 _jmp_ptrDC:
-		INC		_mmc5_operation_in_progress_flag
 		JMP		(_ptrDC)
 
 ; =============== S U B	R O U T	I N E =======================================
-_inc_word15_v_h:
-		LDA		_ptr18+1
-		BNE		loc_18A866
-		INCW	_tmp15
-		RTS
-loc_18A866:
-		LDA		_tmp15
-		CLC
-		ADC		#$20
-		STA		_tmp15
-		LDA		_tmp15+1
-		ADC		#$00
-		STA		_tmp15+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _pal_ppu_send:
-		JSR		_ppu_set_hor_increment
-		LSR
-		BCC		loc_18A881
+		JSR		_ppu_set_hor_increment			; set ppu increment 1
+		LSR										; A - dequeue flags argument
+		BCC		loc_18A881						; bit0 - dequeue sprite pal
 		PHA
 		LDY		#$10
 		JSR		_pal_ppu_buf_send
 		PLA
 loc_18A881:
 		LSR
-		BCC		locret_18A889
+		BCC		locret_18A889					; bit1 - dequeue bg bap
 		LDY		#$00
 		JMP		_pal_ppu_buf_send
 locret_18A889:
@@ -1245,18 +1255,18 @@ locret_18A889:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_ppu_buf_send:
-		LDX		#$3F
+		LDX		#$3F							; set ppu hi pal offset
 		STX		_PPU_ADDR
-		STY		_PPU_ADDR
+		STY		_PPU_ADDR						; lower nibble already in Y as argument
 		LDX		#$10
 loc_18A894:
-		LDA		_pal_bg_buf,Y
+		LDA		_pal_bg_buf,Y					; sent 16 bytes
 		STA		_PPU_DATA
 		INY
 		DEX
 		BNE		loc_18A894
 		LDA		#$3F
-		STA		_PPU_ADDR
+		STA		_PPU_ADDR						; reset ppu offs reg
 		LDA		#$00
 		STA		_PPU_ADDR
 		STA		_PPU_ADDR
@@ -1265,8 +1275,8 @@ loc_18A894:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_load_lib:
-		AND		#$FF
-		BMI		loc_18A8CA
+		AND		#$FF							; if higher bit is set, then load sprite pal
+		BMI		loc_18A8CA						; otherwise load bg pal
 		LDX		#$00
 		STX		_ptr0+1
 		ASL
@@ -1275,7 +1285,7 @@ _pal_load_lib:
 		ASL
 		ROL		_ptr0+1
 		CLC
-		ADC		#<[_pal_bg_lib]
+		ADC		#<[_pal_bg_lib]					; bg pal ofs = (idx * 16) + _pal_bg_lib
 		STA		_ptr0
 		LDA		#>[_pal_bg_lib]
 		ADC		_ptr0+1
@@ -1289,7 +1299,7 @@ loc_18A8CA:
 		ASL
 		ASL
 		CLC
-		ADC		#<[_pal_spr_lib]
+		ADC		#<[_pal_spr_lib]				; spr pal ofs = ((idx & $7F) * 16) + _pal_spr_lib
 		STA		_ptr0
 		LDA		#>[_pal_spr_lib]
 		ADC		#$00
@@ -1301,7 +1311,7 @@ loc_18A8DD:
 loc_18A8E3:
 		LDA		(_ptr0),Y
 		INY
-		STA		_pal_bg_buf,X
+		STA		_pal_bg_buf,X					; load pal buf
 		INX
 		DEC		_tmp2
 		BNE		loc_18A8E3
@@ -1309,38 +1319,38 @@ loc_18A8E3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_fade_in:
-		PUSHB	_game_core_state
+		PUSHB	_game_core_state				; lock THREAD1 while fading
 		LDA		#$01
 		STA		_game_core_state
-		LDA		_screen_pal_cur_bg_idx
+		LDA		_screen_pal_cur_bg_idx			; load desired bg pal
 		JSR		_pal_load_lib
-		LDA		_screen_pal_cur_spr_idx
+		LDA		_screen_pal_cur_spr_idx			; load the same idx spr pal
 		ORA		#$80
 		JSR		_pal_load_lib
-		JSR		_pal_cut_off_half
+		JSR		_pal_cut_off_half				; cut off palette to lower nibbles
 		LDA		#$04
 		STA		_ptr0
 loc_18A90D:
-		LDA		#$05
+		LDA		#$05							; fade delay 5 frames
 		STA		_ptr0+1
 		LDA		#$03
-		STA		_ppu_pal_dequeue_req
+		STA		_ppu_pal_dequeue_req			; set dequeue flag once for both pals
 loc_18A916:
-		JSR		_wait_for_nmi
+		JSR		_wait_for_nmi					; wait for dequeue, also delay
 		DEC		_ptr0+1
 		BNE		loc_18A916
-		JSR		_pal_buf_fade_in
+		JSR		_pal_buf_fade_in				; do fade in
 		DEC		_ptr0
-		BNE		loc_18A90D
-		POPB	_game_core_state
+		BNE		loc_18A90D						; total 4 steps, 4*5 = 20 frames to fade in
+		POPB	_game_core_state				; 1/3 second
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_cut_off_half:
-		LDX		#$1F
-loc_18A92B:
-		LDA		_pal_bg_buf,X
-		AND		#$0F
+		LDX		#$1F							; mask all palette values to have only lower nibble
+loc_18A92B:										; so we may keep BLACK intact and
+		LDA		_pal_bg_buf,X					; have lower shades of colors fot the rest
+		AND		#$0F							; or also black
 		STA		_pal_bg_buf,X
 		DEX
 		BPL		loc_18A92B
@@ -1348,7 +1358,7 @@ loc_18A92B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_buf_fade_in:
-		LDA		#$00
+		LDA		#$00							; fade in also fetches ptrs for both palettes
 		STA		_tmp3
 		LDA		_screen_pal_cur_bg_idx
 		ASL
@@ -1357,14 +1367,14 @@ _pal_buf_fade_in:
 		ASL
 		ROL		_tmp3
 		CLC
-		ADC		#<[_pal_bg_lib]
+		ADC		#<[_pal_bg_lib]					; again get the real palette ofs
 		STA		_tmp2
 		LDA		#>[_pal_bg_lib]
 		ADC		_tmp3
 		STA		_tmp3
-		MOVWO	_tmp4,_pal_bg_buf
-		JSR		__pal_buf_fade_in
-		LDA		_screen_pal_cur_spr_idx
+		MOVWO	_tmp4,_pal_bg_buf				; because pal bg buffer cut out
+		JSR		__pal_buf_fade_in				; now do fade in
+		LDA		_screen_pal_cur_spr_idx			; the same for spr
 		ASL
 		ASL
 		ASL
@@ -1376,16 +1386,17 @@ _pal_buf_fade_in:
 		ADC		#$00
 		STA		_tmp3
 		MOVWO	_tmp4,_pal_spr_buf
-		JMP		__pal_buf_fade_in
+;		JMP		__pal_buf_fade_in				; REDUNDANT
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-; !FALLTHROUGH!
 __pal_buf_fade_in:
-		LDX		#$10
-		LDY		#$00
+		LDX		#$10							; actual fade in,
+		LDY		#$00							; increment high nibble up to
 loc_18A97B:
-		LDA		(_tmp4),Y
-		CMP		(_tmp2),Y
+		LDA		(_tmp4),Y						; 4 times (0F-3F)
+		CMP		(_tmp2),Y						; with clamp to real pal value
 		BEQ		loc_18A986
 		CLC
 		ADC		#$10
@@ -1398,19 +1409,19 @@ loc_18A986:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_fade_out:
-		PUSHB	_game_core_state
+		PUSHB	_game_core_state				; fade out mostly tha same
 		LDA		#$01
 		STA		_game_core_state
-		JSR		_pal_buf_fade_out
-		LDA		#$04
+		JSR		_pal_buf_fade_out				; but no need to get the actual
+		LDA		#$04							; paletter offsets one more time
 		STA		_ptr0
 loc_18A99B:
 		LDA		#$05
 		STA		_ptr0+1
 		LDA		#$03
-		STA		_ppu_pal_dequeue_req
+		STA		_ppu_pal_dequeue_req			; just decrease 4 times hich nibble
 loc_18A9A4:
-		JSR		_wait_for_nmi
+		JSR		_wait_for_nmi					; wait for 5 frames with pal dequeue flags set
 		DEC		_ptr0+1
 		BNE		loc_18A9A4
 		JSR		_pal_buf_fade_out
@@ -1423,9 +1434,9 @@ loc_18A9A4:
 _pal_buf_fade_out:
 		LDX		#$1F
 loc_18A9B9:
-		LDA		_pal_bg_buf,X
-		SEC
-		SBC		#$10
+		LDA		_pal_bg_buf,X					; decrease high nibble with
+		SEC										; clamp to $0F al lowest value
+		SBC		#$10							; (black)
 		BCC		loc_18A9C6
 		STA		_pal_bg_buf,X
 		BCS		loc_18A9CB

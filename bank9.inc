@@ -7,29 +7,29 @@
 ; -
 ; =============== S U B	R O U T	I N E =======================================
 _scr_chr_vars_init:
-		LDA		_ppu_ctrl_shadow
+		LDA		_ppu_ctrl_shadow				; set scroll high bits to nt 2400
 		ORA		#$01
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
-		LDA		#$84
-		STA		_mmc5_nt_mode_shadow
+		LDA		#$84							; switch mmc5 to one-screen mode with
+		STA		_mmc5_nt_mode_shadow			; exnt mapped to nt 2C00
 		STA		_MMC5_NT_MODE
-		LDA		_scr_res_idx
+		LDA		_scr_res_idx					; _scr_res_idx now = _scr_res_idx*2  be careful!
 		ASL
 		STA		_scr_res_idx
 		ASL
 		TAX
 		LDY		#$00
 loc_A001C:
-		LDA		_screen_chr_banks_lib,X
-		BEQ		loc_A0024
+		LDA		_screen_chr_banks_lib,X			; load CHR banks for sprites
+		BEQ		loc_A0024						; $00 means - no change bank
 		STA		_MMC5_CHR_BANKSA,Y
 loc_A0024:
 		INX
 		INY
 		CPY		#$04
 		BNE		loc_A001C
-		LDA		#$00
+		LDA		#$00							; reset screen specific vars
 		STA		_mini_map_cur_row
 		STA		_mini_map_cur_col
 		STA		_fund_request_tax+1
@@ -63,6 +63,8 @@ _screen_chr_banks_lib:
 		.BYTE	$34,$00,$00,$37
 		.BYTE	$34,$00,$1A,$37
 
+; REDUNDANT, unreferenced copy of the routine below
+;
 ; =============== S U B	R O U T	I N E =======================================
 ;_screen_pal_bg_init_unref:
 ;		LDA		_scr_res_idx
@@ -82,20 +84,20 @@ _screen_chr_banks_lib:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_pal_bg_load:
 		LDA		#$02
-		STA		_ppu_pal_dequeue_req
+		STA		_ppu_pal_dequeue_req			; only bg load flag
 		LDA		_scr_res_idx
 		AND		#$FE
 		BNE		loc_A0080
-		LDY		_cur_info_maps_button_idx
+		LDY		_cur_info_maps_button_idx		; for infom maps pal differs by info type
 		LDA		_screen_pal_extra_list,Y
 		JMP		loc_A0085
 loc_A0080:
-		LSR
+		LSR										; the rest is always the same
 		TAY
 		LDA		_screen_pal_list,Y
 loc_A0085:
 		STA		_screen_pal_cur_bg_idx
-		JMP		_pal_load_lib
+		JMP		_pal_load_lib					; load pal immediately
 
 _screen_pal_list:
 		.BYTE	$00,$04,$03,$02,$0B,$12,$06,$0A
@@ -105,7 +107,7 @@ _screen_pal_extra_list:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
 		LDX		#$FF
-		STX		byte_53
+		STX		byte_53							; map area redraw request
 		INX
 		STX		byte_3C
 		STX		byte_54
@@ -123,7 +125,7 @@ _scr_res_wnd_close:
 		LDA		#$30
 		STA		_cur_game_cursor_scr_pos._ROW
 		JSR		_buffers_wait_flush
-		JSR		_pal_fade_out
+		JSR		_pal_fade_out					; restore normal game screen mode
 		LDA		_ppu_ctrl_shadow
 		AND		#$FC
 		STA		_ppu_ctrl_shadow
@@ -2705,7 +2707,7 @@ loc_A0118:
 ;loc_A017A:										; REDUNDANT
 ;		STA		_tax_alloc+1,Y
 ;		LDA		_ptr0
-;		STA		_tax_alloc,Y
+;		STA		_tax_alloc,Yv
 ;		RTS
 
 _fund_reqest_vars_list:

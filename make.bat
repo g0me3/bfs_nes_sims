@@ -12,7 +12,6 @@ rename !simcity.nes !simprev.nes
 cd nas
 
 echo assemble...
-echo -
 
 dasm bank0.nas -f3 -obank0.bin
 dasm bank0.nas -f3 -l!simcity.lst -obank0.bin > !err.log
@@ -26,7 +25,6 @@ dasm %1 -f3 -o%~n1.bin
 goto :eof
 
 :build
-echo -
 echo build...
 
 rename hdr.bin !simcity.hdr > NUL

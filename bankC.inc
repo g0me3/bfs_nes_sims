@@ -1027,7 +1027,9 @@ sub_13671F:
 		STA		byte_53
 		JSR		_constr_palette_redraw_req_set
 		CLC
+		RTS
 locret_136745:
+		SEC								; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1045,7 +1047,9 @@ sub_136750:
 		BNE		locret_136759
 		JSR		sub_13675A
 		CLC
+		RTS
 locret_136759:
+		SEC								; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1066,7 +1070,9 @@ sub_136761:
 		LDA		#$00
 		STA		byte_39
 		CLC
+		RTS
 locret_136774:
+		SEC								; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1078,6 +1084,7 @@ sub_136775:
 		JSR		_map_full_screen_pos_calc
 		JMP		sub_136781
 locret_136780:
+		SEC								; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

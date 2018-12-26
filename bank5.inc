@@ -558,11 +558,14 @@ _obj_ship_max_range_test:
 		SEC
 		RTS
 .ship_cant_go:
-		INX										; this code somehow (not ideal) does
-		TXA										; some kind of bouncing of the map borders
-		AND		#$07							; or else the ship will float along sides of the map forever
-		TAX
-		CLC
+; WRONG! ship can stuck because of that, the main loop counter may never
+; reach the stop condition, if skipped here
+;
+;		INX										; this code somehow (not ideal) does
+;		TXA										; some kind of bouncing of the map borders
+;		AND		#$07							; or else the ship will float along sides of the map forever
+;		TAX
+;		CLC
 		RTS
 .ship_leftmost_pos:
 		CPX		#$05							; leftmost position, but opposite direction
