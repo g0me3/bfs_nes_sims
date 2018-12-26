@@ -3,6 +3,12 @@
 
 		BANK_START $FB
 
+; ---------------------------------------------------------------------------
+; ---------C-I-T-Y--C-O-R-E--M-A-I-N--E-N-G-I-N-E--R-O-U-T-I-N-E-S-----------
+; ---------------------------------------------------------------------------
+
+		SECTION_START	B00
+
 ; =============== S U B	R O U T	I N E =======================================
 ; Here is the main loop for city engine. Performs continuously calculations
 ; on a different city areas and updating statuses.
@@ -133,7 +139,7 @@ loc_11E153:
 		LDY		_city._game_speed				; and finally, population recalcs performed
 		LDA		_game_core_speed_mask_list,Y	; at 3/4 of the delay period.
 		AND		_city._cur_week					; so all three recalcs performed once per loop
-		CMP		_game_core_recalcD_delay_list,Y	; at a different weeks, never calculated
+		CMP		_population_recalc_delay_list,Y	; at a different weeks, never calculated
 		BNE		loc_11E171						; at once
 		LDA		#$04
 		JSR		_critical_section_enter
@@ -154,12 +160,12 @@ _game_core_speed_mask_list:
 ;		.BYTE	$00,$00,$00,$00					; REDUNDAT, actually this not needed, because all zeroes
 _crime_recalc_delay_list:
 		.BYTE	$04,$02,$01,$00
-_game_core_recalcD_delay_list:
+_population_recalc_delay_list:
 		.BYTE	$08,$04,$02,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _screen_invalidate:
-		LDA		#$FF							; set flag to the chain of redraw function for THREAD0
+		LDA		#$FF							; set flag to the chain of redraw functions in THREAD0
 		STA		_hud_redraw_req					; redraws upper hud, tool palette, and game screen
 		LDA		#$01
 		STA		_game_core_state				; switch to the THREAD0 on next nmi
@@ -180,8 +186,8 @@ loc_11E1A2:
 		PHA
 		STX		_tmp_map_pos._COL
 		STY		_tmp_map_pos._ROW
-		JSR		_get_building_map_tile			; all 76x76 map tiles are
-		JSR		_collect_map_tiles_stats		; collected
+		JSR		_get_building_map_tile			; read the actual tile index
+		JSR		_collect_map_tile_stats			; collect info
 		PLA										; now we have stats about
 		TAY										; how much buildings/transport etc.
 		PLA										; and ready to calculate next
@@ -284,7 +290,7 @@ loc_11E23D:
 .bank_re_set:
 		STA		_city._bank_flags
 .bank_break:
-		MADDW	_tmpE6,_RCI_counts._R,_RCI_counts._C
+		MADDW	_tmpE6,_RCI_counts._R,_RCI_counts._C	; calculate overall data
 ; BUG! copy-paste, second CLC wrong here!
 ; -
 ;		LDA		_tmpE6
@@ -296,7 +302,7 @@ loc_11E23D:
 ;		ADC		_RCI_counts._I+1
 ;		STA		_total_RCI_counts+1
 ; -
-		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I	; FIX
+		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I	; FIX, total sum of areas
 ; REDUNDANT, will change after end of the fiscal year, but used in some further calcs
 ; in event manager. not used anywhere near here after all, can be freely removed
 ; -
@@ -305,7 +311,7 @@ loc_11E23D:
 ;		ADC		_coal_power_station_count
 ;		STA		_tmp6CC
 ; -
-		LSADDW	_tmpE6,_city._level._C,_city._level._I,3
+		LSADDW	_tmpE6,_city._level._C,_city._level._I,3	; calculate population value
 		MADDW	_tmpE6,_tmpE6,_city._level._R	; CAUTION! optimized code
 		PHA										; PHA here pushes INT part of E6
 		PUSHB	_tmpE6							; after MADDW instruction.
@@ -317,38 +323,38 @@ loc_11E23D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_collect_map_tiles_stats:
+_collect_map_tile_stats:
 		LDY		_last_map_tile_read
-;		CPY		#$EB							; REDUNDANT: fix me, tile unused,
-;		BNE		loc_11E2EA						; there is no code, so may remove this
+;		CPY		#_MAP_BRIDGE_WATER_LR			; REDUNDANT: fix me, no statistic calcs for this tile
+;		BNE		loc_11E2EA						; removed by now
 ;		NOP
 ;loc_11E2EA:
-		CPY		#$90
-		BCC		loc_11E2FB						; there are no electic tiles under 90
+		CPY		#_MAP_GROUND
+		BCC		loc_11E2FB						; there are no electic tiles under _MAP_GROUND
 		LDA		_map_tiles_flags_tbl,Y
 		BPL		loc_11E2FB
-		INCW	_electrics_count
+		INCW	_electrics_count				; used in overwiew screen only
 loc_11E2FB:
-		CPY		#$90
+		CPY		#_MAP_GROUND
 		BNE		loc_11E308
-		INCW	_map_buldozered_tiles_count
+		INCW	_map_buldozered_tiles_count		; count bulldozered grounds for owerview screen
 		RTS
 loc_11E308:
-;		LDA		_last_map_tile_read				; _last_map_tile_read here still in Y
+;		LDA		_last_map_tile_read				; REDUNDANT, _last_map_tile_read here still in Y
 ;		CMP		#_MAP_FIRE
 		CPY		#_MAP_FIRE
 		BNE		loc_11E312
-		JMP		_fire_tile_collect
+		JMP		_fire_tile_collect				; apply the fire spread logic
 loc_11E312:
-;		CMP		#$B5
-		CPY		#$B5
+;		CMP		#_MAP_FLOOD
+		CPY		#_MAP_FLOOD
 		BNE		loc_11E319
-		JMP		_flooded_tile_collect
+		JMP		_flooded_tile_collect			; flooded area animate statistics
 loc_11E319:
-;		CMP		#$B6
-		CPY		#$B6
+;		CMP		#_MAP_POLLUTION
+		CPY		#_MAP_POLLUTION
 		BNE		loc_11E320
-		JMP		_polluted_tile_collect
+		JMP		_polluted_tile_collect			; polluted area cleanup
 loc_11E320:
 ;		TAY
 		LDA		_map_tiles_flags_tbl,Y
@@ -411,75 +417,85 @@ locret_11E387:
 
 ; =============== S U B	R O U T	I N E =======================================
 _fire_tile_collect:
-		JSR		_rand
-		CMP		#$F0
+		JSR		_rand							; the probability of fire stops
+		CMP		#$F0							; 16/256
 		BCC		loc_11E394
-		LDA		#_MAP_CORRUPTED
-		JMP		_map_tile_write
+		LDA		#_MAP_CORRUPTED					; if hit the treshold, cease flame
+		JMP		_map_tile_write					; the burned ground left
 loc_11E394:
-		LDX		#$03
+		INCW	_fires_count					; FIX, calculate an actual value.
+		LDX		#$03							; now check for 4 surroinding tiles
 loc_11E396:
 		JSR		_jump_to_near_to_tmp_map_pos_tile
-		BCS		loc_11E3B5
-		JSR		_get_building_map_tile
-		LDY		_last_map_tile_read
+		BCS		loc_11E3B5						; skip if at the map edge
+; BUG! this routine isn't X safe! it can reset X to 0
+; sometimes, so we will skip a lot of near tiles for fires!
+; FIX, workaround for X issue
+		TXA
+		PHA
+; -
+		JSR		_get_building_map_tile			; read near tile index
+; FIX, forkaround for X issue finish
+		PLA
+		TAX
+; -
+		LDY		_last_map_tile_read				; test if flammable
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#$40
-		BEQ		loc_11E3B2
-		JSR		_rand
-		CMP		#$F4
-		BCC		loc_11E3B2
+		BEQ		loc_11E3B2						; if no, then return back to the
+		JSR		_rand							; current tile
+		CMP		#$F4							; or with probability 12/256
+		BCC		loc_11E3B2						; burn this near tile
 		JSR		_fire_cur_map_tile
-		INCW	_fires_count					; FIX, calculate an actual value.
 loc_11E3B2:
-		JSR		_back_from_near_tmp_map_pos_tile
-loc_11E3B5:
+		JSR		_back_from_near_tmp_map_pos_tile; return to to the cur tile, repeat
+loc_11E3B5:										; for all 4 surrounding tiles
 		DEX
 		BPL		loc_11E396
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _flooded_tile_collect:
-		LDA		_disaster_tiles_to_flood_count
-		BEQ		loc_11E405
-		DEC		_disaster_tiles_to_flood_count
+		LDA		_disaster_tiles_to_flood_count	; this counter is set by disaster
+		BEQ		.cease_flood					; start routine. the flood will end
+		DEC		_disaster_tiles_to_flood_count	; when counter drops zero
 		LDY		#$03
-_do_flood:
-		TYA
-		PHA
-		JSR		_rand
+.do_flood:
+		TYA										; do test floods for all surrounding tiles
+		PHA										; store counter for now
+		JSR		_rand							; with probability 1/8 do flood
 		AND		#$07
-		BNE		loc_11E3FF
-		PUSHB	_tmp_map_pos._COL
+		BNE		.no_flood
+		PUSHB	_tmp_map_pos._COL				; NOTE, as seen above, the _get_building_map_tile
+		CLC										; routine not X safe, they overlooked it earlier
+		ADC		_near_tile_pos_delta_col_list,Y	; but made some workaround for this problem here
+		STA		_tmp_map_pos._COL				; by implementing another inline method of
+		PUSHB	_tmp_map_pos._ROW				; retrieving the near tile positions with boundary test
 		CLC
-		ADC		byte_11FC26,Y
-		STA		_tmp_map_pos._COL
-		PUSHB	_tmp_map_pos._ROW
-		CLC
-		ADC		byte_11FC2A,Y
+		ADC		_near_tile_pos_delta_row_list,Y
 		STA		_tmp_map_pos._ROW
-		JSR		_tmp_map_pos_test_max
+		JSR		_tmp_map_pos_test_max			; if not exceeded the map boundaries, read near tile
 		BCS		loc_11E3F7
-		JSR		_get_building_map_tile
+		JSR		_get_building_map_tile			; read actual nearest tile
 		LDY		_last_map_tile_read
-		LDA		_map_tiles_flags_tbl,Y
+		LDA		_map_tiles_flags_tbl,Y			; test if we may flood this tile
 		AND		#$02
 		BEQ		loc_11E3F7
-		JSR		_flood_cur_map_tile
+		JSR		_flood_cur_map_tile				; if yes, then do flood
 loc_11E3F7:
 		POPB	_tmp_map_pos._ROW
 		POPB	_tmp_map_pos._COL
-loc_11E3FF:
+.no_flood:
 		PLA
 		TAY
 		DEY
-		BPL		_do_flood
+		BPL		.do_flood
 		RTS
-loc_11E405:
-		JSR		_rand
-		AND		#$07
+.cease_flood:
+		JSR		_rand							; 1/8 probability
+		AND		#$07							; to remove flooded ground
 		BNE		locret_11E411
-		LDA		#$90
+		LDA		#_MAP_GROUND
 		JMP		_map_tile_write
 locret_11E411:
 		RTS
@@ -2240,32 +2256,39 @@ loc_11F0D3:
 ; =============== S U B	R O U T	I N E =======================================
 ; return
 ; 2 - if developed I area (41-4F)
-; 3 - if coal power or sea/air port
+; 3 - if coal power or sea/air port, or fires
 ; F - if flooded ground
 ; 0 - other
 _get_map_tile_pollution_ratio:
 		LDY		#$02
 		LDA		_last_map_tile_read
-		CMP		#$50
+		CMP		#_MAP_POLICE_STATION			; upper tile range for developed I
 		BCS		loc_11F0F0
-		CMP		#$40
+		CMP		#_MAP_I_AREA_DEF				; lower tile range for dev I
 		BCC		loc_11F0F0
-		BNE		locret_11F10A
-		LDY		#$00
-		RTS
+; REDUNDANT
+;		BNE		locret_11F10A					; skip very first undeveloped
+;		LDY		#$00
+; -
+; OPTIMIZED
+		BEQ		locret_11F109					; return Y = 0
+; -
+		RTS										; return current Y = 2 if dev I area
 loc_11F0F0:
 		LDY		#$03
-		CMP		#$E6
+		CMP		#_MAP_FIRE
 		BEQ		locret_11F10A
-		CMP		#$62
+		CMP		#_MAP_SEA_PORT
 		BEQ		locret_11F10A
-		CMP		#$64
+		CMP		#_MAP_AIR_PORT
 		BEQ		locret_11F10A
-		CMP		#$60
+		CMP		#_MAP_COAL_POWER
 		BEQ		locret_11F10A
 		LDY		#$0F
-		CMP		#$B5
+;		CMP		#_MAP_FLOOD						; BUG! FLOOD tile idx
+		CMP		#_MAP_POLLUTION					; FIX, nuclear waste pollution, like in Micropolis
 		BEQ		locret_11F10A
+locret_11F109:
 		LDY		#$00
 locret_11F10A:
 		RTS
@@ -2302,38 +2325,52 @@ locret_11F136:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; get the actual index of the area if the area is a large building
+; or get the individual tile number for single tiles
+;
 _get_building_map_tile:
-		JSR		_map_tile_read
-		STA		_last_map_tile_read
+		JSR		_map_tile_read					; read currently selected tile
+		STA		_last_map_tile_read				; store read value for further usage
 		LDY		#$00
 		STY		_cur_map_tile_is_inside_a_building_flag
 		AND		#$F0
 		CMP		#$80
-		BNE		locret_11F177
+		BNE		locret_11F177					; skip if a sigle-tile index
 		LDX		#$00
-		JSR		_tmp_map_pos_backup
+		JSR		_tmp_map_pos_backup				; backup current tile position in slot 0
 		LDA		_last_map_tile_read
-		AND		#$0F
-		TAY
-		LDX		_internal_building_tile_deltaX_list,Y
-		BEQ		loc_11F15E
-loc_11F158:
-		DEC		_tmp_map_pos._COL
-		DEX
-		BNE		loc_11F158
-loc_11F15E:
-		LDX		_internal_building_tile_deltaY_list,Y
-		BEQ		loc_11F169
-loc_11F163:
-		DEC		_tmp_map_pos._ROW
-		DEX
-		BNE		loc_11F163
-loc_11F169:
-		JSR		_map_tile_read
-		STA		_last_map_tile_read
-		INC		_cur_map_tile_is_inside_a_building_flag
+		AND		#$0F							; calculate position of an actual
+		TAY										; index tile of the building
+; REDUNDANT, weird, why not just subtract here?
+;		LDX		_internal_building_tile_deltaX_list,Y
+;		BEQ		loc_11F15E
+;loc_11F158:
+;		DEC		_tmp_map_pos._COL
+;		DEX
+;		BNE		loc_11F158
+;loc_11F15E:
+;		LDX		_internal_building_tile_deltaY_list,Y
+;		BEQ		loc_11F169
+;loc_11F163:
+;		DEC		_tmp_map_pos._ROW
+;		DEX
+;		BNE		loc_11F163
+;loc_11F169:
+; OPTIMIZED, they used the same code in other places but with X indexing
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		_internal_building_tile_deltaX_list,Y
+		STA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		_internal_building_tile_deltaY_list,Y
+		STA		_tmp_map_pos._ROW
+; -
+		JSR		_map_tile_read					; read the actual index tile
+		STA		_last_map_tile_read				; store it instead
+		INC		_cur_map_tile_is_inside_a_building_flag	; set the special flag
 		LDX		#$00
-		JMP		_tmp_map_pos_restore
+		JMP		_tmp_map_pos_restore			; restore current building position
 locret_11F177:
 		RTS
 _internal_building_tile_deltaX_list:
@@ -3535,11 +3572,11 @@ loc_11FBB9:
 		PHA
 		PUSHB	_tmp_map_pos._COL
 		CLC
-		ADC		byte_11FC26,Y
+		ADC		_near_tile_pos_delta_col_list,Y
 		STA		_tmp_map_pos._COL
 		PUSHB	_tmp_map_pos._ROW
 		CLC
-		ADC		byte_11FC2A,Y
+		ADC		_near_tile_pos_delta_row_list,Y
 		STA		_tmp_map_pos._ROW
 		JSR		_tmp_map_pos_test_max
 		BCS		loc_11FBF2
@@ -3580,9 +3617,9 @@ loc_11FC0E:
 		STA		_game_msg_awaits_flag
 		JSR		_screen_invalidate
 		JMP		_goto_alert_start
-byte_11FC26:
+_near_tile_pos_delta_col_list:
 		.BYTE	$00,$01,$00,$FF
-byte_11FC2A:
+_near_tile_pos_delta_row_list:
 		.BYTE	$FF,$00,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4079,5 +4116,7 @@ loc_11FFBB:
 		POPW	_city._traf_lvl_avr				; value as FRAC part and higher nibble as INT part
 		PLA
 		RTS
+
+		SECTION_ENDS	B00, "PRGB CITY CORE ENGINE"
 
 		BANK_END FB,$C000

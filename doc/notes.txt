@@ -1,202 +1,135 @@
-	NEW TODO
 
-- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar, merge.
-- Graphs data interpolations for all values.
-- Graphs data scale based on previously unused values.
-- Convert all _mmc5_mul8to8 calls to MULAI calls, should be faster.
-- Finish mini-map re and rename.
-- Finish events animation code re and rename.
-- Recalibrate triggers for new crime recalibrated values
-
-	NEW BUGS
-
-- During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
-- Ship object can stuck in a pond or at the map side forever sometimes. Also may be invisible because of that.
-
-	CHANGES LIST
-
-- Removal of the garbage data and commented out all unreferenced data and code for further possible usage, if any.
-- Cleanup some portions of the code, minor optimizations on size.
-- Macrofication of the code for much more readable listing.
-- Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
-- Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
-- Fixed BUGS#1
-- Fixed BUGS#2.1, put the nmi wait calls to force buffers flush after any ppu queue. This also makes the turbo button work slower, but no more buffers overflows there.
-- TODO BUGS#2.2
-- Fixed BUGS#3
-- Fixed BUGS#4
-- Fixed BUGS#5, also removed redundant CPU cycles at Scenario select screen due to RAM address mistake there.
-- Fixed BUGS#6
-- Fixed BUGS#7
-- Fixed BUGS#8
-- Fixed BUGS#9, for square channels.
-- Fixed BUGS#10
-- TODO BUGS#11
-- Fixed BUGS#12.1
-- Fixed BUGS#12.2
-- Fixed BUGS#13
-- Fixed BUGS#14
-- Fixed BUGS#15
-- Fixed BUGS#16
-- TODO BUGS#17
-- TODO BUGS#18
-- Fixed	BUGS#19
-- Fixed BUGS#20, workaround somehow, there are a lot of paches needed to fix it in the original version, but can be patched much more easy in recompile if throw the difficult settings out of resetable area of the game variables. Currently it may cause some errors if I made any mistake in disasm, so let it just a workaround now. But it's work.
-- Fixed BUGS#21
-- TODO BUGS#22
-- Fixed BUGS#23.1
-- Fixed BUGS#23.2
-- Fixed BUGS#23.3, the tax money flow used instead of high nibble, also calculations uses signed values. Still need some kind of interpolation as other values.
-- Fixed BUGS#23.4
-- Fixed BUGS#24
-- Fixed BUGS#25, including BUGS#24.1-5. Rebalanced calculations a bit also, so the the average scores now even worse for complete disasters.
-- Fixed BUGS#26, rescaled and rebalanced some values after fixing some calculation bugs. This may also change the overall game mechanics and difficulty, probably more adjusting needed.
-- Fixed BUGS#27, also added ability to save current window position as well, and position of all configuration windows.
-- TODO BUGS#28
-- Added UNFINISHED#1.5, now "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting of the Scenarios (SLOW).
-- TODO UNFINISHED#2.3, set default name
-- TODO UNFINISHED#2.4, remove unneeded names
-- Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
-- Restored UNFINISHED#5 ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
-- TODO UNFINISHED#4.1.1, UNFINISHED#4.1.7
-- TODO Make ship able to sail under the bridges and road/wires with hiding animations.
-- TODO Re-use the actual FE water tile for those scenarios which use it.
-- TODO UNFINISHED#7, proper fixed point conversions, re-use scaler values calculated once store, scale two adjascent graphs by it's max values combined (so we could see the actual relative values).
-- Restored UNFINISHED#9 4-frame animation for Helicopter. Have no idea wether it was removed on purpose or by accident. 4-frame looks much more blinking, maybe epilepsy issues?
-- Restored UNFINISHED#14, moved the FAR routine to the local PRG9, so fixed problem with damaging the decimal buffer.
-- Added attributes of the pressed buttons on the Name Entry Screens are now not inverted while pushed. However, they may invert it on purpose, but this looks odd actually. The evidence it may be done on purpose that non-sprite push button ("CL") animation uses attr switch the same way as sprites does.
-- Added random turn logic for Ship object to be similar to the SNES version also all the missing code for selecting the deploy position and deploying the object.
-
-	CODES
-
-- At any time during the game, press "A + B + Select + Start" on controller 1 to Soft Reset.
-- At the title screen, press "A + B + Up + Left" on controller 2 to clear SRAM data.
-- During the game in any mode, at any message window (disasters, hints, information), enter two different button codes in any order: CODE#1 One code is to press "A + B + Up + Down + Left + Right" once. Since you couldn't press all the D-Pad buttons at once on a single controller, at least two D-Pad buttons should be pressed on controller 1 and two on controller 2 (for example, "Up + Left" on controller 1 and "Down + Right" on controller 2, or "Down + Left" on controller 1 and "Up + Right" on controller 2, etc...). The "A" and "B" buttons on controller 1 work like a skip/quit commands so you may use them only if you already did another code before, but if you doing this code first use only controller 2 for "A + B" combination. CODE#2 The other code have no strict button combination. The main goal here is to have at least two identical buttons held on both controllers at the same time (except "A" and "B", since you will close the window before can finish the code. for example, held two "Right" buttons) and then press one more additional button on controller 1 (you may use any additional button here, but as mentioned above, you may use "A" or "B" only if you've done another code before, for example press "Up" once). Now you must need to leave the message window since the final test for both flags performed before closing the window. If all done right, a message "I AM GOD   I WISH YOU HAPPY" will be displayed. To disable the debug mode, do the same operations one more time and another message will appear then: "I AM GOD   DEBUG OFF". The debug mode makes some changes to the gameplay:
-	- All constructions cost no money. However, the budget income/outcome still work.
-	- Be able to place any number of buildings at any position without collision check (causes a lot of glitches if heavily obused).
-- You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, disasterS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
-
-	UNFINISHED
-
-UNFINISHED#1. There are 6 regular scenarios available at the beginning. When you beat 6 regular scenarios, two additional scenarios will be available: "Las Vegas UFO" and "Freedom".
-	UNFINISHED#1.2 "Traffic in Bern" scenario seems totally unfunctional. There are no traffic problems calculated by the game engine, so traffic value here always lower than need to fail this scenario. So you will always win even of roads are deterogating (no roads, no traffic!). Also, as against other game parameters, re-calculated in real-time mode, only traffic calculated at evaluating the city problems, after the end of the year (once per year).
-	UNFINISHED#1.2 Both additional scenarios have no briefing texts and window headers, only blank windows.
-	UNFINISHED#1.3 Also both have no completing conditions, both are infinite and cannot be completed.
-	UNFINISHED#1.4 Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR ROM contains two set of tiles for two frames of the large UFO animation with a tractor beam. However, there aren't any other mentions in game messages nor game code for such type of disasters/objects. There is no sprites data associated with it as well. It is just not implemented at all.
-	UNFINISHED#1.5 Scenario "Freedom" have proper map data but have no any proper scenario parameters to load. So all flags, money amount, game settings are be semi-random at start. CAN'T BE PATCHED.
-UNFINISHED#2. There are 5 name buffers inside
-	UNFINISHED#2.1 First is your town name, default name "SIMCITY".
-	UNFINISHED#2.2 Second is what you enter as a favorite word, used as a sister town name during the game in New Town mode, if not entered, used the default name. In practice and scenario modes is blank, so message about sistership of towns will lack the name of the City at all.
-	UNFINISHED#2.3 Third name used as bank name inside the message resourses, but never initialized with any value, always blank, the same as with blank sister town name.
-	UNFINISHED#2.4 Two more are unused completely.
-UNFINISHED#3. One of the SE effects unreferenced and there is not known where it should be used. DEMO GG: AKOXTGAA+YSXZPKAP (replaces one of the used sounds with it, write $08 to $00F1 address in RAM to hear a new one).
-	UNFINISHED#3.1 Unused sound can be heard by setting var $F2 to value $10. Some kind of low alert buzzer. Maybe for unclear meltdown alert which has no any special indication otherwise
-	UNFINISHED#3.2 To another unused sound, set $F2 to value $80. Another kind of click or cancel sound line unreferenced one.
-UNFINISHED#4. There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine.
-	UNFINISHED#4.1 The used ones are: from $0 to $F (except $B "Blackouts") and $18 (starting from a custom handler). The rest aren't used and were just derived from the original Micropolis sources. Most of original messages not presented in this messages are converted to ingame Alert Window Messages, except one (see below).
-		UNFINISHED#4.1.1 0B "BLACKOUTS REPORTED  CHECK POWER MAP", when _powered_areas/_stats._total < 0.7. In current NES code there is an unused variable which counts exactly a number of powered areas, but the scroll message handler for it is missing.
-		UNFINISHED#4.1.2 10 "A PLANE HAS CRASHED", converted to Alert Window Message.
-		UNFINISHED#4.1.3 11 "SHIPWRECK REPORTED", 12 "A TRAIN CRASHED", 13 "A HELICOPTER CRASHED", the rest of crashes from original source not implemented here. There were a lot of various cases to damage vehicles, like by tornado, monster, collisions, random crashed when disasters are enabled, etc...
-		UNFINISHED#4.1.4 14 "UNEMPLOYMENT RATE IS HIGH", not used even in the Micropolis sources.
-		UNFINISHED#4.1.5 15 "YOUR CITY HAS GONE BROKE", used in Micropolis when in Autobudget mode Current money plus Taxes collected aren't enough to fully fund all structures.
-		UNFINISHED#4.1.6 16 "EXPLOSION DETECTED", explosion were used for either the disasters when damaging the Building, combined with vehicles crashes usually.
-		UNFINISHED#4.1.7 17 "BROWNOUTS  BUILD ANOTHER POWER PLANT", when power consumption calculated with power grid map calculation exceeded the amount of generated power by all power plants combined (see equation in BUGS#17 section).
-UNFINISHED#5. There are currently 3 different kind of vehicles visible on the map: a Heli, an Airplain and a Train (its indexes correspondingly 0, 1 and 3). The missing vehicle object with index 2 has most of its code programmed. Judging from the unused CHR data tiles this should be a Ship. The map overview mode displaying all vehicles as a small letters. For used vehicles has accordingly "H" (Heli), "A" (Airplane) and "R" (tRain). Unused vehicle should be displayed as "S" (Ship) correspondingly.
-	UNFINISHED#5.1. There is an unfinished leftover code from an old attempt to calculate the starting position for unused Ship vehicle. It executes every time when the game engine counts sea ports and trying to search for a specific tile in the map buffer ($FE) then it should set the starting position of the ship, which never used because there is no Ship deploy code in the ROM at all. This also takes a lot of redundant CPU cycles. FIX GG: SUEXUEVN+TNOXUATP (disables unused check at all).
-	UNFINISHED#5.2 The search loop stop conditions uses the buffer size instead of the end of the buffer offset so this loop may search through all CPU space, wrap to RAM and ends something in RAM MIRROR area but can stop earlier because there are some $FE bytes in the PRG code.
-	UNFINISHED#5.3 In any cases, all mentioned code doesn't calculate the correct Ship position, just the last position of the Sea port, which isn't correct, because usually, the $FE tile routes doesn't connected with the Sea ports and ship would just stuck inside the Port or on the ground near it.
-	UNFINISHED#5.4 The special water tile $FE used only in one map for Detroit Scenario even while other scenarios has the Sea Ports as well. The New City mode can generate routes automatically for river-types of the maps, and does not generate them for isle-type maps. So We couldn't see the ship for many of maps used in game, even if there is a port.
-	UNFINISHED#5.5 Only two portions of code are looking for a special water tiles either to retarget the ship (object movements routines) or build a special road tiles (construction routines) which intercept the special sea tiles to make some kind of "bridges" (see APPEND C). However, the rest of the code does not aware about special "bridge" tiles or special water tiles to make all this stuff working together properly. Even the Ship movements code knows about sailable waters but does not know about "bridges".
-	UNFINISHED#5.6 The unused Ship vehicle has two sets of sprites for years before and after 1950. Sprites 5 and 6 of the first set are broken, as well as sprite 3 of the second set. CAN'T BE PATCHED
-UNFINISHED#6. In the data for in-game menus there are two unused "YES/NO" windows: "DO YOU QUIT PLAYING WITHOUT SAVING?" and "DO YOU WANT TO START NEW CITY?". Both unused. In all cases except "LOAD GAME" the common "SAVE GAME" menu used instead.
-UNFINISHED#7. Every year, the current state of city parameters are stored in the graphs arrays. Since all values used here are fixed point, they attempt to scale them down to 8-bit fixed values, also calculate the max value for further scaling. However, this scaling value never used, the actual graphs display routine calculate it's own max value and scaling factor for each graph independently.
-UNFINISHED#8. Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
-UNFINISHED#9. Helicopter sprites contain a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason. FIX GG: 039-E37-E6E
-UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably intended to be changed according to current date or scenario type.
-	UNFINISHED#10.1 BANK1E, TILES 0C 4x4 (Airport Terminal 2)
-	UNFINISHED#10.2 BANK1F, TILES 0C 4x4 (Airport Terminal 3)
-	UNFINISHED#10.3 BANK48, TILES 14 2x2 (Extra Park 2)
-	UNFINISHED#10.4 BANK48, TILES 1D 2x2 (White House 2)
-	UNFINISHED#10.5 BANK49, TILES 00 2x2 (White House 3)
-	UNFINISHED#10.6 BANK49, TILES 03 2x2 (White House 4)
-	UNFINISHED#10.7 BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Nascar Track and two Baseball staduims building along with animations)
-UNFINISHED#11. Also there are a little bit of ingame-icons:
-	UNFINISHED#11.1 BANK20, TILES 20 8x2 ("CLEAR" tablet)
-	UNFINISHED#11.2 BANK2B, TILES 16 2x2 ("BANK" icon with frame)
-UNFINISHED#12. Message windows during the game has a various animation sequences depending on current message. There are 19 sequences are used for 10 scenes. Sequences 6 to 11 intended to be used in 4 additional scenes but they isn't. To see each of 4 unused scenes use FIX GG codes and open default hint window during the game by pushing to the "HINT" button. The evidence that the game should have 4 more hint messages is that there are two of the arrays has 40 entries instead of 36 (the number of hint messages currently, see APPEND A below).
-	UNFINISHED#12.1 Scenes 6-7. Uses the same sprites as for Traffic Jam message, but the "Mayor" character stands still at the rightmost window size and constantly looking to the left sweating. The closed door animation in the center of the window which someone badging from the outside. Sprites of it never appear elsewhere. Both animated sprites together exceeded the 8 sprites per line limit and thus the "Mayor" missing part of its face. In the Micropolis sources there is an unused as well message string  "They are rioting the screets!!", but there are no such warnings in current version at all. FIX GG: ZAEAPGPA+TANAPGLA+YANAZGGA
-	UNFINISHED#12.2 Scene 8. The "Mayor" character stand with his back toward us. Sprites never used before. Animation very short. Usage isn't clear. FIX GG: AANAPGLE
-	UNFINISHED#12.3 Scene 9. The mayor character at the middle of the screen with crutch and a bandage on its head, explaining something. Sprites aren't used enywhere else also. Most probably should be used for earnings about disasters or low funding of medicine. FIX GG: PANAPGLE
-	UNFINISHED#12.4 Scenes 10-11. The "Mayor" character constantly running from the left side to the right side of the window. The green cloud is floating after him. Most probalby this animation is for pollution warning message. Also exceeded the 8 sprites limit at some point. In any case, there aren't messages of pollution warning in the game. FIX GG: ZAEAPGPA+ZANAPGLE+LANAZGGE+LUEZYALU
-UNFINISHED#13. While build transport and power lines on the Water, there are no code for testing a valid bends with water type of tiles. You can do only straight lines continuing other straight lines. Can't bend the road on the water. Just can connect with another straight line starting from the grounds.
-UNFINISHED#14. The New city generation screen has 6 small triangle buttons at the borrom-right corner for selecting the map number. There are two tiles for drawing the regular and pressed buttons. There even has some portions of code that loads pressed button tile indexes. But then code goes to number rorate animation code and the pressed button tiles are never showed. The problem was that the button anim code reside in external bank and the FAR call routine uses the tmp values at $000,$001,$002 addresses in RAM, the same addresses used by the number display routine to store an actual decimal value. So they just removed one extra call for the sprite, fixed the glitch but disabled the button pressing animation.
-UNFINISHED#15. Although Difficult setting non functional in original game (see BUGS#20) there are some portions of the code that depends on Difficult setting, all of them however has no effect on the original game.
-	UNFINISHED#15.1 Starting amount of money on Easy is 20000, on Normal - 10000, and 5000 on Hard.
-	UNFINISHED#15.2 Tax Rate value higher to 1 on Normal and to 2 on Hard modes while calculating the RCI growth values of the City. So you may have Tax Rate at 7, but the RCI levels will be calculated as if it 8 on Normal or 9 on Hard correspondingly.
-	UNFINISHED#15.2 Fund requested for transport calculated as (roads+(rails*2))*coeff. Where coeff = 0.7 for easy, 0.9 for Normal and 1.2 for Hard. (exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void))
-  	UNFINISHED#15.3 Overall Tax Collected value calculated as (R_L+C_L+I_L)*overall_city_value*coeff*0.71*tax_rate. coeff = 1.4 for Easy, 1.2 for Norman and 0.8 for Hard. ((exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void)))
-	UNFINISHED#15.4 However, unless the SNES version, the NES does not explode Nuclear Power stations randomly for Normal/Hard modes. The Nuclear Meltdown only available for BOSTON scenario and even has no Alert message corresponding to it. Nuclear meltdown occurs with only a sound and "GOTO" button activated.
-UNFINISHED#16. There is an unused unreferenced type of Fire disaster which fires half of the Fire disaster tiles on the map at once. In the original Amiga/DOS/C64 versions there was a Scenario for Hamburg Germany 1944 Bombing. There is no such disaster in later version of this game (but there were screens on earliest versions), but such unreferenced type of didsaster clearly evidence that they planned it somehow at some point.
-UNFINISHED#17. There is an unused music command in a music engine code that adds a different type of envelope calculation to the note. If you replace all regular notes with such alt enveloped this will sounds like under water or maybe like in UFO-style. No music sequences are using it at all. Probably this is a leftover of the unimplemented UFO object?
-UNFINISHED#18. Pollution value calculated once per THREAD1 loop, but used currently only for calculating overall city problems list. Never used for any alerts display as well as not used for Graph screen because of BUG#23.
-UNFINISHED#19. RAM addresses $5F6/$5F7 in the main city data array never used by any part of the game. However, they reside at the beginning of average states of the city. The only missing average here is Traffic Level average, which currently assigned to other RAM address $656.
-
-	BUGS
-
-BUGS#1. Var at $6CC RAM address is a temporary variable used in many places of the program to store intermediate calc data. However, most of the time it has a value of POWER STATIONS counter, which is calculated every game iteration. This var used exactly as a POWER STATIONS count for the warning scrolled messages tests. Although it used for calculations at the end of the fiscal year and has a semi-random value immediately after the year budget screen is closed, this has no really significant effect to the game and message triggering except the case this semi random value gets ZERO, which is rarely possible.
-BUGS#2. Use the turbo button A on some input screens to glitch the screen because of ppu queue buffer overflow due to lack of proper sync. CANNOT BE PATCHED
-	BUGS#2.1 Name input screen.
-	BUGS#2.2 Budget money adjust screen.
-BUGS#3. There is an unused disabled branch in Practice mode to check if you go well or bad during this game. This branch should check your town population after year 1906 (should be 30000), then send a message if you did it well or you need more practice. For some reason they decided to disable it. Or just make bug in a selection logic. FIX GG: GESLGPTZ.
-BUGS#4. Some events haven't appear automatically when you get it (see table below) due to some sort of hardly visible bug with indexes comparisons. In case you get this bug, you need to go open Hints menu manually in order to obtain a Special item. Most of events works just fine, there only 2 of them which are affected. With this bug you may loose your current present if any other message appear before you go to the Hint screen.
-BUGS#5. The extra scenarios selecting screen code trying to draw "CLEAR" icons on unlocked scenarios, but there aren't proper icon position data for that, so if you manage to beat at least one of them, the scenarios select screen will glitch, if you beat both, game will hang. This is not really important at all, because you just can't beat any of extra scenarios. NO PATCH NEEDED
-BUGS#6. First briefing messages has a couple spelling errors and incorrect placeholders. CANNOT BE PATCHED
-BUGS#7. There is non-critical bug in present items free slot search routine. In case you have no free slots, it will run for 256 loops of dummy cycle instead of just exit. No side effects in this except missed CPU cycles.
-BUGS#8. At BANKB:$A8D9 there is a calculations which fetch power grid buffer data, then test if the particular tile is powered up or not. The opcode at BANKB:$A90E (AND $A3B6,X) refers to the bitmasks table from BANKA, but in BANKB it refers to the portion of the game's code so masking will get the wrong result most of the time, reporting are powered while they are not or vice versa. Seems they overlooked this when moving the code around. To fix it in current ROM. FIX GG: KIEXNPVU+OLOZEPUX.
-BUGS#9. Sound is cracking sometimes in two channels. FIX GG: EPXXYZNP (for square channel only, a courtesy of Chris Covell).
-BUGS#10. When airplane crashes, it's damaging one particular tile on the map with enabling "GOTO" alert button. However, due to copy-paste bug, the coordinates of "GOTO" are wrong and not points to the crash site. FIX GG: KEEAGEVE.
-BUGS#11. Pollution area zone calculated as a sum of weights of the tiles for every 4x4 map area. Weights are follow: developer I area +2 for a tile (+8 for 2x2 building), coal power station +3 for a tile (+36 for 3x3 building), flooded ground +15 for a tile, the rest gives 0. Looks odd, right? Why flooded ground counts as max pollution instead of radiation waste ground? Looks like a bug to me.
-BUGS#12. Tere is a var $67D, which never written by any code, but read sometimes and used in calcs.
-	BUGS#12.1 It is used for "Fires" parameter of City problems list calculations (param = {_fires_count * 5}, i.e. clamp to FRAC part of fixed point value). So this is definitely one lost parameter which isn't calculated in NES code.
-	BUGS#12.2 Also it summed with police stations counter in city assessed value calculations. Based on Micropolis source code, police station counts clearly summed with fire station counter.
-BUGS#13. The clear routine clears only the lower nibble of _city_assessed_value not touching the high ones and then immediately clears the _annual_score_change var which is temporary recalculated var actually sitting near the _city_assessed_value ram address. There is unknown if they wether missed two more bytes to be cleared or clear a wrong vars instead.
-BUGS#14. City assessed value recalc routine have a major calc mistake: 6 out of 9 parameters has wrong weight multipliers, basicly they swapped hi and low nibbles of the 16-bit constants. So instead of weight of hospitals $0190 (decimal 400) we have $9001 (decimal 36865) and so on.
-BUGS#15. Monster disaster appearance logic choses randomly the appearnce point inside the map, then calculates the destination point based on what side of the map is farther (by one of directions) and one random position on that side. The random selection routine stores both X and Y destination coordinates in the same _obj_dest_pos._monster._COL variable. The most noticeable result of this bug is at that the first appearance with higher probability the monster will go UP on the map.
-BUGS#16. Graphs screen data ranges (10/100 years) button-selector of the by default always 10 but not pushed upon entry to the screen. Press it after that does nothing. Only when you press 100, then again 10 it will be drawn correctly.
-BUGS#17. Power consumption calculated as: TOTAL_POWER = COAL*700+NUCLEAR*2000 pts. Every single powerable building tile and every electric wire consume 1 pt. Due to recursive method of collecting the network data, there will be extra power points consumed according to placement and location of adjascent buildings. So the same amount of building may consume more or less power just because of placement and grouping of the buildings.
-BUGS#18. Sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner.
-BUGS#19. Game cursor not disables when the game message window appears. to reproduce, start practice, enter info screen maps, exit and enter a message hint or wait for the first practice message. CANNOT BE PATCHED
-BUGS#20. Difficult settings does not work for New City mode. Although it can be selected, it will clear at the beginning of any game mode, so in any case you'll play on EASY by default. CANNOT BE PATCHED
-BUGS#21. When you buid a present, a corresponding item removed from the list and when empty disables the menu. If you select first one and build a present, then you'll be able to build a second present immediately. They will be properly removed from the list. However, if you choose to build the second prize first, then immediately build another one, you'll build a glitched construction that can't be removed or bulldozered. CANNOT BE PATCHED
-BUGS#22. Some electric tiles near the water electric tiles treated as non-powered in some cases.
-BUGS#23. Graphs calculations slightly broken and mangled, mostly due to copy-pasting.
-	BUGS#23.1 For R it should multiply level value by 2, but instead multiplied integer part of value with itself. The R levels usually are in range 1 to 2, so most of the time we have roughly rounded integer value for this in case of this bug.
-	BUGS#23.2 For "Pollution" button they uses crime level value instead.
-	BUGS#23.3 For "Cash Flow" button they uses highest nibble of money which means only money above 65535 will be documented and used. Also they do the same highest bit masking as for special values in crime and pollution levels, which never used for money value, so this is definitely a copy-paste too.
-	BUGS#23.4 For "Crime" button they uses tax income value which may be positive or negative. They attempted to att signed values to graph by shifting the Y axis to -128, but didn't tested the tax incom value for negativeness at all, so all negative values turns max parameters when clamped. Actuall, this behaviour were in the original Micropolis source for "Cash Flow".
-BUGS#24. City problems list calculation routines has also at least one more major mistake that gets semi-random results on the overall calc in addition to _fires_count usage (not counting they are semi-random by design). One of the problems (unemployment) uses RCI proportion as a test value: param={L_R/(L_C+L_I)*8} also clamped to FRAC portion of fixed point value. However, calc routine stores divider in wrong temporary variable. Shoulbe go to $EA-$EB, but gets to $E7-$E8 instead. INES FIX PATCH: $14C43: EA, $14C4B: EA, $14C4E: EA, $14C51: EA, $14C54: EB, $14C56: EA.
-	BUGS#24.1 Clamping RCI proportion to 0.999 also seems wrong. Uses this equation we calc how much times residental zones development level higher than C+I level combined, means how much unemployed people there are. When unemployment is high, INT portion of result should be non-zero. For all values >=1.00 we have truncation. So we will get highest level of unemployment even if all people are working (R=C+I). This sounds kinda wrong. Micropolis source subtract 1.00 from result of proportion and then truncate to 0.999, then we have correc values for all cases!
-	BUGS#24.2 The problem sorting routine looks kinda wrong as well. It skips problem with the same amount of percents and takes only the last one of them, also for many cases it takes not the greatest ones.
-BUGS#25. City score calculations are broken too. The main problem here is because BUG#26 actually, but can be adjusted for this particular calculations and so the values may be much more reliable.
-	BUGS#25.1 First of all, the problems list summing at the start of the calc routine does calculation on 8-bit values! But the values are 16-bit. So we skip half of problems list as well as INTEGER parts of high problem values are added as a FRAC parts so result is much lower than should be! However, in conjunction with at least BUGS#25.2 this does not make thing better, this forst bug BALANCING the second bug and as a result we have score degradation for scenario modes, etc...
-	BUGS#25.2 The base value of the score is inverted sum of problems multiplied by 4 and truncated to 1000. The max value of sum of problems is FF so this should give a minimum base scores, and so on. The less sum value (except case with 0, rarely possible) more base scores. Bu, after multiply negative value by 4 the code does not save lower nibble of the result, instead it takes the previously used sum value, which is still not negated. So when you you will have high nibble of result (~700) and a lower nibble of small sum. The result will be less than proper one. And vice versa, when you have a lot of problems, you will have additional points higher than should be.
-	BUGS#25.3 The transport funding value has maximum 33, but should be 32. As a result, test for 32 always fails, so when you have 100% funds, your score will be decreased by 1, but when your transport funding drops around 96%, city score won't be affected at all.
-	BUGS#25.4 RCI growth levels (RCI meters to the borrom-left) never lowers the score. They should do that when negative. But tests are incorrect and never passed.
-	BUGS#25.5 Result of score adjustment with net migration proportion stored in wrong value, so the actual result is never used, instead used one of the multiplication arguments (exactly the proportion value).
-BUGS#26. Overal calculations of average values mostly broken. Somehow they balanced with random bugs or bugs on purpose, and somehow rescaled when needed. The main problem here, the original source has a wide range averages for base values. Pollution average, Crime level average are sums of all area levels divided by number of such areas. The average mathematically can't be greather than max value of the single area. In the NES code, values for all areas are in range from $00 to $0F. So average shouldn't be higher than $0F. However, due to some data formats mangling and misunderstanding, the averages calculated as a result of division of two fixed points values. And if we may logically assume, that area values in range $00 to $0F is a small fixed point values, we shouldn't treat the divider the same. Divider is an integer value. If you treat it as fixed point, where low nibble is FRAC, and high nibble is INT, then you will get anything, but average value. For example. Sum of crime area levels is $0653, total areas collected is $00F1. Then if divide as fixed point we divide 6.324 to 0.941 ($00F1=0.241/256). But since we divide to value <1, the result will be HIGHER than overall sum. And this value is used for all other calculations! So we literally using not the average levels, but weighted sums. Other side effect here is when we have more than 256 areas to calc overage, so higher nibble of 16-bit counter won't be zero, we will have a little scaling down of average velues, but still not so much high how it should be. Even if we will calc the max number of areas lite 38*38=1444, result will be only 5 times smaller. The only way to avoid it in current version is to keep all overages at ZERO. Which is mostly impossible for pollution, but highly possible for crime rate for example.
-BUGS#27. Save/Load option in the game has a special game mode index 0. At the same time, you may save and load any mode of the game! And when restored, game mode turns to 0. All special scenario or practice events are not functional anymore! So literally you just couldn't continue the game properly unless you played the new city mode.
-BUGS#28. There are severgal scenario maps with some defects, usually not connected one or two power lines properly, so some buildings are not powered.
-
-	MISC
+	MISC GAME INFO
 
 MISC#1. There is an automatically spawned helicopter for observing the road traffic. It fly randomly and every iteration its coordinates tested against the traffic map. If helicopter hovering over the traffic location with density above 9 it will report about it with DPCM speech and a scroller message. Judging from the message index (18th, the last one in the list) and the fact that all previous messages aren't used at all, we may presume that this heli message and sound were added to the game at the late stage of developement. However, method of calling this message is the same as in Micropolis sources, from sprite engine separately from common scroll message system.
 MISC#2. The game engine consists of two main separate parts. First is an interface and display control part, game engine. It handles all inputs, menus, drawing graphics, screen objects/sprites manager, disasters manipulation. The second is a city control and statistics collector part, simulation engine. It does all city specific calcs on population, industry, energy, pollution and traffic, does stats and charts for info displays, etc... Both parts constantly do its own work in loop, never stop. The most interesting part, the threads manager in NMI handler switches between two process through stack manipulation, so both work some kind like a paraller threads. The game engine has a priority on simulation engine. If you press any button, it will take control instantly, and city calcs are be halted. However, simulation engine can enter some kind of critical sections, which may protect the simulation calculations from accessing from the game engine. I have not seen such engine in any game before. Usually, threading methods used in a scripted engines. This is the first game I've seen that do it on the native code. Basicly, this method can be used for multi-threading operation systems for NES, the problem is just in a very small stack.
 MISC#3. For some reason until you get the City Status and build a Bank, you have only 3 free Special events slots. The rest of the game you'll have 4 slots. However, if all your slots are full, any pending event will wait until any empty slot appears.
-MISC#4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test.
+MISC#4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test. Most probably this is the name of the developer which made the SNES version also.
 MISC#5. All music tracks are used in the game. Most of tracks used to highlight the town population value. some tracks are "paired" and consists of two conjuncted parts. An intro and looped main track (01/02 title, 08/10 practice, 48/50, 60/40 information).
 MISC#6. One of the tables in the Sound engine used for calculating note lengths is the same as in Nintendo games Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All of them has similar way to play SE by setting flag bits and so on. However, as against the Sound Engine for Wrecking Crew for example, this one written highly briefly, and heavily modified. There is no channel data and code unification, a different set of commands, lack the loop commands at all, so music data and code incompatible and not optimal.
 MISC#7. With the Micropolis source codes it is easier to understand some odd things in the NES code, most of this described in the comments in the current sources. The main Micropolis engine were taken mostly exactly the same with some small insifnificant changes due to optimizations or rough fixed point rounding errors.
 MISC#8. Map generation routines for New City mode taken from Micropolis sources mostly exactly, with some additional oprimizations and little changes.
+MISC#9. Power generated by all power stations equals (COAL*700)+(NUCLEAR*2000) points. This power "distributed" between every single powerable tiles including the Powers station and electric wires. Every single powerable tile (all tiles of buildings, electric wires) consume 1 point. Due to optimization rather than bug the recursive algorithm can overpower some tiles inside the buildings or at intersection of wires up to 3 times. So the same amount of building may consume more or less power just because of placement and grouping of power wires. Average consumption for 3x3 building is 13, not 9. The original Micropolis core has exactly the same algorithm.
+MISC#10. Although the Difficult setting non functional in original game (see BUGS#20) there are some portions of the code that depends on Difficult setting, all of them however has no effect on the original game.
+	MISC#15.1 Starting amount of money on Easy is 20000, on Normal - 10000, and 5000 on Hard.
+	MISC#15.2 Tax Rate value higher to 1 on Normal and to 2 on Hard modes while calculating the RCI growth values of the City. So you may have Tax Rate at 7, but the RCI levels will be calculated as if it 8 on Normal or 9 on Hard correspondingly.
+	MISC#15.2 Fund requested for transport calculated as (roads+(rails*2))*coeff. Where coeff = 0.7 for easy, 0.9 for Normal and 1.2 for Hard. (exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void))
+  	MISC#15.3 Overall Tax Collected value calculated as (R_L+C_L+I_L)*overall_city_value*coeff*0.71*tax_rate. coeff = 1.4 for Easy, 1.2 for Norman and 0.8 for Hard. ((exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void)))
+	CODES
+MISC#11. There are some special secret button codes in the NES version.
+	MISC#11.1 At any time during the game, press "A + B + Select + Start" on pad 1 to Soft Reset.
+	MISC#11.2 At the title screen, press "A + B + Up + Left" on pad 2 to clear SRAM data.
+	MISC#11.3 During the game in any mode, at any message window (disasters, hints, information), enter two different button codes in any order. Each raises its own special cheat flag: CODE#1 Press "A + B + Up + Down + Left + Right" once. Since you couldn't press all the D-Pad buttons at once on a single pad, at least two D-Pad buttons should be pressed on pad 1 and two on pad 2 (for example, "Up + Left" on pad 1 and "Down + Right" on pad 2, or "Down + Left" on pad 1 and "Up + Right" on pad 2, etc...). The "A" and "B" buttons on pad 1 works like a skip/quit commands so you may use them only if you already did another code before, but if you doing this code first, use only pad 2 for "A + B" combination. CODE#2 The other code have no strict button combination. The main goal here is to have at least two identical buttons held on both pads at the same time (except "A" and "B", since you will close the window before can finish the code) and then press one more additional button on pad 1 (you may use any additional button here, but as mentioned above, you may use "A" or "B" only if you've done another code before). Easiest way here is to hold "Up" for example on both pads and then press "Left" on pad 1. When done, you must leave the message window in order to complete the cheat test sequence. If all done right, a message "I AM GOD   I WISH YOU HAPPY" will be displayed. To disable the debug mode, do the same operations one more time and another message will appear then: "I AM GOD   DEBUG OFF". The debug mode makes some changes to the gameplay:
+		MISC#11.3.1 All constructions cost no money. However, the budget income/outcome still work.
+		MISC#11.3.2 Be able to place any number of buildings at any position without collision check (causes a lot of glitches if heavily obused).
+	MISC#11.4 You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, disasterS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
+
+	WHAT'S UNFINISHED IN THE GAME
+
+UNFINISHED#1. There are 6 regular scenarios available at the beginning. When you beat 6 regular scenarios, two additional scenarios will be available: "Las Vegas UFO" and "Freedom".
+	UNFINISHED#1.2.TODO "Traffic in Bern" scenario seems totally unfunctional. There are no traffic problems calculated by the game engine, so traffic value here always lower than need to fail this scenario. So you will always win even of roads are deterogating (no roads, no traffic!). Also, as against other game parameters, re-calculated in real-time mode, only traffic calculated at evaluating the city problems, after the end of the year (once per year).
+	UNFINISHED#1.2.TODO Both additional scenarios have no briefing texts and window headers, only blank windows.
+	UNFINISHED#1.3.TODO Also both have no completing conditions, both are infinite and cannot be completed.
+	UNFINISHED#1.4.TODO Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR ROM contains two set of tiles for two frames of the large UFO animation with a tractor beam. However, there aren't any other mentions in game messages nor game code for such type of disasters/objects. There is no sprites data associated with it as well. It is just not implemented at all.
+	UNFINISHED#1.5.ADDED Scenario "Freedom" have proper map data but have no any proper scenario parameters to load. So all flags, money amount, game settings are be semi-random at start. CAN'T BE PATCHED.
+UNFINISHED#2. There are 5 name buffers inside
+	UNFINISHED#2.1 First is your town name, default name "SIMCITY".
+	UNFINISHED#2.2.TODO Second is what you enter as a favorite word, used as a sister town name during the game in New Town mode, if not entered, used the default name. In practice and scenario modes is blank, so message about sistership of towns will lack the name of the City at all.
+	UNFINISHED#2.3.TODO Third name used as bank name inside the message resourses, but never initialized with any value, always blank, the same as with blank sister town name.
+	UNFINISHED#2.4.REMOVED Two more are unused completely.
+UNFINISHED#3.ADDED One of the SE effects unreferenced and there is not known where it should be used. DEMO GG: AKOXTGAA+YSXZPKAP (replaces one of the used sounds with it, write $08 to $00F1 address in RAM to hear a new one).
+	UNFINISHED#3.1.TODO Unused sound can be heard by setting var $F2 to value $10. Some kind of low alert buzzer. Maybe for unclear meltdown alert which has no any special indication otherwise
+	UNFINISHED#3.2.TODO To another unused sound, set $F2 to value $80. Another kind of click or cancel sound line unreferenced one.
+UNFINISHED#4. There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine. The used ones are: from $0 to $F (except $B "Blackouts") and $18 (starting from a custom handler). The rest aren't used and were just derived from the original Micropolis sources. Most of original messages not presented in this messages are converted to ingame Alert Window Messages, except one (see below).
+		UNFINISHED#4.1.TODO 0B "BLACKOUTS REPORTED  CHECK POWER MAP", when _powered_areas/_stats._total < 0.7. In current NES code there is an unused variable which counts exactly a number of powered areas, but the scroll message handler for it is missing.
+		UNFINISHED#4.2 10 "A PLANE HAS CRASHED", converted to Alert Window Message.
+		UNFINISHED#4.3 11 "SHIPWRECK REPORTED", 12 "A TRAIN CRASHED", 13 "A HELICOPTER CRASHED", the rest of crashes from original source not implemented here. There were a lot of various cases to damage vehicles, like by tornado, monster, collisions, random crashed when disasters are enabled, etc...
+		UNFINISHED#4.4.TODO 14 "UNEMPLOYMENT RATE IS HIGH", not used even in the Micropolis sources.
+		UNFINISHED#4.5.TODO 15 "YOUR CITY HAS GONE BROKE", used in Micropolis when in Autobudget mode Current money plus Taxes collected aren't enough to fully fund all structures. In the NES code there is a branch for this case which locks the game.
+		UNFINISHED#4.6 16 "EXPLOSION DETECTED", explosion were used for either the disasters when damaging the Building, combined with vehicles crashes usually.
+		UNFINISHED#4.7.TODO 17 "BROWNOUTS  BUILD ANOTHER POWER PLANT", when power consumption calculated with power grid map calculation exceeded the amount of generated power by all power plants combined (see equation in MISC#9 section).
+UNFINISHED#5. There are currently 3 different kind of vehicles visible on the map: a Heli, an Airplain and a Train (its indexes correspondingly 0, 1 and 3). The missing vehicle object with index 2 has most of its code programmed. Judging from the unused CHR data tiles this should be a Ship. The map overview mode displaying all vehicles as a small letters. For used vehicles has accordingly "H" (Heli), "A" (Airplane) and "R" (tRain). Unused vehicle should be displayed as "S" (Ship) correspondingly.
+	UNFINISHED#5.1.REIMPLEMENT(GG SUEXUEVN+TNOXUATP) There is an unfinished leftover code from an old attempt to calculate the starting position for unused Ship vehicle. It executes every time when the game engine counts sea ports and trying to search for a specific tile in the map buffer ($FE) then it should set the starting position of the ship, which never used because there is no Ship deploy code in the ROM at all. This also takes a lot of redundant CPU cycles.
+	UNFINISHED#5.2.TODO The search loop stop conditions uses the buffer size instead of the end of the buffer offset so this loop may search through all CPU space, wrap to RAM and ends something in RAM MIRROR area but can stop earlier because there are some $FE bytes in the PRG code.
+	UNFINISHED#5.3.ADDED In any cases, all mentioned code doesn't calculate the correct Ship position, just the last position of the Sea port, which isn't correct, because usually, the $FE tile routes doesn't connected with the Sea ports and ship would just stuck inside the Port or on the ground near it.
+	UNFINISHED#5.4.TODO The special water tile $FE used only in one map for Detroit Scenario even while other scenarios has the Sea Ports as well. The New City mode can generate routes automatically for river-types of the maps, and does not generate them for isle-type maps. So We couldn't see the ship for many of maps used in game, even if there is a port.
+	UNFINISHED#5.5.TODO Only two portions of code are looking for a special water tiles either to retarget the ship (object movements routines) or build a special road tiles (construction routines) which intercept the special sea tiles to make some kind of "bridges" (see APPEND C). However, the rest of the code does not aware about special "bridge" tiles or special water tiles to make all this stuff working together properly. Even the Ship movements code knows about sailable waters but does not know about "bridges".
+	UNFINISHED#5.6.FIXED The unused Ship vehicle has two sets of sprites for years before and after 1950. Sprites 5 and 6 of the first set are broken, as well as sprite 3 of the second set.
+UNFINISHED#6.REMOVED In the data for in-game menus there are two unused "YES/NO" windows: "DO YOU QUIT PLAYING WITHOUT SAVING?" and "DO YOU WANT TO START NEW CITY?". Both unused. In all cases except "LOAD GAME" the common "SAVE GAME" menu used instead.
+UNFINISHED#7.TODO Every year, the current state of city parameters are stored in the graphs arrays. Since all values used here are fixed point, they attempt to scale them down to 8-bit fixed values, also calculate the max value for further scaling. However, this scaling value never used, the actual graphs display routine calculate it's own max value and scaling factor for each graph independently.
+UNFINISHED#8.TODO Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
+UNFINISHED#9.ADDED(GG LEVAUPPA) Helicopter sprite contains a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason.
+UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably intended to be changed according to current date or scenario type.
+	UNFINISHED#10.1.TODO BANK1E, TILES 0C 4x4 (Airport Terminal 2), an airport terminal does not change in the SNES version
+	UNFINISHED#10.2.TODO BANK1F, TILES 0C 4x4 (Airport Terminal 3)
+	UNFINISHED#10.3 BANK48, TILES 14 2x2 (Extra Park 2)
+	UNFINISHED#10.4.TODO BANK48, TILES 1D 2x2 (White House 2), the White House is different for every City type in SNES version.
+	UNFINISHED#10.5.TODO BANK49, TILES 00 2x2 (White House 3)
+	UNFINISHED#10.6.TODO BANK49, TILES 03 2x2 (White House 4)
+	UNFINISHED#10.7.TODO BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Race Track and two Baseball staduims building along with animations)
+UNFINISHED#11. Also there are a little bit of ingame-icons:
+	UNFINISHED#11.1 BANK20, TILES 20 8x2 ("CLEAR" tablet)
+	UNFINISHED#11.2 BANK2B, TILES 16 2x2 ("BANK" icon with frame)
+UNFINISHED#12. Message windows during the game has a various animation sequences depending on current message. There are 19 sequences are used for 10 scenes. Sequences 6 to 11 intended to be used in 4 additional scenes but they isn't. To see each of 4 unused scenes use FIX GG codes and open default hint window during the game by pushing to the "HINT" button. The evidence that the game should have 4 more hint messages is that there are two of the arrays has 40 entries instead of 36 (the number of hint messages currently, see APPEND A below).
+	UNFINISHED#12.1.TODO(GG ZAEAPGPA+TANAPGLA+YANAZGGA) Scenes 6-7. Uses the same sprites as for Traffic Jam message, but the "Mayor" character stands still at the rightmost window size and constantly looking to the left sweating. The closed door animation in the center of the window which someone ramming from the outside. Sprites of it never appear elsewhere. Both animated sprites together exceeded the 8 sprites per line limit and thus the "Mayor" missing part of its face. In the Micropolis sources there is an unused as well message string  "They are rioting the screets!!", but there are no such warnings in current version at all. In the SNES version this animation used for common problems alert screens and hints.
+	UNFINISHED#12.2.TODO(GG AANAPGLE) Scene 8. The "Mayor" character stand with his back toward us. Sprites never used before. Animation very short. Usage isn't clear.
+	UNFINISHED#12.3.TODO(GG PANAPGLE) Scene 9. The mayor character at the middle of the screen with crutch and a bandage on its head, explaining something. Sprites aren't used enywhere else also. Most probably should be used for earnings about disasters or low funding of medicine.
+	UNFINISHED#12.4.TODO(GG ZAEAPGPA+ZANAPGLE+LANAZGGE+LUEZYALU) Scenes 10-11. The "Mayor" character constantly running from the left side to the right side of the window. The green cloud is floating after him. Most probalby this animation is for pollution warning message. Also exceeded the 8 sprites limit at some point. In any case, there aren't messages of pollution warning in the game.
+UNFINISHED#13. While build transport and power lines on the Water, there are no code for testing a valid bends with water type of tiles. You can do only straight lines continuing other straight lines. Can't bend the road on the water. Just can connect with another straight line starting from the grounds. The SNES version still not implemented this.
+UNFINISHED#14.FIXED The New city generator screen has 6 small triangle buttons at the borrom-right corner for selecting the map number. There are two tiles for drawing the regular and pressed buttons. There even has some portions of code that loads pressed button tile indexes. But then code goes to number rorate animation code and the pressed button tiles are never showed. The problem was that the button anim code reside in external bank and the FAR call routine uses the tmp values at $000,$001,$002 addresses in RAM, the same addresses used by the number display routine to store an actual decimal value. So they just removed one extra call for the sprite, fixed the glitch but disabled the button pressing animation.
+UNFINISHED#15.TODO Unless the SNES version, the NES does not explode Nuclear Power stations randomly for Normal/Hard modes. The Nuclear Meltdown only available for BOSTON scenario and even has no Alert message corresponding to it. Nuclear meltdown occurs with only a sound and "GOTO" button activated.
+UNFINISHED#16. There is an unused unreferenced type of Fire disaster which fires half of the Fire disaster tiles on the map at once. In the original Amiga/DOS/C64 versions there was a Scenario for Hamburg Germany 1944 Bombing. There is no such disaster in later version of this game (but there were screens on earliest versions), but such unreferenced type of didsaster clearly evidence that they planned it somehow at some point.
+UNFINISHED#17. There is an unused music command in a music engine code that adds a different type of envelope calculation to the note. If you replace all regular notes with such alt enveloped this will sounds like under water or maybe like in UFO-style. No music sequences are using it at all. Probably this is a leftover of the unimplemented UFO object?
+UNFINISHED#18.TODO Pollution value calculated once per THREAD1 loop, but used currently only for calculating overall city problems list. Never used for any alerts display as well as not used for Graph screen because of BUG#23.
+UNFINISHED#19.FIXED RAM addresses $5F6/$5F7 in the main city data array never used by any part of the game. However, they reside at the beginning of average states of the city. The only missing average here is Traffic Level average, which currently assigned to other RAM address $656.
+UNFINISHED#20. Unless the SNES version, Casino present in this game does not add a special income to the cash flow.
+UNFINISHED#21. The unused tiles with indexes $ED-$FC represents the drawbridge tiles in opened state. The same drawbridges inmplemented in the SNES version, they may be opened or closed depending on time. There is no code for this in the NES version at all.
+
+	ORIGINAL GAME BUGS
+
+BUGS#1.FIXED(BFS) Var at $6CC RAM address is a temporary variable used in many places of the program to store intermediate calc data. However, most of the time it has a value of POWER STATIONS counter, which is calculated every game iteration. This var used exactly as a POWER STATIONS count for the warning scrolled messages tests. Although it used for calculations at the end of the fiscal year and has a semi-random value immediately after the year budget screen is closed, this has no really significant effect to the game and message triggering except the case this semi random value gets ZERO, which is rarely possible.
+BUGS#2. Use the turbo button A on some input screens to glitch the screen because of ppu queue buffer overflow due to lack of proper sync. CANNOT BE PATCHED
+	BUGS#2.1.FIXED(BFS) Name input screen.
+	BUGS#2.2.TODO Budget money adjust screen.
+BUGS#3.FIXED(GG GESLGPTZ) There is an unused disabled code in Practice mode events handler which checks if you go well or bad during this game mode. This branch should check your town population after year 1905 (should be 30000), then send a message if you did it well or you need more practice. For some reason they decided to disable it or just make bug in a selection logic.
+BUGS#4.FIXED(BFS) Some events haven't appear automatically when you get it (see table below) due to some sort of hardly visible bug with indexes comparisons. In case you get this bug, you need to open Hints window manually in order to obtain a Special item. Most of events works just fine, there only 2 of them which are affected. With this bug you may loose your current present if any other message appear before you go to the Hint screen.
+BUGS#5.FIXED(BFS) The extra scenarios selecting screen code trying to draw "CLEAR" icons on unlocked scenarios, but there aren't proper icon position data for that, so if you manage to beat at least one of them, the scenarios select screen will glitch, if you beat both, game will hang. This is not really important at all, because you just can't beat any of extra scenarios. Also there is an copy-paste error mistakenly put a wrong variable as a counter, this isn't break anything but does an extra redundant cycles.
+BUGS#6.FIXED(BFS) The briefing messages has a couple of spelling errors and incorrect spacing comparing to the original Micropolis messages where they were taken from.
+BUGS#7.FIXED(BFS) There is non-critical bug in present items free slot search routine. In case you have no free slots, it will run for 256 redundant extra cycles. This does not break anything though anyway except stolen CPU cycles.
+BUGS#8.FIXED(GG KIEXNPVU+OLOZEPUX) There is a routine at PRGB:$A8D9 which fetch power grid buffer data, then test if the particular tile is powered up or not. The opcode at PRGB:$A90E (AND $A3B6,X) refers to the bitmasks table from PRGA, but in PRGB it refers to the portion of the game's code so masking will get the wrong result most of the time, reporting they are powered while they are not or vice versa. Seems they overlooked this when moving the code around.
+BUGS#9.FIXED(GG EPXXYZNP) Sound is cracking sometimes in two channels. There is a reasonable solution for square channel by now, thanks to Chris Covell.
+BUGS#10.FIXED(GG KEEAGEVE) When airplane crashes, it's damaging one particular tile on the map with enabling "GOTO" alert button. However, due to copy-paste bug, the coordinates of "GOTO" are wrong and not points to the crash site.
+BUGS#11.TODO Pollution area zone calculated as a sum of weights of the tiles for every 4x4 map area. Weights are follow: developer I area +2 for a tile (+8 for 2x2 building), coal power station/sea-air ports/fires +3 for a tile (+36 for 3x3 building), and flooded ground +15 for a tile, the rest gives 0. The flooded ground has index B5, the nuclear waste pollution have index B6, so the seems mistakenly swapped them. The Micropolis source uses exactly nuclear waste for this calcu as max pollution source.
+BUGS#12. Tere is a var $67D, which never written by any code, but read sometimes and used in calcs.
+	BUGS#12.1.FIXED(BFS) It is used as "Fires" parameter of City problems list calculations (param = {_fires_count * 5}). The NES version does not count the Fire tiles at all unless the Micropolis original version.
+	BUGS#12.2.FIXED(GG KENXEOIY) Also it summed with police stations counter in a city assessed value calculations. Based on Micropolis source code, police stations counter  summed with fire stations counter.
+BUGS#13.FIXED(BFS) The game var init routine clears only the lower nibble of _city_assessed_value not touching the high ones and then immediately clears the _annual_score_change var which is a temporary var resided near the _city_assessed_value ram address. There is unknown if they wether missed two more bytes to be cleared or clear a wrong vars instead.
+BUGS#14.FIXED(BFS) City assessed value recalc routine have a major calc mistake: 6 out of 9 parameters has wrong weight multipliers, basicly they swapped hi and low nibbles of the 16-bit constants. So instead of weight for hospitals $0190 (decimal 400) we have $9001 (decimal 36865) and so on.
+BUGS#15.FIXED(GG PAXUVIAT) Monster disaster appearance logic choses randomly the appearance point inside the map, calculates the destination point based on what side of the map is farthest then select a random position on that side. The selection routine stores both X and Y destination coordinates in the same variable. The most noticeable result of this bug is that the first appearance with higher probability the monster will go up on the map.
+BUGS#16.FIXED(BFS) Graphs screen data ranges button selector (10/100 years) default state is 10 and should be displayed as pushed button. However, it not pressed at all by default. Only way to display it properly is to push 100 years button then push 10 again.
+BUGS#17.TODO There are severgal scenario maps with some defects, usually they have one or two power lines not connected properly properly, so some buildings are not powered at start.
+BUGS#18.TODO Sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner.
+BUGS#19.FIXED(BFS) Game cursor not disabled when the game event message appears after you enter the Info screens at least once. If triggered, you'll see a garbled cursor near the menu button every time the event message change the page or accept input.
+BUGS#20.FIXED(BFS) Difficult settings does not work for New City mode. Although it can be selected, it will reset again at the beginning of a new game, so in any cases you'll play on EASY by default.
+BUGS#21.FIXED(BFS) When you buid a present, a corresponding item removed from the list and then list is recompressed to remove the holes. However, the current present menu slot index does not changes. If you selected very first present to build, there is no problem. But when you select the last one and does not select another slot manually, you'll build a garbled construction which you couldn't remove or bulldoze.
+BUGS#22.TODO Some electric tiles at the shores does not displayed as connected on the Power Grid map screen.
+BUGS#23. Graphs calculations slightly broken and mangled, mostly due to copy-pasting.
+	BUGS#23.1.FIXED(BFS) For R it should multiply level value by 2, but instead multiplied integer part of value with itself. The R levels usually are in range 1 to 2, so most of the time we have roughly rounded integer value as a result in case of this bug.
+	BUGS#23.2.FIXED(BFS) For "Pollution" button they uses crime level value instead.
+	BUGS#23.3.FIXED(BFS) For "Cash Flow" button they uses highest nibble of money which means only money above 65535 will be documented and used. Also they do the same highest bit masking as for special flags in crime and pollution levels values, which never used for money, so this is definitely a copy-paste too. The Micropolis code uses Tax Income value here instead.
+	BUGS#23.4.FIXED(BFS) For "Crime" button they uses Tax Income mentioned above. It may be positive or negative. They attempted to shift the graph up to be able to display signed values (middle is zero, up - positive, down - negative), but never attempted to determine if there is a positive or negative value they calculating.
+BUGS#24.FIXED(BFS) City problems list calculation routines has also at least one more major mistake that gets semi-random results on the overall calc in addition to BUGS#12.1. One of the problems (unemployment) uses RCI proportion as a test value: param={L_R/(L_C+L_I)*8} also clamped to FRAC portion (0.999). However, calc routine stores divider in wrong temporary variable. Shoul be $EA-$EB, but gets to $E7-$E8 instead. (INES PATCH: $14C43: EA, $14C4B: EA, $14C4E: EA, $14C51: EA, $14C54: EB, $14C56: EA)
+	BUGS#24.1.FIXED(BFS) Clamping RCI proportion to 0.999 also wrong. Using this equation we must calc how much times residental zones development level higher than C+I levels combined, means how much unemployed people there are. When unemployment is high, INT portion of result should be non-zero. But this value equals 1 when both levers are equal, means the best case. But code there still truncates it to 0.999 and treat as a bad case. Micropolis source subtract 1.00 from result of proportion and then truncate to 0.999 to have correct values.
+	BUGS#24.2.FIXED(BFS) The problem sorting routine looks kinda wrong as well. It skips problem with the same amount of percents and takes only the last one of them, also for many cases it takes not the greatest ones. As a result, we see not the actual worst problems list, but semi-random list of high values with lowest ones.
+BUGS#25. City score calculations are broken too. The main problem here is because BUG#26 actually, but may be adjusted for this particular calculations and so the values may be much more reliable.
+	BUGS#25.1.FIXED(BFS) The problems list summing at the start of the calc routine does calculation on 8-bit values! But the values are 16-bit. So we skip half of problems list as well as INTEGER parts of high problem values are added as a FRAC parts so result is much lower than should be! However, in conjunction with BUGS#25.2 this does make results looks better! The first bug is balancing the second one occasionally.
+	BUGS#25.2.FIXED(BFS) The base value of the score is inverted sum of problems multiplied by 4 and truncated to 1000. The max value of sum of problems is FF so this should give a minimum base scores, and so on. The less sum value (except case with 0, rarely possible) more base scores. But, after multiply this value by 4 the code does not save lower nibble of the result. Instead it takes the previously used sum value which is still not inverted. So when you have high nibble of result (~700) and a lower nibble of small sum the result will be less than proper one and vice versa. When you have a lot of problems, you will have additional points higher than they may be.
+	BUGS#25.3.FIXED(BFS) The transport funding value maximum is 33, but must be 32 instead. There is a comparison during the city scores calculation which need this value be 32 exactly and do wrong calc if it is 33. So you will get worse scores even if you have 100% funding.
+	BUGS#25.4.FIXED(BFS) RCI growth levels (RCI meters to the borrom-left) never lowers the score. They must do that when negative. But tests are incorrect and never passed.
+	BUGS#25.5.FIXED(BFS) Result of score adjustment with net migration proportion stored in wrong value, so the actual result is never used, instead used one of the multiplication arguments (exactly the proportion value).
+BUGS#26.FIXE(BFS) Overal calculations of average values mostly broken. However, somehow they compensated by BUGS#24, BUGS#25, or were rebalanced manually in attempt to fix incorrect results of previous calculations. The main problem here the original source has a wide range averages for base values. Pollution average, Crime level average are sums of all area levels divided by number of such areas. The average mathematically can't be greather than max value of the single area. In the NES code, values for all areas are in range from $00 to $0F. So average shouldn't be higher than $0F. However, due to some data formats mangling and misunderstanding, the averages calculated as a result of division of two fixed points values. And even if we may assume that area values in range $00 to $0F are a small fixed point values, we mustn't treat the divider the same. Divider is an integer value. If you treat it as fixed point, where low nibble is FRAC, and high nibble is INT, then you will get anything but average value. For example. Sum of crime area levels is $0653, total areas collected is $00F1. Then if divide as fixed point we divide 6.324 to 0.941 ($00F1=0.241/256). But since we divide to value <1, the result will be HIGHER than overall sum. And then this value is used for all other calculations! So we literally using not the average levels, but weighted sums. Other side effect here is when we have more than 256 areas to calc overage the higher nibble of 16-bit counter won't be zero, so we will have a little scaling down of average velues, but still not so much high how it should be. Even if we will calc the max number of areas (38*38=1444) the counter won't be greater than $05A4 or only 5 times smalled if treated as a fixed point number. The only way to beat this problem during the game is to keep all overages at closer to zero as possible. Which is mostly impossible for pollution for example, and even for crime rates low on map the overage will be high enough to cause a problems.
+BUGS#27.FIXED(BFS) Save/Load option in the game has a special game mode index 0. At the same time you may save and load any mode of the game. When restored, the game mode turns zero and then special scenario or practice events won't appear anymore. So literally you just couldn't continue the game properly unless you've played the new city mode.
+BUGS#28.FIXED(BFS) The Fires control routine tries to fire up all surrounding tiles near it, however, due to incorrect using of the subroutine which corrupts X register, most of the time fires skip the rest of the nearest tiles as soon as at least one near tile appears to be inside any building.
 
 	APPEND. A - EVENTS/PRESENTS
 
@@ -260,19 +193,19 @@ MISC#8. Map generation routines for New City mode taken from Micropolis sources 
 08	COMMERCE REQUIRES AN AIRPORT				C_L>=150fp, AIRPORT=0		yes			-
 09	CITIZENS DEMAND A FIRE DEPARTMENT			ALL_L>=60fp, SPOLICE=0		no			ALL_L=(R_L+C_L+I_L)
 0A	CITIZENS DEMAND A POLICE DEPARTMENT			ALL_L>=60fp, SFIRE=0		no			ALL_L=(R_L+C_L+I_L)
-0B	BLACKOUTS REPORTED  CHECK POWER MAP			-unused-					-			see UNFINISHED#4.1.1
+0B	BLACKOUTS REPORTED  CHECK POWER MAP			-unused-					-			see UNFINISHED#4.1
 0C	CITIZENS UPSET  THE TAX RATE IS TOO HIGH	TAX_RATE>=0C				no			-
 0D	ROADS DETERIORATING  DUE TO LACK OF FUNDS	RFUND_RATE<18, ROADS>=30	no			-
 0E	FIRE DEPARTMENTS NEED FUNDING				FFUND_RATE<0B, ALL_L>=20fp	no			ALL_L=(R_L+C_L+I_L)
 0F	POLICE DEPARTMENTS NEED FUNDING				PFUND_RATE<0B, ALL_L>=20fp	no			ALL_L=(R_L+C_L+I_L)
 10	A PLANE HAS CRASHED							-unused-					-			used as EVENT MESSAGE #22
-11	SHIPWRECK REPORTED							-unused-					-			see UNFINISHED#4.1.3
-12	A TRAIN CRASHED								-unused-					-			see UNFINISHED#4.1.3
-13	A HELICOPTER CRASHED						-unused-					-			see UNFINISHED#4.1.3
-14	UNEMPLOYMENT RATE IS HIGH					-unused-					-			see UNFINISHED#4.1.4
-15	YOUR CITY HAS GONE BROKE					-unused-					-			see UNFINISHED#4.1.5
-16	EXPLOSION DETECTED							-unused-					-			see UNFINISHED#4.1.6
-17	BROWNOUTS  BUILD ANOTHER POWER PLANT		-unused-					-			see UNFINISHED#4.1.7
+11	SHIPWRECK REPORTED							-unused-					-			see UNFINISHED#4.3
+12	A TRAIN CRASHED								-unused-					-			see UNFINISHED#4.3
+13	A HELICOPTER CRASHED						-unused-					-			see UNFINISHED#4.3
+14	UNEMPLOYMENT RATE IS HIGH					-unused-					-			see UNFINISHED#4.4
+15	YOUR CITY HAS GONE BROKE					-unused-					-			see UNFINISHED#4.5
+16	EXPLOSION DETECTED							-unused-					-			see UNFINISHED#4.6
+17	BROWNOUTS  BUILD ANOTHER POWER PLANT		-unused-					-			see UNFINISHED#4.7
 18	HEAVY TRAFFIC REPORTED						TRAFFIC>=10 under HELI pos	yes			see MISC#1
 
 	APPEND C. MAP TILE INDEXES
@@ -299,7 +232,7 @@ MISC#8. Map generation routines for New City mode taken from Micropolis sources 
 71		amusement park				CE		11001110
 72		zoo							CE		11001110
 73		casino						CE		11001110
-74		reclaimed water ground		CE		11001110	*replaced with 90
+74		reclaimed water ground		CE		11001110	*turns to 90 when used
 75		new police station			CE		11001110
 76		new fire station			CE		11001110
 77		10th monument				CE		11001110
@@ -334,19 +267,52 @@ E4-E5	water+electric				85		10000101
 E6		fire ground					00		00000000
 E7-EA	disaster ground anim		00		00000000
 EB-EC	sailable water+road			05		00000101
-ED-FC	diagonal road/water			05		00000101	*unused
+ED-FC	open bridge road			05		00000101	*unused
 FD		-							-		-
 FE		sailable water tile			05		00000101
 FF		-							-		-
 
-		FLAG BITS	76543210
+	APPEND D. FLAG BITS DESCRIPTION
 
-		7bit (80) - conduct power tile
-		6bit (40) - corrupteable/burnable tile
-		5bit (20) - road tile
-		4bit (10) -	rail tile
-		3bit (08) -	consume power tile
-		2bit (04) - non-destructable tiles
-		1bit (02) -
-		0bit (01) -
+	7bit (80) - conduct power tile
+	6bit (40) - cile can be burned/destroyed
+	5bit (20) - road tile
+	4bit (10) -	rail tile
+	3bit (08) -	consume power tile
+	2bit (04) - non-destructable tiles
+	1bit (02) - tile can be flooded
+	0bit (01) -
 
+	BFS CHANGES LIST
+
+- Removal of the garbage data and commented out all unreferenced data and code for further possible usage, if any.
+- Cleanup some portions of the code, minor optimizations on size.
+- Macrofication of the code for much more readable listing.
+- Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
+- Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
+- While fixing BUG#27 by rearranging the RAM variables which also need to be saved with the City map and data, also rearranged the Difficult setting variable which properly fixed BUGS#20 too, also the configuration window positions saved with the city as well.
+- Swapped the correct values for corresponding buttons in Graphs screen, also Tax Income value used instead of Money higher nibbles for "Cash Flow" button.
+- Rescaled and rebalanced some values after fixing some calculation bugs. This may also change the overall game mechanics and difficulty.
+- "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting SLOW.
+So this is restored and fixed the original bug at the same time.
+- Attributes of the pressed buttons on the Name entry screens are now not inverted while pressed. However, they may invert it on purpose but this looks odd actually. The evidence it may be done on purpose that non-sprite push button ("CL") animation uses attr switch the same way as sprites does.
+- The restored UNFINISHED#3 sound effect can be heard when var $00F1 write value $80. Still have no idea where it should be used.
+- The restored UNFINISHED#5 ship object uses the existing movement logic with some corrections to be more like in the SNES version, and a totally new deploy code made by guess.
+- The restored UNFINISHED#9 4-frame animation for Helicopter has a higher blinking frequence. Have no idea wether it was removed on purpose (epilepcy?) or by accident.
+
+	BFS TODO
+
+- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar, merge.
+- Graphs data interpolations for all values.
+- Graphs data scale based on previously unused values.
+- Convert all _mmc5_mul8to8 calls to MULAI calls, should be faster.
+- Finish mini-map re and rename.
+- Finish events animation code re and rename.
+- Fixing BUGS#24, BUGS#25, BUGS#26 revealed the other problem. The trigger values for events and tests now has to be recalibrated too.
+- There are some other special variables left unsaved for BUGS#27 when scenario is triggered. No object or internal counters of current disaster aren't stored. Sometimes with this you may "skip" disaster.
+
+	BFS BUGS
+
+- Ship object goes completely invisible when stuck on the edge of the map on in the ponds.
+- The train object goes invisible on the Water/Rails tiles and never comes back in some cases.
+- During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.

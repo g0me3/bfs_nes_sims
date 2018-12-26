@@ -3,11 +3,11 @@
 
 		BANK_START $FE
 
-		SECTION_START 101
-
 ; ---------------------------------------------------------------------------
 ; ---------E-X-T-R-A--M-U-S-I-C--A-N-D--S-E--C-O-D-E--A-N-D--D-A-T-A---------
 ; ---------------------------------------------------------------------------
+
+		SECTION_START 101
 
 ; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
@@ -398,7 +398,9 @@ _apu_se8000_loop:
 locret_195BD2:
 		RTS
 
-		SECTION_END 101
+		SECTION_ENDS 101, "PRG0 APU SE ROUTINES"
+
+		SECTION_START E00
 
 		.ORG [[. + $3F] & $FFC0]
 
@@ -840,6 +842,10 @@ _DPCM_IDX0	EQU	[[_pcm_sample0 - $C000] >> 6]
 _DPCM_IDX1	EQU	[[_pcm_sample1 - $C000] >> 6]
 _DPCM_IDX2	EQU	[[_pcm_sample2 - $C000] >> 6]
 
+		SECTION_ENDS E00, "PRGE APU PCM SAMPLES"
+
+		SECTION_START E01
+
 _pal_bg_lib:
 		.BYTE	$0F,$36,$10,$12,$0F,$30,$10,$27,$0F,$36,$00,$16,$0F,$12,$28,$2A
 		.BYTE	$0F,$3C,$21,$12,$0F,$30,$10,$37,$0F,$36,$10,$16,$0F,$26,$39,$2B
@@ -1042,5 +1048,7 @@ _city_map_row_pos_list_hi:
 		.BYTE	>[_city_map+(76*73)]
 		.BYTE	>[_city_map+(76*74)]
 		.BYTE	>[_city_map+(76*75)]
+
+		SECTION_ENDS E01, "COMMON DATA AND TABLES"
 
 		BANK_END FE,$E000

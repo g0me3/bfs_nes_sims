@@ -3,6 +3,12 @@
 
 		BANK_START $FC
 
+; ---------------------------------------------------------------------------
+; ----------------I-N-E-R-F-A-C-E--M-A-I-N--E-N-G-I-N-E----------------------
+; ---------------------------------------------------------------------------
+
+		SECTION_START	C00
+
 ; =============== S U B	R O U T	I N E =======================================
 _game_start:
 		JSR		_game_scr_init
@@ -4413,5 +4419,7 @@ loc_150084:
 ;_apu_se1_load:
 ;		STA		_apu_se_idx_req+1
 ;		RTS
+
+		SECTION_ENDS	C00, "PRGC INTERGACE MAIN ENGINE PART1"
 
 		BANK_END FC,$A000

@@ -412,14 +412,14 @@ loc_B82DF:
 .valid_right_electric_water_joint:
 		PLA										; ...nor for a rail lines on the water
 		PLA
-		LDA		#_MAP_WATER_ELECTRIC_LR
+		LDA		#_MAP_WATER_ELECTRO_LR
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
 .valid_bottom_electric_water_joint:
 		PLA
 .valid_upper_electric_water_joint:
-		LDA		#_MAP_WATER_ELECTRIC_UD
+		LDA		#_MAP_WATER_ELECTRO_UD
 .build_store:
 		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
@@ -508,7 +508,7 @@ _test_for_valid_hor_electric_water_joint:
 		BEQ		.valid_electric_water_joint
 		CMP		#_MAP_ELECTRO_RAIL_LR
 		BEQ		.valid_electric_water_joint
-		CMP		#_MAP_WATER_ELECTRIC_LR			; NOTE, no "bridge electric" wires as well
+		CMP		#_MAP_WATER_ELECTRO_LR			; NOTE, no "bridge electric" wires as well
 		BEQ		.valid_electric_water_joint
 .invalid_electric_water_joint:
 		CLC
@@ -529,7 +529,7 @@ _test_for_valid_vert_electric_water_joint:
 		BEQ		.valid_electric_water_joint
 		CMP		#_MAP_ELECTRO_RAIL_UD
 		BEQ		.valid_electric_water_joint
-		CMP		#_MAP_WATER_ELECTRIC_UD
+		CMP		#_MAP_WATER_ELECTRO_UD
 		BEQ		.valid_electric_water_joint
 		CLC
 		RTS

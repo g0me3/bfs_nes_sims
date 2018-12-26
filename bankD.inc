@@ -3,6 +3,12 @@
 
 		BANK_START $FD
 
+; ---------------------------------------------------------------------------
+; ----------------I-N-E-R-F-A-C-E--M-A-I-N--E-N-G-I-N-E----------------------
+; ---------------------------------------------------------------------------
+
+		SECTION_START	D00
+
 ; =============== S U B	R O U T	I N E =======================================
 sub_150124:
 		LDA		byte_71
@@ -1072,7 +1078,7 @@ _test_conjunction_electro_tiles:
 ;		BEQ		loc_1507C5
 ;		CMP		#_MAP_ELECTRO_RAIL_UD
 ;		BEQ		loc_1507C5
-;		CMP		#_MAP_WATER_ELECTRIC_UD
+;		CMP		#_MAP_WATER_ELECTRO_UD
 ;		BEQ		loc_1507C5
 ;		CLC
 ;		BCC		loc_1507C6
@@ -1088,7 +1094,7 @@ loc_1507C6:
 ;		BEQ		loc_1507DF
 ;		CMP		#_MAP_ELECTRO_RAIL_UD
 ;		BEQ		loc_1507DF
-;		CMP		#_MAP_WATER_ELECTRIC_UD
+;		CMP		#_MAP_WATER_ELECTRO_UD
 ;		BEQ		loc_1507DF
 ;		CLC
 ;		BCC		loc_1507E0
@@ -1104,7 +1110,7 @@ loc_1507E0:
 ;		BEQ		loc_1507F9
 ;		CMP		#_MAP_ELECTRO_RAIL_LR
 ;		BEQ		loc_1507F9
-;		CMP		#_MAP_WATER_ELECTRIC_LR
+;		CMP		#_MAP_WATER_ELECTRO_LR
 ;		BEQ		loc_1507F9
 ;		CLC
 ;		BCC		loc_1507FA
@@ -1120,7 +1126,7 @@ loc_1507FA:
 ;		BEQ		loc_150813
 ;		CMP		#_MAP_ELECTRO_RAIL_LR
 ;		BEQ		loc_150813
-;		CMP		#_MAP_WATER_ELECTRIC_LR
+;		CMP		#_MAP_WATER_ELECTRO_LR
 ;		BEQ		loc_150813
 ;		CLC
 ;		BCC		loc_150814
@@ -1136,7 +1142,7 @@ _is_tile_a_electro_cross_ud:
 		BEQ		loc_1507C5
 		CMP		#_MAP_ELECTRO_RAIL_UD
 		BEQ		loc_1507C5
-		CMP		#_MAP_WATER_ELECTRIC_UD
+		CMP		#_MAP_WATER_ELECTRO_UD
 		BEQ		loc_1507C5
 		CLC
 		RTS
@@ -1150,7 +1156,7 @@ _is_tile_a_electro_cross_lr:
 		BEQ		loc_1507C5
 		CMP		#_MAP_ELECTRO_RAIL_LR
 		BEQ		loc_1507C5
-		CMP		#_MAP_WATER_ELECTRIC_LR
+		CMP		#_MAP_WATER_ELECTRO_LR
 		BEQ		loc_1507C5
 		CLC
 		RTS
@@ -4670,5 +4676,7 @@ loc_59B66:
 loc_59B93:
 		PPUQEND
 		RTS
+
+		SECTION_ENDS	D00, "PRGC INTERGACE MAIN ENGINE PART2"
 
 		BANK_END FD,$C000

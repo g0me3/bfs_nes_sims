@@ -609,7 +609,7 @@ OP_ADD	EQU	3
 	MAC BANK_START
 CUR_PRG_BANK	SET {1}
 CUR_BANK_START	SET .
-;		ECHO	"bank",{1},"start [ org=",[CUR_BANK_START>>12]
+		ECHO	"BANK",CUR_PRG_BANK," ORG ",[CUR_BANK_START>>12],"{"
 	ENDM
 
 	MAC	BANK_END
@@ -620,9 +620,11 @@ _total_free	SET	_bank{1}_free
 _total_free	SET _total_free+_bank{1}_free
 	#endif
 	#if .>{2}
-		ECHO	"BANK",CUR_PRG_BANK,"[ org =",[CUR_BANK_START>>12]," s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
+;		ECHO	"BANK",CUR_PRG_BANK,"[ org =",[CUR_BANK_START>>12]," s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
+		ECHO	"} s =",[.-CUR_BANK_START],"EXCEEDED =",[0-_bank{1}_free]
 	#else
-		ECHO	"BANK",CUR_PRG_BANK,"[ org =",[CUR_BANK_START>>12]," s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
+;		ECHO	"BANK",CUR_PRG_BANK,"[ org =",[CUR_BANK_START>>12]," s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
+		ECHO	"} s =",[.-CUR_BANK_START],"FREE =",_bank{1}_free
 	#endif
 	#if .<{2}-1
 		ORG		{2}-1
@@ -636,21 +638,23 @@ _{1}_start	SET	.
 
 	MAC SECTION_END
 _{1}_end	SET .
-		ECHO	" > section s =",_{1}_end-_{1}_start,"[",${1},"]"
+		ECHO	" * block =",_{1}_end-_{1}_start,"[",${1},"]"
 	ENDM
 
 	MAC SECTION_ENDS
 _{1}_end	SET .
-		ECHO	" > section s =",_{1}_end-_{1}_start,"[",{2},"]"
+		ECHO	" * block =",_{1}_end-_{1}_start,"[",{2},"]"
 	ENDM
 
 	MAC	LAST_BANK_END
 _bank{1}_free	SET	[{2}-.-6]
 _total_free	SET _total_free+_bank{1}_free
 	#if .>[{2}-6]
-		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
+;		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
+		ECHO	"} s =",[.-CUR_BANK_START],"EXCEEDED =",[0-_bank{1}_free]
 	#else
-		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
+;		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
+		ECHO	"} s =",[.-CUR_BANK_START],"FREE =",_bank{1}_free
 	#endif
 		ECHO	"-------------";
 		ECHO	"total free =",_total_free
@@ -1219,8 +1223,8 @@ _MAP_WATER_ROAD_LR		EQU		$E0
 _MAP_WATER_ROAD_UD		EQU		$E1
 _MAP_WATER_RAIL_LR		EQU		$E2
 _MAP_WATER_RAIL_UD		EQU		$E3
-_MAP_WATER_ELECTRIC_LR	EQU		$E4
-_MAP_WATER_ELECTRIC_UD	EQU		$E5
+_MAP_WATER_ELECTRO_LR	EQU		$E4
+_MAP_WATER_ELECTRO_UD	EQU		$E5
 _MAP_FIRE				EQU		$E6
 _MAP_CORRUPT0			EQU		$E7
 _MAP_CORRUPT1			EQU		$E8

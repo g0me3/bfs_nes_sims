@@ -1548,9 +1548,9 @@ locret_104C67:
 _get_fires:
 		LDA		_fires_count					; FIX now has correct properly
 		ASL										; utilized variables here
-		ASL
-		CLC
-		ADC		_fires_count
+		ASL										; TODO: this value actually is 16-bit
+		CLC										; so we probably need either clamp
+		ADC		_fires_count					; or 16-bit multiply here.
 		BCC		locret_104C75
 		LDA		#$FF
 locret_104C75:

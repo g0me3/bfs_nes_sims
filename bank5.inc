@@ -891,7 +891,7 @@ loc_884FC:
 		BCC		.continue_move					; move further
 		CMP		#_MAP_WATER_RAIL_LR				; test for two special tiles, rails on water
 		BCC		.stop_move						; it seems they planned some special
-		CMP		#_MAP_WATER_ELECTRIC_LR			; behavior for this, but currently no matter what
+		CMP		#_MAP_WATER_ELECTRO_LR			; behavior for this, but currently no matter what
 		BCS		.stop_move						; value in _train_hide_mode, it always just hiding
 		LDA		#$03							; the train if non-zero, so here train will be
 		BNE		.continue_move_set				; hidden the same way as in train station while ride
