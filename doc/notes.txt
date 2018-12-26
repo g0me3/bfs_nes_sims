@@ -24,8 +24,9 @@ MISC#11. There are some special secret button codes in the NES version.
 		MISC#11.3.2 Be able to place any number of buildings at any position without collision check (causes a lot of glitches if heavily obused).
 	MISC#11.4 You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, disasterS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
 MISC#12. Destruction/corruption logic for map objects avoid corruptions of the raw bulldozered grounds. Only flood as a special case can corrupt it. Why at least nuclear pollution can't do the same?
-MISC#13. Note, that Monster appearance logic (see BUGS#15) doesn't use high pollution zones as a destination point, as stated in the Scenario message and as actually work in the original Micropolis code. For random disaster the starting and destination point is random. For scenario disaster selected to start near the center and walk toward the sea. The area it crosses there corresponds to the industrial zone with high pollution. So literally he DOES attracted to high pollution areas.
+MISC#13.TODO Note, that Monster appearance logic (see BUGS#15) doesn't use high pollution zones as a destination point, as stated in the Scenario message and as actually work in the original Micropolis code. For random disaster the starting and destination point is random. For scenario disaster selected to start near the center and walk toward the sea. The area it crosses there corresponds to the industrial zone with high pollution. So literally he DOES attracted to high pollution areas.
 MISC#14. As I see in the Micropolis sources, the Drive test for traffic calculation tries to drive from R to C and I, from I back to R, but for some reason from C either to R, C and I. The same behaviour ported to the NES version. So most of the C areas does not generate any traffic unless they are in a particular position near the other areas and as a side effect this not preventing of developement of C areas.
+MISC#15. Surprisingly, the trees of the park tiles are animated just like the fire. However, all 4 animation tiles are the same so you couldn't see a difference.
 
 	WHAT'S UNFINISHED IN THE GAME
 
@@ -46,7 +47,7 @@ UNFINISHED#3.ADDED One of the SE effects unreferenced and there is not known whe
 UNFINISHED#4. There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine. The used ones are: from $0 to $F (except $B "Blackouts") and $18 (starting from a custom handler). The rest aren't used and were just derived from the original Micropolis sources. Most of original messages not presented in this messages are converted to ingame Alert Window Messages, except one (see below).
 		UNFINISHED#4.1.TODO 0B "BLACKOUTS REPORTED  CHECK POWER MAP", when _powered_areas/_stats._total < 0.7. In current NES code there is an unused variable which counts exactly a number of powered areas, but the scroll message handler for it is missing.
 		UNFINISHED#4.2 10 "A PLANE HAS CRASHED", converted to Alert Window Message.
-		UNFINISHED#4.3 11 "SHIPWRECK REPORTED", 12 "A TRAIN CRASHED", 13 "A HELICOPTER CRASHED", the rest of crashes from original source not implemented here. There were a lot of various cases to damage vehicles, like by tornado, monster, collisions, random crashed when disasters are enabled, etc...
+		UNFINISHED#4.3.TODO 11 "SHIPWRECK REPORTED", 12 "A TRAIN CRASHED", 13 "A HELICOPTER CRASHED", the rest of crashes from original source not implemented here. There were a lot of various cases to damage vehicles, like by tornado, monster, collisions, random crashed when disasters are enabled, etc in the original Micropolis code.
 		UNFINISHED#4.4.TODO 14 "UNEMPLOYMENT RATE IS HIGH", not used even in the Micropolis sources.
 		UNFINISHED#4.5.TODO 15 "YOUR CITY HAS GONE BROKE", used in Micropolis when in Autobudget mode Current money plus Taxes collected aren't enough to fully fund all structures. In the NES code there is a branch for this case which locks the game.
 		UNFINISHED#4.6 16 "EXPLOSION DETECTED", explosion were used for either the disasters when damaging the Building, combined with vehicles crashes usually.
@@ -63,13 +64,18 @@ UNFINISHED#7.TODO Every year, the current state of city parameters are stored in
 UNFINISHED#8.TODO Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
 UNFINISHED#9.ADDED(GG LEVAUPPA) Helicopter sprite contains a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason.
 UNFINISHED#10. There are a lot of unused CHR data for BG objects, presumably intended to be changed according to current date or scenario type.
-	UNFINISHED#10.1.TODO BANK1E, TILES 0C 4x4 (Airport Terminal 2), an airport terminal does not change in the SNES version
-	UNFINISHED#10.2.TODO BANK1F, TILES 0C 4x4 (Airport Terminal 3)
-	UNFINISHED#10.3 BANK48, TILES 14 2x2 (Extra Park 2)
-	UNFINISHED#10.4.TODO BANK48, TILES 1D 2x2 (White House 2), the White House is different for every City type in SNES version.
-	UNFINISHED#10.5.TODO BANK49, TILES 00 2x2 (White House 3)
-	UNFINISHED#10.6.TODO BANK49, TILES 03 2x2 (White House 4)
-	UNFINISHED#10.7.TODO BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Race Track and two Baseball staduims building along with animations)
+	- BANK10, TILES 20 2x2 (Unused info maps button)
+	- BANK1D, TILES 29, 2A, 2B, 1C 3x3, BANK1F 29, 2A, 2B (a set of tiles for open bridges)
+	- BANK1E, TILES 0C 4x4 (Airport Terminal 2), an airport terminal does not change in the SNES version
+	- BANK23, ALL TILES, (unused set of road traffic tiles also set offrame of traffic for sea bridges)
+	- BANK27, TILES 00 2x2 (Unused config icon)
+	- BANK2E, TILES 00 2x2 (Part of stadium from BANK56)
+	- BANK1F, TILES 0C 4x4 (Airport Terminal 3)
+	- BANK48, TILES 14 2x2 (Extra Park 2)
+	- BANK48, TILES 1D 2x2 (White House 2), the White House is different for every City type in SNES version.
+	- BANK49, TILES 00 2x2 (White House 3)
+	- BANK49, TILES 03 2x2 (White House 4)
+	- BANK56, ALL TILES, BANK57, TILES 1B,1C,2C,3C,1D 2x2 (complete sets for Race Track and two Baseball staduims building along with animations)
 UNFINISHED#11. Also there are a little bit of ingame-icons:
 	UNFINISHED#11.1 BANK20, TILES 20 8x2 ("CLEAR" tablet)
 	UNFINISHED#11.2 BANK2B, TILES 16 2x2 ("BANK" icon with frame)
@@ -279,12 +285,12 @@ FF		-							-		-
 
 	APPEND D. FLAG BITS DESCRIPTION
 
-	7bit (80) - conduct power tile
+	7bit (80) - conductor tile
 	6bit (40) - flammable tile
 	5bit (20) - road tile
 	4bit (10) -	rail tile
-	3bit (08) -	building large tile
-	2bit (04) - valuable tile
+	3bit (08) -	building tile
+	2bit (04) - terrain tile
 	1bit (02) - floodable tile
 	0bit (01) - water tile
 

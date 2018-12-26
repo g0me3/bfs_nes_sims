@@ -992,7 +992,7 @@ _cur_area_develop_state:
 _popul_last_year:
 		.BYTE	0,0,0
 
-		_tpos	_max_popul_dencity_pos
+		_tpos	_city_center_pos
 
 ;_tmp_map_pos_backup_buf_Y:
 ;		.BYTE	0,0,0

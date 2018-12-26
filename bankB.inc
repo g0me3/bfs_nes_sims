@@ -89,10 +89,10 @@ _rci_meters_calc_skip:
 		BNE		.default_month_work
 		FJSR	_graphs_100_year_data_update,SRAM,PRGA	; currently just copy last 10year stats
 .default_month_work:
-		JSR		_growth_recalc					; we have pop growth recalc here for the first time
+		JSR		_smooth_growth_map				; we have pop growth recalc here for the first time
 		JSR		_map_corruption_tiles_animate	; and animate again. if not animate it will stay forever
 .default_city_calcs:
-		JSR		_traffic_smooth					; soften traffic dencity map, TODO: test me, maybe too soft?
+		JSR		_smooth_traffic_map				; soften traffic dencity map
 		JSR		_map_corruption_tiles_animate	; ANIMATE AGAIN!!!
 		FJSR	_events_selector,SRAM,PRGA		; now chek if the events messages need to be displayed
 .game_stop_loop:
@@ -423,8 +423,8 @@ loc_11E33A:
 		BEQ		loc_11E344
 		JMP		_rails_collect					; rails collect
 loc_11E344:
-		LDA		_map_tiles_flags_tbl,Y			; all valuable but not the buildings
-		AND		#_FL_VALUABLE					; like parks, sea shores and bridges
+		LDA		_map_tiles_flags_tbl,Y			; all terrain but not the buildings
+		AND		#_FL_TERRAIN					; like parks, sea shores and bridges
 ;		BEQ		loc_11E34E						; REDUNDANT
 ;		JMP		.protected_collect
 ;loc_11E34E:
@@ -1870,7 +1870,7 @@ loc_11EA55:
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_RAIL
 		BNE		loc_11EA76						; if rails, no traffic applied
-		JSR		_read_traffic_map		; if roads, update traffic map
+		JSR		_read_traffic_map				; if roads, update traffic map
 		CLC
 		ADC		#$02
 		JSR		_write_traffic_map
@@ -1933,32 +1933,32 @@ _small_building_surrond_tiles_row_list:
 		.BYTE	$00,$01,$FF,$02,$FF,$02,$00,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-_traffic_smooth:
-		LDA		#$00
-loc_11F2AD:
-		STA		_tmp_map_pos._ROW
-		LDA		#$00
+_smooth_traffic_map:
+		LDA		#$00							; as soon as traffic collected with
+loc_11F2AD:										; addition to the existing map data
+		STA		_tmp_map_pos._ROW				; we need to calm down traffic every
+		LDA		#$00							; iteration
 loc_11F2B2:
 		STA		_tmp_map_pos._COL
 		JSR		_read_traffic_map
 		CMP		#$03
-		BCS		loc_11F2C0
+		BCS		loc_11F2C0						; if less than 3, clear
 		LDA		#$00
 		BEQ		loc_11F2CD
 loc_11F2C0:
 		CMP		#$0A
-		BCS		loc_11F2CA
+		BCS		loc_11F2CA						; if less than 10, decrease by 3
 		SEC
 		SBC		#$03
 		JMP		loc_11F2CD
 loc_11F2CA:
-		SEC
+		SEC										; more or equal 10, decrease by 4
 		SBC		#$04
 loc_11F2CD:
-		JSR		_write_traffic_map
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
+		JSR		_write_traffic_map				; write back
+		LDA		_tmp_map_pos._COL				; after this, the average traffic
+		CLC										; wouldn't be much than B, where A
+		ADC		#$02							; treated as critical
 		CMP		#$4C
 		BCC		loc_11F2B2
 		LDA		_tmp_map_pos._ROW
@@ -2016,7 +2016,7 @@ loc_11F93E:
 _traf_lvl_avr_recalc:
 		LDY		#$00
 		STY		_tmp6CC							; sum of traffic dencity values for
-		STY		_tmp6CC+1						; valuable only map areas
+		STY		_tmp6CC+1						; terrain only map areas
 		STY		_tmpEA							; counter of traffic areas summed
 		INY										; default is 1.0 for simplify following calculations
 		STY		_tmpEB
@@ -2054,10 +2054,10 @@ loc_11FFBB:
 		STA		_tmpE6
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6CC					; divide integer value to fp8_8, result is integer
-		JSR		_div_32to16						; traffic_value = [traffic_sum/(1.0+(tiles_count/256))]
+		JSR		_div_32to16						; traffic_avr = [traffic_sum/(1.0+(tiles_count/256))]
 		PUSHWI	$0266							; coeff = 2.4
 		PUSHW	_tmpE6							; multiply integer result to fp8_8, result integer
-		JSR		_mmc5_mul16to16					; result traffic_level = [traffic_value * 2.4]
+		JSR		_mmc5_mul16to16					; result traffic_level = [traffic_avr * 2.4]
 		PLA										; or may be treated as fp8_8 with lower nibble of integer
 		POPW	_city._traf_lvl_avr				; value as FRAC part and higher nibble as INT part
 		PLA
@@ -2065,7 +2065,7 @@ loc_11FFBB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _land_value_and_pollution_recalc:
-		JSR		_clear_tmp_map_19_19				; prepare tmp map buffer
+		JSR		_clear_tmp_map_19_19			; prepare tmp map buffer
 		LDA		#$00							; 19x19 4-bit nibbles
 		STA		_tmp6CC
 		STA		_tmp6CC+1
@@ -2076,30 +2076,30 @@ _land_value_and_pollution_recalc:
 		LDA		#$00
 		STA		_tmp_area_pos._COL				; start new row scan
 .pollution_scan_col:
-		JSR		_get_area_pollution				; calculate pollution for selected
-		LDA		_tmpE6							; 4x4 area
+		JSR		_get_area_pollution				; calculate pollution for selected 4x4 area
+		LDA		_tmpE6							; the same time set flag if any terrain tiles there
 		BEQ		.pollution_scan_next
 		JSR		_get_area_map_pos				; convert area pos to map pos
 		LDA		_tmpE7
 		JSR		_write_tmp_map_19_19			; store value, 255 always clamped to 15 here
-		JSR		_get_dist_to_max_popul			; calculate distance between current point
-		STA		_tmpE6							; and max population dencity area calculated on previous
+		JSR		_get_dist_to_city_center		; calculate distance between current point
+		STA		_tmpE6							; and city centercalculated on previous
 		LDA		#$0F							; iteration
 		SEC
-		SBC		_tmpE6							; scale E8 = (15-E6)*16
-		ASL
+		SBC		_tmpE6							; scale delta = (15-popul_distance)*16
+		ASL										; less distance, more value
 		ASL
 		ASL
 		ASL
 		STA		_tmpE8
-		JSR		_get_nearest_valuable_count		; 6D3 = sum*2
+		JSR		_get_nearest_terrain_count		; terrains = sum*2 (sum of terraint entities)
 		JSR		_get_area_map_pos				; convert to map pos again
 		JSR		_read_pollution_map				; read previous pollution map nibble for selected area
 		ASL
 		ASL
 		ASL
 		ASL
-		STA		_tmpE6							; E6 = pollution*16
+		STA		_tmpE6							; poll = pollution*16
 		LDA		_tmpE8
 		SEC
 		SBC		_tmpE6
@@ -2107,18 +2107,18 @@ _land_value_and_pollution_recalc:
 		LDA		#$00
 loc_11EB28:
 		STA		_tmpE8							; E8 = E8 - E6 = (pollution*16)-((15-popul_dist)*16)
-		JSR		_get_area_map_pos				; some kind of "pollution ratio"
-		JSR		_read_crime_map					; get crime value from previous iteration
+		JSR		_get_area_map_pos				; land value increases around city center of population
+		JSR		_read_crime_map					; high crime level decreases the value by 20
 		CMP		#$0B
-		BCC		loc_11EB3E						; crime level less than 11 out of 15 is ok
+		BCC		loc_11EB3E						; or do nothing
 		LDA		_tmpE8							; higher crime level decreases the value ratio
 		SBC		#$14
-		BCS		loc_11EB3C
+		BCS		loc_11EB3C						; less than zero is zero
 		LDA		#$00
 loc_11EB3C:
 		STA		_tmpE8
 loc_11EB3E:
-		LDA		_tmpE8							; now, sum ratio with prot tiles count
+		LDA		_tmpE8							; now, sum ratio with terraint tiles
 		CLC										; clamp to FF
 		ADC		_tmp6D3
 		BCC		loc_11EB48
@@ -2185,20 +2185,20 @@ loc_11EB9A:
 loc_11EBB7:
 		MOVW	_city._land_val_avr,_tmpE6
 		LDA		#$00
-		STA		_tmp6C4
-		STA		_tmp6D0
+		STA		_tmp6C4							; select the pollution map to write
+		STA		_tmp6D0							; we have raw pollution data in tmp_map
 		STA		_tmp6D1
 		STA		_tmp6D2
 		STA		_tmp6D3
-		JSR		_smooth_tmp_map_to_select_map	; smooth tmp_map, store to pollution data
-		JSR		_merge_tmp_map_with_select_map_19_19; merge two maps together, store to tmp map
+		JSR		_smooth_tmp_map_to_select_map_19_19	; so smooth it, then replace pollution_map with it
+		JSR		_merge_tmp_map_with_select_map_19_19; blend two maps with more smooth and store to tmp_map
 		LDA		#$00
 loc_11EBDA:
 		STA		_tmp_map_pos._ROW				; very unoptimal, we copy tmp map to pollution
 		LDA		#$00							; map back again counting the average at the same time
 loc_11EBDF:
 		STA		_tmp_map_pos._COL
-		JSR		_read_tmp_map_19_19				; read nibble, increment counter of non-zero areas
+		JSR		_read_tmp_map_19_19				; read smoothed pollution value, increment counter of non-zero areas
 		PHA										; summing non-zero values
 		CMP		#$00
 		BEQ		loc_11EBFE
@@ -2210,7 +2210,7 @@ loc_11EBDF:
 		INC		_tmp6D3
 loc_11EBFE:
 		PLA
-		JSR		_write_pollution_map		; write back to the pollution map
+		JSR		_write_pollution_map			; replace previous pollution map
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
@@ -2288,47 +2288,49 @@ loc_11EC71:
 
 ; =============== S U B	R O U T	I N E =======================================
 ; NOTE, here we have clacl on a tile basis, for most of the wild lands
-; and seas this is ok, however we use the same flag for present buildings
+; and seas this is ok, however we use the same flag for presents building
 ; and only the building tile has this flag, no other internal buildings
-; does. seems we may have increased value but we doesnt' because of that.
+; does.
+; so present areas should be counted as terrain for the whole 3x3 block
+; but only the leftmost-ipper tile counts.
 ;
-_get_nearest_valuable_count:
+_get_nearest_terrain_count:
 		LDA		#$00							; for currently selected area 4x4 tiles
-		STA		_tmp6D3							; we will calc sum of valuable tiles
-		JSR		_get_valuable_count				; in all surrountings areas and the
+		STA		_tmp6D3							; we will calc sum of terrain tiles
+		JSR		_get_terrain_count				; in all surrountings areas and the
 		ASL		_tmp6D3							; area itself, excluding areas out
 		ASL		_tmp6D3							; of the map edges
 		DEC		_tmp_area_pos._ROW				;  1
 		BMI		loc_11F761						; 304
-		JSR		_get_valuable_count				;  2
+		JSR		_get_terrain_count				;  2
 loc_11F761:
 		INC		_tmp_area_pos._ROW
 		INC		_tmp_area_pos._ROW
 		LDA		_tmp_area_pos._ROW
 		CMP		#$13
 		BCS		loc_11F771
-		JSR		_get_valuable_count
+		JSR		_get_terrain_count
 loc_11F771:
 		DEC		_tmp_area_pos._ROW
 		DEC		_tmp_area_pos._COL
 		BMI		loc_11F77C
-		JSR		_get_valuable_count
+		JSR		_get_terrain_count
 loc_11F77C:
 		INC		_tmp_area_pos._COL
 		INC		_tmp_area_pos._COL
 		LDA		_tmp_area_pos._COL
 		CMP		#$13
 		BCS		loc_11F78C
-		JSR		_get_valuable_count
+		JSR		_get_terrain_count
 loc_11F78C:
 		DEC		_tmp_area_pos._COL
 		ASL		_tmp6D3							; result = sum*2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_valuable_count:
+_get_terrain_count:
 		LDA		_tmp_area_pos._ROW				; for 4x4 selected area, calc
-		ASL										; map pos and sum all valuable tiles
+		ASL										; map pos and sum all terrain tiles
 		ASL										; if any inside this area
 		STA		_tmp_map_pos._ROW
 loc_11F79B:
@@ -2340,7 +2342,7 @@ loc_11F7A3:
 		JSR		_map_tile_read
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#_FL_VALUABLE
+		AND		#_FL_TERRAIN
 		BEQ		loc_11F7B1
 		INC		_tmp6D3
 loc_11F7B1:
@@ -2364,7 +2366,7 @@ loc_11F7B1:
 ; NOTE, there is no dependency on roads/traffic values, because
 ; we work with raw map indexes, not the traffic indexes
 ;
-; TODO, add roads to overall value
+; TODO, add high traffic roads to overall value
 ;
 _get_pollution_ratio:
 		LDY		#$02
@@ -2401,8 +2403,8 @@ locret_11F10A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_dist_to_max_popul:
-		LDA		_max_popul_dencity_pos._COL		; calculate rough approximation of
+_get_dist_to_city_center:
+		LDA		_city_center_pos._COL			; calculate rough approximation of
 		LSR										; distance to maximum population area
 		LSR
 		SEC
@@ -2412,8 +2414,8 @@ _get_dist_to_max_popul:
 		CLC
 		ADC		#$01
 loc_11F11B:
-		STA		_tmpE6							; E6 = abs(pop_den_col-area_col)+
-		LDA		_max_popul_dencity_pos._ROW		; 	   abc(pop_den_row-area_row)
+		STA		_tmpE6							; E6 = abs(city_center_col-area_col)+
+		LDA		_city_center_pos._ROW			; 	   abc(city_center_row-area_row)
 		LSR
 		LSR
 		SEC
@@ -2432,11 +2434,11 @@ locret_11F136:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; different routine to calc distance to the population dencity max area
+; different routine to calc distance to city center
 ; relative to _tmp_map_pos coordinates. never used
 ;
-;_get_dist_to_max_popul_unused:
-;		LDA		_max_popul_dencity_pos._COL
+;_get_dist_to_city_center_unused:
+;		LDA		_city_center_pos._COL
 ;		SEC
 ;		SBC		_tmp_map_pos._COL
 ;		BCS		loc_11F8D5
@@ -2448,7 +2450,7 @@ locret_11F136:
 ;		LSR
 ;		LSR
 ;		STA		_tmpE6
-;		LDA		_max_popul_dencity_pos._ROW
+;		LDA		_city_center_pos._ROW
 ;		SEC
 ;		SBC		_tmp_map_pos._ROW
 ;		BCS		loc_11F8E8
@@ -2481,8 +2483,8 @@ _get_area_map_pos:
 
 ; =============== S U B	R O U T	I N E =======================================
 _dencity_recalc:
-		JSR		_clear_tmp_map_19_19
-		LDY		#$00
+		JSR		_clear_tmp_map_19_19			; population dencity cimply
+		LDY		#$00							; summing all dev states of all areas
 		STY		_tmp6CC
 		STY		_tmp6CC+1
 		STY		_tmp6CE
@@ -2494,21 +2496,21 @@ loc_11ECAA:
 		LDY		#$00
 loc_11ECAF:
 		STY		_tmp_map_pos._COL
-		JSR		_map_tile_read
+		JSR		_map_tile_read					; read map tile
 		STA		_last_map_tile_read
 		TAY
-		LDA		_map_tiles_flags_tbl,Y
+		LDA		_map_tiles_flags_tbl,Y			; test if this is a building
 		AND		#_FL_BUILDING
 		BEQ		loc_11ECF4
-		JSR		_get_RCI_area_develop_state
+		JSR		_get_develop_state				; then get the develop state
 		STA		_tmpE7
-		JSR		_read_tmp_map_19_19
-		CLC
+		JSR		_read_tmp_map_19_19				; we scan full map and write down the
+		CLC										; sum for every 4x4 zone
 		ADC		_tmpE7
-		JSR		_write_tmp_map_19_19
-		ADDWB	_tmp6CC,_tmp_map_pos._COL
-		ADDWB	_tmp6CE,_tmp_map_pos._ROW
-		INCW	_tmp6D0
+		JSR		_write_tmp_map_19_19			; all this clamped to F, so we maybe lose
+		ADDWB	_tmp6CC,_tmp_map_pos._COL		; a lot of accuracy
+		ADDWB	_tmp6CE,_tmp_map_pos._ROW		; summing the positions of areas with buildings
+		INCW	_tmp6D0							; also its counter
 loc_11ECF4:
 		LDY		_tmp_map_pos._COL
 		INY
@@ -2518,24 +2520,24 @@ loc_11ECF4:
 		INY
 		CPY		#$4C
 		BNE		loc_11ECAA
-		LDY		#$02							; population dencity select
+		LDY		#$01							; population dencity map select
 		STY		_tmp6C4
-		JSR		_smooth_tmp_map_to_select_map
-		JSR		_merge_tmp_map_with_select_map_19_19
-		JSR		_smooth_tmp_map_to_select_map
+		JSR		_smooth_tmp_map_to_select_map_19_19	; smooth from tmp to dencity map,
+		JSR		_merge_tmp_map_with_select_map_19_19; blend two maps, store to tmp again
+		JSR		_smooth_tmp_map_to_select_map_19_19	; and once more smooth to dencity map
 		LDA		#$04
 		JSR		_critical_section_leave			; FIXME, section set and leave outside of this proc
-		LDA		_tmp6D0
-		ORA		_tmp6D0+1
-		BEQ		loc_11ED64
-		MOVW	_tmpE7,_tmp6CC
-		MOVW	_tmpEA,_tmp6D0
-		LDA		#$00
+		LDA		_tmp6D0							; now calculate the averages of all positions
+		ORA		_tmp6D0+1						; with buildings to get the center of the most
+		BEQ		loc_11ED64						; populated area
+		MOVW	_tmpE7,_tmp6CC					; since both values are integer, we have here
+		MOVW	_tmpEA,_tmp6D0					; absolutely correct results for center
+		LDA		#$00							; average
 		STA		_tmpE6
 		STA		_tmpE9
 		JSR		_div_32to16
 		LDA		_tmpE7
-		STA		_max_popul_dencity_pos._COL
+		STA		_city_center_pos._COL
 		MOVW	_tmpE7,_tmp6CE
 		MOVW	_tmpEA,_tmp6D0
 		LDA		#$00
@@ -2543,28 +2545,28 @@ loc_11ECF4:
 		STA		_tmpE9
 		JSR		_div_32to16
 		LDA		_tmpE7
-		STA		_max_popul_dencity_pos._ROW
+		STA		_city_center_pos._ROW
 		RTS
 loc_11ED64:
-		LDA		#$26
-		STA		_max_popul_dencity_pos._COL
-		STA		_max_popul_dencity_pos._ROW
+		LDA		#$26							; default city center in the middle of the map
+		STA		_city_center_pos._COL
+		STA		_city_center_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_RCI_area_develop_state:
+_get_develop_state:
 		LDA		_last_map_tile_read
 		CMP		#_MAP_C_AREA_DEF
 		BCS		loc_11ED7C
 		TAY
-		LDA		_R_area_develop_levels_list,Y
-		LSR
+		LDA		_R_area_develop_levels_list,Y	; scale R value to the same level
+		LSR										; as C and I areas
 		LSR
 		LSR
 		RTS
 loc_11ED7C:
-		CMP		#_MAP_I_AREA_DEF
-		BCS		loc_11ED88
+		CMP		#_MAP_I_AREA_DEF				; the Micropolis code rescaling the C and I
+		BCS		loc_11ED88						; to R value multiplying them on 8 instead
 		SEC
 		SBC		#_MAP_C_AREA_DEF
 		TAY
@@ -2583,23 +2585,23 @@ loc_11ED94:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_growth_recalc:
-		LDA		#$00
-loc_11F27A:
-		STA		_tmp_map_pos._ROW
-		LDA		#$00
+_smooth_growth_map:
+		LDA		#$00							; growth info were collected on common
+loc_11F27A:										; RCI scan and higher where the areas develop up
+		STA		_tmp_map_pos._ROW				; this map does not clear also, so we need
+		LDA		#$00							; to calm it down to smooth average values
 loc_11F27F:
 		STA		_tmp_map_pos._COL
-		JSR		_read_growth_map
-		CMP		#$08
-		BEQ		loc_11F296
-		BCS		loc_11F290
-		CLC
+		JSR		_read_growth_map				; there is a middle point of growth - 8
+		CMP		#$08							; fix this value, so we can see positive or
+		BEQ		loc_11F296						; negative values as well, however, this
+		BCS		loc_11F290						; will stabilized after a while in your city
+		CLC										; less than 8 - increment, calm down negative growth
 		ADC		#$01
 		BNE		loc_11F293
 loc_11F290:
 		SEC
-		SBC		#$01
+		SBC		#$01							; higher than 8, decrement, calm down positive growth
 loc_11F293:
 		JSR		_write_growth_map
 loc_11F296:
@@ -2621,7 +2623,7 @@ _smooth_police_and_fire_maps:
 		STA		_tmp6C4
 		JSR		_smooth_select_map_to_tmp_map_10_10
 		JSR		_merge_tmp_map_with_select_map_10_10; store to selected map
-		LDA		#$01								; then for fire map
+		LDA		#$01								; the same for fire map
 		STA		_tmp6C4
 		JSR		_smooth_select_map_to_tmp_map_10_10
 		JMP		_merge_tmp_map_with_select_map_10_10; store to selected map
@@ -2712,26 +2714,26 @@ loc_11EE3B:
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
-_smooth_tmp_map_to_select_map:
+_smooth_tmp_map_to_select_map_19_19:
 		LDA		#$00
 loc_11EE4C:
-		STA		_tmp_map_pos._ROW
-		LDA		#$00
-loc_11EE51:
-		STA		_tmp_map_pos._COL
-		LDA		#$00
+		STA		_tmp_map_pos._ROW				; -*-
+		LDA		#$00							; ***
+loc_11EE51:										; -*-
+		STA		_tmp_map_pos._COL				; calc weighted average of nearest tiles
+		LDA		#$00							; with center
 		STA		_tmpE7
 		JSR		_get_tmp_map_19_19_nearest_sum
 		JSR		_read_tmp_map_19_19
 		CLC
-		ADC		_tmpE7
+		ADC		_tmpE7							; rough average of 4, not 5
 		LSR
 		LSR
 		CMP		#$0F
-		BCC		loc_11EE69
+		BCC		loc_11EE69						; clamp to max F
 		LDA		#$0F
 loc_11EE69:
-		JSR		_write_select_map
+		JSR		_write_select_map_19_19
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
@@ -2804,8 +2806,8 @@ loc_11EE69:
 
 ; =============== S U B	R O U T	I N E =======================================
 _merge_tmp_map_with_select_map_19_19:
-		LDA		#$00
-loc_11EEED:
+		LDA		#$00							; almost the same as smooth, but middle tile
+loc_11EEED:										; given from merging map
 		STA		_tmp_map_pos._ROW				; all routines here gets the map coordinates
 		LDA		#$00							; and then converts them to 19x19 map coords
 loc_11EEF2:
@@ -2837,8 +2839,8 @@ loc_11EF0A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_tmp_map_19_19_nearest_sum:
-		LDA		_tmp_map_pos._COL
-		CMP		#$04
+		LDA		_tmp_map_pos._COL				; read and sum nearest values of
+		CMP		#$04							; selected map with skip edges of the map
 		BCC		loc_11EF3A
 		SBC		#$04
 		STA		_tmp_map_pos._COL
@@ -2881,7 +2883,7 @@ _add_tmp_map_19_19:
 
 ; =============== S U B	R O U T	I N E =======================================
 _merge_tmp_map_with_select_map_10_10:
-		LDA		#$00
+		LDA		#$00							; same merge routine as for map 19x19
 loc_11EF8E:
 		STA		_tmp_map_pos._ROW
 		LDA		#$00
@@ -2914,7 +2916,7 @@ loc_11EFAB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_tmp_map_10_10_nearest_sum:
-		LDA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._COL				; also same as for 19x19
 		CMP		#$08
 		BCC		loc_11EFDB
 		SBC		#$08
@@ -2958,12 +2960,12 @@ _add_tmp_map_10_10:
 
 ; =============== S U B	R O U T	I N E =======================================
 _smooth_select_map_to_tmp_map_10_10:
-		LDA		#$00
+		LDA		#$00							; one more smooth for maps 10x10
 loc_11F02F:
-		STA		_tmp_map_pos._ROW
-		LDA		#$00
-loc_11F034:
-		STA		_tmp_map_pos._COL
+		STA		_tmp_map_pos._ROW				; as against 19x19 maps, here we get
+		LDA		#$00							; the map values directly without intermediate
+loc_11F034:										; buffers and store smooth to tmp_map
+		STA		_tmp_map_pos._COL				; so we need additional nearest sum routine here
 		LDA		#$00
 		STA		_tmpE7
 		JSR		_get_select_map_10_10_nearest_sum
@@ -2990,7 +2992,7 @@ loc_11F04B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_select_map_10_10_nearest_sum:
-		LDA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._COL				; summing neares of selected 10x10 map
 		CMP		#$08
 		BCC		loc_11F07B
 		SBC		#$08
@@ -3204,15 +3206,15 @@ _critical_section_enter:
 _read_select_map_19_19:
 		LDY		_tmp6C4
 		BEQ		_read_pollution_map
-		DEY
-		BEQ		_read_growth_map
+;		DEY										; FIX, shift index to 0 1 instead 0 2
+;		BEQ		_read_growth_map				; REDUNDANT, unused here
 		DEY
 		BEQ		_read_dencity_map
-		DEY
-		BEQ		_read_crime_map
-		DEY
-		BEQ		_read_land_value_map
-		BNE		_read_tmp_map_19_19
+;		DEY										; also redundant. won't make here any
+;		BEQ		_read_crime_map					; asserts because we already controls here
+;		DEY										; all input data
+;		BEQ		_read_land_value_map
+;		BNE		_read_tmp_map_19_19
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pollution_map:
@@ -3341,18 +3343,18 @@ loc_11F748:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_select_map:
-		LDY		_tmp6C4
-		BEQ		_write_pollution_map
-		DEY
-		BEQ		_write_growth_map
+_write_select_map_19_19:
+		LDY		_tmp6C4							; the same case for write select, only 0, 2 used
+		BEQ		_write_pollution_map			; rescale to 0 1 and remove redundant
+;		DEY
+;		BEQ		_write_growth_map
 		DEY
 		BEQ		_write_dencity_map
-		DEY
-		BEQ		_write_crime_map
-		DEY
-		BEQ		_write_land_value_map
-		BNE		_write_tmp_map_19_19
+;		DEY
+;		BEQ		_write_crime_map
+;		DEY
+;		BEQ		_write_land_value_map
+;		BNE		_write_tmp_map_19_19
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pollution_map:
@@ -3410,7 +3412,7 @@ loc_11F801:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_traffic_map:
-		LDXY	_traffic_map
+		LDXY	_traffic_map					; the only map of this size
 		CMP		#$10
 		BCC		loc_11F82C
 		LDA		#$0F
@@ -3429,9 +3431,9 @@ loc_11F82C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_select_map_10_10:
-		LDY		_tmp6C4
-		BEQ		_write_police_map
-		DEY
+		LDY		_tmp6C4							; there are only two maps 10x10
+		BEQ		_write_police_map				; so they did already optimized case tree
+		DEY										; as we did above for 19x19 maps
 		BEQ		_write_fire_map
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3552,14 +3554,16 @@ locret_11FB47:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; UNUSED
+; UNUSED, most probably were intended to BERN SCENARIO from original Micropolis
+; however, there is no more scenario in newer versions
+;
 ;_fire_disaster_small_start_unref:
 ;		LDY		#$14
 ;		BNE		_fire_disaster_start_common
 
 ; =============== S U B	R O U T	I N E =======================================
 ; The Fire disaster is the only disaster that occurs only by manual selecting
-; from the disasterS menu.
+; from the disasters menu.
 ; There are two types of Fire disaster were planned, but the weaker one isn't used
 ;
 _fire_disaster_start:
@@ -3591,59 +3595,59 @@ loc_11FB73:
 		DEY
 		BNE		_fire_disaster_start_common
 		LDA		_disasters_flags				; the rest as usual
-		AND		#$FE
-		STA		_disasters_flags
+		AND		#$FE							; clear disaster request flag,
+		STA		_disasters_flags				; write down the history record
 		LDY		#$06
 		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$20
-		STA		_game_msg_idx
-		LDA		#$01
-		STA		_game_msg_awaits_flag
-		JMP		_screen_invalidate				; if goto icon is used
+		STA		_game_msg_idx					; display an alert game message
+		LDA		#$01							; display msg, then go to the screen
+		STA		_game_msg_awaits_flag			; update wait, it will exit it only
+		JMP		_screen_invalidate				; after window closes and screen redrawn
 
 ; =============== S U B	R O U T	I N E =======================================
 _flood_disaster_start:
 		LDA		#$00
 		STA		_tmp6CC
-		LDY		#$FA
+		LDY		#$FA							; 250 tries to flood something
 loc_11FB9A:
 		TYA
 		PHA
-		LDA		#$4C
+		LDA		#$4C							; select randomly one of the map tiles
 		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._COL
 		LDA		#$4C
 		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read
-		CMP		#$BE
+		CMP		#_MAP_SHORE0					; skip if not the shores
 		BCC		loc_11FC04
-		CMP		#$CE
+		CMP		#_MAP_WOODS0
 		BCS		loc_11FC04
 		LDY		#$03
 loc_11FBB9:
-		TYA
-		PHA
-		PUSHB	_tmp_map_pos._COL
+		TYA										; when shore tile found, flood
+		PHA										; all possible nearest tiles
+		PUSHB	_tmp_map_pos._COL				; according to tile flags
 		CLC
-		ADC		_near_tile_pos_delta_col_list,Y
+		ADC		_near_tile_pos_delta_col_list,Y	; choose the nearest ones
 		STA		_tmp_map_pos._COL
 		PUSHB	_tmp_map_pos._ROW
 		CLC
 		ADC		_near_tile_pos_delta_row_list,Y
 		STA		_tmp_map_pos._ROW
-		JSR		_tmp_map_pos_test_max
+		JSR		_tmp_map_pos_test_max			; test for edges
 		BCS		loc_11FBF2
-		JSR		_map_tile_read
+		JSR		_map_tile_read					; read and flood if possible
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_FLOODABLE
 		BEQ		loc_11FBF2
-		JSR		_flood_cur_map_tile
-		LDA		_disasters_flags
-		AND		#$FD
-		STA		_disasters_flags
-		INC		_tmp6CC
+		JSR		_flood_cur_map_tile				; once done, remove disaster request
+		LDA		_disasters_flags				; and load the flood amount
+		AND		#$FD							; of tiles to flood, which will be
+		STA		_disasters_flags				; handled by city scan routine
+		INC		_tmp6CC							; tmp stop flag to skip other floods
 		LDA		#$1E
 		STA		_disaster_tiles_to_flood_count
 loc_11FBF2:
@@ -3651,23 +3655,23 @@ loc_11FBF2:
 		POPB	_tmp_map_pos._COL
 		PLA
 		TAY
-		LDA		_tmp6CC
+		LDA		_tmp6CC							; skip or countinue to seatch floodable tile
 		BNE		loc_11FC04
 		DEY
 		BPL		loc_11FBB9
 loc_11FC04:
 		PLA
 		TAY
-		LDA		_tmp6CC
+		LDA		_tmp6CC							; skip or continue to seatch shore tile
 		BNE		loc_11FC0E
 		DEY
 		BNE		loc_11FB9A
 loc_11FC0E:
-		LDY		#$07
-		FJSR	_city_history_write,SRAM,PRGA
-		LDA		#$21
-		STA		_game_msg_idx
-		LDA		#$01
+		LDY		#$07							; once again, display the message, while displaying
+		FJSR	_city_history_write,SRAM,PRGA	; the city core is on hold, until message
+		LDA		#$21							; is closed and screen redrawn properly.
+		STA		_game_msg_idx					; then finally set the goto alert flag
+		LDA		#$01							; on the current map position
 		STA		_game_msg_awaits_flag
 		JSR		_screen_invalidate
 		JMP		_goto_alert_start
@@ -3679,46 +3683,46 @@ _near_tile_pos_delta_row_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _earthquake_disaster_start:
-		JSR		_rand
-		CLC
+		JSR		_rand							; rand value 100 to 255 for
+		CLC										; amount of attempts to destroy something
 		ADC		#$64
 		BCC		loc_11FC38
 		LDA		#$FF
 loc_11FC38:
 		STA		_tmp6CE
-		STA		_earthquake_shake_req
+		STA		_earthquake_shake_req			; also shake the screen
 loc_11FC3E:
 		LDA		#$4C
-		JSR		_rand_clamp_A
+		JSR		_rand_clamp_A					; select random map pos
 		STA		_tmp_map_pos._COL
 		LDA		#$4C
 		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._ROW
-		JSR		_get_cur_building_tile
+		JSR		_get_cur_building_tile			; destroy only buildings if any
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_BUILDING
 		BEQ		loc_11FC69
 		LDA		_tmp6CE
 		AND		#$03
-		BEQ		loc_11FC64
+		BEQ		loc_11FC64						; also 1/4 chance to start a fire
 		LDA		#_MAP_CORRUPT0
 		BNE		loc_11FC66
 loc_11FC64:
 		LDA		#_MAP_FIRE
 loc_11FC66:
-		JSR		_corrupt_cur_map_tile
+		JSR		_corrupt_cur_map_tile			; destroy
 loc_11FC69:
-		DEC		_tmp6CE
+		DEC		_tmp6CE							; look for another tile
 		BNE		loc_11FC3E
 loc_11FC6E:
-		JSR		_screen_invalidate
-		LDA		_earthquake_shake_req
+		JSR		_screen_invalidate				; invalidating the screen until shaking
+		LDA		_earthquake_shake_req			; is over
 		BNE		loc_11FC6E
 		LDY		#$0A
-		FJSR	_city_history_write,SRAM,PRGA
-		LDA		#$0A
-		STA		_game_msg_idx
+		FJSR	_city_history_write,SRAM,PRGA	; for some reasons, here we don't wait
+		LDA		#$0A							; for screen redrawn but immediately
+		STA		_game_msg_idx					; set the goto flag.
 		LDA		#$01
 		STA		_game_msg_awaits_flag
 		LDA		_disasters_flags
@@ -3729,28 +3733,28 @@ loc_11FC6E:
 ; =============== S U B	R O U T	I N E =======================================
 _airplane_disaster_request:
 		LDA		#$01
-		STA		_airplane_crash_req				; for some reason, airplane crash
-		LDA		_disasters_flags				; handler in another place in system
-		AND		#$FB							; handlers manager loop of THREAD0
-		STA		_disasters_flags				; don't know why
+		STA		_airplane_crash_req				; airplane crash can be started randomly any time
+		LDA		_disasters_flags				; in obj handler from THREAD0, so they moved
+		AND		#$FB							; corresponding routine there, here we set only
+		STA		_disasters_flags				; request
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tornado_disaster_start:
 		LDA		_obj_active_flags				; tornado and monster can't go together
-		AND		#$30
+		AND		#$30							; wait until no one are on the map
 		BNE		locret_11FCFC
-		LDA		_obj_active_flags				; active flag
+		LDA		_obj_active_flags				; active object flag
 		ORA		#$20
 		STA		_obj_active_flags
 		LDA		#$4C
 		STA		_mmc5_chr_banks_shadow+1
-		STA		_MMC5_CHR_BANKSA+1				; CHR bank init
+		STA		_MMC5_CHR_BANKSA+1				; sprite CHR bank init
 		LDA		#$4C
 		JSR		_rand_clamp_A					; select random map starting pos
-		STA		_obj_pos._tornado._COL
-		STA		_tmp_map_pos._COL
-		LDA		#$4C
+		STA		_obj_pos._tornado._COL			; can be selected manually only
+		STA		_tmp_map_pos._COL				; tornado goes to straight line
+		LDA		#$4C							; and may disapper in any point
 		JSR		_rand_clamp_A
 		STA		_obj_pos._tornado._ROW
 		STA		_tmp_map_pos._ROW
@@ -3769,9 +3773,9 @@ _tornado_disaster_start:
 		STA		_game_msg_idx					; draw message
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JSR		_screen_invalidate
+		JSR		_screen_invalidate				; wait for invalidate
 		APUA_SE	_SE_IDX_TORNADO
-		JMP		_goto_alert_start
+		JMP		_goto_alert_start				; start sound, show goto alert
 locret_11FCFC:
 		RTS
 
@@ -3796,8 +3800,8 @@ _monster_disaster_start:
 		STA		_obj_pos._monster._COL
 		STA		_tmp_map_pos._COL
 		CMP		#$26
-		BCS		loc_11FD17						; walk to farther side of the map
-		LDY		#$4B							; from one half of to another by X
+		BCS		loc_11FD17						; walk to farthest side of the map
+		LDY		#$4B
 loc_11FD17:
 		STY		_obj_dst_pos._monster._COL
 		LDY		#$00
@@ -3812,28 +3816,28 @@ loc_11FD2D:
 ;		STY		_obj_dst_pos._monster._COL		; BUG, seems another copypaste here
 		STY		_obj_dst_pos._monster._ROW		; FIX
 		LDA		#$97
-		JSR		_rand_clamp_A					; if this code change X position,
-		LSR										; the Y will be uninitialized actually
-		BCS		loc_11FD3D						; due to BUG above, but seems it's not
-		STA		_obj_dst_pos._monster._COL		; much important, since we have it initialized to
-		BCC		_monster_disaster_start_ex		; 0 at the beginning and then have value
-loc_11FD3D:										; from previous moster appearance.
+		JSR		_rand_clamp_A					; without this code monster would go
+		LSR										; only to the screen corners
+		BCS		loc_11FD3D						; with this code he will walk to farthest
+		STA		_obj_dst_pos._monster._COL		; side of the map selected randomly.
+		BCC		_monster_disaster_start_ex
+loc_11FD3D:
 		STA		_obj_dst_pos._monster._ROW
 
 ; =============== S U B	R O U T	I N E =======================================
 _monster_disaster_start_ex:
-		LDA		_obj_active_flags				; monster activity flag set
+		LDA		_obj_active_flags				; monster object flag set
 		ORA		#$10
 		STA		_obj_active_flags
-		LDA		#$35							; WRONG: don't know why, this is not initial
-		LDA		#$44							; FIX
+;		LDA		#$35							; BUG, this is not initial CHR bank
+		LDA		#$44							; FIX, however, it will be changed by object handler
 		STA		_mmc5_chr_banks_shadow+1
 		STA		_MMC5_CHR_BANKSA+1				; monster CHR bank
 		LDA		_disasters_flags				; removes disaster request flag
 		AND		#$DF
 		STA		_disasters_flags
 		LDA		#$01
-		STA		_monster_in_water_flag
+		STA		_monster_in_water_flag			; in case we land in water by default
 		LDY		#$0B
 		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$09
@@ -3849,8 +3853,8 @@ locret_11FD73:
 _disaster_destroy_tile:
 		PUSHW	_tmp_map_pos					; additional backup for critical vars
 		PUSHW	_ptrEC							; note, we call this from NMI
-		PUSHB	_backup_var
-		PUSHB	_mmc5_mul1_shadow
+		PUSHB	_backup_var						; this function used by disaster objects
+		PUSHB	_mmc5_mul1_shadow				; to destroy all buildings on its path
 		PUSHB	_mmc5_mul0_shadow
 		PUSHB	_tmp6CD
 		STX		_tmp_map_pos._COL

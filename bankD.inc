@@ -2386,20 +2386,20 @@ sub_15104E:
 		RTS
 loc_151054:
 		LSR
-		BCS		sub_151061
+		BCS		_get_power_anim_tile
 		LSR
-		BCS		sub_1510B2
+		BCS		_get_traffic_anim_tile
 		LSR
-		BCS		sub_1510D9
+		BCS		_get_shores_anim_tile
 		LSR
-		JMP		sub_1510F5
+		JMP		_get_fire_trees_anim_tile
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_151061:
+_get_power_anim_tile:
 		LDA		_tmp535
 		AND		#$01
 		BEQ		nullsub_7
-		JSR		_special_power_grid_bit_test
+		JSR		_get_powered_state
 		BCC		nullsub_7
 		LDX		_tmp534
 		CPX		#$00
@@ -2452,7 +2452,7 @@ nullsub_7:
 ;		.BYTE	$60,$60,$61,$60,$60,$63,$64,$62,$60,$60,$60,$60,$60,$60,$60,$60
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1510B2:
+_get_traffic_anim_tile:
 		JSR		_traffic_area_read
 		BCC		locret_1510D8
 		STA		_ptr0
@@ -2468,16 +2468,16 @@ sub_1510B2:
 		ASL
 		ORA		_ptr0
 		TAX
-		LDA		byte_15115F,X
+		LDA		_traffic_anim_list,X
 		STA		word_6C+1
 		INX
-		LDA		byte_15115F,X
+		LDA		_traffic_anim_list,X
 		STA		word_6C
 locret_1510D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1510D9:
+_get_shores_anim_tile:
 		LDA		_tmp535
 		AND		#$01
 		ASL
@@ -2487,15 +2487,15 @@ sub_1510D9:
 		ASL
 		ORA		_ptr0
 		TAX
-		LDA		byte_15124F,X
+		LDA		_shores_anim_list,X
 		STA		word_6C+1
 		INX
-		LDA		byte_15124F,X
+		LDA		_shores_anim_list,X
 		STA		word_6C
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1510F5:
+_get_fire_trees_anim_tile:
 		LDA		_tmp535
 		AND		#$03
 		ASL
@@ -2518,13 +2518,14 @@ loc_151115:
 		PLA
 		ORA		_ptr0
 		TAX
-		LDA		byte_15128F,X
+		LDA		_fire_trees_anim_list,X
 		STA		word_6C+1
 		INX
-		LDA		byte_15128F,X
+		LDA		_fire_trees_anim_list,X
 		STA		word_6C
 		RTS
-byte_15115F:
+
+_traffic_anim_list:
 		.BYTE	$41,$E2
 		.BYTE	$42,$E2
 		.BYTE	$43,$E2
@@ -2645,7 +2646,7 @@ byte_15115F:
 		.BYTE	$42,$FE
 		.BYTE	$41,$FE
 		.BYTE	$42,$FE
-byte_15124F:
+_shores_anim_list:
 		.BYTE	$C1,$40
 		.BYTE	$C1,$70
 		.BYTE	$C1,$41
@@ -2678,9 +2679,9 @@ byte_15124F:
 		.BYTE	$C1,$94
 		.BYTE	$C1,$65
 		.BYTE	$C1,$95
-byte_15128F:
-		.BYTE	$C1,$E0
-		.BYTE	$C2,$E0
+_fire_trees_anim_list:
+		.BYTE	$C1,$E0							; NOTE: trees are animated also, but all tiles
+		.BYTE	$C2,$E0							; are the same!
 		.BYTE	$C3,$E0
 		.BYTE	$C4,$E0
 		.BYTE	$81,$3E
@@ -2689,7 +2690,7 @@ byte_15128F:
 		.BYTE	$81,$5F
 
 ; =============== S U B	R O U T	I N E =======================================
-_special_power_grid_bit_test:
+_get_powered_state:
 		LDA		_thread0_flags
 		AND		#$02
 		BNE		loc_1512D7
