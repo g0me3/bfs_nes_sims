@@ -609,7 +609,7 @@ OP_ADD	EQU	3
 	MAC BANK_START
 CUR_PRG_BANK	SET {1}
 CUR_BANK_START	SET .
-;		ECHO	"bank",{1},"start ["
+;		ECHO	"bank",{1},"start [ org=",[CUR_BANK_START>>12]
 	ENDM
 
 	MAC	BANK_END
@@ -620,9 +620,9 @@ _total_free	SET	_bank{1}_free
 _total_free	SET _total_free+_bank{1}_free
 	#endif
 	#if .>{2}
-		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
+		ECHO	"BANK",CUR_PRG_BANK,"[ org =",[CUR_BANK_START>>12]," s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
 	#else
-		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
+		ECHO	"BANK",CUR_PRG_BANK,"[ org =",[CUR_BANK_START>>12]," s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
 	#endif
 	#if .<{2}-1
 		ORG		{2}-1

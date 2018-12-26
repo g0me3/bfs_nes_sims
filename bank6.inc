@@ -4,500 +4,6 @@
 		BANK_START $F6
 
 ; ---------------------------------------------------------------------------
-; --------I-N-F-O--S-C-R-E-E-N--C-U-S-T-O-M--D-R-A-W--A-N-D--D-A-T-A---------
-; ---------------------------------------------------------------------------
-
-		SECTION_START 7904
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_button_redraw:
-		EXTQSTART
-;		LDY		_cur_info_maps_button_idx		; REDUNDANT as fuck
-;		LDA		_info_maps_button_idx_list,Y	; special value for disabling
-;		TAY										; released button draw, never used
-;		CMP		#$08							; default value here is B, so we draw
-;		BEQ		loc_A0199						; dummy release always
-		LDY		_prev_info_maps_button_idx
-		CPY		#$FF							; FIX: let's fix logic, skip release here instead
-		BEQ		loc_A0199						; -
-		LDA		_info_maps_button_idx_list,Y
-		JSR		_button_released_extnt_queue	; draw released button
-loc_A0199:
-		LDY		_cur_info_maps_button_idx
-;		CPY		#$0B							; REDUNDANT, cur info never gets 0B value,
-;		BEQ		_button_press_exit				; never, here we have logic flaw or mistake
-		LDA		_info_maps_button_idx_list,Y	; now draw new pushed button or default 0
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_button_pressed_extnt_queue:
-		ASL
-		PHA
-		TAY
-		LDA		_info_buttons_extnt_lib,Y		; get the released button extnt
-		AND		#$C0							; and change it to pressed extnt
-		ORA		#$04
-		STA		_tmp2
-		LDA		_info_buttons_extnt_lib+1,Y
-		AND		#$C0
-		ORA		#$04
-		STA		_tmp3
-		PLA
-		JSR		_button_extnt_data_queue		; send data
-_button_press_exit:
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; as against the info maps buttons, graphs buttons are unpressed by default
-; and you may press two buttons at the same time
-;
-_graphs_buttons_redraw:
-		EXTQSTART
-		CPY		#$FF							; get index of redraw button in Y
-		BEQ		loc_A01CC						; skip release redraw on enter
-		TYA
-		CLC
-;		ADC		#$0A							; REDUNDANT, removed unused lines
-		ADC		#$08							; FIX, new lib offset
-		JSR		_button_released_extnt_queue	; use common functions
-loc_A01CC:
-		LDY		_cur_graphs_button_press_idx
-;		BPL		loc_A01D4						; the same for push button
-;		EXTQEND
-;		RTS
-		BMI		_button_press_exit				; OPTIMIZED
-;loc_A01D4:
-		TYA
-		CLC
-;		ADC		#$0A							; REDUNDANT
-		ADC		#$08							; FIX
-		JMP		_button_pressed_extnt_queue
-
-; =============== S U B	R O U T	I N E =======================================
-_button_released_extnt_queue:
-		ASL										; FIX: swap this, do one shift less later
-		PHA
-		TAY
-		LDA		_info_buttons_extnt_lib,Y		; get released button exnt pattern
-		STA		_tmp2
-		LDA		_info_buttons_extnt_lib+1,Y
-		STA		_tmp3
-		PLA
-
-; =============== S U B	R O U T	I N E =======================================
-_button_extnt_data_queue:
-;		ASL										; FIX one shift less here get extnt lib ofset
-		ASL
-		ASL
-		TAY
-		MOVWO	_ptr0,_info_buttons_extnt_hdr_lib
-		JSR		_button_extnt_line_queue
-
-; !FALLTHROUGH!
-
-; FIX
-; -
-; =============== S U B	R O U T	I N E =======================================
-_button_extnt_line_queue:
-		LDA		(_ptr0),Y						; header is over?
-		BNE		loc_A01FD
-		EXTQMOVB	_tmp2,OP_NOP,0				; send an actual data calculated
-		EXTQMOVB	_tmp3,OP_NOP,0				; before
-		INY
-		RTS
-loc_A01FD:
-		INY										; send header
-		EXTQMOVA
-		JMP		_button_extnt_line_queue
-; -
-; REDUNDANT
-; -
-; =============== S U B	R O U T	I N E =======================================
-;_button_extnt_line_queue:
-;		LDA		#$03
-;		STA		_tmp5
-;loc_A01FC:
-;		LDA		(_ptr0),Y						; send header, 3 bytes ofs+size
-;		INY										; predefined in the table below
-;		EXTQMOVA
-;		DEC		_tmp5
-;		BNE		loc_A01FC
-;		INY										; skip fourt byte
-;		EXTQMOVB	_tmp2,OP_NOP,0				; send an actual data calculated
-;		EXTQMOVB	_tmp3,OP_NOP,0				; before
-;		RTS
-
-_info_maps_button_idx_list:
-		.BYTE	$00,$01,$02,$02,$03,$04,$05,$06,$07,$07	;,$08,$09	REDUNDANT
-
-; here some more redundancy in this lib. every button correspond to
-; 8 bytes of this lib, however, only first 3 bytes of every 4 are used
-; because this is dummy data only for easier calculation of lib offset
-;
-; actual data to store as extnt is in _info_buttons_extnt_lib table
-;
-;_info_buttons_extnt_hdr_lib:
-;			;	+	+	+	-	+	+	+	-
-;		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43	; 00 info map button 0
-;		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43	; 01 info map button 1
-;		.BYTE	$84,$5D,$02,$03,$A4,$5D,$02,$03	; 02 info map button 2
-;		.BYTE	$C4,$5D,$02,$03,$E4,$5D,$02,$03	; 03 info map button 3
-;		.BYTE	$04,$5E,$02,$03,$24,$5E,$02,$03	; 04 info map button 4
-;		.BYTE	$44,$5E,$02,$43,$64,$5E,$02,$43	; 05 info map button 5
-;		.BYTE	$84,$5E,$02,$43,$A4,$5E,$02,$43	; 06 info map button 6
-;		.BYTE	$C4,$5E,$02,$03,$E4,$5E,$02,$03	; 07 info map button 7
-;		.BYTE	$02,$5D,$02,$04,$22,$5D,$02,$04	; 08 info map dummy button push, *unused*
-;		.BYTE	$42,$5D,$02,$04,$62,$5D,$02,$04	; 09 info map dummy button release
-;		.BYTE	$23,$5D,$02,$83,$43,$5D,$02,$83	; 08 -0A graphs button 0
-;		.BYTE	$63,$5D,$02,$03,$83,$5D,$02,$03	; 09 -0B graphs button 1
-;		.BYTE	$A3,$5D,$02,$43,$C3,$5D,$02,$43	; 0A -0C graphs button 2
-;		.BYTE	$E3,$5D,$02,$83,$03,$5E,$02,$83	; 0B -0D graphs button 3
-;		.BYTE	$23,$5E,$02,$C3,$43,$5E,$02,$C3	; 0C -0E graphs button 4
-;		.BYTE	$63,$5E,$02,$03,$83,$5E,$02,$03	; 0D -0F graphs button 5
-;		.BYTE	$A3,$5E,$02,$03,$C3,$5E,$02,$03	; 10 graphs dummy button push, *unused*
-;		.BYTE	$E3,$5E,$02,$03,$03,$5F,$02,$03	; 11 graphs dummy button release, *unused*
-
-; FIX
-; let's reuse them on purpose now.
-;
-_info_buttons_extnt_hdr_lib:
-		.BYTE	$04,$5D,$02,$00,$24,$5D,$02,$00	; 00 info map button 0
-		.BYTE	$44,$5D,$02,$00,$64,$5D,$02,$00	; 01 info map button 1
-		.BYTE	$84,$5D,$02,$00,$A4,$5D,$02,$00	; 02 info map button 2
-		.BYTE	$C4,$5D,$02,$00,$E4,$5D,$02,$00	; 03 info map button 3
-		.BYTE	$04,$5E,$02,$00,$24,$5E,$02,$00	; 04 info map button 4
-		.BYTE	$44,$5E,$02,$00,$64,$5E,$02,$00	; 05 info map button 5
-		.BYTE	$84,$5E,$02,$00,$A4,$5E,$02,$00	; 06 info map button 6
-		.BYTE	$C4,$5E,$02,$00,$E4,$5E,$02,$00	; 07 info map button 7
-		.BYTE	$23,$5D,$02,$00,$43,$5D,$02,$00	; 08 graphs button 0
-		.BYTE	$63,$5D,$02,$00,$83,$5D,$02,$00	; 09 graphs button 1
-		.BYTE	$A3,$5D,$02,$00,$C3,$5D,$02,$00	; 0A graphs button 2
-		.BYTE	$E3,$5D,$02,$00,$03,$5E,$02,$00	; 0B graphs button 3
-		.BYTE	$23,$5E,$02,$00,$43,$5E,$02,$00	; 0C graphs button 4
-		.BYTE	$63,$5E,$02,$00,$83,$5E,$02,$00	; 0D graphs button 5
-
-_info_buttons_extnt_lib:
-		.BYTE	$43,$43	; 00
-		.BYTE	$43,$43	; 01
-		.BYTE	$83,$43	; 02
-		.BYTE	$83,$83 ; 03
-		.BYTE	$83,$83 ; 04
-		.BYTE	$43,$43 ; 05
-		.BYTE	$43,$43 ; 06
-		.BYTE	$83,$83 ; 07
-		.BYTE	$43,$43 ; 08
-		.BYTE	$83,$83 ; 09
-		.BYTE	$83,$83 ; 0A
-		.BYTE	$03,$03 ; 0B
-		.BYTE	$43,$43 ; 0C
-		.BYTE	$83,$83 ; 0D
-		.BYTE	$C3,$C3 ; 0E
-		.BYTE	$03,$03 ; 0F
-		.BYTE	$03,$03 ; 10
-		.BYTE	$03,$83 ; 11
-
-; REDUNDANT, returned back to bank 9 where it belongs
-;
-; =============== S U B	R O U T	I N E =======================================
-;_scr_res_hndl1_A_graphs_draw_init:
-;		LDY		#$FF
-;		STY		_cur_graphs_button_press_idx
-;		STY		_prev_graphs_button_press_idx
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_graphs_period_button_redraw:
-		LDY		_graphs_scr_period_mode			; swap two cmall buttons here
-		LDA		_graphs_period_buttons_extnt_data,Y
-		LDY		#$00
-		JSR		_graphs_period_button_extnt_send
-		LDA		_graphs_scr_period_mode
-		EOR		#$01
-		TAY
-		LDA		_graphs_period_buttons_extnt_data,Y
-		LDY		#$04
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_graphs_period_button_extnt_send:
-		STA		_tmp2
-		EXTQSTART
-loc_A0238:
-		LDA		_graphs_period_buttons_extnt_hdrs,Y	; very smart solution here
-		BNE		loc_A0245						; and very dumb before now
-		EXTQMOVB	_tmp2,OP_NOP,0
-		LDY		#$FE
-loc_A0245:
-		EXTQMOVA								; queue is 2 byte long
-		INY										; the second byte is 0
-		CPY		#$FF
-		BNE		loc_A0238
-		EXTQEND
-		RTS
-
-_graphs_period_buttons_extnt_data:
-		.BYTE	$84,$83
-_graphs_period_buttons_extnt_hdrs:
-		.BYTE	$C3,$5E,$02,$00,$03,$5F,$02,$00
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_header_and_legend_redraw:
-		JSR		_buffers_wait_flush				; routine from BANK9!
-		LDA		_cur_info_maps_button_idx		; convert cur menu idx into
-		BEQ		loc_A0262						; if map header idx = 0
-		CMP		#$0D							; special case
-		BEQ		loc_A0266
-		CLC										; all bove 0 are 3 shifted now then
-		ADC		#$03
-		BPL		loc_A0266
-loc_A0262:
-		CLC										; then select one of 4 maps idxes
-		ADC		_info_maps_menu_extra_idx		; adding index of city map menu
-loc_A0266:
-		PHA										; OPTIMIZED
-		MOVWO	_ptr0,_info_screen_header_nt_lib; OPTIMIZED
-		MOVWO	_tmp2,_ppu_queue_buf
-		PLA										; OPTIMIZED
-		PHA										; -
-		PPUQSTART
-		STX		_tmp4
-		JSR		_strcpy_ex
-		PPUQEND
-		MOVWO	_ptr0,_info_screen_legends_nt_lib
-		PPUQSTART								; because of additional list for nt idxes
-		JSR		_strcpy_lib
-		PPUQEND
-;		JSR		_buffers_wait_flush				; FIX, one wait just enough, or else you will see how it draw
-		MOVWO	_ptr0,_info_screen_header_extnt_lib
-		MOVWO	_tmp2,_extnt_queue_buf
-		PLA										; OPTIMIZED
-		EXTQSTART
-		STX		_tmp4
-		JSR		_strcpy_ex
-		EXTQEND
-		MOVWO	_ptr0,_info_screen_legends_extnt_lib
-		EXTQSTART
-		JSR		_strcpy_lib
-		EXTQEND
-		JMP		_buffers_wait_flush
-
-; =============== S U B	R O U T	I N E =======================================
-_strcpy_lib:
-		STX		_tmp4
-		LDX		_cur_info_maps_button_idx
-		LDA		_info_screen_legends_idx_list,X
-
-; =============== S U B	R O U T	I N E =======================================
-_strcpy_ex:
-		ASL										; calc idx
-		TAY
-		LDA		(_ptr0),Y						; fetch ptr
-		TAX
-		INY
-		LDA		(_ptr0),Y
-		STX		_ptr0							; store ptr
-		STA		_ptr0+1
-		LDY		#$00
-		STY		_tmp5							; set src pos to 0
-		BEQ		loc_A02FD
-loc_A02F1:
-		LDY		_tmp4
-		STA		(_tmp2),Y						; store dst byte
-		INC		_tmp4							; increment dst, can't be more than 256
-		INC		_tmp5							; increment src, and hi ptr nibble if >256
-		BNE		loc_A02FD
-		INC		_ptr0+1
-loc_A02FD:
-		LDY		_tmp5							; repeat
-		LDA		(_ptr0),Y						; read src byte
-		CMP		#$FF
-		BNE		loc_A02F1						; send if not end of buf
-		LDX		_tmp4							; X = head pos of dst buf
-		RTS
-
-_info_screen_legends_idx_list:
-		.BYTE	$00,$01,$02,$03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$04
-_info_screen_legends_nt_lib:
-		.WORD	_info_screen_legend_nt00		; trees/rivers/buildings/clear 4-color
-		.WORD	_info_screen_legend_nt01		; 2-buttons on/off
-		.WORD	_info_screen_legend_nt02		; + pos -
-		.WORD	_info_screen_legend_nt03		; min/max
-		.WORD	_info_screen_legend_nt04		; clear
-_info_screen_legends_extnt_lib:
-		.WORD	_info_screen_legend_extnt00
-		.WORD	_info_screen_legend_extnt01
-		.WORD	_info_screen_legend_extnt02
-		.WORD	_info_screen_legend_extnt03
-		.WORD	_info_screen_legend_extnt04
-_info_screen_legend_nt00:
-		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$83
-		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$A2,$24
-		.BYTE	$08,$DE,$69,$6A,$6B,$DE,$6C,$6D,$6E,$C2,$24,$09,$DE,$79,$7A,$7B
-		.BYTE	$51,$7C,$7D,$7E,$7F,$FF
-_info_screen_legend_extnt00:
-		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$83
-		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$A2,$5C
-		.BYTE	$08,$C1,$43,$43,$43,$01,$43,$43,$43,$C2,$5C,$09,$41,$43,$43,$43
-		.BYTE	$50,$43,$43,$43,$43,$FF
-_info_screen_legend_nt01:
-		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$22,$32,$9D,$A4,$83
-		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$23,$33,$9E,$A5,$A2,$24
-		.BYTE	$07,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$07,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$FF
-_info_screen_legend_extnt01:
-		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$84,$84,$04,$04,$83
-		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$84,$84,$04,$04,$A2,$5C
-		.BYTE	$07,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$07,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$FF
-_info_screen_legend_nt02:
-		.BYTE	$82,$25,$8C,$DE,$DE,$22,$50,$00,$50,$28,$50,$00,$28,$5F,$32,$83
-		.BYTE	$25,$8C,$DE,$DE,$23,$50,$00,$50,$28,$50,$00,$28,$5F,$33,$A2,$24
-		.BYTE	$07,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$07,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$FF
-_info_screen_legend_extnt02:
-		.BYTE	$82,$5D,$8C,$01,$01,$83,$90,$D0,$50,$D0,$D0,$10,$10,$10,$83,$83
-		.BYTE	$5D,$8C,$01,$01,$83,$90,$D0,$50,$D0,$D0,$10,$10,$10,$83,$A2,$5C
-		.BYTE	$07,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$07,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$FF
-_info_screen_legend_nt03:
-		.BYTE	$82,$25,$8C,$DE,$DE,$8E,$50,$50,$00,$BE,$CE,$28,$50,$50,$9E,$83
-		.BYTE	$25,$8C,$DE,$DE,$8F,$50,$50,$00,$BF,$CF,$28,$50,$50,$9F,$A2,$24
-		.BYTE	$07,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$07,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$FF
-_info_screen_legend_extnt03:
-		.BYTE	$82,$5D,$8C,$01,$01,$83,$90,$90,$D0,$C3,$C3,$D0,$D0,$D0,$83,$83
-		.BYTE	$5D,$8C,$01,$01,$83,$90,$90,$D0,$C3,$C3,$D0,$D0,$D0,$83,$A2,$5C
-		.BYTE	$07,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$07,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$FF
-_info_screen_legend_nt04:
-		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$83
-		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$A2,$24
-		.BYTE	$08,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$09,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$FF
-_info_screen_legend_extnt04:
-		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$83
-		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$A2,$5C
-		.BYTE	$08,$01,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$09,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$FF
-_info_screen_header_nt_lib:
-		.WORD	_info_screen_header_nt00		; City Map Comprehensive
-		.WORD	_info_screen_header_nt01		; City Map Residental
-		.WORD	_info_screen_header_nt02		; City Map Commercial
-		.WORD	_info_screen_header_nt03		; City Map Industrial
-		.WORD	_info_screen_header_nt04		; Power Grid
-		.WORD	_info_screen_header_nt05		; Population Dencity
-		.WORD	_info_screen_header_nt06		; Population Rate of Growth
-		.WORD	_info_screen_header_nt07		; Traffic Dencity
-		.WORD	_info_screen_header_nt08		; Pollution Dencity
-		.WORD	_info_screen_header_nt09		; Crime Rate
-		.WORD	_info_screen_header_nt0A		; Land Value
-		.WORD	_info_screen_header_nt0B		; City Service Fire Radius
-		.WORD	_info_screen_header_nt0C		; City Service Police Radius
-		.WORD	_info_screen_header_nt0D		; -blank header- used to clear line
-_info_screen_header_extnt_lib:
-		.WORD	_info_screen_header_extnt00
-		.WORD	_info_screen_header_extnt00
-		.WORD	_info_screen_header_extnt00
-		.WORD	_info_screen_header_extnt00
-		.WORD	_info_screen_header_extnt04
-		.WORD	_info_screen_header_extnt05
-		.WORD	_info_screen_header_extnt05
-		.WORD	_info_screen_header_extnt07
-		.WORD	_info_screen_header_extnt08
-		.WORD	_info_screen_header_extnt04
-		.WORD	_info_screen_header_extnt04
-		.WORD	_info_screen_header_extnt00
-		.WORD	_info_screen_header_extnt00
-		.WORD	_info_screen_header_extnt0D
-_info_screen_header_nt00:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
-		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$43,$6F,$6D,$70
-		.BYTE	$72,$65,$68,$65,$6E,$73,$69,$76,$65,$DF,$DF,$DF,$FF
-_info_screen_header_nt01:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
-		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$52,$65,$73
-		.BYTE	$69,$64,$65,$6E,$74,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt02:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
-		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$20,$43,$6F
-		.BYTE	$6D,$6D,$65,$72,$63,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt03:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
-		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$20,$49,$6E
-		.BYTE	$64,$75,$73,$74,$72,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt0B:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$43,$69,$74,$79,$20,$53,$65,$72,$76
-		.BYTE	$69,$63,$65,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$46,$69,$72
-		.BYTE	$65,$20,$52,$61,$64,$69,$75,$73,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt0C:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$43,$69,$74,$79,$20,$53,$65,$72,$76
-		.BYTE	$69,$63,$65,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$50,$6F,$6C,$69
-		.BYTE	$63,$65,$20,$52,$61,$64,$69,$75,$73,$DF,$DF,$DF,$FF
-_info_screen_header_extnt00:
-		.BYTE	$A9,$5C,$13,$01,$01,$01,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$01,$01,$01,$C9,$5C,$13,$01,$01,$01,$0B,$0B,$0B,$0B
-		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$01,$01,$01,$FF
-_info_screen_header_nt04:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$50,$6F,$77
-		.BYTE	$65,$72,$20,$47,$72,$69,$64,$20,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt09:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$43,$72,$69
-		.BYTE	$6D,$65,$20,$52,$61,$74,$65,$20,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt0A:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$4C,$61,$6E
-		.BYTE	$64,$20,$56,$61,$6C,$75,$65,$20,$20,$DF,$DF,$DF,$FF
-_info_screen_header_extnt04:
-		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$01,$01,$01,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$01,$01,$01,$FF
-_info_screen_header_nt05:
-		.BYTE	$A9,$24,$13,$DF,$DF,$20,$20,$50,$6F,$70,$75,$6C,$61,$74,$69,$6F
-		.BYTE	$6E,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$20,$20,$20,$20,$44
-		.BYTE	$65,$6E,$73,$69,$74,$79,$20,$20,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt06:
-		.BYTE	$A9,$24,$13,$DF,$DF,$20,$20,$50,$6F,$70,$75,$6C,$61,$74,$69,$6F
-		.BYTE	$6E,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$52,$61,$74,$65,$20
-		.BYTE	$6F,$66,$20,$47,$72,$6F,$77,$74,$68,$DF,$DF,$DF,$FF
-_info_screen_header_extnt05:
-		.BYTE	$A9,$5C,$13,$01,$01,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$01,$01,$01,$C9,$5C,$13,$01,$01,$0B,$0B,$0B,$0B,$0B
-		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$01,$01,$01,$FF
-_info_screen_header_nt07:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$20,$54,$72,$61,$66,$66
-		.BYTE	$69,$63,$20,$44,$65,$6E,$73,$69,$74,$79,$20,$DF,$FF
-_info_screen_header_extnt07:
-		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$01,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$01,$FF
-_info_screen_header_nt08:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$20,$50,$6F,$6C,$6C,$75,$74
-		.BYTE	$69,$6F,$6E,$20,$44,$65,$6E,$73,$69,$74,$79,$20,$FF
-_info_screen_header_extnt08:
-		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$FF
-_info_screen_header_nt0D:
-		.BYTE	$A2,$24,$1B,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24
-		.BYTE	$1B,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$FF
-_info_screen_header_extnt0D:
-		.BYTE	$A2,$5C,$1B,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$C2,$5C
-		.BYTE	$1B,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$FF
-
-		SECTION_ENDS 7904, "PRG7-9 INFO SCREEN DRAW HEADERS AND BUTTONS"
-
-; ---------------------------------------------------------------------------
 ; ------S-C-R-E-E-N--R-E-S-O-U-R-C-E-S--T-I-L-E-M-A-P-S--A-N-D--D-R-A-W------
 ; ---------------------------------------------------------------------------
 
@@ -972,6 +478,60 @@ _tlm_scr3_lz0:
 		.BYTE	$04,$9F,$3E,$58,$3F,$00,$02,$38,$44,$08,$83,$07,$DF,$28,$00,$87
 		.BYTE	$03,$F0,$27,$00,$FF
 
-		SECTION_ENDS 902, "PRG9 COMMON SCREEN DRAW ANT TILEMAP DATA"
+		SECTION_ENDS 902, "PRG9 COMMON SCREEN DRAW AND TILEMAP DATA"
+
+		SECTION_START	100
+
+_tlm_res_lz_scenario_complete:
+		.WORD	$2000
+		.BYTE	1
+		.WORD	_tlm_lz_scenario_complete
+_tlm_lz_scenario_complete:
+		.BYTE	$E4,$61,$DD,$00,$A5,$3A,$A6,$00,$A7,$22,$DD,$1C,$B5,$DF,$DF,$AA
+		.BYTE	$AF,$C9,$AF,$C1,$AB,$DF,$AA,$8C,$AF,$C1,$C2,$AC,$C9,$DF,$AA,$C1
+		.BYTE	$AF,$8C,$AC,$AD,$C2,$8D,$DF,$DF,$B7,$85,$00,$7F,$16,$BA,$BF,$D9
+		.BYTE	$BF,$D1,$BB,$DF,$BA,$89,$BF,$D1,$D2,$BC,$D9,$DF,$BA,$D1,$BF,$9C
+		.BYTE	$BC,$BD,$D2,$9D,$86,$00,$9C,$29,$F9,$00,$99,$2F,$F9,$84,$00,$9E
+		.BYTE	$01,$DC,$A0,$23,$A1,$00,$A2,$85,$00,$E4,$85,$00,$E4,$86,$00,$E3
+		.BYTE	$00,$DC,$85,$00,$DE,$00,$B0,$63,$84,$01,$B2,$B0,$63,$8C,$01,$B2
+		.BYTE	$B0,$63,$C4,$02,$B2,$DC,$B0,$63,$80,$00,$B2,$87,$00,$FD,$63,$94
+		.BYTE	$01,$B2,$B0,$63,$9C,$01,$B2,$B0,$63,$D4,$02,$B2,$DC,$B0,$63,$90
+		.BYTE	$88,$01,$1C,$63,$A4,$01,$B2,$B0,$63,$AC,$01,$B2,$B0,$63,$E4,$02
+		.BYTE	$B2,$DC,$B0,$63,$A0,$88,$01,$1C,$63,$B4,$01,$B2,$B0,$63,$BC,$01
+		.BYTE	$B2,$B0,$63,$F4,$02,$B2,$DC,$B0,$63,$B0,$87,$01,$1C,$00,$C0,$23
+		.BYTE	$C1,$00,$C2,$85,$01,$84,$85,$01,$84,$86,$01,$83,$86,$00,$FD,$62
+		.BYTE	$CD,$62,$D3,$03,$DC,$DC,$28,$F3,$22,$DC,$63,$FC,$01,$DC,$DC,$63
+		.BYTE	$9C,$01,$A9,$AA,$86,$00,$FD,$03,$DC,$DC,$C7,$D6,$23,$DC,$01,$C7
+		.BYTE	$9B,$84,$01,$C8,$00,$85,$24,$DC,$03,$0F,$AC,$DC,$DC,$86,$00,$FD
+		.BYTE	$64,$D7,$01,$D1,$DC,$63,$F4,$01,$DC,$DC,$63,$F8,$23,$DC,$04,$AD
+		.BYTE	$AE,$DC,$DC,$DC,$F0,$26,$00,$DE,$63,$C0,$01,$B2,$B0,$63,$C8,$01
+		.BYTE	$B2,$B0,$63,$CC,$02,$B2,$DC,$B0,$23,$88,$88,$01,$1C,$63,$D0,$01
+		.BYTE	$B2,$B0,$63,$D8,$01,$B2,$B0,$63,$DC,$8F,$02,$35,$63,$E0,$01,$B2
+		.BYTE	$B0,$63,$E8,$01,$B2,$B0,$63,$EC,$8F,$02,$35,$63,$F0,$01,$B2,$B0
+		.BYTE	$63,$F8,$01,$B2,$B0,$63,$FC,$06,$B2,$DC,$B0,$88,$88,$88,$88,$F0
+		.BYTE	$27,$01,$7C,$00,$DC,$63,$8C,$83,$01,$F7,$02,$AF,$D6,$DC,$63,$2B
+		.BYTE	$03,$60,$61,$DC,$DC,$63,$C3,$00,$DC,$89,$01,$BD,$00,$AB,$84,$01
+		.BYTE	$D5,$00,$7C,$84,$01,$D5,$00,$6E,$29,$DC,$86,$01,$BE,$63,$D6,$07
+		.BYTE	$DC,$DC,$85,$86,$88,$89,$DC,$DC,$63,$F0,$8F,$02,$F5,$06,$DA,$DB
+		.BYTE	$CE,$CF,$DC,$DC,$8A,$62,$9D,$06,$DC,$DC,$DC,$F4,$F5,$F6,$F7,$8B
+		.BYTE	$02,$F6,$00,$C5,$3A,$C6,$00,$C7,$E4,$60,$DD,$32,$FF,$00,$42,$22
+		.BYTE	$00,$87,$03,$CF,$0F,$FF,$81,$24,$18,$42,$00,$00,$00,$00,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF,$FF,$8F,$03,$DF,$00,$FF,$E4,$61,$81,$3C,$CA,$83
+		.BYTE	$04,$5F,$01,$01,$01,$25,$00,$02,$01,$00,$01,$86,$04,$86,$00,$00
+		.BYTE	$84,$04,$8C,$22,$01,$9F,$04,$7E,$84,$04,$7E,$29,$80,$00,$01,$2F
+		.BYTE	$80,$04,$CA,$81,$81,$81,$CA,$3A,$01,$86,$04,$7E,$23,$53,$85,$05
+		.BYTE	$03,$87,$05,$03,$04,$01,$53,$53,$53,$53,$9F,$04,$FC,$F0,$3F,$04
+		.BYTE	$FC,$01,$01,$01,$F0,$25,$04,$DE,$25,$06,$01,$01,$01,$83,$05,$A8
+		.BYTE	$00,$01,$23,$03,$07,$01,$01,$06,$06,$06,$06,$06,$06,$88,$05,$7D
+		.BYTE	$08,$06,$06,$01,$01,$01,$01,$06,$06,$01,$88,$05,$C3,$02,$01,$06
+		.BYTE	$06,$8F,$05,$9B,$10,$06,$06,$06,$06,$01,$01,$03,$03,$03,$03,$01
+		.BYTE	$01,$01,$01,$06,$06,$01,$F0,$27,$05,$7C,$F0,$9F,$05,$04,$00,$01
+		.BYTE	$23,$02,$86,$05,$AF,$25,$05,$06,$01,$01,$06,$06,$06,$06,$01,$9B
+		.BYTE	$05,$BD,$91,$06,$B9,$09,$02,$02,$02,$02,$01,$01,$03,$03,$03,$03
+		.BYTE	$9B,$06,$F5,$8C,$07,$10,$00,$CA,$F0,$22,$04,$5F,$E4,$5D,$81,$32
+		.BYTE	$00,$87,$07,$BF,$84,$07,$BF,$0B,$42,$18,$24,$81,$00,$00,$00,$00
+		.BYTE	$00,$00,$00,$00,$8F,$07,$DC,$23,$00,$FF
+
+		SECTION_ENDS	100, "TLM 'SCENARIO COMPLETE'"
 
 		BANK_END F6,$A000

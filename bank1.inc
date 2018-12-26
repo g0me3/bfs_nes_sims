@@ -7,6 +7,8 @@
 ; -------------G-A-M-E--S-E-T-U-P--A-N-D--I-N-I-T--S-T-U-F-F-----------------
 ; ---------------------------------------------------------------------------
 
+		SECTION_START F0E
+
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup:
 		LDA		#_MUS_IDX_STOP
@@ -150,7 +152,7 @@ _game_setup05_scenario_init:
 		BNE		loc_240B2
 .extra_scenarios:
 		LDXY	_tlm_res_lz_scenario_complete	; tlm for this scenario is in extra bank
-		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA	; the only extarnal tlm data here for now
+		FJSRA	_res_ppu_lz_unpack,PRG6,PRG6	; the only extarnal tlm data here for now
 		LDY		#$04
 loc_240B2:
 		STY		_tmp6D4							; tmp var for number or icons per row
@@ -809,7 +811,7 @@ _game_setup01_name_input_init:
 ;		LDXY	_tlm_res_lz_name_init			; REDUNDANT, draw external tilemap for name input screen
 ;		FJSRA	_res_ppu_lz_unpack,SRAM,PRGA
 ; -
-		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_name_init	; OPTIMIZED, now lockal
+		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_name_init	; OPTIMIZED, now local
 		LDA		#$00
 		STA		_tmp6DC+2
 		LDA		#$02
@@ -1705,8 +1707,6 @@ _game_setup10_all_complete_input:
 locret_24C44:
 		RTS
 
-		SECTION_START F0F
-
 ; =============== S U B	R O U T	I N E =======================================
 _game_vars_init:
 		JSR		_sram_write_enable
@@ -1956,8 +1956,6 @@ _scenario_presents_flags_lib:					; 7654 3210 FEDC BA98
 		.BYTE	$0E,$1F,$FF,$FF
 _scenario_city_type_list:
 		.BYTE	$03,$03,$03,$04,$03,$03,$03
-
-		SECTION_ENDS F0F, "PRGF GAME VARS INIT"
 
 ; REDUNDANT, two functions to send another type of tilemaps: RLE-packed queue
 ; lists, both called in conjunction always so why we don't merge them and
@@ -2690,6 +2688,10 @@ _all_scenarios_clear_msg:
 		.BYTE	"very difficult.",$A
 		.BYTE	_eof
 
+		SECTION_ENDS F0E, "PRGF GAME SETUP AND INIT ROUTINES"
+
+		SECTION_START F0F
+
 _tlm_res_lz_fullscreen_wnd:
 		.WORD	$2000
 		.BYTE	1
@@ -2792,5 +2794,7 @@ _pak_tlm_name_init0:
 		.BYTE	$CA,$9B,$06,$9C,$03,$CA,$CA,$CA,$CA,$9C,$05,$FC,$04,$06,$06,$06
 		.BYTE	$06,$06,$F0,$23,$05,$DE,$E4,$7D,$86,$27,$00,$07,$FF,$FF,$FF,$FF
 		.BYTE	$00,$00,$00,$00,$8F,$07,$C0,$93,$07,$CC,$8B,$07,$C0,$FF
+
+		SECTION_ENDS	F0F, "TLM GAME SETUP"
 
 		BANK_END F1,$C000

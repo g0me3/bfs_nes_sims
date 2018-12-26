@@ -4,8 +4,10 @@
 		BANK_START $F5
 
 ; ---------------------------------------------------------------------------
-; --------------E-X-T-E-R-N-A-L--S-Y-S-T-E-M--R-O-U-T-I-N-E-S----------------
+; ---------------------O-B-J-E-C-T--H-A-N-D-L-E-R-S--------------------------
 ; ---------------------------------------------------------------------------
+
+		SECTION_START	F10
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_handlers:
@@ -1897,6 +1899,10 @@ _get_cur_obj_map_ptr:
 		BUFPOS	_ptr15,_cur_obj_pos._COL,_cur_obj_pos._ROW,#$4C,#>[_city_map]
 		RTS
 
+		SECTION_ENDS	F10, "PRGF OBJECT MANAGER AND DRAW ROUTINES"
+
+		SECTION_START	F11
+
 ; FIX: common dir delta list
 ;
 _obj_dir_delta_list:
@@ -3286,6 +3292,8 @@ _obj_spr_rotate_delta_table:
 		.BYTE	$FF,$FF,$FF,$01,$01,$01,$00,$FF
 		.BYTE	$FF,$FF,$FF,$FF,$01,$01,$01,$00
 
+		SECTION_ENDS	F11, "PRGF OBJECT SPRITES AND ANIM DATA"
+
 		SECTION_START F04
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3360,6 +3368,6 @@ loc_88CC5:
 		STX		_spr_buf_pos
 		RTS
 
-		SECTION_END F04
+		SECTION_ENDS F04, "PRGF GAME INTERFACE CURSOR ROUTINES"
 
 		BANK_END F5,$A000

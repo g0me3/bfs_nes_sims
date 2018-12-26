@@ -4,8 +4,10 @@
 		BANK_START $F9
 
 ; ---------------------------------------------------------------------------
-; -------M-O-R-E--S-C-R-E-E--R-E-S-O-U-R-C-E-S--C-O-D-E--A-N-D--D-A-T-A------
+; -----M-A-I-B--S-C-R-E-E-N--R-E-S-O-U-R-C-E-S--C-O-D-E--A-N-D--D-A-T-A------
 ; ---------------------------------------------------------------------------
+
+		SECTION_START	C10
 
 ; FIX, moved from PRG7 to the local place
 ; -
@@ -1020,7 +1022,7 @@ loc_EA5BA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw:
-		FJSRA	_info_maps_button_redraw,PRG6,PRG9
+		FJSRA	_info_maps_button_redraw,PRG7,PRG9	; FIX, now in PRG7
 
 ; !FALLTHROUGH!
 
@@ -1034,7 +1036,7 @@ _scr_res_hndl0_AB_info_maps_redraw_ex:
 		JSR		_wait_for_nmi
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
-		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
+		FJSRA	_info_maps_header_and_legend_redraw,PRG7,PRG9	; FIX, now in PRG7
 		JMP		_mini_map_fill_block
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1097,7 +1099,7 @@ loc_EA637:
 		STA		_prev_info_maps_button_idx		; while current map still drawn
 		LDA		_ptr0
 		STA		_cur_info_maps_button_idx
-		FJSRA	_info_maps_button_redraw,PRG6,PRG9
+		FJSRA	_info_maps_button_redraw,PRG7,PRG9	; FIX, now in PRG7
 		POPB	_prev_info_maps_button_idx		; restore previous parameters
 		POPB	_cur_info_maps_button_idx
 .no_buttons_redraw:
@@ -1947,10 +1949,10 @@ _info_maps_menu_handler:
 		LDA		_cur_info_maps_button_idx		; draw back to previous state all buttons and headers
 		STA		_prev_info_maps_button_idx
 		STY		_cur_info_maps_button_idx
-		FJSRA	_info_maps_button_redraw,PRG6,PRG9
+		FJSRA	_info_maps_button_redraw,PRG7,PRG9	; FIX, now in PRG7
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
-		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
+		FJSRA	_info_maps_header_and_legend_redraw,PRG7,PRG9	; FIX, now in PRG7
 		RTS
 .info_menu_A_press:
 		LDY		_cur_info_maps_button_idx		; press A, selection made, update vars
@@ -2040,7 +2042,7 @@ _info_maps_menu_draw:
 		PUSHB	_cur_info_maps_button_idx
 		LDA		#$0D							; idx for dummy header and legend data
 		STA		_cur_info_maps_button_idx		; erase current headers, prepare to redraw it
-		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
+		FJSRA	_info_maps_header_and_legend_redraw,PRG7,PRG9	; FIX, now in PRG7
 		POPB	_cur_info_maps_button_idx
 		LDY		_cur_info_maps_button_idx
 		LDA		_info_maps_menu_var_ofs_list,Y
@@ -4253,5 +4255,7 @@ loc_EBA5F:
 ;		.BYTE	[[100000 >> 0] & $FF]	; $A0
 ;		.BYTE	[[1000000 >> 0] & $FF]  ; $40
 ;		.BYTE	[[10000000 >> 0] & $FF] ; $80
+
+		SECTION_ENDS	C10, "PRGC and PRG1 MAIN SCREEN RESOURCES MANAGER"
 
 		BANK_END F9,$C000

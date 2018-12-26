@@ -361,7 +361,7 @@ _tlm_extnt_game_msg_presentss_icons_lib:
 		.BYTE	$12,$12,$12
 		.BYTE	$12,$12,$12
 
-		SECTION_END 301
+		SECTION_ENDS 301, "PRG3 EXTRA SETUP ROUTINES"
 
 ; ---------------------------------------------------------------------------
 ; ----------------G-A-M-E--E-V-E-N-T-S--A-N-I-M--D-A-T-A---------------------
