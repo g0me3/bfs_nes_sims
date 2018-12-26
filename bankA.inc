@@ -1591,7 +1591,6 @@ loc_104C8E:
 ; -
 		BNE		loc_104C8E
 		LDA		#$03							; average from Micropolis
-;		LDA		#$07							; FIX rebalance average
 		STA		_tmpEB
 		JSR		_div_32to16						; E6 = problems_sum / 3
 		LDA		_tmpE7
@@ -2325,7 +2324,7 @@ loc_105142:
 loc_105153:
 		DEX
 		BNE		loc_105164
-		LDA		_city._crime_lvl_avr.INT			; SCENARIO 2 "DETROIT"
+		LDA		_city._crime_lvl_avr.INT		; SCENARIO 2 "DETROIT"
 		BNE		.scenario_failed
 		LDA		_city._crime_lvl_avr.FRAC
 		CMP		#$3C

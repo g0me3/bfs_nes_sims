@@ -1967,7 +1967,7 @@ loc_EAC51:
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_menu_erase:
 		APUA_SE	_SE_IDX_ROLLOUT
-		FJSRA	_wnd_erase,PRGC,PRG9			; restore nt and extng line by line, erasing wnd
+		FJSRA	_wnd_erase,PRGC,PRG9			; restore nt and extnt line by line, erasing wnd
 		LDA		_cur_info_maps_button_idx		; set cursor position for corresponding button
 		AND		#$FE
 		TAY

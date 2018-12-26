@@ -47,7 +47,7 @@
 - Fixed BUGS#23.4
 - Fixed BUGS#24
 - Fixed BUGS#25, including BUGS#24.1-5. Rebalanced calculations a bit also, so the the average scores now even worse for complete disasters.
-- Added UNFINISHED#1.4, now "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting of the Scenarios (SLOW).
+- Added UNFINISHED#1.5, now "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting of the Scenarios (SLOW).
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
 - TODO Make ship able to sail under the bridges and road/wires with hiding animations.
@@ -70,10 +70,11 @@
 	UNFINISHED
 
 UNFINISHED#1. There are 6 regular scenarios available at the beginning. When you beat 6 regular scenarios, two additional scenarios will be available: "Las Vegas UFO" and "Freedom".
-	UNFINISHED#1.1 Both have no briefing texts and window headers, only blank windows.
-	UNFINISHED#1.2 Both have no completing conditions, both are infinite and cannot be completed.
-	UNFINISHED#1.3 Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR ROM contains two set of tiles for two frames of the large UFO animation with a tractor beam. However, there aren't any other mentions in game messages nor game code for such type of disasters/objects. There is no sprites data associated with it as well. It is just not implemented at all.
-	UNFINISHED#1.4 Scenario "Freedom" have proper map data but have no any proper scenario parameters to load. So all flags, money amount, game settings are be semi-random at start. CAN'T BE PATCHED.
+	UNFINISHED#1.2 "Traffic in Bern" scenario seems totally unfunctional. There are no traffic problems calculated by the game engine, so traffic value here always lower than need to fail this scenario. So you will always win even of roads are deterogating (no roads, no traffic!). Also, as against other game parameters, re-calculated in real-time mode, only traffic calculated at evaluating the city problems, after the end of the year (once per year).
+	UNFINISHED#1.2 Both additional scenarios have no briefing texts and window headers, only blank windows.
+	UNFINISHED#1.3 Also both have no completing conditions, both are infinite and cannot be completed.
+	UNFINISHED#1.4 Scenario "Las Vegas UFO" should have an UFO object as a disaster judging from its name. The CHR ROM contains two set of tiles for two frames of the large UFO animation with a tractor beam. However, there aren't any other mentions in game messages nor game code for such type of disasters/objects. There is no sprites data associated with it as well. It is just not implemented at all.
+	UNFINISHED#1.5 Scenario "Freedom" have proper map data but have no any proper scenario parameters to load. So all flags, money amount, game settings are be semi-random at start. CAN'T BE PATCHED.
 UNFINISHED#2. There are 5 name buffers inside
 	UNFINISHED#2.1 First is your town name, default name "SIMCITY".
 	UNFINISHED#2.2 Second is what you enter as a favorite word, used as a sister town name during the game in New Town mode, if not entered, used the default name. In practice and scenario modes is blank, so message about sistership of towns will lack the name of the City at all.
@@ -129,6 +130,7 @@ UNFINISHED#15. Although Difficult setting non functional in original game (see B
 UNFINISHED#16. There is an unused unreferenced type of Fire disaster which fires half of the Fire disaster tiles on the map at once. In the original Amiga/DOS/C64 versions there was a Scenario for Hamburg Germany 1944 Bombing. There is no such disaster in later version of this game (but there were screens on earliest versions), but such unreferenced type of didsaster clearly evidence that they planned it somehow at some point.
 UNFINISHED#17. There is an unused music command in a music engine code that adds a different type of envelope calculation to the note. If you replace all regular notes with such alt enveloped this will sounds like under water or maybe like in UFO-style. No music sequences are using it at all. Probably this is a leftover of the unimplemented UFO object?
 UNFINISHED#18. Pollution value calculated once per THREAD1 loop, but used currently only for calculating overall city problems list. Never used for any alerts display as well as not used for Graph screen because of BUG#23.
+UNFINISHED#19. RAM addresses $5F6/$5F7 in the main city data array never used by any part of the game. However, they reside at the beginning of average states of the city. The only missing average here is Traffic Level average, which currently assigned to other RAM address $656.
 
 	BUGS
 

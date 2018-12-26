@@ -637,14 +637,15 @@ _R_areas_develop:
 		LDX		#R_AREA_WIDX
 		JSR		_inc_RCI_counts
 		LDY		_last_map_tile_read
-		LDA		_R_area_develop_states_list,Y
+		LDA		_R_area_develop_levels_list,Y
 		STA		_cur_R_area_develop_state
 		JSR		_adc_RCI_level
 		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
 		BNE		loc_11E573
-		INX										; TODO LDX #UNDEVELOPED_WIDX
-		INX
+		LDX		#UNDEVELOPED_WIDX
+;		INX
+;		INX
 loc_11E573:
 		JSR		_inc_areas_stats
 		JSR		_R_areas_twin_blocks_delete_test
@@ -743,15 +744,16 @@ _C_areas_develop:
 		SEC
 		SBC		#$20
 		TAY
-		LDA		_C_area_develop_states_list,Y
+		LDA		_C_area_develop_levels_list,Y
 		STA		_cur_R_area_develop_state
 		JSR		_adc_RCI_level
 		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
 		CMP		#$20
 		BNE		loc_11E644
-		INX										; TODO: LDX UNDEVELOPED_WIDX
-		INX
+		LDX		#UNDEVELOPED_WIDX
+;		INX
+;		INX
 loc_11E644:
 		JSR		_inc_areas_stats
 		JSR		_C_areas_twin_blocks_delete_test
@@ -892,15 +894,16 @@ _I_areas_develop:
 		SEC
 		SBC		#$40
 		TAY
-		LDA		_I_area_develop_states_list,Y
+		LDA		_I_area_develop_levels_list,Y
 		STA		_cur_R_area_develop_state
 		JSR		_adc_RCI_level
 		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
 		CMP		#$40
 		BNE		loc_11E75C
-		INX										; TODO: LDX UNDEVELOPED_WIDX
-		INX
+		LDX		#UNDEVELOPED_WIDX
+;		INX
+;		INX
 loc_11E75C:
 		JSR		_inc_areas_stats
 		LDA		#$06
@@ -1125,7 +1128,7 @@ locret_11E8D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; TODO: when space is enough, merge me with my copy
+; FIXME: when space is enough, merge me with my copy
 ; copy of _power_grid_read in PRGA
 ;
 _test_power_grid_map_bit:
@@ -1306,7 +1309,7 @@ sub_11E9EF:
 		LDY		_tmp6D2
 		INY
 		LDA		_tmp_map_pos._COL
-		STA		_fire_map+$31,Y
+		STA		_tmp_map-1,Y
 		LDA		_tmp_map_pos._ROW
 		STA		_tmp_map+$1B,Y
 		STY		_tmp6D2
@@ -1315,7 +1318,7 @@ sub_11E9EF:
 ; =============== S U B	R O U T	I N E =======================================
 sub_11EA08:
 		LDY		_tmp6D2
-		LDA		_fire_map+$31,Y
+		LDA		_tmp_map-1,Y
 		STA		_tmp_map_pos._COL
 		LDA		_tmp_map+$1B,Y
 		STA		_tmp_map_pos._ROW
@@ -1543,10 +1546,17 @@ loc_11EB9A:
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6CC
 ; -
-; TODO, this fixes the average calc, but then most of other
-; code read the results incorrectly.
-;		MOVW	_tmpE6,_tmp6CC
-;		MOVWI	_tmpE8,0
+; FIX, rescale average
+		LDA		_tmp6CE							; fast divide to 16 in FIXED POINT!
+		ASL										; you may think i multiply, NO!
+		ROL		_tmp6CE+1						; result is fp8_8
+		ASL										; so we cam have results in more wider range
+		ROL		_tmp6CE+1
+		ASL
+		ROL		_tmp6CE+1
+		ASL
+		ROL		_tmp6CE+1
+		STA		_tmp6CE
 ; -
 		MOVW	_tmpEA,_tmp6CE
 		JSR		_div_32to16
@@ -1595,9 +1605,17 @@ loc_11EBFE:
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6D2
 ; -
-; TODO, another value need to be rebalanced after this fix
-;		MOVW	_tmpE6,_tmp6CC
-;		MOVWI	_tmpE8,0
+; FIX, rescale average
+		LDA		_tmp6D0							; fast divide to 16 in FIXED POINT!
+		ASL										; you may think i multiply, NO!
+		ROL		_tmp6D0+1						; result is fp8_8
+		ASL										; so we cam have results in more wider range
+		ROL		_tmp6D0+1
+		ASL
+		ROL		_tmp6D0+1
+		ASL
+		ROL		_tmp6D0+1
+		STA		_tmp6D0
 ; -
 		MOVW	_tmpEA,_tmp6D0
 		JSR		_div_32to16
@@ -1605,7 +1623,7 @@ loc_11EBFE:
 		MOVWI	_tmpE6,$0000
 loc_11EC3B:
 		MOVW	_city._poll_lvl_avr,_tmpE6
-		LDA		#$A0
+		LDA		#$A0							; FIXME, section set and leave outside of this proc
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1694,7 +1712,7 @@ loc_11ECF4:
 		JSR		_interpolate_tmp_with_select_poll_popg_popd_crime_land_to_tmp_map
 		JSR		_interpolate_tmp_to_select_poll_popg_popd_crime_land_maps
 		LDA		#$04
-		JSR		_critical_section_leave			; FIXME, this section set and leave outside of this proc
+		JSR		_critical_section_leave			; FIXME, section set and leave outside of this proc
 		LDA		_tmp6D0
 		ORA		_tmp6D0+1
 		BEQ		loc_11ED64
@@ -1727,7 +1745,7 @@ _get_RCI_area_develop_state:
 		CMP		#$20
 		BCS		loc_11ED7C
 		TAY
-		LDA		_R_area_develop_states_list,Y
+		LDA		_R_area_develop_levels_list,Y
 		LSR
 		LSR
 		LSR
@@ -1738,7 +1756,7 @@ loc_11ED7C:
 		SEC
 		SBC		#$20
 		TAY
-		LDA		_C_area_develop_states_list,Y
+		LDA		_C_area_develop_levels_list,Y
 		RTS
 loc_11ED88:
 		CMP		#$50
@@ -1746,7 +1764,7 @@ loc_11ED88:
 		SEC
 		SBC		#$40
 		TAY
-		LDA		_I_area_develop_states_list,Y
+		LDA		_I_area_develop_levels_list,Y
 		RTS
 loc_11ED94:
 		LDA		#$00
@@ -1782,7 +1800,7 @@ loc_11EDBB:
 		LDA		#$00
 loc_11EDC0:
 		STA		_tmp_map_pos._COL				; set cur COL
-		JSR		_read_land_val_avr_map_nibble		; read LAND value nibble [0-15]
+		JSR		_read_land_val_avr_map_nibble	; read LAND value nibble [0-15]
 		BEQ		loc_11EDF1						; skip if zero value, no crime
 		STA		_tmpE7
 		INCW	_tmp6D0							; increment lands counter
@@ -1807,8 +1825,8 @@ loc_11EDF1:
 		PHA										; backup crime level value
 		JSR		_write_crime_map_nibble			; write new value, auto clamped to F
 		PLA										; restore and add to sum
-		CLC
-		ADC		_tmp6CC							; add calculated crime value here
+		CLC										; NOTE, we write here full sum with overflows
+		ADC		_tmp6CC							; summing crime values for all areas
 		STA		_tmp6CC							; max value here may be 19*19*15 = 5415
 		BCC		loc_11EE02
 		INC		_tmp6CC+1
@@ -1823,23 +1841,31 @@ loc_11EE02:
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EDBB
-; BUG, and again, wrong average
+; BUG, this is not average again!
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		MOVW	_tmpE7,_tmp6CC
+		MOVW	_tmpE7,_tmp6CC					; now load divident
 ; -
-; TODO, rebalance me
-;		MOVW	_tmpE6,_tmp6CC
-;		MOVWI	_tmpE8,0
+; FIX, rescale average
+		LDA		_tmp6D0							; fast divide to 16 in FIXED POINT!
+		ASL										; you may think i multiply, NO!
+		ROL		_tmp6D0+1						; result is fp8_8
+		ASL										; so we cam have results in more wider range
+		ROL		_tmp6D0+1
+		ASL
+		ROL		_tmp6D0+1
+		ASL
+		ROL		_tmp6D0+1
+		STA		_tmp6D0
 ; -
 		MOVW	_tmpEA,_tmp6D0
 		JSR		_div_32to16
 		BCC		loc_11EE3B
 		MOVWI	_tmpE6,0						; default value 0
 loc_11EE3B:
-		MOVW	_city._crime_lvl_avr,_tmpE6
-		LDA		#$40
+		MOVW	_city._crime_lvl_avr,_tmpE6		;
+		LDA		#$40							; FIXME, section set and leave outside of this proc
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3396,13 +3422,13 @@ loc_11F93E:
 		POPW	_tmp_map_pos
 		RTS
 
-_R_area_develop_states_list:
+_R_area_develop_levels_list:
 		.BYTE	$00,$04,$06,$08,$0C,$10,$18,$20,$28,$10,$18,$20,$28,$10,$18,$20
 		.BYTE	$28,$10,$18,$20,$28,$28,$28,$28,$28
-_C_area_develop_states_list:
+_C_area_develop_levels_list:
 		.BYTE	$00,$01,$02,$03,$04,$05,$01,$02,$03,$04,$05,$01,$02,$03,$04,$05
 		.BYTE	$01,$02,$03,$04,$05,$05,$05,$05,$05
-_I_area_develop_states_list:
+_I_area_develop_levels_list:
 		.BYTE	$00,$01,$02,$03,$04,$01,$02,$03,$04
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4015,8 +4041,8 @@ loc_11FF97:
 		LDA		#$00
 loc_11FF9C:
 		STA		_tmp_map_pos._COL				; columns
-		JSR		_read_land_val_avr_map_nibble		; read land value nibble here (4x4 blocks)
-		CMP		#$00
+		JSR		_read_land_val_avr_map_nibble	; read land value nibble here (4x4 blocks)
+;		CMP		#$00							; REDUNDANT, flag already set here
 		BEQ		loc_11FFBB
 		JSR		_read_traffic_dencity_map_nibble; read traffic dencity value for area (2x2 blocks)
 		CLC
@@ -4025,9 +4051,7 @@ loc_11FF9C:
 		BCC		loc_11FFB5
 		INC		_tmp6CC+1
 loc_11FFB5:
-		INC		_tmpEA							; also increas 2x2 tiles counter (1.00+0.01)
-		BNE		loc_11FFBB
-		INC		_tmpEB
+		INCW	_tmpEA							; also increas 2x2 tiles counter (1.00+0.01)
 loc_11FFBB:
 		LDA		_tmp_map_pos._COL				; for all blocks 2x2
 		CLC
@@ -4039,6 +4063,8 @@ loc_11FFBB:
 		ADC		#$02
 		CMP		#$4C
 		BCC		loc_11FF97
+; NOTE, traffic average here calculated different from other places
+; this gives more reliable results somehow
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
