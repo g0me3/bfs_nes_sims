@@ -468,7 +468,7 @@ _power_tile_test:
 ; or tile already powered.
 ;
 _power_grid_test:
-		JSR		_map_tile_read				; read nearest tile
+		JSR		_map_tile_read					; read nearest tile
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
 		BPL		.nothing_to_power				; test if powerable
@@ -677,8 +677,8 @@ loc_10457D:
 		STA		_graphs._10y._I+9				; graph data = [L_I * 16]
 ; BUG! "crime" button is the last one, this is a pollution button.
 ; use pollution value instead!
-;		LDA		_city._crime_level.INT
-		LDA		_city._pollution_level.INT		; FIX, correct value
+;		LDA		_city._crime_lvl_avr.INT
+		LDA		_city._poll_lvl_avr.INT		; FIX, correct value
 ; NOTE, integer part of the value is a special
 ; flag for ingame warning messages, so remove it
 ; interpolate with previous values for nice curvy graph
@@ -697,7 +697,7 @@ loc_1045E9:
 ; all this thing looks wrong then.
 ;
 ;		LDA		_city._money+2					; money above 65535 counts but clamped to 7 bit only
-		LDA		_city._crime_level.INT			; FIX, correct values here
+		LDA		_city._crime_lvl_avr.INT			; FIX, correct values here
 		AND		#$7F							; lol
 		SEC
 ;		SBC		_graphs._10y._money+8			; BUG
@@ -775,7 +775,6 @@ loc_1045FE:
 		LDA		_taxes_income+2
 		EOR		#$FF
 		ADC		#$00
-		STA		_tmpE8
 		BNE		.clamp_to_min_m					; clamp if higher nibble non-zero
 		LDA		_tmpE7							; already got values in tmp vars
 		LSR										; so just /32 here
@@ -801,22 +800,40 @@ loc_1045FE:
 ;		STA		_graphs._10y._crime+9			; BUG
 		STA		_graphs._10y._money+9			; FIX
 		JSR		_sram_write_disable
-		LDX		#$00							; the final calculation for schools and hospitals
+;		LDX		#$00							; the final calculation for schools and hospitals
 		LDA		_city._level._R.INT				; based on integer part of R level value
 		CMP		_hospitals_count				; [L_R]<school/hospitals, school/hospitals delta negative
-		BCC		loc_10463B						; [L_R]=school/hospitals, school/hospitals delta zero
-		BNE		loc_10463F						; [L_R]<school/hospitals, school/hospitals delta positive
-		BEQ		loc_104641						; so we see that a number of schools/hospitals would be exactly
-loc_10463B:										; equal the R level
-		LDX		#$FF
-		BNE		loc_104641
-loc_10463F:
-		LDX		#$01
-loc_104641:
+;		BCC		loc_10463B						; [L_R]=school/hospitals, school/hospitals delta zero
+;		BNE		loc_10463F						; [L_R]<school/hospitals, school/hospitals delta positive
+;		BEQ		loc_104641						; so we see that a number of schools/hospitals would be exactly
+;loc_10463B:										; equal the R level
+;		LDX		#$FF
+;		BNE		loc_104641
+;loc_10463F:
+;		LDX		#$01
+;loc_104641:
+		JSR		_delta_calc
 		STX		_hospitals_delta
-		LDX		#$00
-		LDA		_city._level._R.INT
+;		LDX		#$00
+;		LDA		_city._level._R.INT				; REDUNDANT, already loaded
 		CMP		_schools_count
+;		BCC		loc_104652
+;		BNE		loc_104656
+;		BEQ		loc_104658
+;loc_104652:
+;		LDX		#$FF
+;		BNE		loc_104658
+;loc_104656:
+;		LDX		#$01
+;loc_104658:
+		JSR		_delta_calc
+		STX		_schools_delta
+		RTS
+
+; OPTIMIZED size, merged same compares
+; =============== S U B	R O U T	I N E =======================================
+_delta_calc:
+		LDX		#$00
 		BCC		loc_104652
 		BNE		loc_104656
 		BEQ		loc_104658
@@ -826,7 +843,6 @@ loc_104652:
 loc_104656:
 		LDX		#$01
 loc_104658:
-		STX		_schools_delta
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -919,8 +935,8 @@ loc_1046EB:
 ; NOTE, see, there is no hospitals because this is CAPITALISM and medicine uses insurance systemfor funding itself
 ;
 		PUSHW	_cur_RCI_levels_sum				; two fp8_8 values multiply
-		PUSHW	_city._land_value
-		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*_land_value
+		PUSHW	_city._land_val_avr
+		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*_land_val_avr
 		PLA										; skip lower FRAC nibbles
 		PLA
 		TAX
@@ -936,7 +952,7 @@ loc_1046EB:
 		PHA
 		LDA		_tax_coefs_frac,Y
 		PHA
-		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*OVERALL_LAND_VALUE*diff[1.4/1.2/0.8]
+		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*_land_val_avr*diff[1.4/1.2/0.8]
 		PLA										; migrate results to the multiply arguments again
 		PLA										; looks crypic but little bit faster than using
 		TAX										; temp vars
@@ -952,7 +968,7 @@ loc_1046EB:
 		PLA
 		PUSHW	_tmp6CC							; result already in stack, just push _tax_year_rate
 		JSR		_mmc5_mul16to16					; full equation is
-		PLA										; _city_taxes_collected=(L_R+L_C+L_I)*_land_value*diff[1.4/1.2/0.8]*0.71*_tax_year_rate
+		PLA										; _city_taxes_collected=(L_R+L_C+L_I)*_land_val_avr*diff[1.4/1.2/0.8]*0.71*_tax_year_rate
 		POPD	_city_taxes_collected			; result is 24-bit
 		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings at all, then skip budget screen
 		ORA		_cur_RCI_levels_sum.INT
@@ -1205,7 +1221,7 @@ _city_assessed_value_recalc:
 		PUSHWI	$03E8
 		LDA		_police_stations_count
 		CLC
-;		ADC		_fires_level					; BUG! wrong var used
+;		ADC		_fires_count					; BUG! wrong var used
 		ADC		_fire_stations_count			; FIX, proper value, based on Micropolis source
 		PHA
 		JSR		_mmc5_mul16to8
@@ -1240,7 +1256,7 @@ _city_assessed_value_recalc:
 		PUSHB	_nuke_power_station_count
 		JSR		_mmc5_mul16to8
 ; NOTE, the result is assessed value of micropolis source code has this value
-; additionally multiplied to 1000, the nes version dont
+; additionally multiplied to 1000, the NES version don't
 ;
 		POPADDD	_assessed_value,_tmpE6			; _assessed_value = E6 + (nuclear power * 6000)
 		RTS
@@ -1267,7 +1283,7 @@ _city_net_migration_relalc:
 ; OPTIMIZED
 		LDX		#$04
 loc_104AF0:
-		JSR		_popul_compare
+		JSR		_popul_compare					; existing routine used
 		BCS		loc_104AF1
 		DEX
 		BPL		loc_104AF0
@@ -1306,7 +1322,7 @@ loc_104AF1:
 ; there are three tmp buffers 2*7-bytes each:
 ; 6CE-6DB (_problem_data) 		- set initial parameters
 ; 6DC-6E2 (_problem_accepted)	- flags when problem is selected to sorting list
-; 6E3-6E9 (_problem_percent)		- a number of problem occurance during the random test
+; 6E3-6E9 (_problem_percent)	- a number of problem occurance during the random test
 ;
 ; the overall problem of comparing all these values is they are a different
 ; types of measurement units. they just can't be compared directly.
@@ -1320,27 +1336,27 @@ loc_104AF1:
 ; would be higher than others always...
 ;
 _city_problems_list_recalc:
-		LDA		_city._crime_level.FRAC			; crime level uses high bit as special flag
+		LDA		_city._crime_lvl_avr.FRAC		; crime level uses high bit as special flag
 		STA		_problem_data					; remove it first
-		LDA		_city._crime_level.INT			; 6CE/6CF = crime_level & 0x7F00
+		LDA		_city._crime_lvl_avr.INT		; 6CE/6CF = crime_level & 0x7FFF
 		AND		#$7F
 		STA		_problem_data+1
-		LDA		_city._pollution_level.FRAC		; 6D0/6D1 = pollution_level & 0x7F00
+		LDA		_city._poll_lvl_avr.FRAC		; 6D0/6D1 = pollution_level & 0x7FFF
 		STA		_problem_data+2					; remove special flag bit as well, however
-		LDA		_city._pollution_level.INT		; it never used by the game anymore,
+		LDA		_city._poll_lvl_avr.INT			; it never used by the game anymore,
 		AND		#$7F							; pollution alert isn't implemented
 		STA		_problem_data+3
-		PUSHW	_city._land_value				; 6D2/6D3 = land_value * 0.625
+		PUSHW	_city._land_val_avr				; 6D2/6D3 = land_value * 0.625
 		PUSHB	#$A0							; (0.7 for Micropolis source code)
 		JSR		_mmc5_mul16to8
 		PLA
 		POPW	_problem_data+4
 		MMULB8	_problem_data+6,_city._tax_rate,#$0A; 6D4/6D5 = tax_rate * 10
-		FJSR	_traffic_level_recalc,SRAM,PRGB
-		MOVW	_problem_data+8,_traffic_level	; 6D6/6D7 = traffic level
+		FJSR	_traf_lvl_avr_recalc,SRAM,PRGB
+		MOVW	_problem_data+8,_traf_lvl_avr	; 6D6/6D7 = traffic level
 		JSR		_get_unemployment
 		STA		_problem_data+10				; FIX, now 6D8 = R/(C+I)*8 - 1
-		JSR		_get_fires						; FIX, now 6DA = _fires_level * 5
+		JSR		_get_fires						; FIX, now 6DA = _fires_count * 5
 		STA		_problem_data+12
 		LDA		#$00
 		STA		_problem_data+11				; 6D9 = 0
@@ -1357,7 +1373,7 @@ loc_104B8F:
 .do_all_fields:
 		LDY		#$00							; reset max value for curretn cycle
 		STY		_tmpE6
-; BUG, this algo wery weak and gives incorrect sorting results. don't know why, because
+; BUG, this algo wery weak and gives incorrect sorting results.
 ; the Micropolis sources has the correct algo for this section.
 ;
 ; 1. it compares for greater AND equals, all equal values will be inserted one by one
@@ -1505,7 +1521,7 @@ _get_unemployment:
 		ORA		_tmpEA
 ; -
 		BNE		loc_104C4C						; if yes, then result 0
-		LDA		#$00
+;		LDA		#$00							; REDUNDANT, we get here if A already 0
 		RTS
 loc_104C4C:
 		MOVW	_tmpE7,_city._level._R			; divident = L_R
@@ -1523,11 +1539,11 @@ locret_104C67:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_fires:
-		LDA		_fires_level					; FIX now has correct properly
+		LDA		_fires_count					; FIX now has correct properly
 		ASL										; utilized variables here
 		ASL
 		CLC
-		ADC		_fires_level
+		ADC		_fires_count
 		BCC		locret_104C75
 		LDA		#$FF
 locret_104C75:
@@ -1535,46 +1551,82 @@ locret_104C75:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_score_recalc:
-		MOVW	_prev_city_score,_city._score
-		LDY		#$00
-		STY		_tmpE6
+		MOVW	_prev_city_score,_city._score	; store the previous score for
+		LDY		#$00							; annual change comparison
+		STY		_tmpE6							; clear tmp vars
 		STY		_tmpE7
 		STY		_tmpE8
 		STY		_tmpE9
 		STY		_tmpEA
 loc_104C8E:
-		LDA		_problem_data,Y
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		LDA		_problem_data+1,Y
-		ADC		_tmpE7
+		LDA		_problem_data,Y					; we uses here the problem values
+		CLC										; calculated in previous routine
+;		ADC		_tmpE6							; summing all 7 parameters
+;		STA		_tmpE6
+		ADC		_tmpE7							; FIX, rebalance
 		STA		_tmpE7
+		LDA		_problem_data+1,Y
+; BUG, for some reasons we store values
+; one nibble lower, than for usual divs
+; this lead the result will be always too small
+;		ADC		_tmpE7
+;		STA		_tmpE7
+		ADC		_tmpE8							; FIX, rebalance
+		STA		_tmpE8
+; BUG!!! AAAHAHAHAHAH
+; _problem_data array consists of WORDS!, we need to
+; increment counter by TWO! so the problems sum here would be
+; less than actual value, but this HELP to avoid
+; other bugs below! they goes same low for a
+; base scores and go on... when we fixed the most of bugs except this
+; the game started to show ALL GOOD SCORES even in case of total disaster
+; lol
+; -
+;		INY
+;		CPY		#$07
+; FIX
 		INY
-		CPY		#$07
+		INY
+		CPY		#$0E
+; -
 		BNE		loc_104C8E
-		LDA		#$03
+		LDA		#$03							; average from Micropolis
+;		LDA		#$07							; FIX rebalance average
 		STA		_tmpEB
-		JSR		_div_32to16
+		JSR		_div_32to16						; E6 = problems_sum / 3
 		LDA		_tmpE7
 		BEQ		loc_104CB1
 		LDA		#$FF
-		STA		_tmpE6
+		STA		_tmpE6							; clamp E6 = {E6} (0.999)
 loc_104CB1:
 		LDA		#$00
 		STA		_tmpE7
-		LDA		_tmpE6
-		NEGA
+		LDA		_tmpE6							; E6 = (0.999-E6)*4, reverse value
+; WARNING, case with 0 will calculated incorrectly here
+; probably we need to use other method of negating this calue
+;		NEGA									; more problems, less score
+; -
+; TRYME,
+		EOR		#$FF
+; -
 		ASL
 		ROL		_tmpE7
 		ASL
 		ROL		_tmpE7
-		CMPWI	_tmpE6,1000
-		BCC		loc_104CD4
-		MOVWI	_tmpE6,1000
+; BUG! does not saved low nibble ore multiply result here! means
+; we compare _tmpE6 as a frankenstain combined from not-xored
+; low nibble of _tmpE6 and high nibble of multiply result
+; so we will have here wrong reversed value!
+; FIX! (not so much optimal in code, STA and CMPWI will be
+; load the same var, but easier to read, though.
+		STA		_tmpE6
+;
+		CMPWI	_tmpE6,1000						; can't be unsigned here so no need to
+		BCC		loc_104CD4						; clamp negative values
+		MOVWI	_tmpE6,1000						; clamp to 1000
 loc_104CD4:
 		LDA		_required._stadium				; unfulfilled requests lower
-		BEQ		loc_104CDC						; the overall score by 0.85 each
+		BEQ		loc_104CDC						; the score by 0.85 each
 		JSR		_mul_fp0_85
 loc_104CDC:
 		LDA		_required._airport
@@ -1585,16 +1637,14 @@ loc_104CE4:
 		BEQ		loc_104CEC
 		JSR		_mul_fp0_85
 loc_104CEC:
-		LDA		_fund_rate_trans
-		CMP		#$20
-		BEQ		loc_104D0A
-		LDA		_tmpE6
-		CLC
-		ADC		#$20
-		STA		_tmpE6
-		BCC		loc_104CFE
-		INC		_tmpE7
-loc_104CFE:
+; NOTE, previous routine were calculated this
+; value with overflow, when at 100% the value
+; here would be 21 instead of 20 which lowered the score!
+;
+		LDA		_fund_rate_trans				; test if transport funds are 100%
+		CMP		#$20							; if less than, decrease scores to negative amount
+		BEQ		loc_104D0A						; E6 += (32 - _fund_rate_trans)
+		ADDWB	_tmpE6,#$20
 		LDA		_tmpE6
 		SEC
 		SBC		_fund_rate_trans
@@ -1602,8 +1652,8 @@ loc_104CFE:
 		BCS		loc_104D0A
 		DEC		_tmpE7
 loc_104D0A:
-		LDA		_fund_rate_police
-		CMP		#$0F
+		LDA		_fund_rate_police				; luck of police and fire funding will lower
+		CMP		#$0F							; scores to E6 = (E6 * (0.95 + funding))
 		BCS		loc_104D14
 		JSR		_mul_a_add_fp0_95
 loc_104D14:
@@ -1612,66 +1662,80 @@ loc_104D14:
 		BCS		loc_104D1E
 		JSR		_mul_a_add_fp0_95
 loc_104D1E:
+; BUG!, comparison on the delta value results always
+; false here, because CMP opcode does not set the V
+; overflow flag! also, the original Micropolis code
+; lowers the score here only if delta is negative.
+; values for negative here FF-80, so we must test
+; the higher S bit instead!
 		LDA		_city._delta._R
-		CMP		#$40
-		BVC		loc_104D28
+;		CMP		#$40							; BUG
+;		BVC		loc_104D28
+		BPL		loc_104D28						; FIX, lower scores if negative
 		JSR		_mul_fp0_85
 loc_104D28:
 		LDA		_city._delta._C
-		CMP		#$40
-		BVC		loc_104D32
+;		CMP		#$40							; BUG
+;		BVC		loc_104D32
+		BPL		loc_104D32						; FIX, lower scores if negative
 		JSR		_mul_fp0_85
 loc_104D32:
 		LDA		_city._delta._I
-		CMP		#$40
-		BVC		loc_104D3C
+;		CMP		#$40							; BUG
+;		BVC		loc_104D3C
+		BPL		loc_104D3C						; FIX, lower scores if negative
 		JSR		_mul_fp0_85
 loc_104D3C:
-		LDA		_popul_cur
-		ORA		_popul_cur+1
+		LDA		_popul_cur						; test for cur population, if zero,
+		ORA		_popul_cur+1					; skip net migration test
 		ORA		_popul_cur+2
-		BEQ		loc_104D6A
-		LDA		_popul_net_migration
+		BEQ		.j_sity_score_finish
+		LDA		_popul_net_migration			; also if _popul_net_migration = 0
 		ORA		_popul_net_migration+1
 		ORA		_popul_net_migration+2
-		BEQ		loc_104D6A
+		BEQ		.j_sity_score_finish
 		LDA		_popul_cur
-		CMP		_popul_net_migration
-		BNE		loc_104D6D
-		LDA		_popul_cur+1
+		CMP		_popul_net_migration			; also if _popul_net_migration = _popul_cur
+		BNE		.net_migration_sum				; which will be the case after very first year
+		LDA		_popul_cur+1					; of your city.
 		CMP		_popul_net_migration+1
-		BNE		loc_104D6D
+		BNE		.net_migration_sum
 		LDA		_popul_cur+2
 		CMP		_popul_net_migration+2
-		BNE		loc_104D6D
-loc_104D6A:
-		JMP		loc_104DF9
-loc_104D6D:
+;		BNE		.net_migration_sum				; REDUNDANT
+.j_sity_score_finish:
+;		JMP		.sity_score_finish				; REDUNDANT, too far jump for near opcode
+		BEQ		.sity_score_finish				; OPTIMIZED
+.net_migration_sum:
+		PUSHW	_tmpE6							; OPTIMIZED
 		LDA		_popul_net_migration+2
-		BMI		loc_104DAE
-		PUSHW	_tmpE6
-		LDA		#$00
+		BMI		.negative_net_migration
+;		PUSHW	_tmpE6							; REDUNDANT, push current score value as a multiply arg0
+		LDA		#$00							; if net migration is positive
 		STA		_tmpE9
-		LDA		_popul_net_migration
-		STA		_tmpE6
-		LDA		_popul_net_migration+1
-		STA		_tmpE7
-		LDA		_popul_net_migration+2
-		STA		_tmpE8
-		LDA		_popul_cur+1
-		STA		_tmpEA
-		LDA		_popul_cur+2
-		STA		_tmpEB
-		JSR		_div_32to16
+		MOVD	_tmpE6,_popul_net_migration		; divident = _popul_net_migration
+		MOVW	_tmpEA,_popul_cur+1				; divider = higher nibbles of _popul_cur
+		JSR		_div_32to16						; result = ((_popul_net_migration)/(_popul_cur/256))+1.0
 		INC		_tmpE7
-		PUSHW	_tmpE6
-		JSR		_mmc5_mul16to16
-		PLA
-		POPW	_tmpE8
-		PLA
-		JMP		loc_104DF9
-loc_104DAE:
-		PUSHW	_tmpE6
+; REDUNDANT
+;		PUSHW	_tmpE6							; second multiply arg
+;		JSR		_mmc5_mul16to16
+;		PLA
+; BUG! and again we have here WRONG result var. following code uses E6 as a result
+; and clamp it once more after multiplications... as a result, we have correct score
+; values only for first two years, for all next years the multiply result here
+; is lost and the previous operation result used instead.
+; so we have the annual score here not E6=E6*(1.0+((_popul_net_migration)/(_popul_cur/256)))
+; but only E6=(1.0+((_popul_net_migration)/(_popul_cur/256)))
+;
+;		POPW	_tmpE8							; result = E6*(1.0+((_popul_net_migration)/(_popul_cur/256)))
+;		POPW	_tmpE6							; FIX
+;		PLA
+;		JMP		.sity_score_finish				; lowers the score wehn lower migration is
+; -
+		JMP		.net_migration_mul				; OPTIMIZED
+.negative_net_migration:
+;		PUSHW	_tmpE6							; REDUNDANT, for negative net migration all mostly the same
 		LDA		#$00
 		STA		_tmpE9
 		LDA		#$00
@@ -1684,10 +1748,7 @@ loc_104DAE:
 		LDA		#$00
 		SBC		_popul_net_migration+2
 		STA		_tmpE8
-		LDA		_popul_cur+1
-		STA		_tmpEA
-		LDA		_popul_cur+2
-		STA		_tmpEB
+		MOVWI	_tmpEA,_popul_cur+1
 		JSR		_div_32to16
 		LDA		#$01
 		SEC
@@ -1696,32 +1757,26 @@ loc_104DAE:
 		LDA		#$00
 		SBC		_tmpE6
 		STA		_tmpE6
+.net_migration_mul:
 		PUSHW	_tmpE6
-		JSR		_mmc5_mul16to16
+		JSR		_mmc5_mul16to16					; result = E6*(1.0-(abs(_popul_net_migration)/(_popul_cur/256)))
+		PLA										; little bit different from Micropolis maybe some kind of balancing there was
+;		POPW	_tmpE8							; BUG!
+		POPW	_tmpE6							; FIX
 		PLA
-		POPW	_tmpE8
-		PLA
-loc_104DF9:
+.sity_score_finish:
 		LDA		_tmpE7
-		BPL		loc_104E05
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE7
+		BPL		loc_104E05						; if negative, clamp to 0
+		MOVWI	_tmpE6,0
 		BEQ		loc_104E17
 loc_104E05:
-		LDA		_tmpE6
-		CMP		#$E8
-		LDA		_tmpE7
-		SBC		#$03
+		CMPWI	_tmpE6,1000						; if positive, clamp to 1000
 		BCC		loc_104E17
-		LDA		#$E8
-		STA		_tmpE6
-		LDA		#$03
-		STA		_tmpE7
+		MOVWI	_tmpE6,1000
 loc_104E17:
-		LDA		_city._score
+		LDA		_city._score					; interpolate with previous value
 		CLC
-		ADC		_tmpE6
+		ADC		_tmpE6							; annual change = (new score + old score)/2 - old score
 		STA		_city._score
 		LDA		_city._score+1
 		ADC		_tmpE7
@@ -1731,25 +1786,27 @@ loc_104E17:
 		LDA		_city._score
 		SEC
 		SBC		_prev_city_score
-		STA		_annual_score_change
+		STA		_annual_score_change			; calculate annual score change value
 		LDA		_city._score+1
 		SBC		_prev_city_score+1
 		STA		_annual_score_change+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; mul 0.85
+; helper mul 0.85
 ;
 _mul_fp0_85:
 		PUSHW	_tmpE6
-		PUSHB	#$D9
-		JSR		_mmc5_mul16to8
-		PLA
-		POPW	_tmpE6
-		RTS
+;		PUSHB	#$D9							; REDUNDANT
+		LDA		#$D9							; OPTIMIZED
+		BNE		_mul_stack_a_popw_tmpE6			; -
+;		JSR		_mmc5_mul16to8					; REDUNDANT
+;		PLA
+;		POPW	_tmpE6
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; mul (arg + 0.94), arg in range [0-14], mul range [0.94-0.99]
+; helper mul (arg + 0.94), arg in range [0-14], mul range [0.94-0.99]
 ;
 _mul_a_add_fp0_95:
 		CLC
@@ -1757,6 +1814,11 @@ _mul_a_add_fp0_95:
 		TAX
 		PUSHW	_tmpE6
 		TXA
+
+; !FGALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_mul_stack_a_popw_tmpE6:
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1915,32 +1977,32 @@ _event01_city_growt:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event06_total_jam:
-		LDA		_traffic_level.INT
+		LDA		_traf_lvl_avr.INT
 		BMI		nullsub_4
 		CMP		#$07
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_traffic_level.INT
+		STA		_traf_lvl_avr.INT
 		JMP		_new_event_set
 
 ; =============== S U B	R O U T	I N E =======================================
 _event07_traffic:
-		LDA		_traffic_level.INT
+		LDA		_traf_lvl_avr.INT
 		BMI		nullsub_4
 		CMP		#$02
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_traffic_level.INT
+		STA		_traf_lvl_avr.INT
 		JMP		_new_event_set
 
 ; =============== S U B	R O U T	I N E =======================================
 _event08_crime:
-		LDA		_city._crime_level.INT
+		LDA		_city._crime_lvl_avr.INT
 		BMI		nullsub_4
 		CMP		#$07
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_city._crime_level.INT
+		STA		_city._crime_lvl_avr.INT
 		JMP		_new_event_set
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2250,55 +2312,46 @@ _scenario_result_test:
 		LDA		_city._city_type				; SCENARIO 0 "CISCO"
 		CMP		#$04							; test if city degraded slightly
 		BCC		.scenario_failed				; less than "CAPITAL"
-		BCS		loc_105198
+		BCS		.scenario_won
 loc_105142:
 		DEX
 		BNE		loc_105153
-		LDA		_traffic_level.INT				; SCENARIO 1 "BERN"
+		LDA		_traf_lvl_avr.INT				; SCENARIO 1 "BERN"
 		BNE		.scenario_failed
-		LDA		_traffic_level.FRAC
+		LDA		_traf_lvl_avr.FRAC
 		CMP		#$50
 		BCS		.scenario_failed
-		BCC		loc_105198
+		BCC		.scenario_won
 loc_105153:
 		DEX
 		BNE		loc_105164
-		LDA		_city._crime_level.INT			; SCENARIO 2 "DETROIT"
+		LDA		_city._crime_lvl_avr.INT			; SCENARIO 2 "DETROIT"
 		BNE		.scenario_failed
-		LDA		_city._crime_level.FRAC
+		LDA		_city._crime_lvl_avr.FRAC
 		CMP		#$3C
 		BCS		.scenario_failed
-		BCC		loc_105198
+		BCC		.scenario_won
 loc_105164:
 		DEX
 		BNE		loc_105175
-		LDA		_city._score					; SCENARIO 3 "TOKYO"
-		CMP		#$F4
-		LDA		_city._score+1
-		SBC		#$01
+		CMPWI	_city._score,500				; SCENARIO 3 "TOKYO"
 		BCC		.scenario_failed
-		BCS		loc_105198
+		BCS		.scenario_won
 loc_105175:
 		DEX
 		BNE		loc_105186
-		LDA		_city._score					; SCENARIO 4 "BOSTON"
-		CMP		#$F4
-		LDA		_city._score+1
-		SBC		#$01
+		CMPWI	_city._score,500				; SCENARIO 4 "BOSTON"
 		BCC		.scenario_failed
-		BCS		loc_105198
+		BCS		.scenario_won
 loc_105186:
 		DEX
 		BNE		locret_105197
-		LDA		_city._score					; SCENARIO 5 "RIO"
-		CMP		#$F4
-		LDA		_city._score+1
-		SBC		#$01
+		CMPWI	_city._score,500				; SCENARIO 5 "RIO"
 		BCC		.scenario_failed
-		BCS		loc_105198
+		BCS		.scenario_won
 locret_105197:
 		RTS										; no more options, extra scenarios cannot be completed
-loc_105198:
+.scenario_won:
 		LDA		#$01
 		BNE		loc_10519E
 .scenario_failed:

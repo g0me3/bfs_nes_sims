@@ -11,16 +11,16 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_handler:
-		LDX		#$03
-		LDA		#$00
+		LDX		#$03							; these arrays are 2-byte long
+		LDA		#$00							; but they clear them as 4-bytes
 loc_58144:
-		STA		_anim_pos_is_load,X
-		STA		byte_76,X
-		STA		byte_78,X
+		STA		_anim_pos_is_load,X				; also some of these vars are used
+		STA		byte_76,X						; as tmp values for other parts
+		STA		byte_78,X						; of the game.
 		STA		byte_7A,X
-		STA		byte_7C,X
-		STA		byte_7E,X
-		STA		byte_80,X
+		STA		byte_7C,X						; currently, they used as sprite
+		STA		byte_7E,X						; animation state parameters
+		STA		byte_80,X						; like speed, direction, script ptr, etc
 		DEX
 		BPL		loc_58144
 		STA		_tmp523
@@ -34,58 +34,58 @@ loc_58144:
 		STA		_tmp52F
 		STA		_tmp530
 		LDA		#$05
-		STA		_scr_mode_idx
+		STA		_scr_mode_idx					; setup CHR banks and music
 		JSR		_spr_clear
 		JSR		_game_msg_pal_select
 		LDA		#$01
 		STA		_ppu_pal_dequeue_req
 		JSR		_game_msg_apu_select
-		JSR		_game_msg_wnd_draw
+		JSR		_game_msg_wnd_draw				; draw window
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
 ;		FJSRA	_game_msg_chr_setup,PRG2,PRG2	; REDUNDANT
 		JSR		_game_msg_chr_setup				; OPTIMIZED: local sub now
 		LDA		#$00
 		STA		_ptr0
-		JSR		_game_msg_txt_draw
+		JSR		_game_msg_txt_draw				; draw text fast line-based
 		LDA		#$00
-		STA		_tmp525
-		STA		_tmp524
-loc_581A4:
-		PUSHB	_ptr0
-		JSR		_wait_for_nmi
+		STA		_nmi_frames_timer
+		STA		_nmi_seconds_timer				; init timer for auto skip
+.game_msg_loop:
+		PUSHB	_ptr0							; here we backup for now a counter
+		JSR		_wait_for_nmi					; of pages for current message
 		LDA		#$00
 		STA		_spr_buf_pos
-		JSR		_game_msg_wnd_animA
+		JSR		_game_msg_wnd_animA				; animation work
 		JSR		_game_msg_wnd_animB
 		JSR		_game_msg_wnd_animC
 		JSR		_spr_finish
-		JSR		_game_msg_presents_clear
-		JSR		_msg_wnd_cheat_test
-		POPB	_ptr0
-		LDA		_tmp524
-		CMP		#$1E
+		JSR		_game_msg_presents_clear		; clear area 3x3 with present icon if any
+		JSR		_msg_wnd_cheat_test				; cheat test here!
+		POPB	_ptr0							; restore pages number
+		LDA		_nmi_seconds_timer				; timeout for message window is 30 seconds
+		CMP		#$1E							; force quit when exceeded
 		BCS		loc_581EC
-		LDA		_pad0_autorep_press
+		LDA		_pad0_autorep_press				; test for manual skip/quit buttons
 		AND		#$C0
-		BEQ		loc_581A4
-		LDA		_ptr0
+		BEQ		.game_msg_loop
+		LDA		_ptr0							; increment pages counter
 		CLC
 		ADC		#$01
-		LDX		_game_msg_idx
-		CMP		_game_msg_screens_count_list,X
-		BCS		loc_581EC
-		STA		_ptr0
+		LDX		_game_msg_idx					; if message have more than one page,
+		CMP		_game_msg_screens_count_list,X	; display it.
+		BCS		loc_581EC						; of finish and close the window.
+		STA		_ptr0							; save pages counter for next loop
 		JSR		_game_msg_txt_draw
 		LDA		#$00
-		STA		_tmp525
-		STA		_tmp524
-		JMP		loc_581A4
+		STA		_nmi_frames_timer				; reset nmi counters
+		STA		_nmi_seconds_timer
+		JMP		.game_msg_loop
 loc_581EC:
-		LDA		#$20
+		LDA		#$20							; here we start to quit message
 		STA		_input_forbid_delay
 		JSR		_spr_clear
-		JSR		_wait_for_nmi
+		JSR		_wait_for_nmi					; restore CHR banks and reinit vars
 		LDA		#$00
 		STA		_scr_mode_idx
 		LDA		#$80
@@ -99,17 +99,17 @@ loc_581EC:
 ;		LDA		_mmc5_chr_banks_shadow+3		; REDUNDANT, already loaded in
 ;		STA		_MMC5_CHR_BANKSA+3				; _game_chr_common_reload routine!
 		LDA		#$FF
-		STA		_constr_area_update_req
+		STA		_constr_area_update_req			; set request for game area update
 		LDA		#$00
-		STA		_update_rect_left
-		STA		_update_rect_top
-		LDA		#$4D
-		STA		_update_rect_right
+		STA		_update_rect_left				; special counters for update area
+		STA		_update_rect_top				; choses the whole screen, the display
+		LDA		#$4D							; code will trim it to the current window
+		STA		_update_rect_right				; automatically
 		STA		_update_rect_bottom
 		JSR		_game_msg_music_restore
-		JSR		_present_put_in_list
-		JSR		_init_special_year_date
-		JSR		_debug_flag_toggle_test
+		JSR		_present_put_in_list			; finally insert the selected present to the
+		JSR		_init_special_year_date			; menu
+		JSR		_debug_flag_toggle_test			; and check if we have performed the cheat
 		LDA		#$00
 		STA		_game_msg_idx
 		RTS
@@ -153,8 +153,8 @@ _game_msg_chr3_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_apu_select:
-		LDX		_game_msg_idx
-		LDA		_game_msg_apu_types_list,X
+		LDX		_game_msg_idx					; game msg uses one of two
+		LDA		_game_msg_apu_types_list,X		; jingles for alert and regular messages
 		BEQ		locret_5824B
 		CMP		#$01
 		BNE		loc_58243
@@ -168,25 +168,25 @@ loc_58243:
 locret_5824B:
 		RTS
 
+_game_msg_apu_types_list:
+		.BYTE	$01,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$02,$01
+		.BYTE	$02,$02,$02,$02
+
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_music_restore:
-		LDA		#_MUS_IDX_STOP
-		STA		_apu_mus_idx_req
+		LDA		#_MUS_IDX_STOP					; when exit, need to restore music
+		STA		_apu_mus_idx_req				; for a corresponding city type
 		JSR		_wait_for_nmi
 		LDX		_city._city_type
-		LDY		_bg_music_list,X
-		LDA		_city._game_flags
-		AND		#$08
+		LDY		_bg_music_list,X				; list in the system bank now
+		LDA		_city._game_flags				; for setting with disabled BGM
+		AND		#$08							; restore silence
 		BNE		loc_58262
 		LDY		#_MUS_IDX_STOP
 loc_58262:
 		STY		_apu_mus_idx_req
 		RTS
-
-_game_msg_apu_types_list:
-		.BYTE	$01,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$02,$01
-		.BYTE	$02,$02,$02,$02
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_txt_draw:
@@ -198,13 +198,13 @@ _game_msg_txt_draw:
 		LDA		#$00
 		STA		_ptr0+1
 loc_5829C:
-		PUSHB	_ptr0
-		PUSHB	_ptr0+1
-		JSR		_wait_for_nmi
+		PUSHB	_ptr0							; bug boring line-by-line displaying
+		PUSHB	_ptr0+1							; message text.
+		JSR		_wait_for_nmi					; all
 		POPB	_ptr0+1
 		POPB	_ptr0
-		JSR		_game_msg_line_pos_calc
-		JSR		_game_msg_line_display
+		JSR		_game_msg_line_pos_calc			; data resides in PRG4, locally selected
+		JSR		_game_msg_line_display			; with PRG3 here now
 		INC		_ptr0+1
 		LDY		_game_msg_idx
 ; REDUNDANT
@@ -216,16 +216,16 @@ loc_5829C:
 ;		LDA		_ptr0+1
 ;		CMP		(_tmp2),Y
 ; OPTIMIZED
-		LDA		_game_msg_lines_cnt_lib,Y
-		CLC
-		ADC		_ptr0
-		TAY
+		LDA		_game_msg_lines_cnt_lib,Y		; for every message and every page data
+		CLC										; keep a number of lines to display.
+		ADC		_ptr0							; so we either may select another line to draw
+		TAY										; or stop here
 		LDA		_ptr0+1
 		CMP		_game_msg_lines_cnt_lib,Y
 ; -
 		BCC		loc_5829C
-		JSR		_game_msg_hints_extra_icons_draw
-		JMP		_game_msg_presents_icon_draw
+		JSR		_game_msg_hints_extra_icons_draw; when text is done, draw extra overlay icons
+		JMP		_game_msg_presents_icon_draw	; if any
 
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -239,8 +239,8 @@ loc_5829C:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_txt_draw:
-		LDA		#$02
-		STA		_tmp1
+		LDA		#$02							; draw 3-lines font on the message window
+		STA		_tmp1							; header
 loc_BB84:
 		LDX		_game_msg_idx
 		LDA		_wnd_header_txt_len,X
@@ -276,6 +276,7 @@ loc_BB84:
 		BPL		loc_BB84
 		RTS
 
+; OPTIMIZED, common position recalc function for all routines here
 ; =============== S U B	R O U T	I N E =======================================
 ; args:
 ;		_tmp1 - Y offset,
@@ -302,7 +303,7 @@ loc_BC1A:										; OPTIMIZED
 		PPUQMOVB	_tmp5,OP_ORA,#$20
 		PPUQMOVB	_tmp6,OP_NOP,0
 loc_BC1B:
-		LDA		(_tmp2),Y
+		LDA		(_tmp2),Y						; read header text
 		INY
 		CMP		#$20							; ADDED, if not space,
 		BEQ		loc_BC1C						; adjust character idx
@@ -322,8 +323,8 @@ loc_BC49:
 		RTS
 
 ; REDUNDANT, the autocalculated lengths are the same as in the original
-; list, but except the very first line, which is mover one tile
-; forward for some reasons... no now it fixed
+; list, but except the very first line, which is moved one tile
+; forward for some reasons... now it fixed
 ;
 ;_wnd_header_txt_pos:
 ;		.BYTE	$10,$11,$11,$10,$0E,$0E,$0E,$0E,$11,$0C,$0E,$10,$0E,$10,$10,$10
@@ -599,7 +600,8 @@ _wnd_header_tlm_hi:
 		STR		aFire,			"Fire"
 		STR		aFlood,			"Flood"
 		STR		aAircrash,		"Air crash"
-		STR		aTornade,		"Tornade"
+;		STR		aTornade,		"Tornade"
+		STR		aTornade,		"Tornado"			; HUH?
 
 ;byte_BE90:
 ;		.BYTE	$87,$AF,$AF,$A4,$81,$AA,$AF,$A2
@@ -638,6 +640,10 @@ _wnd_header_tlm_hi:
 ;byte_BF1B:
 ;		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
 
+; OPTIMIZED, another common routine for position calc, they
+; are short in sources, but very long in code, so less
+; routines, less code generated.
+;
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_line_pos_calc:
 		CIADDB	_tmp2,_cur_screen_tile._ROW,#$04,_tmp1,#$1E
@@ -736,19 +742,19 @@ loc_583FA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_clear:
-		LDA		_tmp528
-		CMP		#$02
-		BEQ		loc_58476
+		LDA		_tmp528							; here we test a special flag
+		CMP		#$02							; to decide to clear this area
+		BEQ		loc_58476						; or not
 		RTS
 loc_58476:
-		LDA		#$02
+		LDA		#$02							; clear 3 lines here
 		STA		_ptr0+1
 loc_5847A:
 		JSR		_game_msg_presents_pos_calc
-		JSR		_game_msg_presents_line_clear
+		JSR		_game_msg_presents_line_clear	; clear line length 3
 		DEC		_ptr0+1
 		BPL		loc_5847A
-		INC		_tmp528
+		INC		_tmp528							; make sure we won't clear it again
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -762,9 +768,9 @@ _game_msg_presents_pos_calc:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_line_clear:
 		EXTQSTART
-		PUSHB		_tmp4
+		PUSHB		_tmp4						; save offset for now
 		PUSHB		_tmp5
-		EXTQMOVB	_tmp2,OP_NOP,0
+		EXTQMOVB	_tmp2,OP_NOP,0				; setup and clear exnt line
 loc_584FA:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
@@ -777,12 +783,12 @@ loc_584FB:
 		JMP		loc_584FA
 loc_58527:
 		EXTQEND
-		POPB	_tmp5
+		POPB	_tmp5							; reuse offset to nt data as well
 		POPB	_tmp4
 		PPUQSTART
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_58540:
-		PPUQMOVB	_tmp3,OP_ORA,#$20
+		PPUQMOVB	_tmp3,OP_ORA,#$20			; fill with space.
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58541:
 		PPUQMOVB	#$20,OP_NOP,0
@@ -1623,24 +1629,24 @@ _game_msg_wnd_extnt_frame_data:
 
 ; =============== S U B	R O U T	I N E =======================================
 _msg_wnd_cheat_test:
-		LDA		_pad0_held
-		ORA		_pad1_prev_held
-		AND		#$CF
-		CMP		#$CF
-		BNE		loc_59BA9
-		LDA		_debug_scroll_msg_flags
+		LDA		_pad0_held						; on the cheat screen, hold
+		ORA		_pad1_prev_held					; A+B+U+D+L+R combination
+		AND		#$CF							; using any buttons on any pads
+		CMP		#$CF							; since we can't press all D-Pad
+		BNE		loc_59BA9						; on single pad at once
+		LDA		_debug_scroll_msg_flags			; when done, first flag is set
 		ORA		#$01
 		STA		_debug_scroll_msg_flags
 		RTS
 loc_59BA9:
-		LDA		_pad0_held
-		AND		_pad1_prev_held
-		BEQ		locret_59BBF
-		LDA		_pad0_held
-		CMP		_pad1_prev_held
-		BEQ		locret_59BBF
-		BCC		locret_59BBF
-		LDA		_debug_scroll_msg_flags
+		LDA		_pad0_held						; here we get if no buttons are
+		AND		_pad1_prev_held					; pressed or its wrong combination
+		BEQ		locret_59BBF					; skip idle case, test only if
+		LDA		_pad0_held						; pressed something
+		CMP		_pad1_prev_held					; now compare pads held on c1 and c2
+		BEQ		locret_59BBF					; if they are the same, skip
+		BCC		locret_59BBF					; if c1 bumber lower, skip
+		LDA		_debug_scroll_msg_flags			; or set another flag
 		ORA		#$02
 		STA		_debug_scroll_msg_flags
 locret_59BBF:
@@ -1696,9 +1702,9 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		JMP		_sram_write_disable
 loc_59C0E:
-		LDA		#>[_land_value_map]				; CAUTION: low nibble is zero
+		LDA		#>[_land_val_avr_map]				; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
-		LDA		#<[_land_value_map]
+		LDA		#<[_land_val_avr_map]
 		STA		_ptr0
 		STA		_has_saved_city_data_flag		; zero goes here as well
 		TAY
@@ -1722,7 +1728,7 @@ _sram_sum_calc:
 		STY		_tmp2
 		STY		_tmp3
 		STY		_ptr0
-		LDA		#>[_sram_graphs]
+		LDA		#>[_sram_graphs]				; for sram data only excluding crc
 		STA		_ptr0+1
 		LDY		#<[_sram_graphs]
 loc_59C3F:
@@ -1732,7 +1738,7 @@ loc_59C3F:
 		BNE		loc_59C3F
 		INC		_ptr0+1
 		LDA		_ptr0+1
-		CMP		#$A0
+		CMP		#$A0							; end of sram buffer, start of A000 ROM area
 		BNE		loc_59C3F
 		LDA		#$00
 		JSR		_sum_calc

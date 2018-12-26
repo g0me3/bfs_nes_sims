@@ -604,9 +604,9 @@ _tmp522:
 		.BYTE	0
 _tmp523:
 		.BYTE	0
-_tmp524:
+_nmi_seconds_timer:
 		.BYTE	0
-_tmp525:
+_nmi_frames_timer:
 		.BYTE	0
 _presents_build_menu_req:
 		.BYTE	0
@@ -640,7 +640,7 @@ _tmp534:
 		.BYTE	0
 _tmp535:
 		.BYTE	0
-_game_core_stop_timer:
+_game_core_timer:
 		.BYTE	0
 _debug_scroll_msg_flags:
 		.BYTE	0
@@ -849,7 +849,7 @@ _fund_alloc_education:
 		.BYTE	0,0
 ; -
 
-		_tfix8_8	_traffic_level
+		_tfix8_8	_traf_lvl_avr
 
 _doing_a_good_job_votes:
 		.BYTE	0
@@ -882,7 +882,7 @@ _total_RCI_counts:
 
 		_trciw	_RCI_counts
 
-_fires_level:
+_fires_count:
 		.BYTE	0,0
 
 ; these vars are accessed individually in the statistic
@@ -1255,7 +1255,7 @@ _MMC5_MUL1:
 		ORG	$8000
 
 		; 4-bits array, 19 rows, 19 columns (76/4)
-		_tarray	_land_value_map,((19*19)/2)+1
+		_tarray	_land_val_avr_map,((19*19)/2)+1
 
 		; 4-bits array, 19 rows, 19 columns
 		_tarray	_crime_map,((19*19)/2)+1

@@ -10,8 +10,8 @@ _THREAD1_MAIN:
 		JSR		_overall_stats_recalc
 		JSR		_interpolate_police_fire_maps
 		FJSR	_power_grid_recalc,SRAM,PRGA
-		JSR		_land_value_pollution_recalc
-		JSR		_crime_level_recalc
+		JSR		_land_val_avr_pollution_recalc
+		JSR		_crime_lvl_avr_recalc
 		JSR		_population_dencity_recalc
 		LDA		#$FF
 		STA		_thread1_flags
@@ -78,7 +78,7 @@ loc_11E0DB:
 		JSR		_population_growth_map_recalc
 		JSR		_map_corruption_tiles_animate
 loc_11E0E1:
-		JSR		_traffic_dencity_recalc
+		JSR		_traffic_dencity_smooth
 		JSR		_map_corruption_tiles_animate
 		FJSR	_events_manager,SRAM,PRGA
 _game_stop_loop:
@@ -105,7 +105,7 @@ loc_11E117:
 		BNE		loc_11E135
 		LDA		#$A0
 		JSR		_critical_section_enter
-		JSR		_land_value_pollution_recalc
+		JSR		_land_val_avr_pollution_recalc
 		LDA		#$A0
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -117,7 +117,7 @@ loc_11E135:
 		BNE		loc_11E153
 		LDA		#$40
 		JSR		_critical_section_enter
-		JSR		_crime_level_recalc
+		JSR		_crime_lvl_avr_recalc
 		LDA		#$40
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -422,7 +422,7 @@ loc_11E396:
 		CMP		#$F4
 		BCC		loc_11E3B2
 		JSR		_fire_cur_map_tile
-		INCW	_fires_level					; FIX, calculate an actual value.
+		INCW	_fires_count					; FIX, calculate an actual value.
 loc_11E3B2:
 		JSR		_back_from_near_tmp_map_pos_tile
 loc_11E3B5:
@@ -655,7 +655,7 @@ loc_11E573:
 		LDA		#$00
 		JSR		sub_11E912
 		BCS		loc_11E590
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F4A5
 loc_11E590:
 		JSR		_get_building_map_tile
@@ -700,7 +700,7 @@ loc_11E5C8:
 		BNE		loc_11E5E2
 		JMP		loc_11E5FB
 loc_11E5E2:
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F365
 loc_11E5E8:
 		LDA		_tmpE8
@@ -709,7 +709,7 @@ loc_11E5E8:
 		ADC		#$67
 		CMP		_tmpE9
 		BCS		locret_11E5FA
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F4A5
 locret_11E5FA:
 		RTS
@@ -762,7 +762,7 @@ loc_11E644:
 		LDA		#$01
 		JSR		sub_11E912
 		BCS		loc_11E661
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F551
 loc_11E661:
 		JSR		_rand
@@ -785,7 +785,7 @@ loc_11E67D:
 		SBC		#$67
 		CMP		_tmpE9
 		BCC		loc_11E68F
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F40E
 loc_11E68F:
 		LDA		_tmpE8
@@ -794,7 +794,7 @@ loc_11E68F:
 		ADC		#$67
 		CMP		_tmpE9
 		BCS		locret_11E6A1
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F551
 locret_11E6A1:
 		RTS
@@ -910,7 +910,7 @@ loc_11E75C:
 		LDA		#$02
 		JSR		sub_11E912
 		BCS		loc_11E776
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F5F5
 loc_11E776:
 		JSR		_rand
@@ -933,7 +933,7 @@ loc_11E793:
 		SBC		#$67
 		CMP		_tmpE9
 		BCC		loc_11E7A5
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F48D
 loc_11E7A5:
 		LDA		_tmpE8
@@ -942,7 +942,7 @@ loc_11E7A5:
 		ADC		#$67
 		CMP		_tmpE9
 		BCS		locret_11E7B7
-		JSR		_get_area_pollution_to_land_value_ratio
+		JSR		_get_area_pollution_to_land_val_avr_ratio
 		JMP		sub_11F5F5
 locret_11E7B7:
 		RTS
@@ -1434,7 +1434,7 @@ _4x4_building_surrond_tiles_ofsY_list:
 		.BYTE	$00,$01,$FF,$02,$FF,$02,$00,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-_land_value_pollution_recalc:
+_land_val_avr_pollution_recalc:
 		JSR		_clear_tmp_map_B5
 		LDA		#$00
 		STA		_tmp6CC
@@ -1446,7 +1446,7 @@ loc_11EAEC:
 		LDA		#$00
 		STA		_tmp_area_pos._COL
 loc_11EAF1:
-		JSR		_calc_map_area_pollution_level
+		JSR		_calc_map_area_poll_lvl_avr
 		LDA		_tmpE6
 		BEQ		loc_11EB70
 		JSR		_tmp_area_pos_to_tmp_map_pos_calc
@@ -1515,7 +1515,7 @@ loc_11EB57:
 loc_11EB64:
 		INCW	_tmp6CE
 		PLA
-		JSR		_write_land_value_map_nibble
+		JSR		_write_land_val_avr_map_nibble
 loc_11EB70:
 		INC		_tmp_area_pos._COL
 		LDA		_tmp_area_pos._COL
@@ -1537,14 +1537,21 @@ loc_11EB8A:
 		STA		_tmpE7
 		BEQ		loc_11EBB7
 loc_11EB9A:
+; BUG, WRONG AVERAGE CALC!
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6CC
+; -
+; TODO, this fixes the average calc, but then most of other
+; code read the results incorrectly.
+;		MOVW	_tmpE6,_tmp6CC
+;		MOVWI	_tmpE8,0
+; -
 		MOVW	_tmpEA,_tmp6CE
 		JSR		_div_32to16
 loc_11EBB7:
-		MOVW	_city._land_value,_tmpE6
+		MOVW	_city._land_val_avr,_tmpE6
 		LDA		#$00
 		STA		_tmp6C4
 		STA		_tmp6D0
@@ -1582,21 +1589,27 @@ loc_11EBFE:
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EBDA
+; BUG, another wrong average calc
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6D2
+; -
+; TODO, another value need to be rebalanced after this fix
+;		MOVW	_tmpE6,_tmp6CC
+;		MOVWI	_tmpE8,0
+; -
 		MOVW	_tmpEA,_tmp6D0
 		JSR		_div_32to16
 		BCC		loc_11EC3B
 		MOVWI	_tmpE6,$0000
 loc_11EC3B:
-		MOVW	_city._pollution_level,_tmpE6
+		MOVW	_city._poll_lvl_avr,_tmpE6
 		LDA		#$A0
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_map_area_pollution_level:
+_calc_map_area_poll_lvl_avr:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE7
@@ -1758,7 +1771,7 @@ _interpolate_police_fire_maps:
 ;
 ; start from the beginning of the map in 0,0 position
 ;
-_crime_level_recalc:
+_crime_lvl_avr_recalc:
 		LDA		#$00
 		STA		_tmp6CC							; CRIME_SUM here is overall sum of crime levels on map
 		STA		_tmp6CC+1
@@ -1769,7 +1782,7 @@ loc_11EDBB:
 		LDA		#$00
 loc_11EDC0:
 		STA		_tmp_map_pos._COL				; set cur COL
-		JSR		_read_land_value_map_nibble		; read LAND value nibble [0-15]
+		JSR		_read_land_val_avr_map_nibble		; read LAND value nibble [0-15]
 		BEQ		loc_11EDF1						; skip if zero value, no crime
 		STA		_tmpE7
 		INCW	_tmp6D0							; increment lands counter
@@ -1792,11 +1805,11 @@ loc_11EDC0:
 		LDA		#$00
 loc_11EDF1:
 		PHA										; backup crime level value
-		JSR		_write_crime_map_nibble
+		JSR		_write_crime_map_nibble			; write new value, auto clamped to F
 		PLA										; restore and add to sum
 		CLC
 		ADC		_tmp6CC							; add calculated crime value here
-		STA		_tmp6CC							; max value here may be 19*19*30 = 10830
+		STA		_tmp6CC							; max value here may be 19*19*15 = 5415
 		BCC		loc_11EE02
 		INC		_tmp6CC+1
 loc_11EE02:
@@ -1810,16 +1823,22 @@ loc_11EE02:
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EDBB
-		MOVW	_tmpE7,_tmp6CC					; divident CRIME_SUM (10830 max)
-		MOVW	_tmpEA,_tmp6D0					; divider LAND_CNT (19*19 max)
-		LDA		#$00							; so overall value less than 30.0fp
+; BUG, and again, wrong average
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
+		MOVW	_tmpE7,_tmp6CC
+; -
+; TODO, rebalance me
+;		MOVW	_tmpE6,_tmp6CC
+;		MOVWI	_tmpE8,0
+; -
+		MOVW	_tmpEA,_tmp6D0
 		JSR		_div_32to16
 		BCC		loc_11EE3B
 		MOVWI	_tmpE6,0						; default value 0
 loc_11EE3B:
-		MOVW	_city._crime_level,_tmpE6
+		MOVW	_city._crime_lvl_avr,_tmpE6
 		LDA		#$40
 		JMP		_critical_section_leave
 
@@ -2398,7 +2417,7 @@ loc_11F296:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_traffic_dencity_recalc:
+_traffic_dencity_smooth:
 		LDA		#$00
 loc_11F2AD:
 		STA		_tmp_map_pos._ROW
@@ -2485,7 +2504,7 @@ _corrupt_ground_tiles_list:
 sub_11F341:
 		JSR		_read_pollution_map_nibble
 		STA		_tmpE7
-		JSR		_read_land_value_map_nibble
+		JSR		_read_land_val_avr_map_nibble
 		SEC
 		SBC		_tmpE7
 		BCS		loc_11F350
@@ -2649,7 +2668,7 @@ loc_11F46A:
 		STA		_tmp_map_pos._COL
 		RTS
 loc_11F474:
-		JSR		_read_land_value_map_nibble
+		JSR		_read_land_val_avr_map_nibble
 		LSR
 		CMP		_cur_R_area_develop_state
 		BCC		locret_11F48C
@@ -2916,10 +2935,10 @@ sub_11F647:
 ;  if a 5 to 8 ratio 2
 ;  if a > 8    ratio 3
 ;
-_get_area_pollution_to_land_value_ratio:
+_get_area_pollution_to_land_val_avr_ratio:
 		JSR		_read_pollution_map_nibble
 		STA		_tmpE7
-		JSR		_read_land_value_map_nibble
+		JSR		_read_land_val_avr_map_nibble
 		SEC
 		SBC		_tmpE7
 		LDX		#$00
@@ -2947,7 +2966,7 @@ _read_select_pol_popg_popd_crime_land_tmp_maps_nibble:
 		DEY
 		BEQ		_read_crime_map_nibble
 		DEY
-		BEQ		_read_land_value_map_nibble
+		BEQ		_read_land_val_avr_map_nibble
 		BNE		_read_tmp_map_div4_mul13_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2971,8 +2990,8 @@ _read_crime_map_nibble:
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_land_value_map_nibble:
-		LDXY	_land_value_map
+_read_land_val_avr_map_nibble:
+		LDXY	_land_val_avr_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3150,7 +3169,7 @@ _write_select_poll_popg_popd_crime_land_tmp_maps_nibble:
 		DEY
 		BEQ		_write_crime_map_nibble
 		DEY
-		BEQ		_write_land_value_map_nibble
+		BEQ		_write_land_val_avr_map_nibble
 		BNE		_write_tmp_map_div4_mul13_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3174,8 +3193,8 @@ _write_crime_map_nibble:
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_land_value_map_nibble:
-		LDXY	_land_value_map
+_write_land_val_avr_map_nibble:
+		LDXY	_land_val_avr_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3352,10 +3371,8 @@ _tmp_area_pos_to_tmp_map_pos_calc:
 
 ; =============== S U B	R O U T	I N E =======================================
 _heavy_traffic_report_test:
-		PUSHB	_tmp_map_pos._COL
-		PUSHB	_tmp_map_pos._ROW
-		PUSHB	word_EE
-		PUSHB	word_EE+1
+		PUSHW	_tmp_map_pos
+		PUSHW	word_EE
 		PUSHB	_tmpE6
 		PUSHB	_mmc5_mul1_shadow
 		PUSHB	_mmc5_mul0_shadow
@@ -3375,10 +3392,8 @@ loc_11F93E:
 		POPB	_mmc5_mul0_shadow
 		POPB	_mmc5_mul1_shadow
 		POPB	_tmpE6
-		POPB	word_EE+1
-		POPB	word_EE
-		POPB	_tmp_map_pos._ROW
-		POPB	_tmp_map_pos._COL
+		POPW	word_EE
+		POPW	_tmp_map_pos
 		RTS
 
 _R_area_develop_states_list:
@@ -3987,7 +4002,7 @@ locret_11FF87:
 ; =============== S U B	R O U T	I N E =======================================
 ; called once at the end of the year when city RCI levels not zero from PRGA
 ;
-_traffic_level_recalc:
+_traf_lvl_avr_recalc:
 		LDY		#$00
 		STY		_tmp6CC							; sum of traffic dencity values for
 		STY		_tmp6CC+1						; valuable only map areas
@@ -4000,7 +4015,7 @@ loc_11FF97:
 		LDA		#$00
 loc_11FF9C:
 		STA		_tmp_map_pos._COL				; columns
-		JSR		_read_land_value_map_nibble		; read land value nibble here (4x4 blocks)
+		JSR		_read_land_val_avr_map_nibble		; read land value nibble here (4x4 blocks)
 		CMP		#$00
 		BEQ		loc_11FFBB
 		JSR		_read_traffic_dencity_map_nibble; read traffic dencity value for area (2x2 blocks)
@@ -4033,7 +4048,7 @@ loc_11FFBB:
 		PUSHW	_tmpE6							; multiply integer result to fp8_8, result integer
 		JSR		_mmc5_mul16to16					; result traffic_level = [traffic_value * 2.4]
 		PLA										; or may be treated as fp8_8 with lower nibble of integer
-		POPW	_traffic_level					; value as FRAC part and higher nibble as INT part
+		POPW	_traf_lvl_avr					; value as FRAC part and higher nibble as INT part
 		PLA
 		RTS
 

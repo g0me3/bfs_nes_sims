@@ -1202,13 +1202,16 @@ _mini_map_fill_tile:
 _mini_map0_draw:
 		LDA		_mini_map_cur_row				; calc the wram map offset for
 		ASL										; calculated block 4x4
+		ASL										; additional mul to have right value below
 		TAY
 		LDA		_mini_map_cur_col
 		ASL
 		ASL
-		ADC		_city_mini_map_row_pos_list,Y	; table calc for multiply
-		STA		_ptr0
-		LDA		_city_mini_map_row_pos_list+1,Y
+;		ADC		_city_mini_map_row_pos_list,Y	; REDUNDANT, table calc for multiply
+		ADC		_city_map_row_pos_list_lo,Y		; let's reuse global list, Y already
+		STA		_ptr0							; multiplied by 4, so we get the same result
+;		LDA		_city_mini_map_row_pos_list+1,Y
+		LDA		_city_map_row_pos_list_hi,Y
 		ADC		#$00
 		STA		_ptr0+1							; now we have ofs to left-top corner of 4x4 area
 		JSR		_mini_map_area_info_collect
@@ -1267,13 +1270,13 @@ loc_EA9AD:
 		CMP		#$FF
 		BNE		loc_EA9CA
 		JSR		sub_EA9D9
-		LDX		#<[_city_map+$D0]
+		LDX		#$D0							; default bg tiles indexes
 		LDA		_ptr0
 		LDY		_cur_info_maps_button_idx
 		BEQ		loc_EA9C5
-		LDX		#<[_city_map+$50]
+		LDX		#$50							; for power-like maps
 		CLC
-		ADC		#>[_city_map+$50]
+		ADC		#$60							; additional checker bg tile
 loc_EA9C5:
 		STA		_tmp4
 		STX		_tmp5
@@ -3428,7 +3431,7 @@ off_EB5A0:
 		.WORD	_traffic_map
 		.WORD	_pollution_map
 		.WORD	_crime_map
-		.WORD	_land_value_map
+		.WORD	_land_val_avr_map
 		.WORD	_fire_map
 		.WORD	_police_map
 
@@ -3445,26 +3448,26 @@ byte_EB5E3:
 byte_EB603:
 		.BYTE	$50,$50,$D0,$10,$50,$FF,$FF,$FF,$D0,$FF,$FF,$FF,$10,$FF,$FF,$FF
 		.BYTE	$50,$50,$50,$50,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF
-_city_mini_map_row_pos_list:
-		.WORD	_city_map
-		.WORD	_city_map+$130
-		.WORD	_city_map+$260
-		.WORD	_city_map+$390
-		.WORD	_city_map+$4C0
-		.WORD	_city_map+$5F0
-		.WORD	_city_map+$720
-		.WORD	_city_map+$850
-		.WORD	_city_map+$980
-		.WORD	_city_map+$AB0
-		.WORD	_city_map+$BE0
-		.WORD	_city_map+$D10
-		.WORD	_city_map+$E40
-		.WORD	_city_map+$F70
-		.WORD	_city_map+$10A0
-		.WORD	_city_map+$11D0
-		.WORD	_city_map+$1300
-		.WORD	_city_map+$1430
-		.WORD	_city_map+$1560
+;_city_mini_map_row_pos_list:
+;		.WORD	_city_map
+;		.WORD	_city_map+$130
+;		.WORD	_city_map+$260
+;		.WORD	_city_map+$390
+;		.WORD	_city_map+$4C0
+;		.WORD	_city_map+$5F0
+;		.WORD	_city_map+$720
+;		.WORD	_city_map+$850
+;		.WORD	_city_map+$980
+;		.WORD	_city_map+$AB0
+;		.WORD	_city_map+$BE0
+;		.WORD	_city_map+$D10
+;		.WORD	_city_map+$E40
+;		.WORD	_city_map+$F70
+;		.WORD	_city_map+$10A0
+;		.WORD	_city_map+$11D0
+;		.WORD	_city_map+$1300
+;		.WORD	_city_map+$1430
+;		.WORD	_city_map+$1560
 _mini_map_ppu_col_ofs_list:
 		.BYTE	$09,$25
 		.BYTE	$29,$25
@@ -3494,8 +3497,8 @@ byte_EB682:
 _info_maps_menu_var_ofs_list:
 		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
 
-; UNUSED, this is an early copy of nt/extnt of Dr.Willy in bank window with
-; cash in its hand. the position values are lower and shifted to the left,
+; REDUNDANT, this is an early copy of nt/extnt for Dr.Willy in Bank window with
+; cash in its hand. the position values are shifted bottom-left
 ; so it would be displayed under the left window. this may indicate that
 ; there were another BANK screen layout
 ;
@@ -3748,7 +3751,7 @@ locret_EB9FE:									; the rest not need any other symbols
 ; input args: 16bit _tmp0 * reg X, store 24bit _tmp0-tmp2, _tmp3_tmp5
 ;
 _mmc5_mul16to8_fast:
-		LDA		_tmp1							; local copy of MUL routine, not safe!
+		LDA		_tmp1							; thread unsafe non-stack version of mul routine
 		STA		_MMC5_MUL0						; THREAD1 won't restore mul registers
 		STX		_MMC5_MUL1						; however, most of calc using this routine
 		LDA		_MMC5_MUL0						; work when THREAD1 suspended, so does not

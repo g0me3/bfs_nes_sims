@@ -261,16 +261,16 @@ NMI:
 		LDA		_nmi_busy_flag
 		BEQ		.nmi_normal
 		CLI
-		JSR		_ppu_regs_reload
-		JSR		_ppu_scrolls_reload
+		JSR		_ppu_regs_reload				; dummy nmi cycle when busy,
+		JSR		_ppu_scrolls_reload				; loose one full frame here
 		JSR		_mmc5_scrolls_reload
 		JMP		.nmi_busy
 .nmi_normal:
-		INC		_nmi_busy_flag					; raise nmi busy flag
-		LDA		_mmc5_operation_in_progress_flag; thread safe routine or mmc
-		BEQ		.nmi_start						; operation in progress, skip
-		LDA		_ppu_mask_shadow				; reload ppu params if render is on
-		AND		#$18
+		INC		_nmi_busy_flag					; raise nmi busy flag, test
+		LDA		_mmc5_operation_in_progress_flag; if MMC5 operations in progress
+		BEQ		.nmi_start						; perform default ppu operations
+		LDA		_ppu_mask_shadow				; if render is on or just skip
+		AND		#$18							; if nothing to display here
 		BEQ		loc_18A193
 		LDA		#$02
 		STA		_PPU_OAM_DMA
@@ -279,13 +279,13 @@ NMI:
 		JSR		_ppu_scrolls_reload
 		JSR		_mmc5_scrolls_reload
 loc_18A193:
-		JMP		.nmi_finish
+		JMP		.nmi_finish						; finish nmi either way
 .nmi_start:
 		LDA		#$02
-		STA		_PPU_OAM_DMA
+		STA		_PPU_OAM_DMA					; here is a normal nmi operation
 		CLI
-		LDA		_ppu_pal_dequeue_req
-		BEQ		loc_18A1B8
+		LDA		_ppu_pal_dequeue_req			; check if we have ppu buffers to flush
+		BEQ		loc_18A1B8						; then send them, palette buffers first
 		JSR		_pal_ppu_send
 		LDA		#$00
 		STA		_ppu_pal_dequeue_req
@@ -296,8 +296,8 @@ loc_18A193:
 		INC		_wnd_cur_line_num
 		JMP		loc_18A1F3
 loc_18A1B8:
-		LDA		_scr_mode_idx
-		BNE		loc_18A1DE
+		LDA		_scr_mode_idx					; do special additional palette animation
+		BNE		loc_18A1DE						; if in a corresponding screen mode
 		LDX		_pal_anim_counter
 		LDA		_pal_anim_table,X
 		LDY		#$11
@@ -312,20 +312,20 @@ loc_18A1B8:
 		STA		_PPU_ADDR
 		STA		_PPU_ADDR
 loc_18A1DE:
-		JSR		_ppu_regs_reload
-		LDA		_wnd_ppu_data_backup_req
-		BEQ		loc_18A1EA
+		JSR		_ppu_regs_reload				; also check for screen data backup request
+		LDA		_wnd_ppu_data_backup_req		; used by the window draw routines to save
+		BEQ		loc_18A1EA						; background data when window displayed
 		JSR		_ppu_nt_data_backup
-		INC		_wnd_cur_line_num
+		INC		_wnd_cur_line_num				; one line per nmi, so we see roll on/out effect
 loc_18A1EA:
-		LDA		_ppu_queue_pos_tail
+		LDA		_ppu_queue_pos_tail				; the rest of the ppu buffers flushes here
 		CMP		_ppu_queue_pos_head
 		BEQ		loc_18A1F3
 		JSR		_ppu_dequeue
 loc_18A1F3:
-		JSR		_ppu_scrolls_reload
-		LDA		_main_sub_idx
-		BNE		loc_18A213
+		JSR		_ppu_scrolls_reload				; also reload CHR banks at the title screen
+		LDA		_main_sub_idx					; the game setup and ingame modes uses it's own
+		BNE		loc_18A213						; CHR setup code
 		LDA		_mmc5_chr_banks_shadow
 		STA		_MMC5_CHR_BANKSA
 		LDA		_mmc5_chr_banks_shadow+1
@@ -335,21 +335,21 @@ loc_18A1F3:
 		LDA		_mmc5_chr_banks_shadow+3
 		STA		_MMC5_CHR_BANKSA+3
 loc_18A213:
-		JSR		_mmc5_scrolls_reload
+		JSR		_mmc5_scrolls_reload			; do scrolls
 		TSX
-		LDY		_cur_thread_idx
-		TXA
-		STA		_thread_stack,Y
-		LDA		_prg_prg8000_shadow
+		LDY		_cur_thread_idx					; now the thread stuff starting
+		TXA										; get the index of current executing thread.
+		STA		_thread_stack,Y					; store it's stack and MMC5 parameters
+		LDA		_prg_prg8000_shadow				; so we flushed the thread context
 		STA		_thread_prg8000,Y
 		LDA		_prg_prgA000_shadow
 		STA		_thread_prgA000,Y
 		LDA		_sram_state_flag
 		STA		_thread_sram_state,Y
-		JSR		_get_input
-		INC		_frames_counter
-		INC		_frames_div8_counter
-		LDA		_frames_div8_counter
+		JSR		_get_input						; get input here
+		INC		_frames_counter					; do actual frame counters. they only
+		INC		_frames_div8_counter			; increment if full nmi occurs. doesn't
+		LDA		_frames_div8_counter			; changes if nmi is busy or skipped
 		AND		#$07
 		STA		_frames_div8_counter
 		INC		_frames_div4_counter
@@ -357,7 +357,7 @@ loc_18A213:
 		AND		#$0F
 		STA		_frames_div4_counter
 		LDA		#$00
-		STA		_spr_buf_pos
+		STA		_spr_buf_pos					; check if we need to draw cursor
 		LDA		_scr_mode_idx					; test if we currently ingame
 		BEQ		.do_ingame_work					; jump directly to ingame handlers then
 ; BUG! here, this var never cleared upon exiting of any screen
@@ -368,6 +368,9 @@ loc_18A213:
 ; other screens before that, the cursor will stay on the
 ; screen with incorrect CHR bank data every time
 ; you press a button.
+; FIX, added forced value reinitialization after quitting
+; the game info screens. Now work properly.
+;
 		LDA		_scr_res_idx					; if in any other mode, test if we
 		CMP		#$01							; at the info screens
 		BNE		.skip_ingame_work				; skip if no
@@ -392,7 +395,7 @@ loc_18A213:
 		JSR		_goto_alert_spr_draw			; only ingame (_scr_mode_idx = 0) also draw "GOTO"
 .skip_goto:
 		LDA		_obj_active_flags
-		BEQ		loc_18A284						; draw objexts if any as well,
+		BEQ		loc_18A284						; draw and move objects if any as well,
 		JSR		_obj_handlers
 loc_18A284:
 ;		LDA		_scr_mode_idx					; REDUNDANT, some kind of leftovers without
@@ -408,45 +411,44 @@ loc_18A284:
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-
 .skip_ingame_work:
-		LDA		_game_wnd_spr_mode_flag
-		BNE		loc_18A2D6
-		LDA		_city._game_speed
+		LDA		_game_wnd_spr_mode_flag			; here we do the threads timers and
+		BNE		loc_18A2D6						; priority checks
+		LDA		_city._game_speed				; game setting "STOP" test
 		CMP		#$03
-		BNE		loc_18A2B4
+		BNE		loc_18A2B4						; if enabled, stop core timer
 		LDA		#$00
 		STA		_game_core_stop_flag
 		BEQ		loc_18A2D6
 loc_18A2B4:
-		LDA		_game_core_stop_flag
-		BNE		loc_18A2BC
-		INC		_game_core_stop_timer
+		LDA		_game_core_stop_flag			; for other speeds do increment if not
+		BNE		loc_18A2BC						; stopped somewhere outside
+		INC		_game_core_timer
 loc_18A2BC:
-		LDA		_game_core_stop_timer
+		LDA		_game_core_timer				; mask timer bits according to selected game speed
 		LDX		_city._game_speed
-		BNE		loc_18A2CA
+		BNE		loc_18A2CA						; "SLOW" uses 7 bit counter, 128 frames for thread
 		AND		#$7F
-		BNE		loc_18A2D6
+		BNE		loc_18A2D6						; if timer is zero we need to switch THREADS
 		BEQ		loc_18A2CE
 loc_18A2CA:
-		AND		#$1F
-		BNE		loc_18A2D6
+		AND		#$1F							; both "NORMAL" and "FAST" options are the same
+		BNE		loc_18A2D6						; counts only 5 bits, 32 frames for thread
 loc_18A2CE:
 		LDA		#$FF
 		STA		_game_core_stop_flag
 		STA		_game_core_state
 loc_18A2D6:
-		LDA		_thread_priority_req
-		BPL		loc_18A2FC
-		AND		#$7F
-		TAY
+		LDA		_thread_priority_req			; here is critical sections tests
+		BPL		loc_18A2FC						; preventing threads from switching
+		AND		#$7F							; if one of them requesting the critical
+		TAY										; section,
 		LDX		#$00
 		CMP		#$08
-		BCC		loc_18A2E5
-		INX
+		BCC		loc_18A2E5						; first 3 bits are for THREAD0 to THREAD1 signals
+		INX										; the rest are for THREAD1 exclusive signals
 loc_18A2E5:
-		LDA		_bitmasks,Y
+		LDA		_bitmasks,Y						; test if threads has these bit locked
 		AND		_thread0_flags,X
 		BNE		_switch_to_thread1
 		LDA		_thread_priority_req
@@ -548,16 +550,16 @@ loc_18A3B2:
 		BNE		loc_18A3BD
 		JMP		RESET
 loc_18A3BD:
-		INC		_tmp525
-		LDA		_tmp525
+		INC		_nmi_frames_timer				; raw timer, increment every frame unconditionally
+		LDA		_nmi_frames_timer				; 60 frames mean 1 second to pass
 		CMP		#$3C
 		BCC		loc_18A3CF
-		INC		_tmp524
+		INC		_nmi_seconds_timer				; increment seconds timer, reset frames timer
 		LDA		#$00
-		STA		_tmp525
+		STA		_nmi_frames_timer
 loc_18A3CF:
 		LDA		#$FF
-		STA		_nmi_flag
+		STA		_nmi_flag						; set nmi is over flag for sync purposes
 		PLA
 		TAY
 		PLA

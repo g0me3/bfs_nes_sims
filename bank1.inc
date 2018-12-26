@@ -1865,7 +1865,7 @@ loc_1044A3:
 		LDX		#>[_traffic_map_end-_power_map]
 		LDY		#<[_traffic_map_end-_power_map]
 		JSR		_clear_buf
-		MOVWO	_tmpE6,_land_value_map			; clear the rest of the statistic maps
+		MOVWO	_tmpE6,_land_val_avr_map			; clear the rest of the statistic maps
 ; -
 ; REDUNDANT
 ;		LDX		#$03
@@ -1885,8 +1885,8 @@ loc_1044A3:
 ;		BNE		loc_1044F8
 ; -
 ; OPTIMIZED
-		LDX		#>[_fire_map_end-_land_value_map]	; size is correct this time
-		LDY		#<[_fire_map_end-_land_value_map]
+		LDX		#>[_fire_map_end-_land_val_avr_map]	; size is correct this time
+		LDY		#<[_fire_map_end-_land_val_avr_map]
 		JSR		_clear_buf
 ; -
 		JSR		_sram_write_disable
@@ -1920,11 +1920,19 @@ _scenario_disasters_count_list:
 		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
 _scenario_disaster_end_years_list:
 		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
-_scenario_presents_flags_lib:
+
+; NOTE, here is the default flags for scenarios, most of usual alerts are
+; disabled, most of scenarios have allowed only two town statuses update:
+; METROPOLIS and MEGAPOLIS, and only "TOKYO" scenario allows only the last
+; one.
+; also for all scenarios allowed AMUSEMENT PARK, ZOO and CASINO alerts
+; the rest are forbidden.
+;
+_scenario_presents_flags_lib:					; 7654 3210 FEDC BA98
+		.BYTE	$0E,$1F,$FF,$FF					; 0000 1110 0001 1111 1111 1111 1111 1111
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$1E,$1F,$FF,$FF
+		.BYTE	$1E,$1F,$FF,$FF					; 0001 1110 0001 1111 1111 1111 1111 1111
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF
 		.BYTE	$0E,$1F,$FF,$FF

@@ -141,9 +141,9 @@ I_AREA_WIDX	EQU 4
 		_trci							{1}._delta
 {1}._var_5F6:							.BYTE	0	; *unused*
 {1}._var_5F7:							.BYTE	0	; *unused*
-		_tfix8_8						{1}._land_value
-		_tfix8_8						{1}._crime_level
-		_tfix8_8						{1}._pollution_level
+		_tfix8_8						{1}._land_val_avr
+		_tfix8_8						{1}._crime_lvl_avr
+		_tfix8_8						{1}._poll_lvl_avr
 {1}._difficult:							.BYTE	0
 {1}._city_type:							.BYTE	0
 {1}._score:								.WORD	0
