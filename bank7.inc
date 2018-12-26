@@ -5,6 +5,10 @@
 
 		SECTION_START C03
 
+; ---------------------------------------------------------------------------
+; ------------------------B-U-I-L-D--R-O-U-T-I-N-E-S-------------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _constr_palette_state_update:
 		LDA		#$00
@@ -327,21 +331,7 @@ _water_tile_build_select:
 		RTS
 .no_roads_on_water:
 		CMP		#$03
-		BNE		.rails_water_joint_tests		; here we built electrics
-		PLA
-		JSR		_test_for_valid_hor_electric_water_joint
-		BCS		.valid_left_electro_water_joint
-		PLA
-		JSR		_test_for_valid_hor_electric_water_joint
-		BCS		.valid_right_electro_water_joint
-		PLA
-		JSR		_test_for_valid_vert_electric_water_joint
-		BCS		.valid_bottom_electro_water_joint
-		PLA
-		JSR		_test_for_valid_vert_electric_water_joint
-		BCS		.valid_upper_electro_water_joint
-		BCC		.build_forbidden0
-.rails_water_joint_tests:
+		BNE		.electric_water_joint_tests		; here we built rails
 		PLA
 		JSR		_test_for_valid_hor_rail_water_joint
 		BCS		.valid_left_rail_water_joint
@@ -354,6 +344,20 @@ _water_tile_build_select:
 		PLA
 		JSR		_test_for_valid_vert_rail_water_joint
 		BCS		.valid_upper_rail_water_joint
+		BCC		.build_forbidden0
+.electric_water_joint_tests:
+		PLA
+		JSR		_test_for_valid_hor_electric_water_joint
+		BCS		.valid_left_electric_water_joint
+		PLA
+		JSR		_test_for_valid_hor_electric_water_joint
+		BCS		.valid_right_electric_water_joint
+		PLA
+		JSR		_test_for_valid_vert_electric_water_joint
+		BCS		.valid_bottom_electric_water_joint
+		PLA
+		JSR		_test_for_valid_vert_electric_water_joint
+		BCS		.valid_upper_electric_water_joint
 		BCC		.build_forbidden0
 .valid_left_road_water_joint:
 		PLA
@@ -387,147 +391,146 @@ loc_B82DF:
 		BNE		.build_store					; OPTIMIZED
 ; NOTE: there is no sailable electrics or rails on water at all!
 ;
-.valid_left_electro_water_joint:
+.valid_left_rail_water_joint:
 		PLA
-.valid_right_electro_water_joint:
+.valid_right_rail_water_joint:
 		PLA										; there is no special bridger nor for a electrics...
 		PLA
 		LDA		#_MAP_WATER_RAIL_LR
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
-.valid_bottom_electro_water_joint:
+.valid_bottom_rail_water_joint:
 		PLA
-.valid_upper_electro_water_joint:
+.valid_upper_rail_water_joint:
 		LDA		#_MAP_WATER_RAIL_UD
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
-.valid_left_rail_water_joint:
+.valid_left_electric_water_joint:
 		PLA
-.valid_right_rail_water_joint:
+.valid_right_electric_water_joint:
 		PLA										; ...nor for a rail lines on the water
 		PLA
 		LDA		#_MAP_WATER_ELECTRIC_LR
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
-.valid_bottom_rail_water_joint:
+.valid_bottom_electric_water_joint:
 		PLA
-.valid_upper_rail_water_joint:
+.valid_upper_electric_water_joint:
 		LDA		#_MAP_WATER_ELECTRIC_UD
 .build_store:
 		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
 
-
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_road_water_joint:
 		CMP		#_MAP_ROAD_LR
-		BCC		.invalid_water_joint			; bulldozered ground and all other buildings
+		BCC		.invalid_road_water_joint		; can't join road on water with buildings
 		CMP		#_MAP_RAIL_LR
-		BCC		.valid_water_joint				; all roads here
+		BCC		.valid_road_water_joint			; can only join with ground roads
 		CMP		#_MAP_ROAD_RAIL_LR
-		BEQ		.valid_water_joint				; hor road+rail
+		BEQ		.valid_road_water_joint			; also LR road+rail
 		CMP		#_MAP_ELECTRO_ROAD_UD
-		BEQ		.valid_water_joint				; hor road+electric
+		BEQ		.valid_road_water_joint			; also UD road+electric
 		CMP		#_MAP_WATER_ROAD_LR
-		BEQ		.valid_water_joint				; hor road+water
+		BEQ		.valid_road_water_joint			; also LR road+water
 		CMP		#_MAP_BRIDGE_WATER_LR
-		BEQ		.valid_water_joint				; hor road+water copy, unused
-.invalid_water_joint:
+		BEQ		.valid_road_water_joint			; and finally LR road+water copy, unused
+.invalid_road_water_joint:
 		CLC
 		RTS
-.valid_water_joint:
+.valid_road_water_joint:
 		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_vert_road_water_joint:
 		CMP		#_MAP_ROAD_LR
-		BCC		.invalid_water_joint			; the same for vert tiles here
+		BCC		.invalid_road_water_joint		; the same for vert tiles here
 		CMP		#_MAP_RAIL_LR
-		BCC		.valid_water_joint				; regular roards are valid all
+		BCC		.valid_road_water_joint			; regular roards are valid
 		CMP		#_MAP_ROAD_RAIL_UD
-		BEQ		.valid_water_joint
-		CMP		#_MAP_ELECTRO_ROAD_LR
-		BEQ		.valid_water_joint
+		BEQ		.valid_road_water_joint			; as well as special ones,
+		CMP		#_MAP_ELECTRO_ROAD_LR			; just with reversed sides
+		BEQ		.valid_road_water_joint
 		CMP		#_MAP_WATER_ROAD_UD
-		BEQ		.valid_water_joint
+		BEQ		.valid_road_water_joint
 		CMP		#_MAP_BRIDGE_WATER_UD
-		BEQ		.valid_water_joint
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_test_for_valid_hor_electric_water_joint:
-		CMP		#_MAP_RAIL_LR
-		BCC		loc_B8357
-		CMP		#_MAP_ELECTRO_LR
-		BCC		loc_B8359
-		CMP		#_MAP_ROAD_RAIL_UD
-		BEQ		loc_B8359
-		CMP		#_MAP_ELECTRO_RAIL_UD
-		BEQ		loc_B8359
-		CMP		#_MAP_WATER_RAIL_LR
-		BEQ		loc_B8359
-loc_B8357:
-		CLC
-		RTS
-loc_B8359:
-		SEC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_test_for_valid_vert_electric_water_joint:
-		CMP		#_MAP_RAIL_LR
-		BCC		loc_B8357
-		CMP		#_MAP_ELECTRO_LR
-		BCC		loc_B8359
-		CMP		#_MAP_ROAD_RAIL_LR
-		BEQ		loc_B8359
-		CMP		#_MAP_ELECTRO_RAIL_LR
-		BEQ		loc_B8359
-		CMP		#_MAP_WATER_RAIL_UD
-		BEQ		loc_B8359
+		BEQ		.valid_road_water_joint
 		CLC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_rail_water_joint:
-		CMP		#_MAP_GROUND0
-		BCC		loc_B838B
+		CMP		#_MAP_RAIL_LR					; rails building/ground joint invalid too
+		BCC		.invalid_rail_water_joint		; as well as roars
 		CMP		#_MAP_ELECTRO_LR
-		BCC		loc_B8389
-		CMP		#_MAP_GRASS
-		BCC		loc_B838B
-		CMP		#_MAP_ELECTRO_ROAD_LR
-		BEQ		loc_B838B
-		CMP		#_MAP_ELECTRO_RAIL_LR
-		BEQ		loc_B838B
-		CMP		#_MAP_WATER_ELECTRIC_LR
-		BEQ		loc_B838B
-loc_B8389:
+		BCC		.valid_rail_water_joint			; all rails on ground are valid
+		CMP		#_MAP_ROAD_RAIL_UD
+		BEQ		.valid_rail_water_joint			; all special rails as well
+		CMP		#_MAP_ELECTRO_RAIL_UD			; NOTE, there is no "bridge rails" here at all
+		BEQ		.valid_rail_water_joint
+		CMP		#_MAP_WATER_RAIL_LR
+		BEQ		.valid_rail_water_joint
+.invalid_rail_water_joint:
 		CLC
 		RTS
-loc_B838B:
+.valid_rail_water_joint:
 		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_vert_rail_water_joint:
-		CMP		#_MAP_GROUND0
-		BCC		loc_B838B
+		CMP		#_MAP_RAIL_LR
+		BCC		.invalid_rail_water_joint		; the same for rotated rails
 		CMP		#_MAP_ELECTRO_LR
-		BCC		loc_B8389
+		BCC		.valid_rail_water_joint
+		CMP		#_MAP_ROAD_RAIL_LR
+		BEQ		.valid_rail_water_joint
+		CMP		#_MAP_ELECTRO_RAIL_LR
+		BEQ		.valid_rail_water_joint
+		CMP		#_MAP_WATER_RAIL_UD
+		BEQ		.valid_rail_water_joint
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_test_for_valid_hor_electric_water_joint:
+		CMP		#_MAP_GROUND0					; electric is a special case, can be
+		BCC		.valid_electric_water_joint		; built near any building in the shore
+		CMP		#_MAP_ELECTRO_LR
+		BCC		.invalid_electric_water_joint	; the rest as usual, no roads/rails
 		CMP		#_MAP_GRASS
-		BCC		loc_B838B
+		BCC		.valid_electric_water_joint		; all electrics only
+		CMP		#_MAP_ELECTRO_ROAD_LR
+		BEQ		.valid_electric_water_joint
+		CMP		#_MAP_ELECTRO_RAIL_LR
+		BEQ		.valid_electric_water_joint
+		CMP		#_MAP_WATER_ELECTRIC_LR			; NOTE, no "bridge electric" wires as well
+		BEQ		.valid_electric_water_joint
+.invalid_electric_water_joint:
+		CLC
+		RTS
+.valid_electric_water_joint:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_test_for_valid_vert_electric_water_joint:
+		CMP		#_MAP_GROUND0
+		BCC		.valid_electric_water_joint		; same for the rest of rotated wires
+		CMP		#_MAP_ELECTRO_LR
+		BCC		.invalid_electric_water_joint
+		CMP		#_MAP_GRASS
+		BCC		.valid_electric_water_joint
 		CMP		#_MAP_ELECTRO_ROAD_UD
-		BEQ		loc_B838B
+		BEQ		.valid_electric_water_joint
 		CMP		#_MAP_ELECTRO_RAIL_UD
-		BEQ		loc_B838B
+		BEQ		.valid_electric_water_joint
 		CMP		#_MAP_WATER_ELECTRIC_UD
-		BEQ		loc_B838B
+		BEQ		.valid_electric_water_joint
 		CLC
 		RTS
 
@@ -687,6 +690,10 @@ loc_B8485:
 
 		SECTION_START F05
 
+; ---------------------------------------------------------------------------
+; ------------------T-I-T-L-E--S-C-R-E-E-N--H-A-N-D-L-E-R--------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _title_screen:
 ;		LDA		_title_sub_idx					; REDUNDANT, never enter here with idx=2
@@ -697,14 +704,14 @@ _title_screen:
 		STA		_title_sub_idx					; may be $80 here on input sometimes
 .title_loop:
 		JSR		_wait_for_nmi
-		LDA		_pad1_prev_held
+		LDA		_pad1_prev_held					; test for sram reset A+B+UP+LEFT on PAD2
 		AND		#$CA
 		CMP		#$CA
 		BNE		loc_B8526
 		FJSRA	_sram_reset,SRAM,PRG3
 loc_B8526:
 		JSR		_title_sub_exec
-		BIT		_title_sub_idx
+		BIT		_title_sub_idx					; exit when idx = $80
 		BMI		loc_B8534
 		JSR		_spr_finish
 		JMP		.title_loop
@@ -713,6 +720,28 @@ loc_B8534:
 		JSR		_spr_clear
 		LDA		#$00
 		STA		_MMC5_NT_MODE
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_name_bufs_reset:
+		LDY		#$0A
+		LDA		#$7C
+loc_B9607:
+		STA		_city._name,Y
+		STA		_city._sister_name,Y
+		STA		_city._bank_name,Y
+		STA		_city._unused_name3,Y
+		STA		_city._unused_name4,Y
+		DEY
+		BNE		loc_B9607
+		LDY		#$01
+		STY		_city._name
+		STY		_city._sister_name
+		STY		_city._bank_name
+		STY		_city._unused_name3
+		STY		_city._unused_name4
+		DEY
+		STY		byte_6DC+2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -734,7 +763,7 @@ _title_sub0_init:
 		JSR		_spr_clear
 		LDA		#$08
 		STA		_mmc5_nt_mode_shadow
-		STA		_MMC5_NT_MODE
+		STA		_MMC5_NT_MODE					; draw initial title screen
 		JSRXY	_tlm_res_unpack,_tlm_res_title_main
 		JSR		_wait_for_nmi
 		JSR		_ppu_reset
@@ -765,7 +794,7 @@ _title_sub0_init:
 		STA		_ppu_mask_shadow
 		INC		_mmc5_operation_in_progress_flag
 		JSR		_render_on
-		JMP		_pal_fade_in
+		JMP		_pal_fade_in					; prepare palettes and fade in
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub1_title_input:
@@ -791,7 +820,7 @@ _title_sub2_menu_draw:
 		LDA		#$03
 		STA		_mmc5_chr_banks_shadow+3
 		STA		_MMC5_CHR_BANKSA+3
-		LDXY	_tlm_res_title_menu_default		; draw one of two menu lists
+		LDXY	_tlm_res_title_menu_default		; draw one of two menu
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B858C
 		LDXY	_tlm_res_title_menu_continue
@@ -1011,15 +1040,26 @@ _tlm_rle_title3B:
 
 		SECTION_START 903
 
+; ---------------------------------------------------------------------------
+; --------------------B-A-N-K--S-C-R-E-E-N--H-A-N-D-L-E-R--------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl6_A_bank_draw:
+		LDA		_scr_res_idx
+		CMP		#$0C
+		BEQ		locret_EB2D0
+		RTS
+locret_EB2D0:
 		LDA		#$80
 		STA		_tmp118+7
+		INC		_scr_res_idx
 		LDA		#$00
 		BIT		_city._bank_flags
 		BVC		loc_B8A11							; test for loan flag
-		LDA		#$3F
-		JSR		_bank_scr_common_spr_draw
+;		LDA		#$3F								; REDUNDANT
+;		JSR		_bank_spr_curtain_draw
+		JSR		_bank_spr_curtain_draw_pos3F		; OPTIMIZED
 		JSR		_bank_scr_sub7_already_loan_draw
 		LDA		#$07
 loc_B8A11:
@@ -1033,12 +1073,12 @@ _scr_res_hndl6_B_bank_input:
 		JSR		_bank_scr_sub_exec
 		BIT		_tmp118+2							; exit test
 		BPL		locret_B8A34
-		LDA		#$40
-		STA		_scr_res_control_flags
+;		LDA		#$40								; REDUNDANT, see below
+;		STA		_scr_res_control_flags
 		LDA		#$02
 		STA		_scr_res_idx
-		LDA		#$10
-		STA		_scr_res_control_flags
+		LDA		#$10								; special exit flag for
+		STA		_scr_res_control_flags				; bank screen draw after budget immediately
 		JMP		_pal_fade_out
 locret_B8A34:
 		RTS
@@ -1158,14 +1198,14 @@ _bank_scr_sub3_loan_done_init:
 		INC		_city._money+2
 loc_B8AF7:
 		LDA		#$00
-		STA		_tmp118
+		STA		_tmp118							; init anim counter
 		LDA		#$58
-		JSR		_bank_scr_common_spr_draw
+		JSR		_bank_spr_curtain_draw		; draw sprite curtain at lower position
 		INC		_tmp118+2
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan_def
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan_def
 ;		JMP		_bank_loan_anim_send
-		LDX		#$10
+		LDX		#$10							; clear "$10000" from curtain!
 
 ; !FALLTHROUGH!
 
@@ -1199,20 +1239,21 @@ loc_B8CFD:
 		BNE		loc_B8CFD
 loc_B8D10:
 		EXTQEND
+locret_B8B91:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub4_loan_done_animate:
 		JSR		_bank_loan_yes_no_push_spr_draw
-		INC		_tmp118
+		INC		_tmp118							; increment animation counter
 		LDA		_tmp118
 		LSR
-		TAX
-		LDA		_spr_loan_animate,X
+		TAX										; every two frames move along
+		LDA		_spr_loan_anim_pos_list,X		; at the end of the list, draw opened curtain
 		BMI		loc_B8B89
-		JSR		_bank_scr_common_spr_draw
-		LDX		_tmp118
-		CPX		#$12
+		JSR		_bank_spr_curtain_draw
+		LDX		_tmp118							; four lines for picture under the opened curtain
+		CPX		#$12							; animate from lower line to upper
 		BEQ		loc_B8B63
 		CPX		#$22
 		BEQ		loc_B8B76
@@ -1240,13 +1281,12 @@ loc_B8B76:
 		LDX		#$04
 		BNE		_bank_loan_anim_send
 loc_B8B89:
-		LDA		#$3F
-		JSR		_bank_scr_common_spr_draw
 		INC		_tmp118+2
-locret_B8B91:
-		RTS
+;		LDA		#$3F							; REDUNDANT
+;		JSR		_bank_spr_curtain_draw
+		JMP		_bank_spr_curtain_draw_pos3F	; OPTIMIZED
 
-_spr_loan_animate:
+_spr_loan_anim_pos_list:
 		.BYTE	$58,$59,$5A,$5B
 		.BYTE	$5C,$5D,$5E,$5F
 		.BYTE	$5F,$5E,$5D,$5C
@@ -1266,26 +1306,27 @@ _tlm_loan_anim_lib:
 		.WORD	_tlm_nt_bank_loan3,_tlm_extnt_bank_loan3
 		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def
 
-_tlm_nt_bank_loan0:
-		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$00	;	,$00
-_tlm_nt_bank_loan1:
-		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$00	;	,$00
-_tlm_nt_bank_loan2:
-		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$00	;	,$00
 _tlm_nt_bank_loan3:
 		.BYTE	$ED,$24,$06,$35,$DF,$DF,$DF,$DF,$3A,$00	;	,$00
+_tlm_nt_bank_loan2:
+		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$00	;	,$00
 _tlm_nt_bank_loan_def:
 		.BYTE	$0D,$25,$06,$DC,$DC,$DC,$DC,$DC,$DC,$00	;	,$00
-_tlm_extnt_bank_loan0:
-		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$00	;	,$00
-_tlm_extnt_bank_loan1:
-		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
-_tlm_extnt_bank_loan2:
-		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
+_tlm_nt_bank_loan1:
+		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$00	;	,$00
+_tlm_nt_bank_loan0:
+		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$00	;	,$00
+
 _tlm_extnt_bank_loan3:
 		.BYTE	$ED,$5C,$06,$48,$01,$01,$01,$01,$48,$00	;	,$00
+_tlm_extnt_bank_loan2:
+		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
 _tlm_extnt_bank_loan_def:
 		.BYTE	$0D,$5D,$06,$C8,$C8,$C8,$C8,$C8,$C8,$00	;	,$00
+_tlm_extnt_bank_loan1:
+		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
+_tlm_extnt_bank_loan0:
+		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$00	;	,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_loan_yes_no_push_spr_draw:
@@ -1333,13 +1374,14 @@ _bank_scr_sub6_exit_wait_input:
 		JSR		_bank_loan_yes_no_push_spr_draw
 		LDA		_tmp118+4
 		BNE		loc_B8C0C
-		LDA		#$3F
-		JSR		_bank_scr_common_spr_draw
+;		LDA		#$3F							; REDUNDANT
+;		JSR		_bank_spr_curtain_draw
+		JSR		_bank_spr_curtain_draw_pos3F	; OPTIMIZED
 loc_B8C0C:
 		DEC		_tmp118+7
 		BNE		locret_B8C16
 		LDA		#$80
-		STA		_tmp118+2
+		STA		_tmp118+2						; bank screen exit
 locret_B8C16:
 		RTS
 
@@ -1357,7 +1399,7 @@ loc_B8C25:
 		STA		_ptr0
 		STX		_ptr0+1
 		PPUQSTART
-		PPUQMOVB	#$F6,OP_NOP,0
+		PPUQMOVB	#$F6,OP_NOP,0				; fixed screen pos, no scroll adjustments
 		PPUQMOVB	#$26,OP_NOP,0
 		PPUQMOVB	#$02,OP_NOP,0
 		LDY		_ptr0+1
@@ -1389,7 +1431,7 @@ loc_B8C25:
 		EXTQMOVB	#$D8,OP_NOP,0
 		EXTQMOVA
 		EXTQEND
-		JMP		_bank_scr_common_spr_draw_pos3F
+		JMP		_bank_spr_curtain_draw_pos3F
 
 _loan_font_tiles_top_list:
 		.BYTE	$CA,$CB,$CC,$CD,$CE,$CF,$EA,$EB,$EC,$ED,$EE,$EF
@@ -1400,17 +1442,9 @@ _loan_font_tiles_bottom_list:
 _bank_scr_sub8_already_load_input:
 		LDA		_pad0_autorep_press
 		AND		#$C0
-		BNE		_bank_scr_return
-
-; =============== S U B	R O U T	I N E =======================================
-_bank_scr_common_spr_draw_pos3F:
-		LDA		#$3F
-		JMP		_bank_scr_common_spr_draw
-
-; =============== S U B	R O U T	I N E =======================================
-_bank_scr_return:
+		BEQ		_bank_spr_curtain_draw_pos3F
 		LDA		#$80
-		STA		_tmp118+2
+		STA		_tmp118+2						; loan screen exit
 		RTS
 
 ; REDUNDANT, optimized with library function
@@ -1452,20 +1486,27 @@ _bank_scr_return:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_bank_scr_common_spr_draw:
-		STA		_tmp2
+_bank_spr_curtain_draw_pos3F:
+		LDA		#$3F
+;		JMP		_bank_spr_curtain_draw
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_spr_curtain_draw:
+		STA		_tmp2							; common Y shift
 		LDX		#$00
-		STX		_tmp4
+		STX		_tmp4							; common X shift
 		CMP		#$49
 		BCS		loc_B8D1F
 		LDX		#$20
 loc_B8D1F:
-		STX		_tmp3
-		MOVWO	_ptr0,_spr_bank_common1
+		STX		_tmp3							; common attrib override
+		MOVWO	_ptr0,_spr_bank_curtain_body
 		JSR		_spr_raw_insert
 		LDA		#$00
 		STA		_tmp3
-		MOVWO	_ptr0,_spr_bank_common2
+		MOVWO	_ptr0,_spr_bank_curtain_handle	; curtain drawn
 		JSR		_spr_raw_insert
 		LDA		_tmp2
 		CMP		#$47
@@ -1473,7 +1514,7 @@ loc_B8D1F:
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_B8D45:
-		LDA		_spr_bank_common0,Y
+		LDA		_spr_bank_hair,Y				; top portion of man's hair
 		STA		_spr_buf,X
 		INX
 		INY
@@ -1483,10 +1524,10 @@ loc_B8D51:
 		STX		_spr_buf_pos
 		RTS
 
-_spr_bank_common0:
+_spr_bank_hair:
 		.BYTE	$37,$F4,$00,$80
 		.BYTE	$37,$F5,$00,$88
-_spr_bank_common1:
+_spr_bank_curtain_body:
 		.BYTE	$F0,$FD,$23,$68
 		.BYTE	$F0,$FD,$03,$70
 		.BYTE	$F0,$FD,$03,$78
@@ -1494,20 +1535,27 @@ _spr_bank_common1:
 		.BYTE	$F0,$FD,$03,$88
 		.BYTE	$F0,$FD,$23,$90
 		.BYTE	$FF
-_spr_bank_common2:
+_spr_bank_curtain_handle:
 		.BYTE	$F8,$FB,$00,$78
 		.BYTE	$F8,$FC,$00,$80
 		.BYTE	$FF
 
+; ---------------------------------------------------------------------------
+; -----------------G-R-A-P-H-S--S-C-R-E-E-N--H-A-N-D-L-E-R-------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl1_A_graphs_draw:
-		JSR		_graphs_period_start_year_draw
-		FJSRA	_graphs_period_button_redraw,PRG6,PRG7	; FIX uninitialized button state
-		JMP		_graphs_data_draw
+		JSR		_graphs_period_spr_start_year_draw
+; FIX uninitialized button state
+; -
+		FJSRA	_graphs_period_button_redraw,PRG6,PRG7
+; -
+		JMP		_graphs_period_axis_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl1_B_graphs_input:
-		JSR		_graphs_period_start_year_draw
+		JSR		_graphs_period_spr_start_year_draw	; sprite number, need to be drawn each frame
 		BIT		_scr_res_control_flags
 		BMI		loc_B8E30
 		BIT		_pad0_autorep_press
@@ -1515,10 +1563,10 @@ _scr_res_hndl1_B_graphs_input:
 		BPL		locret_B8E3F
 		LDA		#$20
 		STA		_apu_se_flags+1
-		JMP		_graphs_get_hover_button_idx
+		JMP		_graphs_get_hover_button_idx	; icons press switch
 loc_B8E30:
 		JSR		_flush_test_wait
-		JMP		sub_B8EFB
+		JMP		_graphs_data_draw_column
 loc_B8E36:
 		LDA		#$20
 		STA		_apu_se_flags+1
@@ -1528,8 +1576,8 @@ locret_B8E3F:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_graphs_period_start_year_draw:
-		JSR		_get_graphs_scr_period_range
+_graphs_period_spr_start_year_draw:
+		JSR		_get_graph_dec_range_start_year
 		LDA		_spr_buf_pos
 		STA		_tmp5
 		LDA		#$03
@@ -1553,6 +1601,7 @@ loc_B8E5B:
 		LDX		_tmp5
 		STX		_spr_buf_pos
 		RTS
+
 _spr_graphs_period_start_year:
 		.BYTE	$C7,$B0,$00,$3D
 		.BYTE	$C7,$B0,$00,$41
@@ -1561,112 +1610,108 @@ _spr_graphs_period_start_year:
 
 ; =============== S U B	R O U T	I N E =======================================
 _graphs_get_hover_button_idx:
-		LDA		_cur_game_cursor_scr_pos._COL
-		CMP		#$18
-		BCC		nullsub_9
-		CMP		#$28
-		BCS		nullsub_9
-		LDA		_cur_game_cursor_scr_pos._ROW
-		CMP		#$48
-		BCC		nullsub_9
-		CMP		#$A8
-		BCC		loc_B8EA5
-		LDX		#$06
-		CMP		#$B0
-		BCC		nullsub_9
-		CMP		#$B8
-		BCC		loc_B8EB4
+		LDA		_cur_game_cursor_scr_pos._COL	; isolate icons screen area
+		CMP		#$18							; 18     28
+		BCC		nullsub_9						; +---+---+ 48
+		CMP		#$28							; |   |   |		10x10 x 6 buttons
+		BCS		nullsub_9						; +...+...+		(idx 0 to 5)
+		LDA		_cur_game_cursor_scr_pos._ROW   ; |   |   |
+		CMP		#$48							; +---+---+ A8
+		BCC		nullsub_9						; |       |		empty area
+		CMP		#$A8							; +-------+ B0
+		BCC		.graphs_regular_buttons			; |  10   |		10 year button area (idx 6)
+		LDX		#$06							; +-------+ B8
+		CMP		#$B0							; |       |		empty area
+		BCC		nullsub_9						; +-------+ C0
+		CMP		#$B8							; |  100  |		100 year button area (idx 7)
+		BCC		.draw_graphs_buttons			; +-------+ C8
 		CMP		#$C0
 		BCC		nullsub_9
 		CMP		#$C8
 		BCS		nullsub_9
 		INX
-		BCC		loc_B8EB4
-loc_B8EA5:
-		LDX		#$00
+		BCC		.draw_graphs_buttons
+.graphs_regular_buttons:
+		LDX		#$00							; left/right button calc
 		SEC
 		SBC		#$48
-		BEQ		loc_B8EB4
+		BEQ		.draw_graphs_buttons
 		DEX
 loc_B8EAD:
 		INX
 		SBC		#$10
-		BEQ		loc_B8EB4
+		BEQ		.draw_graphs_buttons
 		BCS		loc_B8EAD
-loc_B8EB4:
+.draw_graphs_buttons:
 		CPX		#$06
-		BCC		sub_B8ED8
+		BCC		.draw_graphs_regular_buttons
 		TXA
 		SEC
 		SBC		#$06
-		CMP		_graphs_scr_period_mode
+		CMP		_graphs_scr_period_mode			; draw range button press/release
 		BEQ		nullsub_9
-		LDA		_graphs_scr_period_mode
+		LDA		_graphs_scr_period_mode			; update range selection button
 		EOR		#$01
 		STA		_graphs_scr_period_mode
 		LDA		#$80
-		STA		_scr_res_control_flags
+		STA		_scr_res_control_flags			; redraw data flag set
 		FJSRA	_graphs_period_button_redraw,PRG6,PRG7
-		JMP		_graphs_data_draw
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B8ED8:
+		JMP		_graphs_period_axis_draw		; also redraw axis values
+.draw_graphs_regular_buttons:
 		CPX		_cur_graphs_button_press_idx
 		BEQ		nullsub_9
-		LDY		_prev_graphs_button_press_idx
-		LDA		_cur_graphs_button_press_idx
+		LDY		_prev_graphs_button_press_idx	; redraw pressed/cleared buttons,
+		LDA		_cur_graphs_button_press_idx	; keep track of two last pressed buttons
 		STA		_prev_graphs_button_press_idx
 		STX		_cur_graphs_button_press_idx
 		LDA		#$80
-		STA		_scr_res_control_flags
+		STA		_scr_res_control_flags			; redraw data flag set
 		FJSRA	_graphs_buttons_redraw,PRG6,PRG7
 		LDA		#$00
-		STA		byte_59B
-
-; =============== S U B	R O U T	I N E =======================================
+		STA		_graphs_draw_data_pos
 nullsub_9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8EFB:
-		LDA		byte_59B
-		AND		#$01
-		TAX
+_graphs_data_draw_column:
+		LDA		_graphs_draw_data_pos			; extract odd/even bit
+		AND		#$01							; even column for prev button
+		TAX										; odd column for last button
 		LDA		_cur_graphs_button_press_idx,X
-		BMI		loc_B8F1A
-		JSR		sub_B8F2D
-		PHA
-		LDA		byte_59B
+		BMI		loc_B8F1A						; if not initialized ($FF)
+		JSR		_get_graph_col_scaled_value
+		PHA										; store it for now
+		LDA		_graphs_draw_data_pos
 		AND		#$01
 		TAY
 		LDX		_cur_graphs_button_press_idx,Y
-		JSR		sub_B8F82
+		JSR		_graph_col_ppu_data				; args Y col idx, X graph idx
 		PLA
-		JSR		sub_B8F9E
+		JSR		_graph_col_draw
 loc_B8F1A:
-		INC		byte_59B
-		LDA		byte_59B
-		CMP		#$14
+		INC		_graphs_draw_data_pos			; continue for 20 columns
+		LDA		_graphs_draw_data_pos			; 10 per graph, 2 graphs at the
+		CMP		#$14							; same time
 		BCC		locret_B8F2C
 		LDA		#$00
 		STA		_scr_res_control_flags
-		STA		byte_59B
+		STA		_graphs_draw_data_pos
 locret_B8F2C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8F2D:
+_get_graph_col_scaled_value:
 		TAY
-		LDA		byte_59B
+		LDA		_graphs_draw_data_pos
 		LSR
-		STA		_tmp2
+		STA		_tmp2							; cur column idx
 		TYA
-		STA		_tmp3
-		LDX		_graphs_scr_period_mode
+		STA		_tmp3							; cur button idx
+		LDX		_graphs_scr_period_mode			; offset 10yeat graphs in array
 		BEQ		loc_B8F3E
-		LDX		#$3C
+		LDX		#$3C							; offset 100year graphs in array (6*10)
 loc_B8F3E:
-		STX		_ptr0+1
+		STX		_ptr0+1							; cur_button_idx*2+cur_button_idx*8+offset
 		ASL
 		STA		_ptr0
 		ASL
@@ -1679,73 +1724,78 @@ loc_B8F3E:
 		LDX		#$03
 		LDA		_tmp3
 		CMP		#$04
-		BEQ		loc_B8F75
+		BEQ		loc_B8F75						; fixed scale for money rate /8
 		LDA		#$00
 		STA		_ptr0
 		LDX		#$0A
 loc_B8F5A:
-		LDA		_wram_map_buf+$7ED,Y
-		CMP		_ptr0
+		LDA		[[_wram_graphs&$1FFF]|$6000],Y	; retarget _wram_graphs to $6000 bank
+		CMP		_ptr0							; calc max value for current graph
 		BCC		loc_B8F63
-		STA		_ptr0
+		STA		_ptr0							; calc scale ratio
 loc_B8F63:
 		INY
 		DEX
-		BNE		loc_B8F5A
+		BNE		loc_B8F5A						; max value to scale all others
 		LDX		#$01
 		LDA		_ptr0
 		CMP		#$40
-		BCC		loc_B8F75
+		BCC		loc_B8F75						; 00-3F - /2
 		INX
 		CMP		#$80
-		BCC		loc_B8F75
-		INX
+		BCC		loc_B8F75						; 00-7F - /4
+		INX										; 80-FF - /8
 loc_B8F75:
 		PLA
 		CLC
 		ADC		_tmp2
 		TAY
-		LDA		_wram_map_buf+$7ED,Y
+		LDA		[[_wram_graphs&$1FFF]|$6000],Y	; retarget _wram_graphs to $6000 bank
 loc_B8F7D:
 		LSR
 		DEX
-		BNE		loc_B8F7D
+		BNE		loc_B8F7D						; scale
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8F82:
+_graph_col_ppu_data:
 		STY		_ptr0
-		LDA		byte_B8F92,X
+		LDA		_graph_col_nt_idx_list,X
 		CLC
 		ADC		_ptr0
 		STA		_tmp2
-		LDA		byte_B8F98,X
+		LDA		_graph_col_extnt_idx_list,X
 		STA		_tmp3
 		RTS
-byte_B8F92:
+
+_graph_col_nt_idx_list:
 		.BYTE	$C8,$C8,$C8,$B8,$C8,$A8
-byte_B8F98:
+_graph_col_extnt_idx_list:
 		.BYTE	$81,$01,$41,$C1,$C1,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8F9E:
+; A = column data value
+; tmp2, tmp3 - params
+; total column height - 32 points, 16 tiles
+;
+_graph_col_draw:
 		STA		_ptr0
 		LDA		#$20
 		SEC
 		SBC		_ptr0
 		LSR
-		STA		_ptr0+1
+		STA		_ptr0+1							; calc empty size of column
 		PPUQSTART
-		LDA		byte_59B
+		LDA		_graphs_draw_data_pos			; calc graphs starting pos
 		CLC
 		ADC		#$08
 		STA		_tmp4
 		PPUQMOVA
 		PPUQMOVB	#$25,OP_NOP,0
-		PPUQMOVB	#$90,OP_NOP,0
+		PPUQMOVB	#$90,OP_NOP,0				; ppu vertical data column queue 10 tiles
 		LDY		_ptr0+1
 		BEQ		loc_B8FCF
-		LDA		#$DD
+		LDA		#$DD							; fill empty portion of column data
 loc_B8FC8:
 		PPUQMOVA
 		DEY
@@ -1753,11 +1803,11 @@ loc_B8FC8:
 loc_B8FCF:
 		LDA		_ptr0
 		LSR
-		BCC		loc_B8FE1
+		BCC		loc_B8FE1						; calc full/half tile needed here
 		TAY
 		LDA		_tmp2
 		CLC
-		ADC		#$02
+		ADC		#$02							; put half tile on the top
 		PPUQMOVA
 		TYA
 		BNE		loc_B8FE4
@@ -1765,7 +1815,7 @@ loc_B8FE1:
 		BEQ		loc_B8FED
 		TAY
 loc_B8FE4:
-		LDA		_tmp2
+		LDA		_tmp2							; put the rest of the full tiles
 loc_B8FE6:
 		PPUQMOVA
 		DEY
@@ -1773,7 +1823,7 @@ loc_B8FE6:
 loc_B8FED:
 		PPUQEND
 		EXTQSTART
-		EXTQMOVB	_tmp4,OP_NOP,0
+		EXTQMOVB	_tmp4,OP_NOP,0				; the same for extnt data
 		EXTQMOVB	#$5D,OP_NOP,0
 		EXTQMOVB	#$90,OP_NOP,0
 		LDY		_ptr0+1
@@ -1799,7 +1849,7 @@ loc_B901D:
 		BNE		loc_B901D
 loc_B9024:
 		EXTQEND
-		LDA		_cur_graphs_button_press_idx
+		LDA		_cur_graphs_button_press_idx	; for money graphs draw middle line
 		CMP		#$04
 		BEQ		loc_B9034
 		LDA		_prev_graphs_button_press_idx
@@ -1835,49 +1885,49 @@ locret_B9082:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_graphs_data_draw:
-		JSR		_get_graphs_scr_period_range
+_graphs_period_axis_draw:
+		JSR		_get_graph_dec_range_start_year	; calc start year for axis
 		PPUQSTART
 		LDY		#$02
 loc_B908A:
-		LDA		byte_B9117,Y
+		LDA		_graphs_period_axis_nt_ofs,Y	; queue pos and len, fixed
 		PPUQMOVA
 		DEY
 		BPL		loc_B908A
 		LDA		#$09
 		STA		_tmp4
-		LDA		_graphs_scr_period_mode
+		LDA		_graphs_scr_period_mode			; for 10 year range test for odd/even
 		BNE		loc_B90AD
 		LDA		_city._cur_year
 		LSR
 		BCC		loc_B90AD
-		LDA		#$01
+		LDA		#$01							; shift numbers if even, no shift for odds
 		LDY		#$00
-		JSR		sub_B914A
+		JSR		_graphs_axis_num_add_ex			; add 1 to lower digit
 		JMP		loc_B90C0
 loc_B90AD:
-		PPUQMOVB	#$DD,OP_NOP,0
+		PPUQMOVB	#$DD,OP_NOP,0				; put dummy tile
 		PPUQMOVA
 		LDA		#$02
-		JSR		sub_B9147
+		JSR		_graphs_axis_num_add			; add 2/20 according to range
 		DEC		_tmp4
 		BEQ		loc_B90D6
 loc_B90C0:
-		LDA		_ptr0+1
+		LDA		_ptr0+1							; put numbers
 		CLC
 		ADC		#$B0
 		PPUQMOVA
 		LDY		_ptr0
-		LDA		byte_B9163,Y
+		LDA		_graphs_nt_numbers_list,Y
 		PPUQMOVA
 		DEC		_tmp4
 		BNE		loc_B90AD
 loc_B90D6:
 		PPUQEND
-		EXTQSTART
+		EXTQSTART								; the same for extnt, but simpler
 		LDY		#$02
 loc_B90DC:
-		LDA		byte_B9114,Y
+		LDA		_graphs_period_axis_extnt_ofs,Y
 		EXTQMOVA
 		DEY
 		BPL		loc_B90DC
@@ -1887,7 +1937,7 @@ loc_B90DC:
 		BNE		loc_B90F5
 		LDA		_city._cur_year
 		LSR
-		BCS		loc_B9103
+		BCS		loc_B9103						; shift apply
 loc_B90F5:
 		EXTQMOVB	#$81,OP_NOP,0
 		EXTQMOVA
@@ -1901,14 +1951,19 @@ loc_B9103:
 loc_B9111:
 		EXTQEND
 		RTS
-byte_B9114:
+
+_graphs_nt_numbers_list:
+		.BYTE	$BA,$DD,$BB,$DD,$BC,$DD,$BD,$DD,$BE,$DD
+_graphs_period_axis_extnt_ofs:
 		.BYTE	$12,$5F,$2A
-byte_B9117:
+_graphs_period_axis_nt_ofs:
 		.BYTE	$12,$27,$2A
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_graphs_scr_period_range:
-		LDA		#$0A
+; calcs starting year for a graphs, result is decimal
+;
+_get_graph_dec_range_start_year:
+		LDA		#$0A							; cur_year-10/100 according to setting
 		LDX		_graphs_scr_period_mode
 		BEQ		loc_B9123
 		LDA		#$64
@@ -1924,38 +1979,38 @@ loc_B9123:
 		LDA		#$00
 		TAY
 loc_B9136:
-		STA		_ptr0+1
+		STA		_ptr0+1							; store hex cur_year-10/100  value
 		STY		_ptr0
-		JSR		_hex_to_dec9999999_0
+		JSR		_hex_to_dec9999					; to decimal (sub in PRG9)
 		LDA		_graphs_scr_period_mode
-		BEQ		locret_B9146
+		BEQ		locret_B9146					; for 100 year range, round
 		LDA		#$00
 		STA		_ptr0
 locret_B9146:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B9147:
-		LDY		_graphs_scr_period_mode
+_graphs_axis_num_add:
+		LDY		_graphs_scr_period_mode			; either 0 or 1
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B914A:
+_graphs_axis_num_add_ex:
 		CLC
-		ADC		$00,Y
+		ADC		_ptr0,Y
 		CMP		#$0A
 		BCC		loc_B915F
 		LDA		#$00
-		STA		$00,Y
+		STA		_ptr0,Y
 		LDA		#$01
 		INY
 		CPY		#$04
-		BCC		sub_B914A
+		BCC		_graphs_axis_num_add_ex
 		RTS
 loc_B915F:
-		STA		$00,Y
+		STA		_ptr0,Y
 		RTS
-byte_B9163:
-		.BYTE	$BA,$DD,$BB,$DD,$BC,$DD,$BD,$DD,$BE,$DD
 
 ; =============== S U B	R O U T	I N E =======================================
 _flush_wait:
@@ -1971,64 +2026,73 @@ _flush_test_wait:
 		BNE		_flush_wait
 		RTS
 
+; ---------------------------------------------------------------------------
+; -----------------B-U-D-G-E-T--S-C-R-E-N--H-A-N-D-L-E-R---------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl2_B_budget_input:
-		JSR		_budget_tax_change_input
+		JSR		_budget_tax_change_input		; button A test
 		LDA		_pad0_held
-		BNE		loc_B920A
-		LDA		byte_596
+		BNE		.budget_input_test
+		LDA		_budget_display_timer			; while idle, run timer
 		CLC
 		ADC		#$01
 		AND		#$7F
-		STA		byte_596
-		BEQ		loc_B91F7
-		JMP		loc_B927C
-loc_B91F7:
-		LDA		byte_597
+		STA		_budget_display_timer			; 128 frames
+		BEQ		.budget_hi_timer_inc
+		JMP		.budget_screen_animate
+.budget_hi_timer_inc:
+		LDA		_budget_display_timer+1
 		CLC
 		ADC		#$01
-		STA		byte_597
+		STA		_budget_display_timer+1
 		CMP		#$07
-		BCC		loc_B927C
-		LDA		#$80
+		BCC		.budget_screen_animate			; 7 times 128 frames
+		LDA		#$80							; then auto quit button
 		STA		_pad0_held
-		BNE		loc_B9243
-loc_B920A:
-		LDA		#$00
-		STA		byte_596
-		STA		byte_597
-		JSR		_budget_wnd_cursor_draw
-		LDA		_pad0_autorep_release
+		BNE		.budget_screen_exit
+.budget_input_test:
+		LDA		#$00							; reset timer upon pressings
+		STA		_budget_display_timer
+		STA		_budget_display_timer+1
+		JSR		_budget_screen_clock_spr_animate		; not sure why animated once here
+		LDA		_pad0_autorep_release			; test for d-pan press
 		AND		#$0F
-		BEQ		loc_B9221
-		JSR		sub_B92DA
-		JMP		loc_B927C
-loc_B9221:
+		BEQ		.budget_buttons_test
+		JSR		_budget_screen_dpad_test
+		JMP		.budget_screen_animate
+.budget_buttons_test:
 		BIT		_pad0_autorep_release
-		BPL		loc_B927C
-		LDA		#$01
+		BPL		.budget_screen_animate
+		LDA		#$01							; A button pressed
 		STA		_apu_se_flags
-		LDA		_budget_tax_cur_pos
-		CMP		#$0A
-		BCS		loc_B9238
-		FJSRA	_budget_funds_recalc,PRG7,PRG9
+		LDA		_budget_tax_cur_pos				; check cursor position
+		CMP		#$0A							; all above or equal $A are exits
+		BCS		.budget_screen_exit_test		; the rest are budget adjustments
+; REDUNDANT, called from PRG9, call back PRG9 as far routine
+; -
+; 		FJSRA	_budget_funds_recalc,PRG7,PRG9
+; -
+; OPTIMIZED, here both functions are in the same CPU space
+ 		JSR		_budget_funds_recalc
+; -
 		RTS
-loc_B9238:
-		BNE		loc_B9243
+.budget_screen_exit_test:
+		BNE		.budget_screen_exit				; $B - exit
 		BIT		_city._bank_flags
-		BPL		loc_B9243
-		JMP		_bank_screen_init
-
-loc_B9243:
-		LDA		#$00
-		STA		byte_596
-		STA		byte_597
-		JSR		_current_funds_calc
-		BCC		loc_B927C
+		BPL		.budget_screen_exit				; if $A and bank icon enabled, the go to bank
+		BMI		.budget_screen_exit_to_bank
+.budget_screen_exit:
+		LDA		#$00							; REDUNDANT, not needed here, vars are clear
+		STA		_budget_display_timer			; always upon entering this screen and always
+		STA		_budget_display_timer+1
+		JSR		_budget_amount_test				; calc amount of total funds, if less than budget, can't skip
+		BCC		.budget_screen_animate
 		LDA		_budget_screen_return_to_info_maps_flag
 		BEQ		.budget_normal_exit
 		JSR		_pal_fade_out					; exit from budget screen to info maps screen
-		LDA		#$00
+		LDA		#$00							; occurs when budget triggered at info maps mode
 		STA		_scr_res_idx					; set the info maps index, NOT CLEAR IT HERE!
 		STA		_fiscal_year_results_draw_req
 		STA		_budget_screen_return_to_info_maps_flag
@@ -2045,22 +2109,19 @@ loc_B9243:
 		LDA		#$40
 		STA		_scr_res_control_flags
 		RTS
-loc_B927C:
-		JSR		_budget_wnd_cursor_pos_set
-		JSR		sub_B9473
-		JMP		_budget_wnd_cursor_draw
-
-; =============== S U B	R O U T	I N E =======================================
-_bank_screen_init:
+.budget_screen_animate:
+		JSR		_budget_screen_cursor_pos_set	; cursor drawn automatically outside of this handler
+		JSR		_budget_bank_arrow_spr_animate
+		JMP		_budget_screen_clock_spr_animate
+.budget_screen_exit_to_bank:
 		LDA		#$06
 		STA		_scr_res_idx
 		LDA		#$10
 		STA		_scr_res_control_flags
 		JMP		_pal_fade_out
 
-
 ; =============== S U B	R O U T	I N E =======================================
-_current_funds_calc:
+_budget_amount_test:
 		LDY		#$00
 		LDX		#$03
 		SEC
@@ -2083,78 +2144,78 @@ _save_taxes_data:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B92DA:
+_budget_screen_dpad_test:
 		BIT		_city._bank_flags
-		BPL		loc_B9312
+		BPL		.budget_common_dpad_test		; common tests if no bank enabled
 		LDA		_pad0_autorep_release
 		AND		#$0C
-		BEQ		loc_B9312
+		BEQ		.budget_common_dpad_test
 		LDX		_budget_tax_cur_pos
 		CMP		#$08
-		BNE		loc_B92FE
-		CPX		#$02
-		BCC		loc_B92F8
+		BNE		.budget_cursor_down				; test for pad value, not cur pos!
+		CPX		#$02							; here up pressings handled
+		BCC		..budget_exit_pos_wrap			; wrap to $B if at the topmost pos (0 or 1)
 		CPX		#$0A
-		BCC		loc_B9312
+		BCC		.budget_common_dpad_test		; if at the bank pos ($A), then go up
 		DEC		_budget_tax_cur_pos
 		RTS
-loc_B92F8:
-		LDA		#$0B
+..budget_exit_pos_wrap:
+		LDA		#$0B							; last pos
 		STA		_budget_tax_cur_pos
 		RTS
-loc_B92FE:
+.budget_cursor_down:
 		CPX		#$08
-		BCC		loc_B9312
-		BEQ		loc_B930C
+		BCC		.budget_common_dpad_test		; less than 8 for regular controls pos
+		BEQ		.budget_bank_pos_wrap			; if 8 - no jump to 9, skip to A
 		CPX		#$0B
-		BEQ		loc_B9312
-		INC		_budget_tax_cur_pos
+		BEQ		.budget_common_dpad_test		; if at exit pos, to regular wrap
+		INC		_budget_tax_cur_pos				; or just go down one pos
 		RTS
-loc_B930C:
+.budget_bank_pos_wrap:
 		LDA		#$0A
 		STA		_budget_tax_cur_pos
 		RTS
-loc_B9312:
+.budget_common_dpad_test:
 		LDA		_pad0_autorep_release
-		AND		#$0F
-		CMP		#$04
-		AND		#$05
-		BCS		loc_B9334
-		BNE		loc_B9329
-		LDA		_budget_tax_cur_pos
+		AND		#$0F							; extract dpad buttons
+		CMP		#$04							; test for hor/vert ranges
+		AND		#$05							; mask UP or RIGHT
+		BCS		.budget_up_down_test			; jump if any vert button pressed
+		BNE		.budget_right					; 0-3 range masked with 5, non zero then right
+		LDA		_budget_tax_cur_pos				; zero, then pressed left
 		AND		#$01
-		BEQ		locret_B9365
+		BEQ		locret_B9365					; can't switch left from leftmost position
 		LDA		#$FF
-		BNE		loc_B935A
-loc_B9329:
+		BNE		.budget_pos_adjust				; or else decrease
+.budget_right:
 		LDA		_budget_tax_cur_pos
 		AND		#$01
-		BNE		locret_B9365
+		BNE		locret_B9365					; can't switch right from rightmost position
 		LDA		#$01
-		BNE		loc_B935A
-loc_B9334:
-		BNE		loc_B9349
+		BNE		.budget_pos_adjust				; or else increase
+.budget_up_down_test:
+		BNE		.budget_down					; masked with 5 non zero if up pressed
 		LDA		_budget_tax_cur_pos
 		CMP		#$02
-		BCS		loc_B9345
-		AND		#$01
+		BCS		.budget_pos_decrease			; if not the topmost pos, decrease
+		AND		#$01							; tompost pos - wrap around, keep left-right pos
 		CLC
 		ADC		#$0C
 		STA		_budget_tax_cur_pos
-loc_B9345:
+.budget_pos_decrease:
 		LDA		#$FE
-		BNE		loc_B935A
-loc_B9349:
+		BNE		.budget_pos_adjust				; decrease by 2 to keep left-right position
+.budget_down:
 		LDA		_budget_tax_cur_pos
 		CMP		#$0A
-		BCC		loc_B9358
-		AND		#$01
+		BCC		.budget_pos_increase			; not in the bottom pos, just increase by 2
+		AND		#$01							; else wrap to topmost
 		CLC
 		ADC		#$FE
 		STA		_budget_tax_cur_pos
-loc_B9358:
+.budget_pos_increase:
 		LDA		#$02
-loc_B935A:
+.budget_pos_adjust:
 		CLC
 		ADC		_budget_tax_cur_pos
 		STA		_budget_tax_cur_pos
@@ -2164,107 +2225,118 @@ locret_B9365:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_budget_wnd_cursor_pos_set:
+_budget_screen_cursor_pos_set:
 		BIT		_city._bank_flags
-		BPL		loc_B937D
-		LDA		_budget_tax_cur_pos
+		BPL		.common_pos
+		LDA		_budget_tax_cur_pos				; special pos for bank icon
 		CMP		#$0A
-		BCC		loc_B937D
-		BNE		loc_B937D
-		LDA		#$B8
+		BCC		.common_pos						; if less than A or B, are commons
+		BNE		.common_pos
+		LDA		#$B8							; if A, then bank special pos
 		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$D4
 		STA		_cur_game_cursor_scr_pos._COL
 		RTS
-loc_B937D:
+.common_pos:
 		LDX		#$00
-		LDA		_budget_tax_cur_pos
+		LDA		_budget_tax_cur_pos				; select left or right hor pos
 		LSR
 		BCC		loc_B9386
 		INX
 loc_B9386:
 		TAY
-		LDA		byte_B9392,Y
-		STA		_cur_game_cursor_scr_pos._ROW
-		LDA		byte_B9399,X
+		LDA		_budget_cursor_vert_pos_list,Y	; this forces the exit button to have
+		STA		_cur_game_cursor_scr_pos._ROW	; two points as well
+		LDA		_budget_cursor_hor_pos_list,X
 		STA		_cur_game_cursor_scr_pos._COL
 		RTS
-byte_B9392:
-		.BYTE	$3C,$6C,$74,$7C,$84,$D4,$00
-byte_B9399:
+_budget_cursor_vert_pos_list:
+		.BYTE	$3C,$6C,$74,$7C,$84,$D4	;	,$00 REDUNDANT
+_budget_cursor_hor_pos_list:
 		.BYTE	$AC,$B4
 
 ; =============== S U B	R O U T	I N E =======================================
-_budget_wnd_cursor_draw:
+_budget_screen_clock_spr_animate:
 		LDX		#$10
 		STX		_ptr0
 		LDX		_spr_buf_pos
-		LDA		byte_597
+		LDA		_budget_display_timer+1			; animation timer read
 		ASL
 		ASL
 		ASL
 		ASL
 		TAY
 loc_B93A9:
-		LDA		byte_B93D7,Y
-		STA		_spr_buf,X
+		LDA		_spr_clock_anim_lib,Y			; read one of 7 clock anims
+		STA		_spr_buf,X						; copy to spr buf
 		INY
 		INX
 		DEC		_ptr0
 		BNE		loc_B93A9
-		LDA		byte_597
+		LDA		_budget_display_timer+1
 		CMP		#$06
-		BEQ		loc_B93D4
+		BEQ		.no_drops						; skip drops on the last frame
 		LDA		#$04
 		STA		_ptr0
-		LDA		byte_596
-		AND		#$30
+		LDA		_budget_display_timer			; in the middle of sand changes
+		AND		#$30							; do grains droplets animation
 		LSR
 		LSR
 		TAY
 loc_B93C8:
-		LDA		byte_B9447,Y
+		LDA		_spr_clock_drops_lib,Y			; 4 frames total
 		STA		_spr_buf,X
 		INY
 		INX
 		DEC		_ptr0
 		BNE		loc_B93C8
-loc_B93D4:
+.no_drops:
 		STX		_spr_buf_pos
 		RTS
-byte_B93D7:
-		.BYTE	$38,$B0,$02,$18,$38,$B0,$42,$1F,$02,$FA,$02,$FA,$02,$FA,$42,$FA
+; NOTE: two sprites of first animation and two sprites of the last one triyng to
+; hide sprites by setting wrong tile idx as well as X position,
+; these sprites does not hide completely, but can be seen at the top-right corner of
+; the screen.
+; let's hide them properly
+;
+_spr_clock_anim_lib:
+;		.BYTE	$38,$B0,$02,$18,$38,$B0,$42,$1F,$02,$FA,$02,$FA,$02,$FA,$42,$FA	; REDUNDANT
+		.BYTE	$38,$B0,$02,$18,$38,$B0,$42,$1F,$F4,$00,$00,$00,$F4,$00,$00,$00	; FIX
 		.BYTE	$38,$B1,$02,$18,$38,$B1,$42,$1F,$42,$B2,$02,$18,$42,$B2,$42,$1F
 		.BYTE	$38,$B3,$02,$18,$38,$B3,$42,$1F,$42,$B4,$02,$18,$42,$B4,$42,$1F
 		.BYTE	$38,$B5,$02,$18,$38,$B5,$42,$1F,$42,$B6,$02,$18,$42,$B6,$42,$1F
 		.BYTE	$38,$B7,$02,$18,$38,$B7,$42,$1F,$42,$B8,$02,$18,$42,$B8,$42,$1F
 		.BYTE	$38,$B9,$02,$18,$38,$B9,$42,$1F,$42,$BA,$02,$18,$42,$BA,$42,$1F
-		.BYTE	$02,$FA,$02,$FA,$02,$FA,$42,$FA,$42,$BB,$02,$18,$42,$BB,$42,$1F
-byte_B9447:
-		.BYTE	$40,$BC,$02,$18,$41,$BC,$02,$18,$42,$BC,$02,$18,$43,$BC,$02,$18
+;		.BYTE	$02,$FA,$02,$FA,$02,$FA,$42,$FA,$42,$BB,$02,$18,$42,$BB,$42,$1F ; REDUNDANT
+		.BYTE	$F4,$00,$00,$00,$F4,$00,$00,$00,$42,$BB,$02,$18,$42,$BB,$42,$1F ; FIX
+_spr_clock_drops_lib:
+		.BYTE	$40,$BC,$02,$18
+		.BYTE	$41,$BC,$02,$18
+		.BYTE	$42,$BC,$02,$18
+		.BYTE	$43,$BC,$02,$18
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_tax_change_input:
-		LDA		_pad0_held
+		LDA		_pad0_held						; test for pad pressed
 		BMI		loc_B9461
 		LDA		#$00
 		STA		_budget_tax_adjust_value
 		RTS
 loc_B9461:
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep_release			; if held, test for autorep
 		BPL		locret_B9472
-		INC		_budget_tax_adjust_value
-		LDA		_budget_tax_adjust_value
-		CMP		#$40
-		BCC		locret_B9472
+		INC		_budget_tax_adjust_value		; increment while held
+		LDA		_budget_tax_adjust_value		; max value here 40
+		CMP		#$40							; used to increase more when
+		BCC		locret_B9472					; hold button longer
 		DEC		_budget_tax_adjust_value
 locret_B9472:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B9473:
+_budget_bank_arrow_spr_animate:
 		LDA		_city._bank_flags
-		BEQ		locret_B94B4
+		BEQ		locret_B94B4					; no bank - no arrows
 		LDA		#$00
 		STA		_tmp2
 		STA		_tmp4
@@ -2279,114 +2351,43 @@ loc_B948A:
 		LSR
 		LSR
 		TAX
-		LDA		byte_B94C7,X
+		LDA		_arrow_attribs_list,X			; blink attribs for selected spr
 		STA		_tmp3
 		CPX		#$03
 		BEQ		loc_B94A9
 		CPX		#$06
 		BEQ		loc_B94A9
-		MOVWO	_ptr0,byte_B94B5
+		MOVWO	_ptr0,_spr_arrow0				; change sprites, total 4 color changes
 		JMP		_spr_raw_insert
 loc_B94A9:
-		MOVWO	_ptr0,byte_B94BE
+		MOVWO	_ptr0,_spr_arrow1
 		JMP		_spr_raw_insert
 locret_B94B4:
 		RTS
 
-byte_B94B5:
+_spr_arrow0:
 		.BYTE	$A0,$43,$00,$BB
 		.BYTE	$A0,$44,$00,$C3
 		.BYTE	$FF
-byte_B94BE:
+_spr_arrow1:
 		.BYTE	$A0,$41,$00,$BB
 		.BYTE	$A0,$42,$00,$C3
 		.BYTE	$FF
-byte_B94C7:
+_arrow_attribs_list:
 		.BYTE	$02,$02,$02,$00,$00,$02
 
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_spr_rect_draw:
-		LDA		#$00
-		STA		_tmp3
-		LDA		_info_maps_rect_pos._ROW
-		STA		_tmp2
-		LDA		_info_maps_rect_pos._COL
-		STA		_tmp4
-		MOVWO	_ptr0,_spr_map_info_rect
-		JMP		_spr_raw_insert
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_spr_arrows_draw:
-		LDA		_info_maps_rect_pos._ROW
-		STA		_tmp2
-		LDA		_info_maps_rect_pos._COL
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp3
-		MOVWO	_ptr0,_spr_map_info_arrows
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_spr_raw_insert:
-		LDY		#$00
-		LDX		_spr_buf_pos
-loc_B9500:
-		LDA		(_ptr0),Y
-		CMP		#$FF
-		BEQ		loc_B952A
-		CLC
-		ADC		_tmp2
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_ptr0),Y
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_ptr0),Y
-		ORA		_tmp3
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_ptr0),Y
-		CLC
-		ADC		_tmp4
-		STA		_spr_buf,X
-		INX
-		INY
-		BNE		loc_B9500
-loc_B952A:
-		STX		_spr_buf_pos
-		RTS
-
-_spr_map_info_rect:
-		.BYTE	$00,$04,$00,$00
-		.BYTE	$00,$05,$00,$2F
-		.BYTE	$28,$06,$00,$00
-		.BYTE	$28,$07,$00,$2F
-		.BYTE	$FF
-_spr_map_info_arrows:
-		.BYTE	$F0,$8B,$03,$14
-		.BYTE	$F0,$8C,$03,$1C
-		.BYTE	$F8,$8D,$03,$18
-		.BYTE	$38,$8B,$83,$14
-		.BYTE	$38,$8C,$83,$1C
-		.BYTE	$30,$8D,$83,$18
-		.BYTE	$10,$8F,$03,$3F
-		.BYTE	$18,$9F,$03,$3F
-		.BYTE	$14,$8E,$03,$37
-		.BYTE	$10,$8F,$43,$F0
-		.BYTE	$18,$9F,$43,$F0
-		.BYTE	$14,$8E,$43,$F8
-		.BYTE	$FF
+; ---------------------------------------------------------------------------
+; -----------------H-I-S-T-O-R-Y--S-C-R-E-E-N--R-O-U-T-I-N-E-S---------------
+; ---------------------------------------------------------------------------
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl5_A_history_draw:
-		LDA		_scr_res_idx
-		CMP		#$0A
-		BNE		locret_B95EC
-		LDA		#$02
+		LDA		_scr_res_idx					; for some reason, this handler
+		CMP		#$0A							; called from common loop
+		BEQ		locret_B95EC					; so we need to check if we actually
+		RTS
+locret_B95EC:
+		LDA		#$02							; need to draw here
 		STA		_MMC5_CHR_MODE
 		LDA		#$48
 		STA		_tmp118+7
@@ -2395,9 +2396,9 @@ _scr_res_hndl5_A_history_draw:
 		STA		_tmp118+9
 		STA		_tmp118+$A
 loc_B958B:
-		LDX		_tmp118+8
-		CPX		#$15
-		BCS		loc_B95E1
+		LDX		_tmp118+8						; print out a history entry
+		CPX		#$15							; as well as year of event
+		BCS		loc_B95E1						; line by line
 		LDA		_city._history_list,X
 		BEQ		loc_B95E1
 		INC		_tmp118+8
@@ -2406,15 +2407,23 @@ loc_B958B:
 		LDA		_tmp118+$A
 		CLC
 		ADC		#$06
-		FJSRA	_printf_txt_lib,PRG7,PRG9
-		FJSRA	_printf_history_year,PRG7,PRG9
-		JSR		_buffers_force_flush
+; OPTIMIZED, all functions here are in one CPU area as well
+; -
+		JSR		_printf_txt_lib
+		JSR		_printf_history_year
+; -
+; REDUNDANT
+; -
+;		FJSRA	_printf_txt_lib,PRG7,PRG9		; this sub were called from PRG9 as PRG7/PRG9
+;		FJSRA	_printf_history_year,PRG7,PRG9	; here we call back PRG9 routine as far call
+; -
+		JSR		_buffers_force_flush			; but this call not?! WHY?!
 		PPUQSTART
 		LDY		_tmp118+9
-		LDA		word_B95ED,Y
+		LDA		_history_delimiter_pos_list,Y
 		INY
 		PPUQMOVA
-		LDA		word_B95ED,Y
+		LDA		_history_delimiter_pos_list,Y
 		INY
 		PPUQMOVA
 		PPUQMOVB	#$01,OP_NOP,0
@@ -2425,13 +2434,13 @@ loc_B958B:
 		INC		_tmp118+$A
 		BNE		loc_B958B
 loc_B95E1:
-		INC		_scr_res_idx
+		INC		_scr_res_idx					; to the next sub (input)
 		JSR		_buffers_force_flush
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
-locret_B95EC:
 		RTS
-word_B95ED:
+
+_history_delimiter_pos_list:
 		.WORD	$24C8
 		.WORD	$2528
 		.WORD	$2588
@@ -2442,245 +2451,57 @@ word_B95ED:
 ;_unused_10:
 ;		.BYTE	$00,$06,$07,$08,$09,$0A,$0B,$0C
 
+; ---------------------------------------------------------------------------
+; -------------M-I-S-C--A-N-D--I-N-F-O--M-A-P-S--R-O-U-T-I-N-E-S-------------
+; ---------------------------------------------------------------------------
+
+; MERGED with same routine in PRG9, here used only locally in one
+; CPU area with PRG9 at the same time
+;
 ; =============== S U B	R O U T	I N E =======================================
-_name_bufs_reset:
-		LDY		#$0A
-		LDA		#$7C
-loc_B9607:
-		STA		_city._name,Y
-		STA		_city._sister_name,Y
-		STA		_city._bank_name,Y
-		STA		_city._unused_name3,Y
-		STA		_city._unused_name4,Y
-		DEY
-		BNE		loc_B9607
-		LDY		#$01
-		STY		_city._name
-		STY		_city._sister_name
-		STY		_city._bank_name
-		STY		_city._unused_name3
-		STY		_city._unused_name4
-		DEY
-		STY		byte_6DC+2
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B962F:
-		LDY		_cur_info_maps_button_idx
-		LDA		byte_B9665,Y
-		TAY
-		LDA		_info_maps_city_map_modes_idx,Y
-		STA		_ptr0
-		TYA
-		ASL
-		ASL
-		CLC
-		ADC		_ptr0
-		TAX
-		LDA		byte_B9659,X
-		STA		_cur_game_cursor_scr_pos._ROW
-		LDA		byte_B964D,X
-		STA		_cur_game_cursor_scr_pos._COL
-		RTS
-byte_B964D:
-		.BYTE	$60,$90,$60,$90,$60,$98,$60,$98,$60,$90,$60,$90
-byte_B9659:
-		.BYTE	$50,$50,$78,$78,$80,$80,$80,$80,$B8,$B8,$B8,$B8
-byte_B9665:
-		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B966E:
-		LDY		#$00
-		LDX		#$60
-loc_B9672:
-		LDA		byte_B9681,Y
-		STA		_spr_buf,X
-		INX
-		INY
-		CPY		#$20
-		BCC		loc_B9672
-		STX		_spr_buf_pos
-		RTS
-byte_B9681:
-		.BYTE	$80,$90,$00,$40
-		.BYTE	$80,$91,$00,$48
-		.BYTE	$80,$92,$00,$50
-		.BYTE	$80,$93,$00,$58
-		.BYTE	$80,$94,$00,$60
-		.BYTE	$80,$A0,$00,$68
-		.BYTE	$80,$A1,$00,$70
-		.BYTE	$80,$A2,$00,$78
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B96A1:
-		PHA
-		LDY		#$FF
-		BIT		byte_15E
-		BPL		loc_B96AB
-		LDY		#$02
-loc_B96AB:
-		LDA		byte_15E
-loc_B96AE:
-		LSR
-		INY
-		BCC		loc_B96AE
-		LDA		byte_B96BB,Y
-		TAX
-		PLA
-		STA		_spr_buf,X
-		RTS
-byte_B96BB:
-		.BYTE	$1D,$21,$25,$11,$15,$19
-
-; =============== S U B	R O U T	I N E =======================================
-_wnd_header_year_draw:
-		MOVW	_ptr0,_city._cur_year
-		JSR		_hex_to_dec9999999_0
-		PPUQSTART
-		LDA		_scr_res_idx
-		AND		#$FE
-		CMP		#$04
-		BNE		loc_B96F9
-		LDA		#$A1
-		STA		_tmp4
-		LDA		#$67
-		JSR		sub_B9754
-		LDA		#$B1
-		STA		_tmp4
-		LDA		#$87
-		JSR		sub_B9754
-		PPUQEND
-		MOVWO	_tmp2,byte_B9774
-		JMP		_info_wnd_year_extnt_queue
-
-loc_B96F9:
-		LDA		#$00
-		STA		_tmp4
-		LDA		#$66
-		JSR		_info_wnd_year_nt_queue
-		LDA		#$40
-		STA		_tmp4
-		LDA		#$86
-		JSR		_info_wnd_year_nt_queue
-		PPUQEND
-		MOVWO	_tmp2,off_B9745
-		JMP		_info_wnd_year_extnt_queue
-
-
-; =============== S U B	R O U T	I N E =======================================
-_info_wnd_year_nt_queue:
-		PPUQMOVA
-		PPUQMOVB	#$24,OP_NOP,0
-		PPUQMOVB	#$04,OP_NOP,0
-		LDY		#$03
-loc_B972B:
-		LDA		_ptr0,Y
-		CLC
-		ADC		#$1B
-		CMP		#$20
-		BCC		loc_B973B
-		LDA		_ptr0,Y
-		CLC
-		ADC		#$36
-loc_B973B:
-		ADC		_tmp4
-		PPUQMOVA
-		DEY
-		BPL		loc_B972B
-		RTS
-off_B9745:
-		.WORD	_MMC5_EXRAM+$66
-		.BYTE	$04,$98,$98,$98,$98
-		.WORD	_MMC5_EXRAM+$86
-		.BYTE	$04,$98,$98,$98,$98
-		.BYTE	0
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B9754:
-		PPUQMOVA
-		PPUQMOVB	#$24,OP_NOP,0
-		PPUQMOVB	#$04,OP_NOP,0
-		LDY		#$03
-loc_B9766:
-		LDA		_ptr0,Y
-		CLC
-		ADC		_tmp4
-		PPUQMOVA
-		DEY
-		BPL		loc_B9766
-		RTS
-byte_B9774:
-		.BYTE	$67,$5C,$04,$4B,$4B,$4B,$4B,$87,$5C,$04,$4B,$4B,$4B,$4B,$00
-
-; =============== S U B	R O U T	I N E =======================================
-_info_wnd_year_extnt_queue:
-		EXTQSTART
-		LDY		#$00
-loc_B9787:
-		LDA		(_tmp2),Y
-		BEQ		loc_B9792
-		EXTQMOVA
-		INY
-		BNE		loc_B9787
-loc_B9792:
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_wnd_common_cursor_spr_clear:
-		LDX		#$0F
-		LDA		#$FA
-loc_B97FC:
-		STA		_spr_buf,X
-		DEX
-		BPL		loc_B97FC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec9999999_0:
-		LDY		#$00
-		STY		_tmp2
-		LDX		#$03
-		LDY		#$00
-		STY		_tmp3
-		STY		_tmp4
-		STY		_tmp5
-		STY		_tmp6
-		STY		_tmp7
-loc_B97A7:
-		LDY		#$00
-loc_B97A9:
-		LDA		_tmp0
-		CMP		_hex_to_dec_tbl0,X
-		LDA		_tmp1
-		SBC		_hex_to_dec_tbl1,X
-		LDA		_tmp2
-		SBC		_hex_to_dec_tbl2,X
-		BCC		loc_B97D2
-		LDA		_tmp0
-		SBC		_hex_to_dec_tbl0,X
-		STA		_tmp0
-		LDA		_tmp1
-		SBC		_hex_to_dec_tbl1,X
-		STA		_tmp1
-		LDA		_tmp2
-		SBC		_hex_to_dec_tbl2,X
-		STA		_tmp2
-		INY
-		BNE		loc_B97A9
-loc_B97D2:
-		STY		_tmp2,X
-		DEX
-		BPL		loc_B97A7
-		LDX		#$00
-loc_B97D9:
-		LDA		_tmp2,X
-		STA		_tmp1,X
-		INX
-		CPX		#$06
-		BNE		loc_B97D9
-		RTS
+;_hex_to_dec9999_0:
+;		LDY		#$00
+;		STY		_tmp2
+;		LDX		#$03
+;		LDY		#$00
+;		STY		_tmp3
+;		STY		_tmp4
+;		STY		_tmp5
+;		STY		_tmp6
+;		STY		_tmp7
+;loc_B97A7:
+;		LDY		#$00
+;loc_B97A9:
+;		LDA		_tmp0
+;		CMP		_hex_to_dec_tbl0,X
+;		LDA		_tmp1
+;		SBC		_hex_to_dec_tbl1,X
+;		LDA		_tmp2
+;		SBC		_hex_to_dec_tbl2,X
+;		BCC		loc_B97D2
+;		LDA		_tmp0
+;		SBC		_hex_to_dec_tbl0,X
+;		STA		_tmp0
+;		LDA		_tmp1
+;		SBC		_hex_to_dec_tbl1,X
+;		STA		_tmp1
+;		LDA		_tmp2
+;		SBC		_hex_to_dec_tbl2,X
+;		STA		_tmp2
+;		INY
+;		BNE		loc_B97A9
+;loc_B97D2:
+;		STY		_tmp2,X
+;		DEX
+;		BPL		loc_B97A7
+;		LDX		#$00
+;loc_B97D9:
+;		LDA		_tmp2,X
+;		STA		_tmp1,X
+;		INX
+;		CPX		#$06
+;		BNE		loc_B97D9
+;		RTS
 
 ; REDUNDANT, merged in system bank
 ;
@@ -2783,6 +2604,255 @@ loc_B97D9:
 ;		.BYTE	[[100000 >> 0] & $FF]	; $A0
 ;		.BYTE	[[1000000 >> 0] & $FF]  ; $40
 ;		.BYTE	[[10000000 >> 0] & $FF] ; $80
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_spr_rect_draw:
+		MOVWO	_ptr0,_spr_map_info_rect
+		JMP		_info_maps_spr_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_spr_arrows_draw:
+		MOVWO	_ptr0,_spr_map_info_arrows
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_spr_draw:
+		LDA		_info_maps_rect_pos._ROW
+		STA		_tmp2
+		LDA		#$00
+		STA		_tmp3
+		LDA		_info_maps_rect_pos._COL
+		STA		_tmp4
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_spr_raw_insert:
+		LDY		#$00
+		LDX		_spr_buf_pos
+loc_B9500:
+		LDA		(_ptr0),Y
+		CMP		#$FF
+		BEQ		loc_B952A
+		CLC
+		ADC		_tmp2
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		ORA		_tmp3
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_ptr0),Y
+		CLC
+		ADC		_tmp4
+		STA		_spr_buf,X
+		INX
+		INY
+		BNE		loc_B9500
+loc_B952A:
+		STX		_spr_buf_pos
+		RTS
+
+_spr_map_info_rect:
+		.BYTE	$00,$04,$00,$00
+		.BYTE	$00,$05,$00,$2F
+		.BYTE	$28,$06,$00,$00
+		.BYTE	$28,$07,$00,$2F
+		.BYTE	$FF
+_spr_map_info_arrows:
+		.BYTE	$F0,$8B,$03,$14
+		.BYTE	$F0,$8C,$03,$1C
+		.BYTE	$F8,$8D,$03,$18
+		.BYTE	$38,$8B,$83,$14
+		.BYTE	$38,$8C,$83,$1C
+		.BYTE	$30,$8D,$83,$18
+		.BYTE	$10,$8F,$03,$3F
+		.BYTE	$18,$9F,$03,$3F
+		.BYTE	$14,$8E,$03,$37
+		.BYTE	$10,$8F,$43,$F0
+		.BYTE	$18,$9F,$43,$F0
+		.BYTE	$14,$8E,$43,$F8
+		.BYTE	$FF
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B962F:
+		LDY		_cur_info_maps_button_idx
+		LDA		byte_B9665,Y
+		TAY
+		LDA		_info_maps_city_map_modes_idx,Y
+		STA		_ptr0
+		TYA
+		ASL
+		ASL
+		CLC
+		ADC		_ptr0
+		TAX
+		LDA		byte_B9659,X
+		STA		_cur_game_cursor_scr_pos._ROW
+		LDA		byte_B964D,X
+		STA		_cur_game_cursor_scr_pos._COL
+		RTS
+byte_B964D:
+		.BYTE	$60,$90,$60,$90,$60,$98,$60,$98,$60,$90,$60,$90
+byte_B9659:
+		.BYTE	$50,$50,$78,$78,$80,$80,$80,$80,$B8,$B8,$B8,$B8
+byte_B9665:
+		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B966E:
+		LDY		#$00
+		LDX		#$60
+loc_B9672:
+		LDA		byte_B9681,Y
+		STA		_spr_buf,X
+		INX
+		INY
+		CPY		#$20
+		BCC		loc_B9672
+		STX		_spr_buf_pos
+		RTS
+byte_B9681:
+		.BYTE	$80,$90,$00,$40
+		.BYTE	$80,$91,$00,$48
+		.BYTE	$80,$92,$00,$50
+		.BYTE	$80,$93,$00,$58
+		.BYTE	$80,$94,$00,$60
+		.BYTE	$80,$A0,$00,$68
+		.BYTE	$80,$A1,$00,$70
+		.BYTE	$80,$A2,$00,$78
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B96A1:
+		PHA
+		LDY		#$FF
+		BIT		byte_15E
+		BPL		loc_B96AB
+		LDY		#$02
+loc_B96AB:
+		LDA		byte_15E
+loc_B96AE:
+		LSR
+		INY
+		BCC		loc_B96AE
+		LDA		byte_B96BB,Y
+		TAX
+		PLA
+		STA		_spr_buf,X
+		RTS
+byte_B96BB:
+		.BYTE	$1D,$21,$25,$11,$15,$19
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_header_year_draw:
+		MOVW	_ptr0,_city._cur_year
+		JSR		_hex_to_dec9999					; used merged sub in PRG9
+		PPUQSTART
+		LDA		_scr_res_idx
+		AND		#$FE
+		CMP		#$04
+		BNE		loc_B96F9
+		LDA		#$A1
+		STA		_tmp4
+		LDA		#$67
+		JSR		sub_B9754
+		LDA		#$B1
+		STA		_tmp4
+		LDA		#$87
+		JSR		sub_B9754
+		PPUQEND
+		MOVWO	_tmp2,byte_B9774
+		JMP		_info_wnd_year_extnt_queue
+
+loc_B96F9:
+		LDA		#$00
+		STA		_tmp4
+		LDA		#$66
+		JSR		_info_wnd_year_nt_queue
+		LDA		#$40
+		STA		_tmp4
+		LDA		#$86
+		JSR		_info_wnd_year_nt_queue
+		PPUQEND
+		MOVWO	_tmp2,off_B9745
+		JMP		_info_wnd_year_extnt_queue
+
+
+; =============== S U B	R O U T	I N E =======================================
+_info_wnd_year_nt_queue:
+		PPUQMOVA
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	#$04,OP_NOP,0
+		LDY		#$03
+loc_B972B:
+		LDA		_ptr0,Y
+		CLC
+		ADC		#$1B
+		CMP		#$20
+		BCC		loc_B973B
+		LDA		_ptr0,Y
+		CLC
+		ADC		#$36
+loc_B973B:
+		ADC		_tmp4
+		PPUQMOVA
+		DEY
+		BPL		loc_B972B
+		RTS
+off_B9745:
+		.WORD	_MMC5_EXRAM+$66
+		.BYTE	$04,$98,$98,$98,$98
+		.WORD	_MMC5_EXRAM+$86
+		.BYTE	$04,$98,$98,$98,$98
+		.BYTE	0
+
+; =============== S U B	R O U T	I N E =======================================
+sub_B9754:
+		PPUQMOVA
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	#$04,OP_NOP,0
+		LDY		#$03
+loc_B9766:
+		LDA		_ptr0,Y
+		CLC
+		ADC		_tmp4
+		PPUQMOVA
+		DEY
+		BPL		loc_B9766
+		RTS
+byte_B9774:
+		.BYTE	$67,$5C,$04,$4B,$4B,$4B,$4B,$87,$5C,$04,$4B,$4B,$4B,$4B,$00
+
+; =============== S U B	R O U T	I N E =======================================
+_info_wnd_year_extnt_queue:
+		EXTQSTART
+		LDY		#$00
+loc_B9787:
+		LDA		(_tmp2),Y
+		BEQ		loc_B9792
+		EXTQMOVA
+		INY
+		BNE		loc_B9787
+loc_B9792:
+		EXTQEND
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_common_cursor_spr_clear:
+		LDX		#$0F
+		LDA		#$FA
+loc_B97FC:
+		STA		_spr_buf,X
+		DEX
+		BPL		loc_B97FC
+		RTS
 
 		SECTION_END 903
 

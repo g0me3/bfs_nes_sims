@@ -795,17 +795,15 @@ _budget_tax_cur_pos:
 
 		_tfund8	_funding_level
 
-byte_596:
-		.BYTE	0
-byte_597:
-		.BYTE	0
+_budget_display_timer:
+		.WORD	0
 _cur_graphs_button_press_idx:
 		.BYTE	0
 _prev_graphs_button_press_idx:
 		.BYTE	0
 _graphs_scr_period_mode:
 		.BYTE	0
-byte_59B:
+_graphs_draw_data_pos:
 		.BYTE	0
 _game_setup_sub_idx:
 		.BYTE	0

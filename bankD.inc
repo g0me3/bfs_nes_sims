@@ -4512,7 +4512,7 @@ loc_58076:
 		RTS
 
 ; FIX: moved here from bank7, now almost all routines are in it's
-; home, already reformatted to use common function with other cunctions
+; home, already reformatted to use common function with other functions
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _hud_city_name_draw:

@@ -35,7 +35,8 @@ _apu_init:
 		STA		_PAD1_REG
 ;		LDA		#$80							; debug leftovers
 ;		STA		byte_4083
-		ASL
+;		ASL
+		LDA		#$00
 		STA		_APU_DMC_FREQ
 		STA		_APU_DMC_LOAD
 ;		STA		byte_4083						; debug leftovers
@@ -439,7 +440,7 @@ loc_A31E:
 		BEQ		loc_A381
 		AND		#$10
 		BEQ		loc_A366
-		LDA		#$78
+		LDA		#_DPCM_IDX2
 		STA		_APU_DMC_ADDR
 		LDA		#$03
 		STA		_APU_DMC_LEN
@@ -447,7 +448,7 @@ loc_A31E:
 		STA		_APU_DMC_FREQ
 		BNE		loc_A375
 loc_A366:
-		LDA		#$78
+		LDA		#_DPCM_IDX2
 		STA		_APU_DMC_ADDR
 		LDA		#$08
 		STA		_APU_DMC_LEN

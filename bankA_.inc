@@ -200,7 +200,7 @@ _j_apu_se8000_loop:
 _apu_se200_start:
 		STY		_apu_se_loop_flags+1
 		JSR		_apu_tri_chnl_no_dpcm
-		LDA		#$00
+		LDA		#_DPCM_IDX0
 		STA		_APU_DMC_ADDR
 		LDA		#$FF
 		STA		_APU_DMC_LEN
@@ -231,7 +231,7 @@ locret_19598E:
 _apu_se100_start:
 		STY		_apu_se_loop_flags+1
 		JSR		_apu_tri_chnl_no_dpcm
-		LDA		#$40
+		LDA		#_DPCM_IDX1
 		STA		_APU_DMC_ADDR
 		LDA		#$DF
 		STA		_APU_DMC_LEN

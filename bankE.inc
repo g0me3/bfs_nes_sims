@@ -3,6 +3,8 @@
 
 		BANK_START $FE
 
+		.ORG [[. + $3F] & $FFC0]
+
 _pcm_sample0:
 		.BYTE	$55,$55,$55,$67,$89,$AB,$CD,$EF,$B5,$54,$D5,$AA,$9A,$04,$54,$FD
 		.BYTE	$BF,$42,$42,$B5,$6D,$55,$51,$B5,$DD,$01,$00,$FB,$FF,$03,$00,$FE
@@ -197,7 +199,7 @@ _pcm_sample0:
 		.BYTE	$A5,$54,$55,$15,$0B,$9D,$5B,$57,$95,$2A,$A5,$55,$AD,$AA,$4A,$95
 		.BYTE	$26,$55,$55,$5B,$AD,$AA,$2A,$55,$55,$35,$4D,$55,$55,$95,$A5,$AA
 
-		ORG $D000
+		.ORG [[. + $3F] & $FFC0]
 
 _pcm_sample1:
 		.BYTE	$FF,$FF,$0B,$C0,$FF,$03,$00,$F0,$FF,$FF,$03,$00,$3F,$00,$01,$F0
@@ -425,7 +427,7 @@ _pcm_sample1:
 		.BYTE	$A9,$F6,$FF,$7F,$08,$00,$28,$75,$F7,$FF,$7F,$57,$49,$8A,$02,$02
 		.BYTE	$80,$AA,$6A,$7B,$9B,$02,$80,$FA,$FF,$FF,$FF,$BF,$00,$00,$80,$54
 
-		ORG $DE00
+		.ORG [[. + $3F] & $FFC0]
 
 _pcm_sample2:
 		.BYTE	$D5,$12,$87,$AA,$1F,$3F,$06,$E0,$F8,$71,$FC,$00,$A8,$FF,$FB,$0F
@@ -436,5 +438,9 @@ _pcm_sample2:
 		.BYTE	$3F,$00,$EC,$C0,$FF,$FF,$00,$80,$FF,$43,$0B,$10,$F8,$FF,$03,$00
 		.BYTE	$BE,$EB,$FF,$05,$00,$FF,$8B,$42,$18,$A5,$7F,$D7,$09,$80,$D5,$2F
 		.BYTE	$1D,$40,$B7,$FF,$07,$C0,$4E,$2F,$45,$96,$64,$BB,$8B,$C4,$AA,$72
+
+_DPCM_IDX0	EQU	[[_pcm_sample0 - $C000] >> 6]
+_DPCM_IDX1	EQU	[[_pcm_sample1 - $C000] >> 6]
+_DPCM_IDX2	EQU	[[_pcm_sample2 - $C000] >> 6]
 
 		BANK_END FE,$E000

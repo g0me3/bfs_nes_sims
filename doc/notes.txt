@@ -28,10 +28,11 @@
 - TODO	BUGS#17
 - TODO	BUGS#18
 - Fixed	BUGS#19
+- Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
 - TODO  Make ship able to sail under the bridges and road/wires with hiding animations.
 - TODO  Reuse the actual FE water tile for those scenarios which use it.
-- Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
+- TODO UNFINISHED#7, proper fixed point conversions, re-use scaler values calculated once store, scale two adjascent graphs by it's max values combined (so we could see the actual relative values).
 - Restored UNFINISHED#9 4-frame animation for Helicopter. Have no idea wether it was removed on purpose or by accident. 4-frame looks much more blinking, maybe epilepsy issues?
 - Added attributes of the pressed buttons on the Name Entry Screens are now not inverted while pushed. However, they may invert it on purpose, but this looks odd actually. The evidence it may be done on purpose that non-sprite push button ("CL") animation uses attr switch the same way as sprites does.
 - Added random turn logic for Ship object to be similar to the SNES version also all the missing code for selecting the deploy position and deploying the object.
@@ -70,7 +71,7 @@
 	5.5 Only two portions of code are looking for a special water tiles either to retarget the ship (object movements routines) or build a special road tiles (construction routines) which intercept the special sea tiles to make some kind of "bridges" (see APPEND C). However, the rest of the code does not aware about special "bridge" tiles or special water tiles to make all this stuff working together properly. Even the Ship movements code knows about sailable waters but does not know about "bridges".
 	5.6 The unused Ship vehicle has two sets of sprites for years before and after 1950. Sprites 5 and 6 of the first set are broken, as well as sprite 3 of the second set. CAN'T BE PATCHED
 6. In the data for in-game menus there are two unused "YES/NO" windows: "DO YOU QUIT PLAYING WITHOUT SAVING?" and "DO YOU WANT TO START NEW CITY?". Both unused. In all cases except "LOAD GAME" the common "SAVE GAME" menu used instead.
-7. The data used for Graphs screen in the current version calculated very briefly, and code looks like a mess sometimes. All values for this screen are fixed point values between -2 and 2, so the graphs display only a small columns for all parameters except crime rate, which is calculated differently. Also code lacks proper scaling of parameters although the max values for RCI data are calculated and stored. So we may presume the scaling has been planned.
+7. Every year, the current state of city parameters are stored in the graphs arrays. Since all values used here are fixed point, they attempt to scale them down to 8-bit fixed values, also calculate the max value for further scaling. However, this scaling value never used, the actual graphs display routine calculate it's own max value and scaling factor. Also, the fixed point conversion seems kinda messy for R values, looks like some kind of iverlooked bug.
 8. Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
 9. Helicopter sprites contain a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason. FIX GG: 039-E37-E6E
 10. There are a lot of unused CHR data for BG objects:

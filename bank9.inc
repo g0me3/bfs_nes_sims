@@ -148,10 +148,19 @@ _scr_res_common:
 		JSR		_scr_pal_bg_load				; FIX, now local
 		JSR		_wait_for_nmi
 		FJSRA	_scr_common_draw,PRG6,PRG9
+; -
+; for some reason attempting to use a regular handler system with no extra checks
+; lead to screen garbling... probably there is no proper sync somewhere
+; putting these draw routines here prevents from interrupting while in draw?
+; all there routines need render to be off, while other init functions aren't
+;
 		JSR		_scr_res_hndl2_A_budget_draw
 		JSR		_scr_res_hndl3_A_city_eval_draw
-		JSR		_far_scr_res_hndl5_A_history_draw
-		JSR		_far_scr_res_hndl6_A_bank_draw
+;		JSR		_far_scr_res_hndl5_A_history_draw		; REDUNDANT
+		FJSRA	_scr_res_hndl5_A_history_draw,PRG7,PRG9	; OPTIMIZED
+;		JSR		_far_scr_res_hndl6_A_bank_draw			; REDUNDANT
+		FJSRA	_scr_res_hndl6_A_bank_draw,PRG7,PRG9	; OPTIMIZED
+;-
 		LDA		_scr_res_idx
 		LSR
 		TAY
@@ -164,7 +173,7 @@ _scr_res_common:
 		LDA		#$01
 		STA		_scr_res_window_opened_flag
 		JSR		_pal_fade_in
-loc_EA050:
+.scr_res_loop:
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9
 		JSR		_spr_finish
@@ -172,19 +181,18 @@ loc_EA050:
 		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
 		JSR		_scr_res_hndl_common_exec
 		BIT		_scr_res_control_flags
-		BVC		loc_EA07F
+		BVC		.scr_res_quick_warp_test
 		LDA		#$01
 		STA		_apu_se_flags
 ;		FJSRA	_scr_res_wnd_close,PRG6,PRG9	; REDUNDANT
 ;		RTS
 		JMP		_scr_res_wnd_close				; FIX, now local
-loc_EA07F:
+.scr_res_quick_warp_test:
 		LDA		_scr_res_control_flags
 		CMP		#$10
-		BNE		loc_EA089
+		BNE		.scr_res_loop
 		JMP		_scr_res_common
-loc_EA089:
-		JMP		loc_EA050
+
 byte_EA08C:
 		.BYTE	$00,$00,$20,$08,$08,$08,$08,$A8
 
@@ -200,15 +208,15 @@ _scr_res_hndl_common_exec:
 		.WORD	_scr_res_hndl0_B_info_maps_input
 		.WORD	_far_scr_res_hndl1_A_graphs_draw
 		.WORD	_far_scr_res_hndl1_B_graphs_input
+		.WORD	0	; _far_scr_res_hndl2_B_budget_input	; *unused* here
 		.WORD	_far_scr_res_hndl2_B_budget_input
-		.WORD	_far_scr_res_hndl2_B_budget_input
+		.WORD	0	; _scr_res_hndl3_B_city_eval_input	; *unused* here
 		.WORD	_scr_res_hndl3_B_city_eval_input
-		.WORD	_scr_res_hndl3_B_city_eval_input
-		.WORD	_scr_res_hndl4_A_city_overview_draw
+		.WORD	_scr_res_hndl4_A_city_overview_init
 		.WORD	_scr_res_hndl4_B_city_overview_input
+		.WORD	0	;_scr_res_hndl5_B_history_input		; *unused* here
 		.WORD	_scr_res_hndl5_B_history_input
-		.WORD	_scr_res_hndl5_B_history_input
-		.WORD	_far_scr_res_hndl6_A_bank_draw
+		.WORD	0	;_far_scr_res_hndl6_A_bank_draw		; *unused* here
 		.WORD	_far_scr_res_hndl6_B_bank_input
 		.WORD	_scr_res_hndl7_A_new_city_gen_init
 		.WORD	_scr_res_hndl7_B_new_city_gen_input
@@ -727,8 +735,8 @@ loc_EA507:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_A_info_maps_draw:
-		LDA		_cur_map_wnd_pos._ROW
-		ASL
+		LDA		_cur_map_wnd_pos._ROW			; copy current screen map position
+		ASL										; to info map selection rect sprite pos
 		CLC
 		ADC		#$3C
 		STA		_info_maps_rect_pos._ROW
@@ -737,8 +745,8 @@ _scr_res_hndl0_A_info_maps_draw:
 		CLC
 		ADC		#$45
 		STA		_info_maps_rect_pos._COL
-		JSR		sub_EAE37
-		JSR		_info_maps_date_draw_ex
+		JSR		_info_maps_city_name_HUD_draw
+		JSR		_info_maps_date_HUD_draw_ex
 		JSR		_info_maps_popul_HUD_draw
 		LDA		#$00
 		STA		byte_13C
@@ -752,7 +760,7 @@ _scr_res_hndl0_A_info_maps_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_B_info_maps_input:
-		JSR		_info_maps_date_draw
+		JSR		_info_maps_date_HUD_draw
 		JSR		_info_maps_popul_HUD_draw
 ;		JSR		sub_EADC9						; REDUNDANT
 ; OPTIMIZED
@@ -1610,6 +1618,15 @@ loc_EAB60:
 		STA		_tmp118
 		RTS
 
+byte_EAE86:
+		.BYTE	$10,$01,$10,$01
+byte_EAE8A:
+		.BYTE	$00,$02,$04,$06,$04,$06,$00,$02
+_mini_map_building_types_list0:
+		.BYTE	$20,$40,$50,$80,$90,$91,$A7,$B2,$B4,$B5,$B6,$B9,$BD,$CE,$E0,$E2,$E6,$FF
+_mini_map_building_types_list1:
+		.BYTE	$84,$86,$85,$80,$0E,$01,$00,$80,$02,$01,$03,$00,$80,$03,$02,$00,$03,$01
+
 ; =============== S U B	R O U T	I N E =======================================
 sub_EAB64:
 		LDA		(_ptr0),Y
@@ -1844,7 +1861,7 @@ loc_EAD58:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_date_draw:
+_info_maps_date_HUD_draw:
 		LDA		_hud_redraw_req
 		BEQ		locret_EADB1
 		LDA		#$00
@@ -1853,7 +1870,7 @@ _info_maps_date_draw:
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_date_draw_ex:
+_info_maps_date_HUD_draw_ex:
 		MOVW	_ptr0,_city._cur_year
 		JSR		_hex_to_dec9999
 		LDA		#$15
@@ -1958,29 +1975,29 @@ locret_EAE36:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EAE37:
-		LDY		_city._name
-		DEY
-		BEQ		locret_EAE85
-		STY		_ptr0
-		STY		_ptr0+1
-		LDY		#$01
+_info_maps_city_name_HUD_draw:
+		LDY		_city._name						; as against the ni-game routines
+		DEY										; this is single screen displays, no
+		BEQ		locret_EAE85					; need to recalc the starting positions,
+		STY		_ptr0							; first byte of city name is its length
+		STY		_ptr0+1							; copy for extnt
+		LDY		#$01							; point to begin of the scring
 		PPUQSTART
-		PPUQMOVB	#$62,OP_NOP,0
+		PPUQMOVB	#$62,OP_NOP,0				; put fixed pos and len already read
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	_ptr0,OP_NOP,0
 loc_EAE57:
-		LDA		_city,Y
+		LDA		_city._name,Y					; just copy the text
 		PPUQMOVA
 		INY
 		DEC		_ptr0
 		BNE		loc_EAE57
 		PPUQEND
-		EXTQSTART
+		EXTQSTART								; same for extnt
 		EXTQMOVB	#$62,OP_NOP,0
 		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
 		EXTQMOVB	_ptr0+1,OP_NOP,0
-		LDA		#$59
+		LDA		#$59							; extnt fixed
 loc_EAE7B:
 		EXTQMOVA
 		DEC		_ptr0+1
@@ -1988,14 +2005,6 @@ loc_EAE7B:
 		EXTQEND
 locret_EAE85:
 		RTS
-byte_EAE86:
-		.BYTE	$10,$01,$10,$01
-byte_EAE8A:
-		.BYTE	$00,$02,$04,$06,$04,$06,$00,$02
-_mini_map_building_types_list0:
-		.BYTE	$20,$40,$50,$80,$90,$91,$A7,$B2,$B4,$B5,$B6,$B9,$BD,$CE,$E0,$E2,$E6,$FF
-_mini_map_building_types_list1:
-		.BYTE	$84,$86,$85,$80,$0E,$01,$00,$80,$02,$01,$03,$00,$80,$03,$02,$00,$03,$01
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_A_graphs_draw:
@@ -2027,6 +2036,7 @@ _scr_res_hndl2_A_budget_draw:
 		BEQ		loc_EAEEC
 		RTS
 loc_EAEEC:
+		DEC		_mmc5_operation_in_progress_flag
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		LDA		#$80
@@ -2120,11 +2130,12 @@ loc_EAFFD:
 		FJSRA	_wnd_header_year_draw,PRG7,PRG9
 		INC		_scr_res_idx
 		LDA		#$00
-		STA		byte_596
-		STA		byte_597
+		STA		_budget_display_timer
+		STA		_budget_display_timer+1
 		STA		_budget_tax_cur_pos
-		FJSRA	_budget_wnd_cursor_pos_set,PRG7,PRG9
-		FJSRA	_budget_wnd_cursor_draw,PRG7,PRG9
+		FJSRA	_budget_screen_cursor_pos_set,PRG7,PRG9
+		FJSRA	_budget_screen_clock_spr_animate,PRG7,PRG9
+		INC		_mmc5_operation_in_progress_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2134,14 +2145,14 @@ _far_scr_res_hndl2_B_budget_input:
 
 ; =============== S U B	R O U T	I N E =======================================
 _buffers_force_flush:
-		JSR		_ppu_dequeue					; TODO: not only duplicated code
-loc_EB043:										; 		but seems has a wrong branch
-		JSR		_extnt_dequeue					;		why else they check both queues,
-		LDA		_ppu_queue_pos_tail				;		but dequeues only extnt in loop?
+		JSR		_ppu_dequeue					; do dequeue of nt data
+loc_EB043:
+		JSR		_extnt_dequeue					; then extnt
+		LDA		_ppu_queue_pos_tail				; if nt not flushed, repeat both
 		CMP		_ppu_queue_pos_head
-		BNE		_buffers_force_flush
-		LDA		_extnt_queue_pos_tail
-		CMP		_extnt_queue_pos_head
+		BNE		_buffers_force_flush			; if flushed, here only extnt may
+		LDA		_extnt_queue_pos_tail			; need to flush, so let's optimize
+		CMP		_extnt_queue_pos_head			; it and jump only to extnt dequeue
 		BNE		loc_EB043
 		RTS
 
@@ -2253,7 +2264,7 @@ locret_EB11F:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_scr_res_hndl4_A_city_overview_draw:
+_scr_res_hndl4_A_city_overview_init:
 		PUSHB	_cur_info_maps_button_idx
 		LDA		#$0B
 		STA		_cur_info_maps_button_idx
@@ -2449,9 +2460,9 @@ off_EB26C:
 		.WORD	_electrics_count
 
 ; =============== S U B	R O U T	I N E =======================================
-_far_scr_res_hndl5_A_history_draw:
-		FJSRA	_scr_res_hndl5_A_history_draw,PRG7,PRG9
-		RTS
+;_far_scr_res_hndl5_A_history_draw:
+;		FJSRA	_scr_res_hndl5_A_history_draw,PRG7,PRG9
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _printf_history_year:
@@ -2477,14 +2488,9 @@ locret_EB2BE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_far_scr_res_hndl6_A_bank_draw:
-		LDA		_scr_res_idx
-		CMP		#$0C
-		BNE		locret_EB2D0
-		FJSRA	_scr_res_hndl6_A_bank_draw,PRG7,PRG9
-		INC		_scr_res_idx
-locret_EB2D0:
-		RTS
+;_far_scr_res_hndl6_A_bank_draw:
+;		FJSRA	_scr_res_hndl6_A_bank_draw,PRG7,PRG9
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl6_B_bank_input:
