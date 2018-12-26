@@ -689,6 +689,19 @@ _total_free	SET _total_free+_bank{1}_free
 		POPB	{1}+2
 	ENDM
 
+	MAC POPADDD
+		PLA
+		CLC
+		ADC		{2}
+		STA		{1}
+		PLA
+		ADC		{2}+1
+		STA		{1}+1
+		PLA
+		ADC		{2}+2
+		STA		{1}+2
+	ENDM
+
 	; \t\tLDA\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\1\+1\n\t\tSTA\t\t\2\+1\n
 	; \t\tMOVW\t\2,\1\n
 	;

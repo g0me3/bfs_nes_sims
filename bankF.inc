@@ -223,6 +223,8 @@ _city_stats_reset:
 		STA		_popul_last_year+1
 		STA		_popul_last_year+2
 		STA		_assessed_value
+		STA		_assessed_value+1				; FIX, missing nibbles
+		STA		_assessed_value+2				; FIX, missing nibbles
 		STA		_annual_score_change
 		STA		_annual_score_change+1
 		MOVWI	_city._score,500

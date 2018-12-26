@@ -651,7 +651,7 @@ loc_10457D:
 		LDA		_city._level._R.FRAC			; here we multiply to 2 the whole fixed point number
 		STA		_tmpE6							; take higher bit of FRAC into integer part once
 		LDA		_city._level._R.INT				; then shift integer part
-; BUG! _tmpE6 writeen twice, low nibble of _R lost
+; BUG! _tmpE6 writeen twice, FRAC nibble of _R lost then
 ; FIX, remove it and we get actual value
 ;		STA		_tmpE6
 		ASL		_tmpE6
@@ -683,11 +683,15 @@ loc_10457D:
 		STA		_wram_graphs._10y._I+9			; graph data = [L_I * 16]
 ; BUG! "crime" button is the last one, this is a pollution button.
 ; use pollution value instead!
+;		LDA		_city._crime_level.INT
+		LDA		_city._pollution_level.INT		; FIX, correct value
+; NOTE, integer part of the value is a special
+; flag for ingame warning messages, so remove it
+; interpolate with previous values for nice curvy graph
 ;
-		LDA		_city._crime_level.INT			; integer part of the _crime_level value is a special
-		AND		#$7F							; flag for ingame warning messages, so remove it
-		SEC										; interpolate with previous values for nice curvy graph
-		SBC		_wram_graphs._10y._pollution+8
+		AND		#$7F
+		SEC
+		SBC		_wram_graphs._10y._pollution+8	; interpolate with previous value
 		LSR
 		LSR
 		ADC		_wram_graphs._10y._pollution+8
@@ -698,25 +702,53 @@ loc_1045E9:
 ; BUG, it seems they copy=pasted code above and just put the money var here
 ; all this thing looks wrong then.
 ;
-		LDA		_city._money+2					; money above 65535 counts but clamped to 7 bit only
+;		LDA		_city._money+2					; money above 65535 counts but clamped to 7 bit only
+		LDA		_city._crime_level.INT			; FIX, correct values here
 		AND		#$7F							; lol
 		SEC
-		SBC		_wram_graphs._10y._money+8
+;		SBC		_wram_graphs._10y._money+8		; BUG
+		SBC		_wram_graphs._10y._crime+8		; FIX
 		LSR
 		LSR
-		ADC		_wram_graphs._10y._money+8
+;		ADC		_wram_graphs._10y._money+8		; BUG
+		ADC		_wram_graphs._10y._crime+8		; FIX
 		BCC		loc_1045FE
 		LDA		#$FF							; clamp to 255 max
 loc_1045FE:
-		STA		_wram_graphs._10y._money+9
+;		STA		_wram_graphs._10y._money+9		; BUG
+		STA		_wram_graphs._10y._crime+9		; FIX
 ; BUG, Also odd calculation, _taxes_income never gets higher nibble calculated before now in the original code
 ; also _taxes_income may be negative, so further calculations may be incorrect and clamp negative values to
 ; max on the graph instead...
 ;
-		LDA		_taxes_income+2					; NOTE, taxes wer income never calculated as 24-bit value
-		BNE		loc_104625						; only as 16-bit, now it is so this check isnt redundant now
-		LDA		_taxes_income+1					; graph value = (_taxes_income / 32) - 128
-		STA		_tmpE6							; so values here are inrange -128 to +127
+;		LDA		_taxes_income+2					; NOTE, taxes wer income never calculated as 24-bit value
+;		BNE		loc_104625						; only as 16-bit, now it is so this check isnt redundant now
+;		LDA		_taxes_income+1					; graph value = (_taxes_income / 32) - 128
+;		STA		_tmpE6							; so values here are inrange -128 to +127
+;		LDA		_taxes_income
+;		LSR		_tmpE6
+;		ROR
+;		LSR		_tmpE6
+;		ROR
+;		LSR		_tmpE6
+;		ROR
+;		LSR		_tmpE6
+;		ROR
+;		LSR		_tmpE6
+;		ROR
+;		LDY		_tmpE6
+;		BNE		loc_104625						; attempt to clamp
+;		ADC		#$80
+;		BCC		.money_store					; attempt to shift graph to the middle of the axis
+;loc_104625:
+;		LDA		#$FF							; clamp to 255 max
+; -
+; FIX, may be optimized a little by rearranging some opcodes
+		LDA		_taxes_income+2
+		BMI		.negative_income				; negative
+		BNE		.clamp_to_max_m					; non-zero
+		LDA		_taxes_income+1					; the rest is shifted
+		STA		_tmpE6
 		LDA		_taxes_income
 		LSR		_tmpE6
 		ROR
@@ -729,13 +761,51 @@ loc_1045FE:
 		LSR		_tmpE6
 		ROR
 		LDY		_tmpE6
-		BNE		loc_104625						; attempt to clamp
+		BNE		.clamp_to_max_m
+		CLC
 		ADC		#$80
-		BCC		loc_104627						; attempt to shift graph to the middle of the axis
-loc_104625:
-		LDA		#$FF							; clamp to 255 max
-loc_104627:
-		STA		_wram_graphs._10y._crime+9
+		BCC		.clamp_to_max_m
+.clamp_to_max_m:
+		LDA		#$FF
+		BNE		.money_store
+.negative_income:
+		LDA		_taxes_income				; negative value
+		EOR		#$FF
+		CLC
+		ADC		#$01
+		STA		_tmpE6
+		LDA		_taxes_income+1
+		EOR		#$FF
+		ADC		#$00
+		STA		_tmpE7
+		LDA		_taxes_income+2
+		EOR		#$FF
+		ADC		#$00
+		STA		_tmpE8
+		BNE		.clamp_to_min_m				; clamp if higher nibble non-zero
+		LDA		_tmpE7						; already got values in tmp vars
+		LSR									; so just /32 here
+		ROR		_tmpE6
+		LSR
+		ROR		_tmpE6
+		LSR
+		ROR		_tmpE6
+		LSR
+		ROR		_tmpE6
+		LSR
+		ROR		_tmpE6
+		CMP		#$00						; for high nibble in A
+		BNE		.clamp_to_min_m				; opposite values here as well.
+		LDA		#$80
+		SEC
+		SBC		_tmpE6
+		BCC		.money_store
+.clamp_to_min_m:
+		LDA		#$00
+; -
+.money_store:
+;		STA		_wram_graphs._10y._crime+9		; BUG
+		STA		_wram_graphs._10y._money+9		; FIX
 		JSR		_sram_write_disable
 		LDX		#$00							; the final calculation for schools and hospitals
 		LDA		_city._level._R.INT				; based on integer part of R level value
@@ -1108,13 +1178,17 @@ _default_city_fund_rate_list:
 		.BYTE	$20,$21
 
 ; =============== S U B	R O U T	I N E =======================================
+; NOTE, all this stuff calculated at the end of the year only.
+; so the city problems don't work for the first year and
+; may be alrady solved but you don't know until the next year
+;
 _city_stats_recalc:
 		LDA		_cur_RCI_levels_sum.FRAC		; calculated previously
 		ORA		_cur_RCI_levels_sum.INT
 		BEQ		loc_10497B
-		JSR		_city_assessed_value_recalc
-		JSR		_city_popul_relalc
-		JSR		_city_problems_list_recalc
+		JSR		_city_assessed_value_recalc		; assessed value recalc
+		JSR		_city_net_migration_relalc		; city net migration recalc
+		JSR		_city_problems_list_recalc		; list of current city problems
 		JSR		_city_score_recalc
 		JMP		_city_votes_recalc				; OPTIMIZED
 ;		JMP		loc_10497E						; REDUNDANT
@@ -1130,157 +1204,115 @@ _city_assessed_value_recalc:
 		PUSHB	#$05
 		JSR		_mmc5_mul16to8
 		POPD	_tmpE6
-		PUSHW	_rails_count				; TMP = rails*10
+		PUSHW	_rails_count
 		PUSHB	#$0A
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6						; E6 = E6 + TMP
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$03E8
+		POPADDD	_tmpE6,_tmpE6				; E6 += rails*10
+		PUSHWI	$03E8						;
 		LDA		_police_stations_count
 		CLC
-		ADC		_unknown_var				; BUG! unknown unused var
+;		ADC		_fires_level				; BUG! wrong var used
+		ADC		_fire_stations_count		; FIX, proper value, based on Micropolis source
 		PHA
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$9001						; BUG! SWAP NIBBLES
+		POPADDD	_tmpE6,_tmpE6				; E6 += (police + fire) * 1000
+;		PUSHWI	$9001						; BUG! SWAP NIBBLES
+		PUSHWI	$0190						; FIX, correct value!
 		PUSHB	_hospitals_count
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$B80B						; BUG! SWAP NIBBLES
+		POPADDD	_tmpE6,_tmpE6				; E6 += hospitals * 400
+;		PUSHWI	$B80B						; BUG! SWAP NIBBLES
+		PUSHWI	$0BB8						; FIX, correct value!
 		PUSHB	_stadiums_count
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$8813						; BUG! SWAP NIBBLES
+		POPADDD	_tmpE6,_tmpE6				; E6 += stadiums * 3000
+;		PUSHWI	$8813						; BUG! SWAP NIBBLES
+		PUSHWI	$1388						; FIX, correct value!
 		PUSHB	_sea_ports_count
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$1027						; BUG! SWAP NIBBLES
+		POPADDD	_tmpE6,_tmpE6				; E6 += sea ports * 5000
+;		PUSHWI	$1027						; BUG! SWAP NIBBLES
+		PUSHWI	$2710						; FIX, correct value!
 		PUSHB	_airports_count
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$B80B						; BUG! SWAP NIBBLES
+		POPADDD	_tmpE6,_tmpE6				; E6 += air ports * 10000
+;		PUSHWI	$B80B						; BUG! SWAP NIBBLES
+		PUSHWI	$0BB8						; FIX, correct value!
 		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_tmpE6
-		PLA
-		ADC		_tmpE7
-		STA		_tmpE7
-		PLA
-		ADC		_tmpE8
-		STA		_tmpE8
-		PUSHWI	$7017						; BUG! SWAP NIBBLES
-		PUSHB	_nuke_power_station_count
+		POPADDD	_tmpE6,_tmpE6				; E6 += coal power * 3000
+;		PUSHWI	$7017						; BUG! SWAP NIBBLES
+		PUSHWI	$1770						; FIX, correct value!
+		PUSHB	_nuke_power_station_count	;
 		JSR		_mmc5_mul16to8
-		PLA
-		CLC
-		ADC		_tmpE6
-		STA		_assessed_value
-		PLA
-		ADC		_tmpE7
-		STA		_assessed_value+1
-		PLA
-		ADC		_tmpE8
-		STA		_assessed_value+2
+; NOTE, the result is assessed value of micropolis source code has this value
+; additionally multiplied to 1000, the nes version dont
+;
+		POPADDD	_assessed_value,_tmpE6		; _assessed_value = E6 + (nuclear power * 6000)
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_city_popul_relalc:
-		LDA		_popul_cur
-		SEC
-		SBC		_popul_last_year
-		STA		_popul_net_migration
-		LDA		_popul_cur+1
-		SBC		_popul_last_year+1
-		STA		_popul_net_migration+1
-		LDA		_popul_cur+2
-		SBC		_popul_last_year+2
-		STA		_popul_net_migration+2
-		MOVW	_popul_last_year,_popul_cur
-		LDA		_popul_cur+2
-		STA		_popul_last_year+2
-		LDY		#$05
+_city_net_migration_relalc:
+		MSUBD	_popul_net_migration,_popul_cur,_popul_last_year	; calc delta between current population and last year population
+		MOVD	_popul_last_year,_popul_cur	; save current population for the next year
+; REDUNDANT, merged, reused code
+;		LDY		#$05
+;loc_104AF0:
+;		LDA		_popul_cur
+;		CMP		_popul_city_type_list0,Y
+;		LDA		_popul_cur+1
+;		SBC		_popul_city_type_list1,Y
+;		LDA		_popul_cur+2
+;		SBC		_popul_city_type_list2,Y
+;		BCS		loc_104B07
+;		DEY
+;		BPL		loc_104AF0
+;loc_104B07:
+;		STY		_city._city_type
+; -
+; OPTIMIZED
+		LDX		#$04
 loc_104AF0:
-		LDA		_popul_cur
-		CMP		byte_104B17,Y
-		LDA		_popul_cur+1
-		SBC		byte_104B11,Y
-		LDA		_popul_cur+2
-		SBC		byte_104B0B,Y
-		BCS		loc_104B07
-		DEY
+		JSR		_popul_compare
+		BCS		loc_104AF1
+		DEX
 		BPL		loc_104AF0
-loc_104B07:
-		STY		_city._city_type
+loc_104AF1:
+		INX
+		STX		_city._city_type
+; -
 		RTS
-byte_104B0B:
-		.BYTE	$00,$00,$00,$00,$01,$07
-byte_104B11:
-		.BYTE	$00,$07,$27,$C3,$86,$A1
-byte_104B17:
-		.BYTE	$00,$D0,$10,$50,$A0,$20
+
+; REDUNDANT, merged copies
+;_popul_city_type_list2:
+;		.BYTE	$00
+;		.BYTE	$00
+;		.BYTE	$00
+;		.BYTE	$00
+;		.BYTE	$01
+;		.BYTE	$07
+;_popul_city_type_list1:
+;		.BYTE	$00
+;		.BYTE	$07
+;		.BYTE	$27
+;		.BYTE	$C3
+;		.BYTE	$86
+;		.BYTE	$A1
+;_popul_city_type_list0:
+;		.BYTE	$00
+;		.BYTE	$D0
+;		.BYTE	$10
+;		.BYTE	$50
+;		.BYTE	$A0
+;		.BYTE	$20
+
 
 ; =============== S U B	R O U T	I N E =======================================
 ; this routine calculates the list of city wors problems,
 ; there are three tmp buffers 2*7-bytes each:
 ; 6CE-6DB (_problem_data) 		- set initial parameters
 ; 6DC-6E2 (_problem_accepted)	- flags when problem is selected to sorting list
-; 6E3-6E9 (_problem_weight)		- a number of problem occurance during the random test
+; 6E3-6E9 (_problem_percent)		- a number of problem occurance during the random test
 ;
 ; the overall problem of comparing all these values is they are a different
 ; types of measurement units. they just can't be compared directly.
@@ -1300,26 +1332,26 @@ _city_problems_list_recalc:
 		AND		#$7F
 		STA		_problem_data+1
 		LDA		_city._pollution_level.FRAC		; 6D0/6D1 = pollution_level & 0x7F00
-		STA		_problem_data+2
-		LDA		_city._pollution_level.INT
-		AND		#$7F
+		STA		_problem_data+2					; remove special flag bit as well, however
+		LDA		_city._pollution_level.INT		; it never used by the game anymore,
+		AND		#$7F							; pollution alert isn't implemented
 		STA		_problem_data+3
 		PUSHW	_city._land_value				; 6D2/6D3 = land_value * 0.625
-		PUSHB	#$A0
+		PUSHB	#$A0							; (0.7 for Micropolis source code)
 		JSR		_mmc5_mul16to8
 		PLA
 		POPW	_problem_data+4
-		MMULB8	_problem_data+6,_city._tax_rate,#$0A	; 6D4/6D5 = tax_rate * 10
+		MMULB8	_problem_data+6,_city._tax_rate,#$0A; 6D4/6D5 = tax_rate * 10
 		FJSR	_traffic_level_recalc,SRAM,PRGB
 		MOVW	_problem_data+8,_traffic_level	; 6D6/6D7 = traffic level
-		JSR		_get_RCI_proportion
-		STA		_problem_data+10				; 6D8 = R/CI proportion
-		JSR		_unknown_var_mul5				; 6DA = _unknown_var * 5
+		JSR		_get_unemployment
+		STA		_problem_data+10				; FIX, now 6D8 = R/(C+I)*8 - 1
+		JSR		_get_fires						; FIX, now 6DA = _fires_level * 5
 		STA		_problem_data+12
 		LDA		#$00
 		STA		_problem_data+11				; 6D9 = 0
 		STA		_problem_data+13				; 6DB = 0
-		JSR		_city_problem_select			; random selection of the problems weights
+		JSR		_city_problems_percents_calc	; random calc of the problems percents
 		LDY		#$00
 		TYA
 loc_104B8F:
@@ -1328,67 +1360,125 @@ loc_104B8F:
 		CPY		#$07
 		BNE		loc_104B8F
 		LDX		#$00							; init the problems counter (out of 4)
-loc_104B99:
-		LDY		#$00							; start to sort out the problems
+.do_all_fields:
+		LDY		#$00							; reset max value for curretn cycle
 		STY		_tmpE6
-loc_104B9D:
+; BUG, this algo wery weak and gives incorrect sorting results. don't know why, because
+; the Micropolis sources has the correct algo for this section.
+;
+; 1. it compares for greater AND equals, all equal values will be inserted one by one
+;    and only the last of them will be stored
+; 2. when store intermediate max value for current cycle, it marks stored value
+;    as accepted in all cases, even if it will be overwritten with another value later.
+;    as a result, this value won't be selected at all for other cycles
+; 3. both of that problems cause that some problems going missing
+;    and not the exactly maxed out percents are displayed!
+;
+;.do_all_problems:
+;		LDA		_problem_accepted,Y				; test if accepted already
+;		BNE		.next_problem_test
+;		LDA		_problem_percent,Y				; find max value
+;		CMP		_tmpE6
+;		BCC		.next_problem_test				; greather or equal counts, make greater only!
+;		STA		_tmpE6							; so we will record always the last from equals in list
+;		STA		_worst_problem_percents,X		; then update percent and list idx
+;		TYA
+;		STA		_worst_problem_list,X			; store problem idx from 0 to 6
+;		LDA		#$01
+;		STA		_problem_accepted,Y				; mark problem as assepted even if they aren't max!
+;.next_problem_test:
+;		INY
+;		CPY		#$07
+;		BNE		.do_all_problems				; compare all 7 problems to find the max one
+;		LDA		_tmpE6
+;		BNE		.next_field_test				; if there is no one, set default values
+;		LDA		#$FF
+;		STA		_worst_problem_percents,X
+;		STA		_worst_problem_list,X
+; -
+; FIX, correct algo
+.do_all_problems:
 		LDA		_problem_accepted,Y				; test if accepted already
-		BNE		loc_104BB7
-		LDA		_problem_weight,Y				; compare with max weight
+		BNE		.next_problem_test
+		LDA		_problem_percent,Y				; find max value
 		CMP		_tmpE6
-		BCC		loc_104BB7
-		STA		_tmpE6
-		STA		_worst_problem_percents,X		; if greather or equal, then update percent and list idx
+		BCC		.next_problem_test				; greather only
+		BEQ		.next_problem_test
+		STA		_tmpE6							; store max value
 		TYA
-		STA		_worst_problem_list,X
-		LDA		#$01
-		STA		_problem_accepted,Y				; mark problem as assepted
-loc_104BB7:
+		STA		_tmpE7							; as well store idx of cur max value only
+.next_problem_test:
 		INY
 		CPY		#$07
-		BNE		loc_104B9D						; compare all 7 problems to find the max one
+		BNE		.do_all_problems				; compare all 7 problems to find the max one
 		LDA		_tmpE6
-		BNE		loc_104BC8						; if there is no one, set default values
-		LDA		#$FF
+		BNE		.store_problem					; if any non-zero value is in max var, store it
+		LDA		#$FF							; if sero, then fill it with dummy value
 		STA		_worst_problem_percents,X
 		STA		_worst_problem_list,X
-loc_104BC8:
+		BNE		.next_field_test
+.store_problem:
+		LDA		_tmpE6
+		STA		_worst_problem_percents,X		; then update percent and list idx
+		LDA		_tmpE7
+		STA		_worst_problem_list,X			; store problem idx from 0 to 6
+		TAY
+		LDA		#$01
+		STA		_problem_accepted,Y				; mark problem as assepted even if they aren't max!
+; -
+.next_field_test:
 		INX
 		CPX		#$04
-		BNE		loc_104B99						; repeat for 4 problems
+		BNE		.do_all_fields					; repeat for 4 problems
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_city_problem_select:
+; NOTE, from calculations below we can see, the problems tested agains
+; random value from range [0-1.56], if random value less than problem
+; value, this means problem is high enough to get a percent up
+; also random value may be low enough to add to a problem percentage
+; even small problem, so problems will always be here! randomly!
+; also problem values often much higher than 1.56 even in better random
+; distribution case, so all values above 1.56 will always get percents
+; if there more than one problem higher than 1.56, they will share almost
+; the same amount of percents.
+;
+; TODO: maybe we should rebalance this for real values ranges?
+;
+; In the micropolis sources its called "vote problems" and semi-random as well.
+; but with other constants: 600 iteration per voting instead 512 (just for
+; code optimization), and random treshold 300 instead of 400
+;
+_city_problems_percents_calc:
 		LDY		#$00
 		TYA
 loc_104BD1:
-		STA		_problem_weight,Y				; problems cumulative counter
+		STA		_problem_percent,Y				; problems percents counter
 		INY
 		CPY		#$07
 		BNE		loc_104BD1
 		STA		_tmpE8
-		STA		_tmpE9
+		STA		_tmpE9							; percents counter
 		STA		_tmpEA
 		STA		_tmpEB
 loc_104BE1:
-		PUSHWI	$0190
+		PUSHWI	$0190							; fp8_8 = 1.56 or int = 400
 		JSR		_rand
 		PHA
-		JSR		_mmc5_mul16to8
-		PLA
-		POPW	_tmpE6							; E6/E7 = 400 * rand(256)
-		LDA		_tmpE8							; load current problem parameter idx
+		JSR		_mmc5_mul16to8					; E6/E7 = 400 * rand(256) integer or
+		PLA										; or in fp8_8 1.56*[0-0.999]
+		POPW	_tmpE6
+		LDA		_tmpE8
 		ASL
-		TAX
+		TAX										; load current problem parameter idx
 		LDA		_tmpE6							; random compared with selected problem parameter
 		CMP		_problem_data,X
 		LDA		_tmpE7
 		SBC		_problem_data+1,X
-		BCS		loc_104C0C						; if problem lower than random value,
-		LDX		_tmpE8							; then increase problem weight
-		INC		_problem_weight,X				; as well the overall problem trigger counter
-		INC		_tmpE9
+		BCS		loc_104C0C						; if selected parameter higher than [0-1.56] range
+		LDX		_tmpE8
+		INC		_problem_percent,X				; then problem percent increased
+		INC		_tmpE9							; and counter of percents decreased
 loc_104C0C:
 		INC		_tmpE8							; or else skip this value and choose the next one
 		LDA		_tmpE8
@@ -1397,27 +1487,29 @@ loc_104C0C:
 		LDA		#$00
 		STA		_tmpE8
 loc_104C18:
-		INC		_tmpEA							; increase overall attempts counter
-		BNE		loc_104C1E
-		INC		_tmpEB
-loc_104C1E:
-		LDA		_tmpEB
+		INCW	_tmpEA							; increase overall attempts counter, if there are
+		LDA		_tmpEB							; not much problems to get all 10 percents range
 		CMP		#$02
-		BCS		locret_104C2A					; repeat until overall attempts >512
-		LDA		_tmpE9							; or overal problems trigger > 100
+		BCS		locret_104C2A					; stop when until overall attempts counter >512
+		LDA		_tmpE9							; also stop when we distributed all percents
 		CMP		#$64
 		BCC		loc_104BE1
 locret_104C2A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; BUG! calculations looks like for divider and divident, but
+_get_unemployment:
+; BUG! calculations chould prepare divider and divident, but
 ; divider uses wrong tmp var! E6 instead EA. so division here performed
-; on right divident and random divider. result is random as well
+; on correct divident and random divider
 ;
-_get_RCI_proportion:
-		LSADDW	_tmpE6,_city._level._C,_city._level._I,3	; E6 =(L_C+L_I)*8
-		ORA		_tmpE6							; test if result 0
+;		LSADDW	_tmpE6,_city._level._C,_city._level._I,3	; E6 =(L_C+L_I)*8
+;		ORA		_tmpE6							; test if result 0
+;
+; FIX
+		LSADDW	_tmpEA,_city._level._C,_city._level._I,3	; EA =(L_C+L_I)*8
+		ORA		_tmpEA
+; -
 		BNE		loc_104C4C						; if yes, then result 0
 		LDA		#$00
 		RTS
@@ -1429,18 +1521,19 @@ loc_104C4C:
 		JSR		_div_32to16
 		LDA		_tmpE6
 		LDY		_tmpE7
+		DEY										; FIX for incorrect clamping!
 		BEQ		locret_104C67					; clamp result to 0.999
 		LDA		#$FF
 locret_104C67:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_unknown_var_mul5:
-		LDA		_unknown_var
-		ASL
+_get_fires:
+		LDA		_fires_level					; FIX now has correct properly
+		ASL										; utilized variables here
 		ASL
 		CLC
-		ADC		_unknown_var
+		ADC		_fires_level
 		BCC		locret_104C75
 		LDA		#$FF
 locret_104C75:
@@ -2121,11 +2214,38 @@ _popul_compare:
 		RTS
 
 _popul_vals_lib0:
-		.BYTE	$D0,$10,$50,$A0,$20,$F0,$C0,$90,$40,$70
+		.BYTE	$D0	; 2000		; TOWN
+		.BYTE	$10	; 10000		; CITY
+		.BYTE	$50	; 50000		; CAPITAL
+		.BYTE	$A0	; 100000	; METROPOLIS
+		.BYTE	$20 ; 500000	; MEGAPOLIS
+		.BYTE	$F0 ; 150000
+		.BYTE	$C0 ; 120000
+		.BYTE	$90 ; 250000
+		.BYTE	$40 ; 200000
+		.BYTE	$70 ; 70000
 _popul_vals_lib1:
-		.BYTE	$07,$27,$C3,$86,$A1,$49,$D4,$D0,$0D,$11
+		.BYTE	$07 ; 2000
+		.BYTE	$27 ; 10000
+		.BYTE	$C3 ; 50000
+		.BYTE	$86 ; 100000
+		.BYTE	$A1 ; 500000
+		.BYTE	$49 ; 150000
+		.BYTE	$D4 ; 120000
+		.BYTE	$D0 ; 250000
+		.BYTE	$0D ; 200000
+		.BYTE	$11 ; 70000
 _popul_vals_lib2:
-		.BYTE	$00,$00,$00,$01,$07,$02,$01,$03,$03,$01
+		.BYTE	$00 ; 2000
+		.BYTE	$00 ; 10000
+		.BYTE	$00	; 50000
+		.BYTE	$01 ; 100000
+		.BYTE	$07 ; 500000
+		.BYTE	$02 ; 150000
+		.BYTE	$01 ; 120000
+		.BYTE	$03 ; 250000
+		.BYTE	$03 ; 200000
+		.BYTE	$01 ; 70000
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_result_test:
@@ -2202,25 +2322,25 @@ loc_10519E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _practice_mode_events_handler:
-		LDA		_cur_game_mode					; Practice game mode
+		LDA		_cur_game_mode					; practice game mode
 		CMP		#$03
 		BNE		_exit
 		LDA		_city._cur_week					; end of month
 		AND		#$03
 		BNE		_exit
 		LDA		_city._cur_year+1				; high nibble of 190x year
-		CMP		#$07
+		CMP		#>[1900]
 		BNE		_exit
 		LDA		_city._cur_month				; end of JAN
 		CMP		#$01
 		BNE		_exit
 		LDA		_city._cur_year					; low nibble for 1900 year
-		CMP		#$6C
+		CMP		#<[1900]
 		BNE		loc_1051D1
 		LDX		#$1B							; first practice hint message
 		BNE		.set_game_msg
 loc_1051D1:
-		CMP		#$6D							; low nibble for 1901 year
+		CMP		#<[1901]						; low nibble for 1901 year
 ;		BNE		_exit							; REDUNDANT
 		BNE		loc_1051F3						; FIX
 		LDX		#$1C							; second practice hint message
@@ -2229,7 +2349,7 @@ loc_1051D1:
 ; -
 ;		LDA		_city._cur_year					; REDUNDANT
 loc_1051F3:
-		CMP		#$71							; test for year 1905
+		CMP		#<[1905]						; test for year 1905
 		BNE		_exit
 		LDX		#$1D							; message for good practice result
 		LDA		_popul_cur+2					; test for population level

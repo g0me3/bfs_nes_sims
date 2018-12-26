@@ -946,7 +946,7 @@ _total_RCI_counts:
 
 		_trciw	_RCI_counts
 
-_unknown_var:
+_fires_level:
 		.BYTE	0,0
 
 ; these vars are accessed individually in the statistic
@@ -1092,7 +1092,7 @@ _problem_accepted:
 		.BYTE	0,0,0,0,0,0,0
 					; one of these vars used as tmp	value _tmp_name_input_mode_idx
 					; in name input	system
-_problem_weight:
+_problem_percent:
 		.BYTE	0,0,0,0,0,0,0
 
 		ORG	$700

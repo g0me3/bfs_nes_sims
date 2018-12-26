@@ -327,8 +327,8 @@ loc_11E2FB:
 		RTS
 loc_11E308:
 ;		LDA		_last_map_tile_read				; _last_map_tile_read here still in Y
-;		CMP		#$E6
-		CPY		#$E6
+;		CMP		#_MAP_FIRE
+		CPY		#_MAP_FIRE
 		BNE		loc_11E312
 		JMP		_fire_tile_collect
 loc_11E312:
@@ -406,7 +406,7 @@ _fire_tile_collect:
 		JSR		_rand
 		CMP		#$F0
 		BCC		loc_11E394
-		LDA		#$B4
+		LDA		#_MAP_CORRUPTED
 		JMP		_map_tile_write
 loc_11E394:
 		LDX		#$03
@@ -422,6 +422,7 @@ loc_11E396:
 		CMP		#$F4
 		BCC		loc_11E3B2
 		JSR		_fire_cur_map_tile
+		INCW	_fires_level					; FIX, calculate an actual value.
 loc_11E3B2:
 		JSR		_back_from_near_tmp_map_pos_tile
 loc_11E3B5:
@@ -3782,17 +3783,17 @@ loc_11FDAC:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pollute_cur_map_tile:
-		LDA		#$B6
+		LDA		#_MAP_POLLUTION
 		BNE		_corrupt_cur_map_tile
 
 ; =============== S U B	R O U T	I N E =======================================
 _fire_cur_map_tile:
-		LDA		#$E6
+		LDA		#_MAP_FIRE
 		BNE		_corrupt_cur_map_tile
 
 ; =============== S U B	R O U T	I N E =======================================
 _flood_cur_map_tile:
-		LDA		#$B5
+		LDA		#_MAP_FLOOD
 
 ; =============== S U B	R O U T	I N E =======================================
 _corrupt_cur_map_tile:
