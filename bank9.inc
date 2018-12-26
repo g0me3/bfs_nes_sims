@@ -32,10 +32,10 @@ loc_A0024:
 		LDA		#$00							; reset screen specific vars
 		STA		_mini_map_cur_row
 		STA		_mini_map_cur_col
-		STA		_fund_request_tax+1
+		STA		_max_tax_rate+1
 		STA		_game_msg_wnd_active_flag
 		LDA		#$14
-		STA		_fund_request_tax
+		STA		_max_tax_rate					; hardcoded tax maximum = 20
 		LDA		#$80
 		STA		_game_wnd_spr_mode_flag
 		STA		_game_core_state
@@ -47,7 +47,7 @@ loc_A0024:
 		LDA		_scr_res_idx
 		LSR
 		TAX
-		LDA		_screen_pal_spr_list,X
+		LDA		_screen_pal_spr_list,X			; load spr pal idx
 		STA		_screen_pal_cur_spr_idx
 		RTS
 
@@ -84,7 +84,7 @@ _screen_chr_banks_lib:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_pal_bg_load:
 		LDA		#$02
-		STA		_ppu_pal_dequeue_req			; only bg load flag
+		STA		_ppu_pal_dequeue_req			; only bg queue flag
 		LDA		_scr_res_idx
 		AND		#$FE
 		BNE		loc_A0080
@@ -107,26 +107,26 @@ _screen_pal_extra_list:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
 		LDX		#$FF
-		STX		byte_53							; map area redraw request
+		STX		_constr_area_update_req			; map area redraw request
 		INX
-		STX		byte_3C
-		STX		byte_54
-		STX		byte_56
+		STX		_gui_active_controls_flags		; clear gui flags, request to draw as well
+;		STX		_update_rect_left				; REDUNDANT, redraw top-leftmost area of map
+;		STX		_update_rect_top				; which is not correct here
 		STX		_scr_res_control_flags
 		STX		_game_core_stop_flag
 		STX		_scr_res_idx					; FIX BUGS#19
-		INX
-		LDA		#$18
-		STA		byte_55
-		LDA		#$14
-		STA		byte_57
+;		INX										; one more leftover
+;		LDA		#$18							; REDUNDANT, continue, these paremerers
+;		STA		_update_rect_right				; are set in another routine
+;		LDA		#$14							; and calculated from cur screen pos
+;		STA		_update_rect_bottom
 		LDA		#$44							; NOTE: always the same cursor pos
 		STA		_cur_game_cursor_scr_pos._COL	; after exit any screen resourse
 		LDA		#$30
 		STA		_cur_game_cursor_scr_pos._ROW
-		JSR		_buffers_wait_flush
-		JSR		_pal_fade_out					; restore normal game screen mode
-		LDA		_ppu_ctrl_shadow
+		JSR		_buffers_wait_flush				; wait for ppu queues if any
+		JSR		_pal_fade_out					; fade out
+		LDA		_ppu_ctrl_shadow				; restore regular game ppo modes
 		AND		#$FC
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
@@ -139,7 +139,7 @@ _scr_res_wnd_close:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_common:
-		JSR		_thread_lock_flag_set
+		JSR		_thread_lock_flag_set			; enter THREAD1-safe critical section
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
@@ -158,7 +158,7 @@ _scr_res_common:
 ;
 ; in order to remove these functions from here and inserting them into main
 ; sub list you need to remove all force flush code and make the nmi code do its
-; work correctly
+; work instead
 ;
 		JSR		_scr_res_hndl2_A_budget_draw
 		JSR		_scr_res_hndl3_A_city_eval_draw
@@ -167,10 +167,10 @@ _scr_res_common:
 ;		JSR		_far_scr_res_hndl6_A_bank_draw			; REDUNDANT
 		FJSRA	_scr_res_hndl6_A_bank_draw,PRG7,PRG9	; OPTIMIZED
 ;-
-		LDA		_scr_res_idx
+		LDA		_scr_res_idx							; currently _scr_res_idx = _scr_res_idx*2
 		LSR
 		TAY
-		LDA		byte_EA08C,Y
+		LDA		_scr_res_ctlr_flag_list,Y
 		STA		_scr_res_control_flags
 		JSR		_ppu_reset
 		JSR		_wait_for_nmi
@@ -178,29 +178,29 @@ _scr_res_common:
 		INC		_mmc5_operation_in_progress_flag
 		LDA		#$01
 		STA		_scr_res_window_opened_flag
-		JSR		_pal_fade_in
+		JSR		_pal_fade_in							; show the actual screen
 .scr_res_loop:
 		JSR		_wait_for_nmi
 ;		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9	; REDUNDANT
-		JSR		_wnd_common_cursor_spr_clear	; OPTIMIZED, now local
+		JSR		_wnd_common_cursor_spr_clear			; OPTIMIZED, now local
 		JSR		_spr_finish
-		FJSRA	_scr_res_cursor_move,PRG6,PRG9
-		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
-		JSR		_scr_res_hndl_common_exec
+		FJSRA	_scr_res_cursor_move,PRG6,PRG9			; common cursor handlers
+		FJSRA	_scr_res_cursor_draw,PRG6,PRG9			; common cursor draw
+		JSR		_scr_res_hndl_common_exec				; execure screen handler
 		BIT		_scr_res_control_flags
-		BVC		.scr_res_quick_warp_test
-		LDA		#$01
+		BVC		.scr_res_quick_warp_test		; cancel command test
+		LDA		#$01							; exit from screen
 		STA		_apu_se_flags
 ;		FJSRA	_scr_res_wnd_close,PRG6,PRG9	; REDUNDANT
 ;		RTS
 		JMP		_scr_res_wnd_close				; OPTIMIZED, now local
 .scr_res_quick_warp_test:
-		LDA		_scr_res_control_flags
-		CMP		#$10
+		LDA		_scr_res_control_flags			; for warp from one screen to another
+		CMP		#$10							; used in budget to banks screen jump
 		BNE		.scr_res_loop
 		JMP		_scr_res_common
 
-byte_EA08C:
+_scr_res_ctlr_flag_list:
 		.BYTE	$00,$00,$20,$08,$08,$08,$08,$A8
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -287,9 +287,9 @@ loc_EA0EC:
 		STA		_scr_res_control_flags
 		RTS
 loc_EA0FD:
-		BIT		_pad0_autorep_press
+		BIT		_pad0_autorep_press				; press B
 		BVC		loc_EA10C
-		LDA		#$40
+		LDA		#$40							; exit to title
 		STA		_scr_res_control_flags
 		LDA		#$02
 		STA		_title_sub_idx
@@ -404,8 +404,8 @@ sub_EA1C5:
 		BNE		locret_EA1F3
 		MOVWO	_ptr0,byte_EA3D8
 		MOVWO	_tmp2,byte_EA3EE
-		LDA		#$00
-		JSR		sub_EA366
+;		LDA		#$FF
+		JSR		_tlm_queue
 		JSR		sub_EA405
 		LDX		#$08
 loc_EA1E8:
@@ -548,8 +548,8 @@ sub_EA2E5:
 		BNE		loc_EA363
 		MOVWO	_ptr0,byte_EA392
 		MOVWO	_tmp2,byte_EA3A7
-		LDA		#$00
-		JSR		sub_EA366
+;		LDA		#$FF
+		JSR		_tlm_queue
 		JSR		_wait_for_nmi
 		LDA		_new_map_number
 		CLC
@@ -585,19 +585,23 @@ loc_EA342:
 		JSR		sub_EA29D
 		MOVWO	_ptr0,byte_EA3B5
 		MOVWO	_tmp2,byte_EA3CA
-		LDA		#$00
-		JMP		sub_EA366
+;		LDA		#$FF
+		JMP		_tlm_queue
 loc_EA363:
 		JMP		sub_EA405
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA366:
-		STA		_stack_upper
+; args: _ptr0 - nt data
+;       _tmp2 - extnt data
+;       A - stop byte for data
+_tlm_queue:
+;		STA		byte_15F						; REDUNDANT, custom stop byte stored here
 		PPUQSTART
 		LDY		#$00
 loc_EA36D:
-		LDA		(_ptr0),Y
-		CMP		_stack_upper
+		LDA		(_ptr0),Y						; first queue nt data
+;		CMP		byte_15F						; REDUNDANT, now all data uses the same stop-byte
+		CMP		#$FF
 		BEQ		loc_EA37B
 		PPUQMOVA
 		INY
@@ -607,8 +611,9 @@ loc_EA37B:
 		EXTQSTART
 		LDY		#$00
 loc_EA381:
-		LDA		(_tmp2),Y
-		CMP		_stack_upper
+		LDA		(_tmp2),Y						; then queue extnt data
+;		CMP		byte_15F
+		CMP		#$FF
 		BEQ		loc_EA38F
 		EXTQMOVA
 		INY
@@ -616,22 +621,37 @@ loc_EA381:
 loc_EA38F:
 		EXTQEND
 		RTS
+
 byte_EA392:
-		.BYTE	$F9,$24,$04,$AF,$AF,$AF,$AF,$19,$25,$04,$ED,$DE,$EE,$FD,$39,$25
-		.BYTE	$03,$FE,$AD,$B9,$00
+		.BYTE	$F9,$24,$04,$AF,$AF,$AF,$AF
+		.BYTE	$19,$25,$04,$ED,$DE,$EE,$FD
+		.BYTE	$39,$25,$03,$FE,$AD,$B9
+		.BYTE	$FF
 byte_EA3A7:
-		.BYTE	$19,$5D,$04,$0A,$0A,$0A,$0A,$39,$5D,$03,$0A,$0A,$0A,$00
+		.BYTE	$19,$5D,$04,$0A,$0A,$0A,$0A
+		.BYTE	$39,$5D,$03,$0A,$0A,$0A
+		.BYTE	$FF
 byte_EA3B5:
-		.BYTE	$F9,$24,$04,$A9,$A9,$A9,$A9,$19,$25,$04,$4E,$45,$58,$54,$39,$25
-		.BYTE	$03,$4D,$41,$50,$00
+		.BYTE	$F9,$24,$04,$A9,$A9,$A9,$A9
+		.BYTE	$19,$25,$04,$4E,$45,$58,$54
+		.BYTE	$39,$25,$03,$4D,$41,$50
+		.BYTE	$FF
 byte_EA3CA:
-		.BYTE	$19,$5D,$04,$8B,$8B,$8B,$8B,$39,$5D,$03,$8B,$8B,$8B,$00
+		.BYTE	$19,$5D,$04,$8B,$8B,$8B,$8B
+		.BYTE	$39,$5D,$03,$8B,$8B,$8B
+		.BYTE	$FF
 byte_EA3D8:
-		.BYTE	$79,$25,$04,$AF,$AF,$AF,$AF,$99,$25,$04,$AB,$AC,$AD,$AE,$B9,$25
-		.BYTE	$04,$9E,$AD,$9F,$DE,$00
+		.BYTE	$79,$25,$04,$AF,$AF,$AF,$AF
+		.BYTE	$99,$25,$04,$AB,$AC,$AD,$AE
+		.BYTE	$B9,$25,$04,$9E,$AD,$9F,$DE
+		.BYTE	$FF
 byte_EA3EE:
 		.BYTE	$99,$5D,$04,$0A,$0A,$0A,$0A
-		.BYTE	$B9,$5D,$04,$0A,$0A,$0A,$0A,$00,$01,$00,$0A,$00,$64,$00,$64,$00
+		.BYTE	$B9,$5D,$04,$0A,$0A,$0A,$0A
+		.BYTE	$FF
+
+; REDUNDANT, unused
+;		.BYTE	$01,$00,$0A,$00,$64,$00,$64,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA405:
@@ -806,9 +826,9 @@ _scr_res_hndl0_A_info_maps_draw:
 		CLC
 		ADC		#$45
 		STA		_info_maps_rect_pos._COL
-		JSR		_info_maps_city_name_HUD_draw
-		JSR		_info_maps_date_HUD_draw_ex
-		JSR		_info_maps_popul_HUD_draw
+		JSR		_info_maps_city_name_hud_draw
+		JSR		_info_maps_date_hud_draw_ex
+		JSR		_info_maps_popul_hud_draw
 		LDA		#$00
 		STA		byte_13C
 		INC		_scr_res_idx
@@ -821,8 +841,8 @@ _scr_res_hndl0_A_info_maps_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_B_info_maps_input:
-		JSR		_info_maps_date_HUD_draw
-		JSR		_info_maps_popul_HUD_draw
+		JSR		_info_maps_date_hud_draw
+		JSR		_info_maps_popul_hud_draw
 ;		JSR		sub_EADC9						; REDUNDANT
 ; OPTIMIZED
 		LDX		#$10
@@ -1947,7 +1967,7 @@ _spr_please_wait:
 		.BYTE	$80,$A2,$00,$78
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_date_HUD_draw:
+_info_maps_date_hud_draw:
 		LDA		_hud_redraw_req
 		BEQ		locret_EADB1
 		LDA		#$00
@@ -1956,7 +1976,7 @@ _info_maps_date_HUD_draw:
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_date_HUD_draw_ex:
+_info_maps_date_hud_draw_ex:
 		MOVW	_ptr0,_city._cur_year
 		JSR		_hex_to_dec9999
 		LDA		#$15
@@ -1982,7 +2002,7 @@ locret_EADB1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_popul_HUD_draw:
+_info_maps_popul_hud_draw:
 		MOVD	_ptr0,_popul_cur
 		JSR		_hex_to_dec9999999
 		LDA		#$16
@@ -2070,7 +2090,7 @@ _info_maps_rect_limits_right_bottom:
 		.BYTE	$AB,$AA
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_city_name_HUD_draw:
+_info_maps_city_name_hud_draw:
 		LDY		_city._name						; as against the ni-game routines
 		DEY										; this is single screen displays, no
 		BEQ		locret_EAE85					; need to recalc the starting positions,
@@ -2173,22 +2193,22 @@ loc_EAEEC:
 		JSR		_printf_num_lib
 		BIT		_city._bank_flags
 		BPL		loc_EAFD0
-		MOVWO	_ptr0,byte_EB7C3
-		MOVWO	_tmp2,word_EB80C
-		LDA		#$FF
-		JSR		sub_EA366
+		MOVWO	_ptr0,_tlm_nt_bank_icon
+		MOVWO	_tmp2,_tlm_extnt_bank_icon
+;		LDA		#$FF
+		JSR		_tlm_queue
 		JSR		_buffers_force_flush
 		BIT		_city._bank_flags
 		BVC		loc_EAFBB
-		MOVWO	_ptr0,word_EB801
-		MOVWO	_tmp2,word_EB84A
+		MOVWO	_ptr0,_tlm_nt_bank_loan
+		MOVWO	_tmp2,_tlm_extnt_bank_loan
 		JMP		loc_EAFCB
 loc_EAFBB:
-		MOVWO	_ptr0,word_EB7FC
-		MOVWO	_tmp2,word_EB845
+		MOVWO	_ptr0,_tlm_nt_bank_no_loan
+		MOVWO	_tmp2,_tlm_extnt_bank_no_loan
 loc_EAFCB:
-		LDA		#$FF
-		JSR		sub_EA366
+;		LDA		#$FF
+		JSR		_tlm_queue
 loc_EAFD0:
 		LDY		#$00
 		LDX		#$03
@@ -2711,7 +2731,7 @@ loc_A0118:
 ;		RTS
 
 _fund_reqest_vars_list:
-		.WORD	_fund_request_tax
+		.WORD	_max_tax_rate					; used for calculate maximum for overall tax rate
 		.WORD	_fund_request_fire
 		.WORD	_fund_request_police
 		.WORD	_fund_request_trans
@@ -3155,22 +3175,22 @@ byte_EB76C:
 		.BYTE	$00,$00,$07,$07,$08,$08,$09,$09,$0A,$0A,$0B,$0B
 byte_EB778:
 		.BYTE	$00,$00,$0C,$0C,$0D,$0D,$0E,$0E,$0F,$0F,$10,$10
-byte_EB7C3:
+_tlm_nt_bank_icon:
 		.BYTE	$84,$26,$04,$7B,$7C,$7D,$7E,$90,$26,$01,$24,$79,$26,$03,$10,$11
 		.BYTE	$12,$99,$26,$03,$20,$21,$22,$B9,$26,$03,$30,$31,$32,$D8,$26,$06
 		.BYTE	$13,$14,$15,$16,$17,$18,$F8,$26,$06,$23,$24,$25,$26,$27,$28,$18
 		.BYTE	$27,$06,$33,$34,$35,$36,$37,$38,$FF
-word_EB7FC:
+_tlm_nt_bank_no_loan:
 		.WORD	$2696
 		.BYTE	$01,$00
 		.BYTE	$FF
-word_EB801:
+_tlm_nt_bank_loan:
 		.WORD	$268F
 		.BYTE	$01,$7F
 		.WORD	$2694
 		.BYTE	$03,$05,$00,$00
 		.BYTE	$FF
-word_EB80C:
+_tlm_extnt_bank_icon:
 		.WORD	$5E84
 		.BYTE	$04,$45,$45,$45,$45
 		.WORD	$5E90
@@ -3188,11 +3208,11 @@ word_EB80C:
 		.WORD	$5F18
 		.BYTE	$06,$17,$17,$17,$17,$17,$17
 		.BYTE	$FF
-word_EB845:
+_tlm_extnt_bank_no_loan:
 		.WORD	$5E96
 		.BYTE	$01,$05
 		.BYTE	$FF
-word_EB84A:
+_tlm_extnt_bank_loan:
 		.WORD	$5E8F
 		.BYTE	$01,$05
 		.WORD	$5E94

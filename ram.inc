@@ -98,13 +98,13 @@ byte_37:
 		.BYTE	0								; REDUNDANT, unused var
 _game_state_idx:
 		.BYTE	0
-byte_39:
+_hud_static_redraw_req:
 		.BYTE	0
-byte_3A:
+_constr_palette_redraw_req:
 		.BYTE	0
 byte_3B:
 		.BYTE	0
-byte_3C:
+_gui_active_controls_flags:
 		.BYTE	0
 
 		_tpos	_cur_screen_tile
@@ -141,15 +141,15 @@ _pad1_prev_held:
 ;
 		_tpos	_cur_map_wnd_pos
 
-byte_53:
+_constr_area_update_req:
 		.BYTE	0
-byte_54:
+_update_rect_left:
 		.BYTE	0
-byte_55:
+_update_rect_right:
 		.BYTE	0
-byte_56:
+_update_rect_top:
 		.BYTE	0
-byte_57:
+_update_rect_bottom:
 		.BYTE	0
 byte_58:
 		.BYTE	0
@@ -160,15 +160,15 @@ byte_59:
 
 byte_5C:
 		.BYTE	0
-byte_5D:
+_constr_area_update_req_tmp:
 		.BYTE	0
-byte_5E:
+_update_rect_left_tmp:
 		.BYTE	0
-byte_5F:
+_update_rect_right_tmp:
 		.BYTE	0
-byte_60:
+_update_rect_top_tmp:
 		.BYTE	0
-byte_61:
+_update_rect_bottom_tmp:
 		.BYTE	0
 byte_62:
 		.BYTE	0
@@ -296,7 +296,7 @@ byte_AA:
 		.BYTE	0
 byte_AB:
 		.BYTE	0
-_constr_palette_redraw_req:
+_constr_palette_update_req:
 		.BYTE	0
 _constr_palette_flags:
 		.BYTE	0,0,0,0
@@ -362,7 +362,7 @@ byte_D4:
 		.BYTE	0
 byte_D5:
 		.BYTE	0
-_presents_building_name_and_cost_hud_draw_req:
+_hud_present_name_draw_req:
 		.BYTE	0
 _building_name_and_cost_hud_src_ofs:
 		.BYTE	0
@@ -486,7 +486,7 @@ byte_131:
 		.BYTE	0
 _budget_tax_adjust_value:
 		.BYTE	0
-_fund_request_tax:
+_max_tax_rate:
 		.BYTE	0,0
 _taxes_income:
 		.BYTE	0,0
@@ -547,7 +547,7 @@ _new_city_digit_spr_y_pos:
 		.BYTE	0
 _new_city_button_idx:
 		.BYTE	0
-_unref_17:
+byte_15F:
 		.BYTE	0
 _stack_upper:
 		.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -637,13 +637,13 @@ _screen_pal_cur_bg_idx:
 
 		_tpos	_cur_constr_cursor_map_pos
 
-byte_511:
+_tmp511:
 		.BYTE	0
-byte_512:
+_tmp512:
 		.BYTE	0
 _hud_date_redraw_req:
 		.BYTE	0
-byte_514:
+_tmp514:
 		.BYTE	0
 _game_msg_awaits_flag:
 		.BYTE	0
@@ -651,51 +651,51 @@ _unref_5:
 		.BYTE	0
 _tmp_popul_hex:
 		.BYTE	0,0,0
-byte_51A:
+_tmp51A:
 		.BYTE	0
-byte_51B:
+_tmp51B:
 		.BYTE	0
 _tmp_popul_decimal_buf:
 		.BYTE	0,0,0,0,0,0
-byte_522:
+_tmp522:
 		.BYTE	0
-byte_523:
+_tmp523:
 		.BYTE	0
-byte_524:
+_tmp524:
 		.BYTE	0
-byte_525:
+_tmp525:
 		.BYTE	0
 _presents_build_menu_req:
 		.BYTE	0
 _cur_present_select_idx:
 		.BYTE	0
-byte_528:
+_tmp528:
 		.BYTE	0
-byte_529:
+_tmp529:
 		.BYTE	0
-byte_52A:
+_tmp52A:
 		.BYTE	0
-byte_52B:
+_tmp52B:
 		.BYTE	0
-byte_52C:
+_tmp52C:
 		.BYTE	0
-byte_52D:
+_tmp52D:
 		.BYTE	0
-byte_52E:
+_tmp52E:
 		.BYTE	0
-byte_52F:
+_tmp52F:
 		.BYTE	0
-byte_530:
+_tmp530:
 		.BYTE	0
 _input_forbid_delay:
 		.BYTE	0
 _game_core_stop_flag:
 		.BYTE	0
-byte_533:
+_tmp533:
 		.BYTE	0
-byte_534:
+_tmp534:
 		.BYTE	0
-byte_535:
+_tmp535:
 		.BYTE	0
 _game_core_stop_timer:
 		.BYTE	0
@@ -721,17 +721,17 @@ _hud_popul_redraw_req:
 		.BYTE	0
 _hud_city_name_redraw_req:
 		.BYTE	0
-byte_542:
+_tmp542:
 		.BYTE	0
-byte_543:
+_tmp543:
 		.BYTE	0
-byte_544:
+_tmp544:
 		.BYTE	0
-byte_545:
+_tmp545:
 		.BYTE	0
-byte_546:
+_tmp546:
 		.BYTE	0
-byte_547:
+_tmp547:
 		.BYTE	0
 
 		_tpos _constr_palette_area_cursor_pos
@@ -754,37 +754,37 @@ _train_hide_mode:
 		.BYTE	0
 _train_turns_counter:
 		.BYTE	0
-byte_573:
+_tmp573:
 		.BYTE	0
-byte_574:
+_tmp574:
 		.BYTE	0
-byte_575:
+_tmp575:
 		.BYTE	0
-byte_576:
+_tmp576:
 		.BYTE	0
-byte_577:
+_tmp577:
 		.BYTE	0
-byte_578:
+_tmp578:
 		.BYTE	0
-byte_579:
+_tmp579:
 		.BYTE	0
-byte_57A:
+_tmp57A:
 		.BYTE	0
-byte_57B:
+_tmp57B:
 		.BYTE	0
-byte_57C:
+_tmp57C:
 		.BYTE	0
-byte_57D:
+_tmp57D:
 		.BYTE	0
-byte_57E:
+_tmp57E:
 		.BYTE	0
-byte_57F:
+_tmp57F:
 		.BYTE	0
-byte_580:
+_tmp580:
 		.BYTE	0
-byte_581:
+_tmp581:
 		.BYTE	0
-byte_582:
+_tmp582:
 		.BYTE	0
 _main_sub_idx:
 		.BYTE	0
@@ -831,15 +831,15 @@ _has_saved_city_data_flag:
 		.BYTE	0
 word_5A9:
 		.BYTE	0,0
-byte_5AB:
+_tmp5AB:
 		.BYTE	0
-byte_5AC:
+_tmp5AC:
 		.BYTE	0
-byte_5AD:
+_tmp5AD:
 		.BYTE	0
-byte_5AE:
+_tmp5AE:
 		.BYTE	0
-byte_5AF:
+_tmp5AF:
 		.BYTE	0
 _mmc5_chr_banks_shadow:
 		.BYTE	0,0,0,0

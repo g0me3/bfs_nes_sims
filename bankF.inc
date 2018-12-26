@@ -171,6 +171,8 @@ loc_18A0F0:
 		LDA		#$80
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
+		LDA		#$00							; every title entry should
+		STA		_title_sub_idx					; init starting mode manually
 		CLI
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -499,13 +501,13 @@ loc_18A3B2:
 		BNE		loc_18A3BD
 		JMP		RESET
 loc_18A3BD:
-		INC		byte_525
-		LDA		byte_525
+		INC		_tmp525
+		LDA		_tmp525
 		CMP		#$3C
 		BCC		loc_18A3CF
-		INC		byte_524
+		INC		_tmp524
 		LDA		#$00
-		STA		byte_525
+		STA		_tmp525
 loc_18A3CF:
 		LDA		#$FF
 		STA		_nmi_flag
@@ -1796,7 +1798,7 @@ _tlm_res_unpack:
 		STA		_tmp3
 		INY
 		LDA		(_ptr0),Y
-		STA		byte_5AE
+		STA		_tmp5AE
 loc_18AC59:
 		INY
 		LDA		(_ptr0),Y
@@ -1809,7 +1811,7 @@ loc_18AC59:
 		JSR		_tlm_unpack
 		PLA
 		TAY
-		DEC		byte_5AE
+		DEC		_tmp5AE
 		BNE		loc_18AC59
 		JMP		_apu_music_on
 
@@ -1864,10 +1866,10 @@ loc_18ACC0:
 		LDX		_tmp2
 		STX		_PPU_ADDR
 		LDX		word_5A9+1
-		STX		byte_5AD
+		STX		_tmp5AD
 		LDX		word_5A9
 		BNE		loc_18ACD8
-		DEC		byte_5AD
+		DEC		_tmp5AD
 loc_18ACD8:
 		CMP		#$20
 		BEQ		loc_18AD12
@@ -1884,7 +1886,7 @@ loc_18ACEB:
 		STA		_PPU_DATA
 		DEX
 		BNE		loc_18ACE4
-		DEC		byte_5AD
+		DEC		_tmp5AD
 		BPL		loc_18ACE4
 loc_18ACF6:
 		TYA
@@ -1909,7 +1911,7 @@ loc_18AD15:
 		STA		_PPU_DATA
 		DEX
 		BNE		loc_18AD15
-		DEC		byte_5AD
+		DEC		_tmp5AD
 		BPL		loc_18AD15
 		JMP		loc_18ACF6
 loc_18AD23:
@@ -1921,7 +1923,7 @@ loc_18AD23:
 		STA		_PPU_DATA
 		DEX
 		BNE		loc_18AD23
-		DEC		byte_5AD
+		DEC		_tmp5AD
 		BPL		loc_18AD23
 		INY
 		INY
@@ -1937,22 +1939,22 @@ loc_18AD45:
 		ADC		#$01
 		DEX
 		BNE		loc_18AD45
-		DEC		byte_5AD
+		DEC		_tmp5AD
 		BPL		loc_18AD45
 		JMP		loc_18ACF6
 loc_18AD56:
 		PHA
 		LDA		(_tmp6),Y
 		INY
-		STA		byte_5AC
+		STA		_tmp5AC
 		LDA		(_tmp6),Y
 		INY
 		CLC
 		ADC		_tmp4
-		STA		byte_5AB
+		STA		_tmp5AB
 		LDA		_tmp5
-		ADC		byte_5AC
-		STA		byte_5AC
+		ADC		_tmp5AC
+		STA		_tmp5AC
 		TYA
 		CLC
 		ADC		_tmp6
@@ -1975,7 +1977,7 @@ loc_18AD8D:
 		JSR		sub_18ADC9
 		JSR		_tlm_get_reverse_ppu_data
 		JSR		_tlm_send_ppu_data
-		INC		byte_5AC
+		INC		_tmp5AC
 		DEC		word_5A9+1
 		BPL		loc_18AD8D
 		JMP		loc_18AC7A
@@ -1984,7 +1986,7 @@ loc_18ADA1:
 		JSR		_tlm_get_reverse_ppu_data
 		JSR		_tlm_rotate_data
 		JSR		_tlm_send_ppu_data
-		INC		byte_5AC
+		INC		_tmp5AC
 		DEC		word_5A9+1
 		BPL		loc_18ADA1
 		JMP		loc_18AC7A
@@ -2003,14 +2005,14 @@ sub_18ADC9:
 		BEQ		loc_18ADD3
 		LDX		#$00
 loc_18ADD3:
-		STX		byte_5AF
+		STX		_tmp5AF
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_get_reverse_ppu_data:
-		LDA		byte_5AC
+		LDA		_tmp5AC
 		STA		_PPU_ADDR
-		LDA		byte_5AB
+		LDA		_tmp5AB
 		STA		_PPU_ADDR
 		LDA		_PPU_DATA
 loc_18ADE6:
@@ -2022,7 +2024,7 @@ loc_18ADE6:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_send_ppu_data:
-		LDX		byte_5AF
+		LDX		_tmp5AF
 		LDA		_tmp3
 		STA		_PPU_ADDR
 		LDA		_tmp2
@@ -2032,8 +2034,8 @@ loc_18ADFD:
 		STA		_PPU_DATA
 		DEX
 		BNE		loc_18ADFD
-		DEC		byte_5AF
-		LDA		byte_5AF
+		DEC		_tmp5AF
+		LDA		_tmp5AF
 		SEC
 		ADC		_tmp2
 		STA		_tmp2
@@ -2044,13 +2046,13 @@ locret_18AE15:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_rotate_data:
-		LDX		byte_5AF
+		LDX		_tmp5AF
 loc_18AE19:
 		LDA		_ppu_queue_buf,X
-		STA		byte_5AD
+		STA		_tmp5AD
 		LDY		#$08
 loc_18AE21:
-		ASL		byte_5AD
+		ASL		_tmp5AD
 		ROR
 		DEY
 		BNE		loc_18AE21
@@ -2061,16 +2063,16 @@ loc_18AE21:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_get_ppu_data:
-		STX		byte_5AD
-		DEC		byte_5AD
-		LDA		byte_5AB
+		STX		_tmp5AD
+		DEC		_tmp5AD
+		LDA		_tmp5AB
 		CLC
-		SBC		byte_5AD
-		STA		byte_5AB
+		SBC		_tmp5AD
+		STA		_tmp5AB
 		TAY
-		LDA		byte_5AC
+		LDA		_tmp5AC
 		SBC		#$00
-		STA		byte_5AC
+		STA		_tmp5AC
 		STA		_PPU_ADDR
 		STY		_PPU_ADDR
 		LDA		_PPU_DATA
@@ -2080,7 +2082,7 @@ loc_18AE56:
 		INX
 		LDA		_PPU_DATA
 		STA		_ppu_queue_buf,X
-		CPX		byte_5AF
+		CPX		_tmp5AF
 		BNE		loc_18AE56
 		RTS
 

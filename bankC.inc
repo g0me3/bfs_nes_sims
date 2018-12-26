@@ -23,12 +23,12 @@ loc_13600B:
 loc_13601B:
 		LDA		_game_state_idx
 		JSR		_switch
-		.WORD	_game_state00
-		.WORD	_game_state01
+		.WORD	_game_state00_hud_static_redraw
+		.WORD	_game_state01_constr_palette_redraw
 		.WORD	_game_state02_map_scroll
 		.WORD	_game_state03_map_scroll_mode_set
-		.WORD	_game_state04
-		.WORD	_game_state05_constr_palette_redraw
+		.WORD	_game_state04_constr_area_redraw
+		.WORD	_game_state05_constr_palette_update
 		.WORD	_game_state06_game_hud_redraw
 		.WORD	_game_state07
 		.WORD	_game_state08_build
@@ -62,15 +62,15 @@ _game_state_common:
 		SEC
 		SBC		_extnt_queue_pos_head
 		STA		_ptr0+1
-		LDA		byte_3C							; test for idle state, checking if
+		LDA		_gui_active_controls_flags							; test for idle state, checking if
 		EOR		#$03							; any of critical state flags arent
 		ORA		_ptr0							; clear, so mean there is some pending
 		ORA		_ptr0+1							; requests still
-		ORA		byte_39
-		ORA		byte_3A
-		ORA		byte_3B
+		ORA		_hud_static_redraw_req
 		ORA		_constr_palette_redraw_req
-		ORA		_presents_building_name_and_cost_hud_draw_req
+		ORA		byte_3B
+		ORA		_constr_palette_update_req
+		ORA		_hud_present_name_draw_req
 		ORA		_RCI_meter_redraw_req
 		ORA		_hud_date_redraw_req
 		ORA		_hud_popul_redraw_req
@@ -87,39 +87,57 @@ _game_state_common:
 		JMP		_MAIN_LOOP
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state00:
-		JSR		sub_136761
+_game_state00_hud_static_redraw:
+		JSR		_hud_static_redraw				; redraw static part of the HUD (buttons, extnts)
 		BCS		loc_1360DD
-		LDA		byte_3C
+		LDA		_gui_active_controls_flags		; set HUD draw complete flag
 		ORA		#$01
-		STA		byte_3C
+		STA		_gui_active_controls_flags
 		LDA		#$FF
-		STA		_hud_date_redraw_req
+		STA		_hud_date_redraw_req			; set static portions of the HUD redraw requests
 		STA		_hud_money_redraw_req
 		STA		_hud_popul_redraw_req
 		STA		_hud_city_name_redraw_req
 loc_1360DD:
 		JMP		_game_state_common
 
+; FIX: moved here from bankD to collect free space in one place
+;
+; =============== S U B	R O U T	I N E =======================================
+_game_state01_constr_palette_redraw:
+		JSR		_constr_palette_redraw
+		BCS		loc_150019
+		LDA		#$3A
+		STA		_MMC5_CHR_BANKSA+2
+		LDA		#$FF
+		STA		_hud_present_name_draw_req
+		LDA		_gui_active_controls_flags
+		ORA		#$02
+		STA		_gui_active_controls_flags
+		LDA		#$FF
+		STA		_RCI_meter_redraw_req
+loc_150019:
+		JMP		_game_state_common
+
 ; =============== S U B	R O U T	I N E =======================================
 _game_state02_map_scroll:
-		LDA		byte_3C
+		LDA		_gui_active_controls_flags
 		AND		#$03
 		BEQ		.mini_map_wait_for_scrolls
 		LSR
 		BCC		.mini_map_hor_queue
 		JSR		sub_136775						; vert map ppu data queue
 		BCS		.j_game_state_common
-		LDA		byte_3C
+		LDA		_gui_active_controls_flags
 		AND		#$FE
-		STA		byte_3C
+		STA		_gui_active_controls_flags
 		JMP		_game_state_common
 .mini_map_hor_queue:
 		JSR		sub_136750
 		BCS		.j_game_state_common
-		LDA		byte_3C
+		LDA		_gui_active_controls_flags
 		AND		#$FD
-		STA		byte_3C
+		STA		_gui_active_controls_flags
 .j_game_state_common:
 		JMP		_game_state_common
 .mini_map_wait_for_scrolls:
@@ -147,7 +165,7 @@ _game_state02_map_scroll:
 		INC		_cur_screen_tile._COL			; right scroll needed
 		LDA		_cur_screen_tile._COL
 		CMP		#$40
-		BCC		.mini_map_scroll_done				; wrap to 0
+		BCC		.mini_map_scroll_done			; wrap to 0
 		LDA		#$00
 		STA		_cur_screen_tile._COL
 		BEQ		.mini_map_scroll_done
@@ -185,7 +203,7 @@ _game_state02_map_scroll:
 		BEQ		loc_13617C
 ;		JSR		_buffers_test_flush
 ;		BCC		loc_13617F
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BEQ		loc_13617F
 loc_13617C:
 		JMP		_game_state_common
@@ -343,7 +361,7 @@ loc_13626D:
 		LDA		_building_sizes_list,X
 		STA		_cur_selected_buildings_size
 		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
+		STA		_hud_present_name_draw_req
 		CPX		#$0B
 		BNE		loc_13629F
 		STA		_power_build_menu_req
@@ -373,21 +391,21 @@ sub_1362C0:
 		CMP		#$0B
 		BNE		loc_1362CE
 		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
+		STA		_hud_present_name_draw_req
 		STA		_power_build_menu_req
 		JMP		_game_state_common
 loc_1362CE:
 		CMP		#$0C
 		BNE		loc_1362DC
 		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
+		STA		_hud_present_name_draw_req
 		STA		_airport_build_menu_req
 		JMP		_game_state_common
 loc_1362DC:
 		CMP		#$0D
 		BNE		_j_apu_se_error
 		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
+		STA		_hud_present_name_draw_req
 		STA		_presents_build_menu_req
 		FJSRA	_presents_wnd_generate,PRGC,PRG2
 		JMP		_game_state_common
@@ -515,7 +533,7 @@ loc_1363BE:
 		CMP		#$0D
 		BNE		loc_1363F5
 		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
+		STA		_hud_present_name_draw_req
 		BNE		loc_1363F5
 .cant_build_anything_beep:
 		JSR		_save_constr_cursor_pos
@@ -560,13 +578,13 @@ _save_constr_cursor_pos:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state04:
-		JSR		sub_137CD4
+_game_state04_constr_area_redraw:
+		JSR		_constr_area_redraw
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state05_constr_palette_redraw:
-		JSR		_constr_palette_redraw
+_game_state05_constr_palette_update:
+		JSR		_constr_palette_update
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -576,17 +594,17 @@ _game_state06_game_hud_redraw:
 		JSR		_buffers_test_flush		; OPTIMIZED, merged
 		BNE		loc_136472
 		LDA		_cur_map_wnd_pos._COL
-		STA		byte_54
+		STA		_update_rect_left
 		CLC
 		ADC		#$18
-		STA		byte_55
+		STA		_update_rect_right
 		LDA		_cur_map_wnd_pos._ROW
-		STA		byte_56
+		STA		_update_rect_top
 		CLC
 		ADC		#$14
-		STA		byte_57
+		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		byte_53
+		STA		_constr_area_update_req
 		LDA		#$00
 		STA		_hud_redraw_req
 		LDA		#$FF
@@ -755,19 +773,19 @@ _game_state0E:
 ;		BCS		loc_136582
 		JSR		_buffers_test_flush		; OPTIMIZED, merged
 		BNE		loc_136582
-		INC		byte_535
+		INC		_tmp535
 		LDA		_cur_map_wnd_pos._COL
-		STA		byte_54
+		STA		_update_rect_left
 		CLC
 		ADC		#$18
-		STA		byte_55
+		STA		_update_rect_right
 		LDA		_cur_map_wnd_pos._ROW
-		STA		byte_56
+		STA		_update_rect_top
 		CLC
 		ADC		#$14
-		STA		byte_57
+		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		byte_53
+		STA		_constr_area_update_req
 		LDA		#$00
 		STA		_game_core_stop_flag
 loc_136582:
@@ -859,7 +877,7 @@ _game_states_select:
 		LDA		#$10
 		JMP		_set_game_state_idx
 loc_136610:
-		LDA		_scr_mode_idx
+		LDA		_scr_mode_idx					; full map scroll mode request
 		CMP		#$01
 		BNE		loc_13661B
 		LDA		#$02
@@ -875,36 +893,36 @@ loc_136625:
 		LDA		#$04
 		JMP		_set_game_state_idx
 loc_13662E:
-		LDA		byte_39
+		LDA		_hud_static_redraw_req			; keep state of hud redraw till the end
 		BEQ		loc_136637
 		LDA		#$00
 		JMP		_set_game_state_idx
 loc_136637:
-		LDA		byte_3A
+		LDA		_constr_palette_redraw_req		; also keep state of pal redraw till the end
 		BEQ		loc_136640
 		LDA		#$01
-		JMP		_set_game_state_idx
+		JMP		_set_game_state_idx				; full redraw constr palette frame
 loc_136640:
-		LDA		byte_3C
+		LDA		_gui_active_controls_flags		; check gui flags active
 		AND		#$03
 		CMP		#$03
-		BEQ		loc_13665D
+		BEQ		loc_13665D						; both flags are set, then gui drawn, skip
 		LSR
-		BCS		loc_136654
+		BCS		loc_136654						; bit0 clear if static hud need to be redrawn
 		LDA		#$FF
-		STA		byte_39
+		STA		_hud_static_redraw_req			; set the static hud redraw flag
 		LDA		#$00
-		JMP		_set_game_state_idx
+		JMP		_set_game_state_idx				; also set the state for redraw already
 loc_136654:
 		LDA		#$FF
-		STA		byte_3A
+		STA		_constr_palette_redraw_req		; bit 1 clear, then constr paletter full redraw request set
 		LDA		#$01
-		JMP		_set_game_state_idx
+		JMP		_set_game_state_idx				; also state of the game updated
 loc_13665D:
-		LDA		_constr_palette_redraw_req
+		LDA		_constr_palette_update_req		; when constr paletter redrawn, need to update active icons
 		BEQ		loc_136666
 		LDA		#$05
-		JMP		_set_game_state_idx
+		JMP		_set_game_state_idx				; update the states of const palette buttons
 loc_136666:
 		LDA		_power_build_menu_req
 		BEQ		loc_136670
@@ -952,7 +970,7 @@ loc_1366B6:
 		LDA		#$11
 		JMP		_set_game_state_idx
 loc_1366C0:
-		LDA		_presents_building_name_and_cost_hud_draw_req
+		LDA		_hud_present_name_draw_req
 		BEQ		loc_1366C9
 		LDA		#$09
 		JMP		_set_game_state_idx
@@ -979,7 +997,7 @@ loc_1366E4:
 		LDA		#$08
 		JMP		_set_game_state_idx
 loc_1366F3:
-		LDA		byte_53
+		LDA		_constr_area_update_req
 		BEQ		loc_1366FC
 		LDA		#$04
 		JMP		_set_game_state_idx
@@ -1005,31 +1023,32 @@ _set_game_state_idx:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_13671F:
+_constr_palette_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_136745
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136745
 		JSR		sub_136746
 		LDA		#$00
-		STA		byte_3A
+		STA		_constr_palette_redraw_req
 		LDA		_cur_map_wnd_pos._COL
-		STA		byte_54
+		STA		_update_rect_left
 		CLC
 		ADC		#$18
-		STA		byte_55
+		STA		_update_rect_right
 		LDA		_cur_map_wnd_pos._ROW
-		STA		byte_56
+		STA		_update_rect_top
 		CLC
 		ADC		#$14
-		STA		byte_57
+		STA		_update_rect_bottom
 		LDA		#$FF
-		STA		byte_53
-		JSR		_constr_palette_redraw_req_set
+		STA		_constr_area_update_req
+		STA		_constr_palette_update_req
+;		JSR		_constr_palette_update_req_set	; REDUNDANT
 		CLC
 		RTS
 locret_136745:
-		SEC								; FIX, flush wait optimize workaround
+		SEC										; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1043,13 +1062,13 @@ sub_136746:
 sub_136750:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_136759
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136759
 		JSR		sub_13675A
 		CLC
 		RTS
 locret_136759:
-		SEC								; FIX, flush wait optimize workaround
+		SEC										; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1059,51 +1078,51 @@ sub_13675A:
 
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136761:
+_hud_static_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_136774
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136774
 		JSR		_map_full_screen_pos_calc
-		JSR		sub_1368BD
-		JSR		sub_136935
+		JSR		_hud_static_controls_nt_draw
+		JSR		_hud_static_controls_extnt_draw
 		LDA		#$00
-		STA		byte_39
+		STA		_hud_static_redraw_req
 		CLC
 		RTS
 locret_136774:
-		SEC								; FIX, flush wait optimize workaround
+		SEC										; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136775:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_136780
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136780
 		JSR		_map_full_screen_pos_calc
 		JMP		sub_136781
 locret_136780:
-		SEC								; FIX, flush wait optimize workaround
+		SEC										; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136781:
 		LDA		_ppu_queue_pos_head
-		STA		byte_544
+		STA		_tmp544
 		LDA		_extnt_queue_pos_head
-		STA		byte_545
+		STA		_tmp545
 		LDA		_cur_map_wnd_pos._COL
 		SEC
 		SBC		#$07
-		STA		byte_542
+		STA		_tmp542
 		LDA		_cur_map_wnd_pos._ROW
 		SEC
 		SBC		#$07
-		STA		byte_543
+		STA		_tmp543
 loc_13679B:
 		JSR		sub_1367D3
-		INC		byte_543
+		INC		_tmp543
 		LDA		byte_7A
 		CLC
 		ADC		#$20
@@ -1125,52 +1144,52 @@ loc_13679B:
 		STA		byte_7D
 		BEQ		loc_13679B
 loc_1367C8:
-		LDA		byte_544
-		LDX		byte_545
+		LDA		_tmp544
+		LDX		_tmp545
 		STA		_ppu_queue_pos_head
 		EXTQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1367D3:
-		LDX		byte_544
+		LDX		_tmp544
 		PPUQMOVB	byte_7A,OP_AND,#$E0
 		PPUQMOVB	byte_7B,OP_NOP,0
 		PPUQMOVB	#$20,OP_NOP,0
-		STX		byte_544
-		LDX		byte_545
+		STX		_tmp544
+		LDX		_tmp545
 		EXTQMOVB	byte_7A,OP_AND,#$E0
 		EXTQMOVB	byte_7B,OP_ADD,#$3C
 		EXTQMOVB	#$20,OP_NOP,0
-		STX		byte_545
-		STA		byte_546
-		LDA		byte_542
+		STX		_tmp545
+		STA		_tmp546
+		LDA		_tmp542
 		CLC
 		ADC		byte_7E
 		STA		_tmp_tile_pos._COL
-		LDA		byte_543
+		LDA		_tmp543
 		STA		_tmp_tile_pos._ROW
 		LDA		#$20
 		SEC
 		SBC		byte_7E
-		STA		byte_547
+		STA		_tmp547
 		SEC
 loc_136823:
 		JSR		sub_137E6E
-		LDX		byte_544
+		LDX		_tmp544
 		PPUQMOVB	word_6C,OP_NOP,0
-		STX		byte_544
-		LDX		byte_545
+		STX		_tmp544
+		LDX		_tmp545
 		EXTQMOVB	word_6C+1,OP_NOP,0
-		STX		byte_545
-		DEC		byte_546
+		STX		_tmp545
+		DEC		_tmp546
 		BEQ		locret_136857
 		INC		_tmp_tile_pos._COL
-		DEC		byte_547
+		DEC		_tmp547
 		BNE		loc_136823
 		LDA		#$20
-		STA		byte_547
-		LDA		byte_542
+		STA		_tmp547
+		LDA		_tmp542
 		STA		_tmp_tile_pos._COL
 		SEC
 		BCS		loc_136823
@@ -1236,8 +1255,8 @@ loc_1368BA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1368BD:
-		MOVWO	_ptr0,byte_1514D6
+_hud_static_controls_nt_draw:
+		MOVWO	_ptr0,_tlm_hud_static_nt
 		LDA		byte_7A
 		AND		#$E0
 		STA		_tmp2
@@ -1264,22 +1283,10 @@ loc_1368EF:
 loc_1368FC:
 		DEC		_tmp6
 		BNE		loc_1368EF
-		LDA		_ptr0
-		CLC
-		ADC		#$20
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		#$00
-		STA		_ptr0+1
+		ADDWB	_ptr0,#$20
 		DEC		_tmp4
 		BEQ		loc_136920
-		LDA		_tmp2
-		CLC
-		ADC		#$20
-		STA		_tmp2
-		LDA		_tmp3
-		ADC		#$00
-		STA		_tmp3
+		ADDWB	_tmp2,#$20
 		BNE		loc_1368DB
 loc_136920:
 		DO_WRAP	_tmp4,_tmp5,loc_136932
@@ -1292,8 +1299,8 @@ loc_136932:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136935:
-		MOVWO	_ptr0,byte_1515B7
+_hud_static_controls_extnt_draw:
+		MOVWO	_ptr0,_tlm_hud_static_extnt
 		LDA		byte_7A
 		AND		#$E0
 		STA		_tmp2
@@ -1322,22 +1329,10 @@ loc_13696A:
 loc_136977:
 		DEC		_tmp6
 		BNE		loc_13696A
-		LDA		_ptr0
-		CLC
-		ADC		#$20
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		#$00
-		STA		_ptr0+1
+		ADDWB	_ptr0,#$20
 		DEC		_tmp4
 		BEQ		loc_13699B
-		LDA		_tmp2
-		CLC
-		ADC		#$20
-		STA		_tmp2
-		LDA		_tmp3
-		ADC		#$00
-		STA		_tmp3
+		ADDWB	_tmp2,#$20
 		BNE		loc_136956
 loc_13699B:
 		DO_WRAP	_tmp4,_tmp5,loc_1369AD
@@ -1520,24 +1515,24 @@ sub_136B10:
 		LDA		_extnt_queue_pos_head
 		STA		byte_81
 		LDA		_cur_map_wnd_pos._COL
-		STA		byte_55
+		STA		_update_rect_right
 		SEC
 		SBC		#$07
-		STA		byte_54
+		STA		_update_rect_left
 		LDA		_cur_map_wnd_pos._ROW
-		STA		byte_56
+		STA		_update_rect_top
 		CLC
 		ADC		#$15
-		STA		byte_57
+		STA		_update_rect_bottom
 loc_136B2A:
-		LDA		byte_54
-		CMP		byte_55
+		LDA		_update_rect_left
+		CMP		_update_rect_right
 		BEQ		loc_136B56
 		STA		_tmp_tile_pos._COL
-		LDA		byte_56
+		LDA		_update_rect_top
 		STA		_tmp_tile_pos._ROW
 		JSR		sub_136B5F
-		INC		byte_54
+		INC		_update_rect_left
 		DEC		byte_7E
 		BEQ		loc_136B43
 		INC		byte_7A
@@ -2119,7 +2114,7 @@ loc_137018:
 		JSR		_wait_for_nmi
 		JSR		_game_chr_common_reload
 		LDA		#$00
-		STA		byte_514
+		STA		_tmp514
 		PLA
 		SEC
 		RTS
@@ -2135,7 +2130,7 @@ loc_137054:
 		JSR		_wait_for_nmi
 		JSR		_game_chr_common_reload
 		LDA		#$00
-		STA		byte_514
+		STA		_tmp514
 		CLC
 		RTS
 loc_137064:
@@ -2265,9 +2260,9 @@ loc_13710E:
 		LDA		_pad0_held
 		BEQ		loc_137117
 		LDA		#$FF
-		STA		byte_514
+		STA		_tmp514
 loc_137117:
-		LDA		byte_514
+		LDA		_tmp514
 		BMI		loc_137122
 		AND		#$0F
 		CMP		#$0A
@@ -2282,14 +2277,14 @@ loc_137122:
 		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert
 loc_137133:
-		LDX		byte_514
+		LDX		_tmp514
 		BMI		locret_137142
 		INX
 		CPX		#$20
 		BCC		loc_13713F
 		LDX		#$00
 loc_13713F:
-		STX		byte_514
+		STX		_tmp514
 locret_137142:
 		RTS
 
@@ -3625,8 +3620,8 @@ loc_137B1D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_constr_palette_redraw:
-		LDA		_constr_palette_redraw_req
+_constr_palette_update:
+		LDA		_constr_palette_update_req
 		BEQ		locret_137B5D
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_137B5D
@@ -3658,7 +3653,7 @@ loc_137B55:
 		DEC		_tmp3
 		BPL		loc_137B3D
 		LDA		#$00
-		STA		_constr_palette_redraw_req
+		STA		_constr_palette_update_req
 locret_137B5D:
 		RTS
 
@@ -3837,12 +3832,12 @@ _ppu_extnt_byte_queue:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137CD4:
+_constr_area_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_137D0A
 		JSR		_buffers_test_flush		; OPTIMIZED, merged
 		BNE		locret_137D0A
-		LDA		byte_53
+		LDA		_constr_area_update_req
 		BEQ		locret_137D0A
 		JSR		sub_137D20
 		LDA		_ppu_queue_pos_head
@@ -3871,12 +3866,12 @@ locret_137D0A:
 ; =============== S U B	R O U T	I N E =======================================
 sub_137D0B:
 		LDA		#$00
-		STA		byte_53
+		STA		_constr_area_update_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_137D20:
-		LDA		byte_56
+		LDA		_update_rect_top
 		BPL		loc_137D26
 		LDA		#$00
 loc_137D26:
@@ -3884,11 +3879,11 @@ loc_137D26:
 		BCS		loc_137D2C
 		LDA		_cur_map_wnd_pos._ROW
 loc_137D2C:
-		STA		byte_56
+		STA		_update_rect_top
 		SEC
 		SBC		_cur_map_wnd_pos._ROW
 		STA		byte_59
-		LDA		byte_57
+		LDA		_update_rect_bottom
 		SEC
 		SBC		_cur_map_wnd_pos._ROW
 		CMP		#$15
@@ -3896,9 +3891,9 @@ loc_137D2C:
 		LDA		#$14
 		CLC
 		ADC		_cur_map_wnd_pos._ROW
-		STA		byte_57
+		STA		_update_rect_bottom
 loc_137D43:
-		LDA		byte_54
+		LDA		_update_rect_left
 		BPL		loc_137D49
 		LDA		#$00
 loc_137D49:
@@ -3906,13 +3901,13 @@ loc_137D49:
 		BCS		loc_137D4F
 		LDA		_cur_map_wnd_pos._COL
 loc_137D4F:
-		STA		byte_54
+		STA		_update_rect_left
 		SEC
 		SBC		_cur_map_wnd_pos._COL
 		CLC
 		ADC		#$07
 		STA		byte_58
-		LDA		byte_55
+		LDA		_update_rect_right
 		SEC
 		SBC		_cur_map_wnd_pos._COL
 		CMP		#$19
@@ -3920,12 +3915,12 @@ loc_137D4F:
 		LDA		#$18
 		CLC
 		ADC		_cur_map_wnd_pos._COL
-		STA		byte_55
+		STA		_update_rect_right
 loc_137D69:
 		LDX		#$00
-		LDA		byte_57
+		LDA		_update_rect_bottom
 		SEC
-		SBC		byte_56
+		SBC		_update_rect_top
 		ADC		#$00
 		CMP		#$02
 		BCC		loc_137D7A
@@ -3976,9 +3971,9 @@ loc_137D8E:
 		SEC
 		ADC		#$20
 		STA		_ptr0
-		LDA		byte_55
+		LDA		_update_rect_right
 		SEC
-		SBC		byte_54
+		SBC		_update_rect_left
 		CLC
 		ADC		#$01
 		CMP		_ptr0
@@ -3994,9 +3989,9 @@ loc_137DD9:
 		LDA		#$00
 		STA		byte_6B
 loc_137DDF:
-		LDA		byte_54
+		LDA		_update_rect_left
 		STA		_tmp_tile_pos._COL
-		LDA		byte_56
+		LDA		_update_rect_top
 		STA		_tmp_tile_pos._ROW
 		RTS
 
@@ -4082,8 +4077,8 @@ loc_137EB5:
 		JSR		sub_137EDD
 loc_137EC4:
 		LDY		#$01
-		STY		byte_533
-		STX		byte_534
+		STY		_tmp533
+		STX		_tmp534
 		JSR		sub_150BF7
 		BCC		loc_137ED6
 		BCS		loc_137ED9
@@ -4129,7 +4124,7 @@ sub_137EFB:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_137F16:
-		INC		byte_56
+		INC		_update_rect_top
 		INC		byte_59
 		DEC		byte_64
 		BEQ		loc_137F20
@@ -4149,33 +4144,33 @@ locret_137F29:
 
 ; =============== S U B	R O U T	I N E =======================================
 _swap_constr_area_update_params:
-		LDA		byte_53
-		LDX		byte_5D
-		STA		byte_5D
-		STX		byte_53
-		LDA		byte_54
-		LDX		byte_5E
-		STA		byte_5E
-		STX		byte_54
-		LDA		byte_55
-		LDX		byte_5F
-		STA		byte_5F
-		STX		byte_55
-		LDA		byte_56
-		LDX		byte_60
-		STA		byte_60
-		STX		byte_56
-		LDA		byte_57
-		LDX		byte_61
-		STA		byte_61
-		STX		byte_57
+		LDA		_constr_area_update_req
+		LDX		_constr_area_update_req_tmp
+		STA		_constr_area_update_req_tmp
+		STX		_constr_area_update_req
+		LDA		_update_rect_left
+		LDX		_update_rect_left_tmp
+		STA		_update_rect_left_tmp
+		STX		_update_rect_left
+		LDA		_update_rect_right
+		LDX		_update_rect_right_tmp
+		STA		_update_rect_right_tmp
+		STX		_update_rect_right
+		LDA		_update_rect_top
+		LDX		_update_rect_top_tmp
+		STA		_update_rect_top_tmp
+		STX		_update_rect_top
+		LDA		_update_rect_bottom
+		LDX		_update_rect_bottom_tmp
+		STA		_update_rect_bottom_tmp
+		STX		_update_rect_bottom
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_15011A:
 		JSR		_swap_constr_area_update_params
 		LDA		#$00
-		STA		byte_5D
+		STA		_constr_area_update_req_tmp
 		STA		byte_5C
 		RTS
 
@@ -4204,10 +4199,10 @@ loc_137F48:
 		LDA		#$35
 loc_137F4E:
 		STA		_cur_map_wnd_pos._COL
-		STA		byte_54
+		STA		_update_rect_left
 		CLC
 		ADC		#$18
-		STA		byte_55
+		STA		_update_rect_right
 		LDA		_goto_dst_tile._ROW
 		SEC
 		SBC		#$0A
@@ -4220,14 +4215,14 @@ loc_137F63:
 		LDA		#$37
 loc_137F69:
 		STA		_cur_map_wnd_pos._ROW
-		STA		byte_56
+		STA		_update_rect_top
 		CLC
 		ADC		#$14
-		STA		byte_57
+		STA		_update_rect_bottom
 		LDA		#$1E
 		STA		_goto_transition_counter
 		LDA		#$FF
-		STA		byte_53
+		STA		_constr_area_update_req
 locret_137F7B:
 		RTS
 
@@ -4246,7 +4241,9 @@ loc_137F8D:
 		STA		_cur_map_wnd_pos._COL
 		STA		_cur_map_wnd_pos._ROW
 loc_137F93:
-		JSR		_constr_palette_redraw_req_set
+;		JSR		_constr_palette_update_req_set	; REDUNDANT
+		LDA		#$FF
+		STA		_constr_palette_update_req
 		LDA		#$00
 		STA		_MMC5_NT_MODE
 		STA		_game_wnd_spr_mode_flag
@@ -4283,24 +4280,6 @@ _seasonal_pal_load:
 _seasonal_pal_list:
 		.BYTE	$0E,$0E,$00,$00,$00,$0C,$0C,$0C,$0D,$0D,$0D,$0E
 
-; FIX: moved here from bankD to collect free space in one place
-;
-; =============== S U B	R O U T	I N E =======================================
-_game_state01:
-		JSR		sub_13671F
-		BCS		loc_150019
-		LDA		#$3A
-		STA		_MMC5_CHR_BANKSA+2
-		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
-		LDA		byte_3C
-		ORA		#$02
-		STA		byte_3C
-		LDA		#$FF
-		STA		_RCI_meter_redraw_req
-loc_150019:
-		JMP		_game_state_common
-
 ; =============== S U B	R O U T	I N E =======================================
 _game_state09_presents_building_name_and_cost_hud_draw:
 ;		JSR		_buffers_test_flush
@@ -4309,7 +4288,7 @@ _game_state09_presents_building_name_and_cost_hud_draw:
 		BNE		loc_150028
 		JSR		_building_name_and_cost_hud_draw
 		LDA		#$00
-		STA		_presents_building_name_and_cost_hud_draw_req
+		STA		_hud_present_name_draw_req
 loc_150028:
 		JMP		_game_state_common
 

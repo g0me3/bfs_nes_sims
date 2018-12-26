@@ -80,7 +80,7 @@ loc_B8110:
 		LDA		_tmp3
 		STA		_constr_palette_flags+3
 		LDA		#$FF							; set flag to update
-		STA		_constr_palette_redraw_req
+		STA		_constr_palette_update_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -696,12 +696,13 @@ loc_B8485:
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_screen:
-;		LDA		_title_sub_idx					; REDUNDANT, never enter here with idx=2
-;		CMP		#$02							; literally impossible
-;		BEQ		.title_loop
+; REDUNDANT, not actually
+;		LDA		_title_sub_idx					; enter here when any of the game modes
+;		CMP		#$02							; selection cancelled
+;		BEQ		.title_loop						; return to menu instead of title screen
 ;		INC		_tmp118							; REDUNDANT, actually, not need here too
-		LDA		#$00
-		STA		_title_sub_idx					; may be $80 here on input sometimes
+;		LDA		#$00
+;		STA		_title_sub_idx					;
 .title_loop:
 		JSR		_wait_for_nmi
 		LDA		_pad1_prev_held					; test for sram reset A+B+UP+LEFT on PAD2

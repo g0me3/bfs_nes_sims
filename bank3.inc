@@ -23,16 +23,16 @@ loc_58144:
 		STA		byte_80,X
 		DEX
 		BPL		loc_58144
-		STA		byte_523
-		STA		byte_528
-		STA		byte_529
-		STA		byte_52A
-		STA		byte_52B
-		STA		byte_52C
-		STA		byte_52D
-		STA		byte_52E
-		STA		byte_52F
-		STA		byte_530
+		STA		_tmp523
+		STA		_tmp528
+		STA		_tmp529
+		STA		_tmp52A
+		STA		_tmp52B
+		STA		_tmp52C
+		STA		_tmp52D
+		STA		_tmp52E
+		STA		_tmp52F
+		STA		_tmp530
 		LDA		#$05
 		STA		_scr_mode_idx
 		JSR		_spr_clear
@@ -49,8 +49,8 @@ loc_58144:
 		STA		_ptr0
 		JSR		_game_msg_txt_draw
 		LDA		#$00
-		STA		byte_525
-		STA		byte_524
+		STA		_tmp525
+		STA		_tmp524
 loc_581A4:
 		PUSHB	_ptr0
 		JSR		_wait_for_nmi
@@ -63,7 +63,7 @@ loc_581A4:
 		JSR		_game_msg_presents_clear
 		JSR		_msg_wnd_cheat_test
 		POPB	_ptr0
-		LDA		byte_524
+		LDA		_tmp524
 		CMP		#$1E
 		BCS		loc_581EC
 		LDA		_pad0_autorep_press
@@ -78,8 +78,8 @@ loc_581A4:
 		STA		_ptr0
 		JSR		_game_msg_txt_draw
 		LDA		#$00
-		STA		byte_525
-		STA		byte_524
+		STA		_tmp525
+		STA		_tmp524
 		JMP		loc_581A4
 loc_581EC:
 		LDA		#$20
@@ -99,13 +99,13 @@ loc_581EC:
 ;		LDA		_mmc5_chr_banks_shadow+3		; REDUNDANT, already loaded in
 ;		STA		_MMC5_CHR_BANKSA+3				; _game_chr_common_reload routine!
 		LDA		#$FF
-		STA		byte_53
+		STA		_constr_area_update_req
 		LDA		#$00
-		STA		byte_54
-		STA		byte_56
+		STA		_update_rect_left
+		STA		_update_rect_top
 		LDA		#$4D
-		STA		byte_55
-		STA		byte_57
+		STA		_update_rect_right
+		STA		_update_rect_bottom
 		JSR		_game_msg_music_restore
 		JSR		_present_put_in_list
 		JSR		_init_special_year_date
@@ -739,7 +739,7 @@ loc_583FA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_clear:
-		LDA		byte_528
+		LDA		_tmp528
 		CMP		#$02
 		BEQ		loc_58476
 		RTS
@@ -751,7 +751,7 @@ loc_5847A:
 		JSR		_game_msg_presents_line_clear
 		DEC		_ptr0+1
 		BPL		loc_5847A
-		INC		byte_528
+		INC		_tmp528
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -800,11 +800,11 @@ loc_5856D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_animA:
-		LDA		byte_523
+		LDA		_tmp523
 		BNE		loc_58419
 		LDX		_game_msg_idx
 		LDA		_anim_seq_cmd_list,X
-		STA		byte_523
+		STA		_tmp523
 loc_58419:
 		CMP		#$FA
 		BEQ		locret_5846D
@@ -816,13 +816,13 @@ loc_58425:
 		LDA		#$F4
 		STA		_spr_buf,X
 		STA		_spr_buf+4,X
-		LDA		byte_523
+		LDA		_tmp523
 		CMP		#$FC
 		BEQ		loc_58438
 		TYA
 		STA		_spr_buf,X
 loc_58438:
-		LDA		byte_523
+		LDA		_tmp523
 		CMP		#$FD
 		BEQ		loc_58443
 		TYA
@@ -855,98 +855,98 @@ locret_5846D:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_animB:
 		LDX		_game_msg_idx
-		LDA		byte_586B2,X
+		LDA		_animB_data_table0,X
 		BNE		loc_58578
 		RTS
 loc_58578:
 		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
-		LDA		byte_528
+		STA		_hud_present_name_draw_req
+		LDA		_tmp528
 		BEQ		loc_58586
 		BPL		loc_585A5
 		JMP		loc_58614
 loc_58586:
 		LDA		#$98
-		STA		byte_529
+		STA		_tmp529
 		LDA		#$A8
-		STA		byte_52A
-		INC		byte_528
-		LDA		byte_58659
-		STA		byte_52B
-		LDA		byte_58684
-		STA		byte_52D
-		LDA		byte_586A2
-		STA		byte_52F
+		STA		_tmp52A
+		INC		_tmp528
+		LDA		_animB_data_list1
+		STA		_tmp52B
+		LDA		_animB_data_list4
+		STA		_tmp52D
+		LDA		_animB_data_list6
+		STA		_tmp52F
 loc_585A5:
-		LDY		byte_52C
-		LDX		byte_52B
+		LDY		_tmp52C
+		LDX		_tmp52B
 		CPX		#$00
 		BNE		loc_585CA
 		INY
-		LDA		byte_58659,Y
+		LDA		_animB_data_list1,Y
 		TAX
 		CMP		#$FF
 		BNE		loc_585BE
-		STA		byte_528
+		STA		_tmp528
 		JMP		loc_58614
 loc_585BE:
 		CMP		#$FE
 		BNE		loc_585CA
 		INY
-		LDA		byte_58659,Y
+		LDA		_animB_data_list1,Y
 		TAX
-		INC		byte_528
+		INC		_tmp528
 loc_585CA:
-		LDA		byte_5864A,Y
+		LDA		_animB_data_list0,Y
 		CMP		#$FD
 		BNE		loc_585DB
 		DEX
-		STX		byte_52B
-		STY		byte_52C
+		STX		_tmp52B
+		STY		_tmp52C
 		JMP		loc_58614
 loc_585DB:
 		STA		_spr_insert_args._idx
 		DEX
-		STX		byte_52B
-		STY		byte_52C
-		LDY		byte_52E
-		LDX		byte_52D
+		STX		_tmp52B
+		STY		_tmp52C
+		LDY		_tmp52E
+		LDX		_tmp52D
 		CPX		#$00
 		BNE		loc_585F2
 		INY
-		LDX		byte_58684,Y
+		LDX		_animB_data_list4,Y
 loc_585F2:
-		LDA		byte_58668,Y
+		LDA		_animB_data_list2,Y
 		CLC
-		ADC		byte_529
-		STA		byte_529
+		ADC		_tmp529
+		STA		_tmp529
 		STA		_spr_insert_args._pos._COL
-		LDA		byte_58676,Y
+		LDA		_animB_data_list3,Y
 		CLC
-		ADC		byte_52A
-		STA		byte_52A
+		ADC		_tmp52A
+		STA		_tmp52A
 		STA		_spr_insert_args._pos._ROW
 		DEX
-		STX		byte_52D
-		STY		byte_52E
+		STX		_tmp52D
+		STY		_tmp52E
 		JSR		_spr_lib_attr_insert
 loc_58614:
-		LDY		byte_530
-		LDX		byte_52F
+		LDY		_tmp530
+		LDX		_tmp52F
 		CPX		#$00
 		BNE		loc_58622
 		INY
-		LDX		byte_586A2,Y
+		LDX		_animB_data_list6,Y
 loc_58622:
-		LDA		byte_58692,Y
+		LDA		_animB_data_list5,Y
 		CMP		#$FF
 		BEQ		locret_58641
 		CMP		#$FE
 		BEQ		loc_58642
 		STA		_spr_insert_args._idx
 		DEX
-		STX		byte_52F
-		STY		byte_530
+		STX		_tmp52F
+		STY		_tmp530
 		LDA		#$28
 		STA		_spr_insert_args._pos._COL
 		LDA		#$A8
@@ -956,24 +956,25 @@ locret_58641:
 		RTS
 loc_58642:
 		DEX
-		STX		byte_52F
-		STY		byte_530
+		STX		_tmp52F
+		STY		_tmp530
 		RTS
-byte_5864A:
+
+_animB_data_list0:
 		.BYTE	$FD,$FD,$90,$91,$92,$93,$94,$95,$96,$97,$98,$00,$99,$9D,$FF
-byte_58659:
+_animB_data_list1:
 		.BYTE	$C0,$E0,$02,$02,$02,$02,$02,$02,$02,$02,$02,$FE,$04,$6E,$FF
-byte_58668:
+_animB_data_list2:
 		.BYTE	$00,$FD,$FD,$FD,$FD,$FD,$FD,$FD,$FD,$FD,$FD,$FD,$FD,$FF
-byte_58676:
+_animB_data_list3:
 		.BYTE	$00,$00,$01,$00,$01,$00,$01,$00,$01,$00,$01,$00,$01,$FF
-byte_58684:
+_animB_data_list4:
 		.BYTE	$60,$05,$01,$05,$01,$05,$01,$05,$01,$05,$01,$05,$01,$FF
-byte_58692:
+_animB_data_list5:
 		.BYTE	$FE,$FE,$FE,$9A,$9B,$9C,$9E,$9F,$9A,$A1,$A1,$A1,$A1,$A1,$A1,$FF
-byte_586A2:
+_animB_data_list6:
 		.BYTE	$C0,$94,$AE,$08,$08,$14,$40,$08,$08,$E0,$E0,$E0,$E0,$E0,$E0,$FF
-byte_586B2:
+_animB_data_table0:
 		.BYTE	$00,$00,$01,$00,$00,$00
 		.BYTE	$00,$00,$00,$00,$00,$01
 		.BYTE	$00,$01,$01,$01,$01,$01
@@ -985,14 +986,14 @@ byte_586B2:
 _game_msg_wnd_animC:
 		LDX		_game_msg_idx
 		LDA		_anim_seq_obj_count_list,X
-		STA		byte_522						; tmp anim obj counter
+		STA		_tmp522						; tmp anim obj counter
 .anim_load_loop:
 		LDX		_game_msg_idx
 		LDA		_anim_seq_lib_lo,X
 		STA		_ptr0
 		LDA		_anim_seq_lib_hi,X
 		STA		_ptr0+1
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		LDA		(_ptr0),Y
 		TAX
@@ -1049,7 +1050,7 @@ loc_58751:
 		LDA		(_tmp2),Y
 		BNE		loc_5876C
 loc_58760:
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		LDA		#$FF
 		STA		_anim_pos_is_load,Y
@@ -1074,7 +1075,7 @@ loc_5877E:
 		INY
 		STA		byte_82
 		STY		byte_83
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		LDA		byte_7E,Y
 		BEQ		loc_587AA
@@ -1094,7 +1095,7 @@ loc_587A4:
 loc_587AA:
 		LDY		byte_83
 		LDA		(_tmp2),Y
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		STA		byte_7E,Y
 		LDA		byte_83
@@ -1104,11 +1105,11 @@ loc_587AA:
 		JMP		loc_58748
 loc_587BE:
 		INY
-		STA		byte_523
+		STA		_tmp523
 		JMP		loc_58748
 loc_587C5:
 		TYA
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		STA		byte_78,Y
 		TXA
@@ -1145,7 +1146,7 @@ loc_587F6:
 		INY
 		STA		byte_82
 		STY		byte_83
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		LDA		byte_80,Y
 		BEQ		loc_58822
@@ -1165,7 +1166,7 @@ loc_5881C:
 loc_58822:
 		LDY		byte_83
 		LDA		(_tmp6),Y
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		STA		byte_80,Y
 		LDA		byte_83
@@ -1179,7 +1180,7 @@ loc_58837:
 		LDA		(_tmp4),Y
 		PHA
 		TYA
-		LDY		byte_522
+		LDY		_tmp522
 		DEY
 		STA		byte_7C,Y
 		TXA
@@ -1209,7 +1210,7 @@ loc_58864:
 		STA		_anim_pos_row,Y
 		JSR		_spr_lib_clip_insert
 .anim_load_next_obj:
-		DEC		byte_522
+		DEC		_tmp522
 		BEQ		locret_58876
 		JMP		.anim_load_loop
 locret_58876:
@@ -1234,7 +1235,7 @@ _cmd40_24_name:
 		SEC
 		SBC		#$30
 		JSR		_get_select_name
-		LDA		byte_51A
+		LDA		_tmp51A
 		BNE		loc_58896
 		CLC
 		RTS
@@ -1253,7 +1254,7 @@ loc_5889A:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_588C5:
-		DEC		byte_51A
+		DEC		_tmp51A
 		BNE		loc_5889A
 		PLA
 		TAY
@@ -1280,35 +1281,35 @@ loc_588E4:
 		LDA		_city._name
 		SEC
 		SBC		#$01
-		STA		byte_51A
+		STA		_tmp51A
 		MOVWO	word_DA,_city._name+1
 		RTS
 loc_588F6:
 		LDA		_city._sister_name
 		SEC
 		SBC		#$01
-		STA		byte_51A
+		STA		_tmp51A
 		MOVWO	word_DA,_city._sister_name+1			; empty in practice, scenarios does not need it
 		RTS
 loc_58908:
 		LDA		_city._bank_name
 		SEC
 		SBC		#$01
-		STA		byte_51A
+		STA		_tmp51A
 		MOVWO	word_DA,_city._bank_name+1				; always empty, never initializes
 		RTS												; so displaying always just as "BANK"
 loc_5891A:
 		LDA		_city._unused_name3
 		SEC
 		SBC		#$01
-		STA		byte_51A
+		STA		_tmp51A
 		MOVWO	word_DA,_city._unused_name3+1			; unused buffers/name
 		RTS												; there is unknown what they
 loc_5892C:												; were intended for
 		LDA		_city._unused_name4
 		SEC
 		SBC		#$01
-		STA		byte_51A
+		STA		_tmp51A
 		MOVWO	word_DA,_city._unused_name4+1
 		RTS
 
@@ -1320,7 +1321,7 @@ _cmd40_23_popul:
 		SBC		#$30
 		JSR		_get_select_popul_num
 		LDA		#$01
-		STA		byte_51B
+		STA		_tmp51B
 		TYA
 		PHA
 		LDY		#$05
@@ -1329,7 +1330,7 @@ loc_58950:
 		DEY
 		CMP		#$30
 		BNE		loc_58963
-		LDA		byte_51B
+		LDA		_tmp51B
 		BEQ		loc_58961
 		CPY		#$FF
 		BNE		loc_58950
@@ -1338,7 +1339,7 @@ loc_58961:
 loc_58963:
 		PPUQMOVA
 		LDA		#$00
-		STA		byte_51B
+		STA		_tmp51B
 		DEC		_tmp4
 		BNE		loc_58990
 		DO_WRAP	_tmp4,_tmp5,loc_58998
@@ -2338,7 +2339,9 @@ loc_591C5:
 		JSR		_game_chr_common_reload
 loc_591D8:
 		LDA		#$00
-		STA		_main_sub_idx
+		STA		_main_sub_idx					; exit to main sub0, start title
+		LDA		#$02							; option called "GOTO MENU"
+		STA		_title_sub_idx					; so let's start from menu then!
 		JSR		_pal_fade_out
 		TSX
 		TXA
@@ -2357,7 +2360,7 @@ _turn_off_power_screen:
 		STA		_PPU_CTRL
 		STA		_ppu_mask_shadow
 		STA		_PPU_MASK
-		STA		byte_582
+		STA		_tmp582
 		LDA		#$80
 		STA		_game_wnd_spr_mode_flag
 		LDA		#$53
@@ -2463,16 +2466,16 @@ _turn_off_power_animate:
 		LDA		#$A2
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_attr_insert
-		LDA		byte_582
+		LDA		_tmp582
 		LDX		#$00
 loc_592E4:
-		CMP		byte_5930F,X
+		CMP		_off_power_anim_data,X
 		BCC		loc_592ED
 		INX
 		INX
 		BCS		loc_592E4
 loc_592ED:
-		LDA		byte_5930F+1,X
+		LDA		_off_power_anim_data+1,X
 		CMP		#$FF
 		BEQ		loc_59301
 		STA		_spr_insert_args._idx
@@ -2482,16 +2485,16 @@ loc_592ED:
 		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert
 loc_59301:
-		LDX		byte_582
+		LDX		_tmp582
 		INX
 		CPX		#$52
 		BCC		loc_5930B
 		LDX		#$00
 loc_5930B:
-		STX		byte_582
+		STX		_tmp582
 		RTS
 
-byte_5930F:
+_off_power_anim_data:
 		.BYTE	$0A,$A3
 		.BYTE	$16,$A4
 		.BYTE	$24,$A5
@@ -2549,16 +2552,16 @@ loc_59354:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_isle_map:
 		LDA		#$4B
-		STA		byte_573
-		STA		byte_574
+		STA		_tmp573
+		STA		_tmp574
 loc_59379:
 		LDA		#$02
-		LDX		byte_573
+		LDX		_tmp573
 		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
-		LDX		byte_574
+		LDX		_tmp574
 		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
@@ -2566,22 +2569,22 @@ loc_59379:
 		LDA		#$00
 loc_59393:
 		JSR		_isle_map_tile_write
-		DEC		byte_574
+		DEC		_tmp574
 		BPL		loc_59379
-		DEC		byte_573
+		DEC		_tmp573
 		BMI		loc_593A8
 		LDA		#$4B
-		STA		byte_574
+		STA		_tmp574
 		JMP		loc_59379
 loc_593A8:
 		LDA		#$00
-		STA		byte_573
+		STA		_tmp573
 loc_593AD:
 		LDX		#$09
 		JSR		_mul_rand
-		STA		byte_576
-		LDA		byte_573
-		STA		byte_575
+		STA		_tmp576
+		LDA		_tmp573
+		STA		_tmp575
 		JSR		_generate_new_map_sub3
 		LDX		#$09
 		JSR		_mul_rand
@@ -2589,28 +2592,28 @@ loc_593AD:
 		LDA		#$47
 		SEC
 		SBC		_ptr0
-		STA		byte_576
+		STA		_tmp576
 		JSR		_generate_new_map_sub3
 		LDA		#$00
-		STA		byte_576
+		STA		_tmp576
 		JSR		_generate_new_map_sub3
 		LDA		#$48
-		STA		byte_576
+		STA		_tmp576
 		JSR		_generate_new_map_sub3
-		LDX		byte_573
+		LDX		_tmp573
 		INX
 		INX
-		STX		byte_573
+		STX		_tmp573
 		CPX		#$4C
 		BCC		loc_593AD
 		LDA		#$00
-		STA		byte_574
+		STA		_tmp574
 loc_593F1:
 		LDX		#$09
 		JSR		_mul_rand
-		STA		byte_575
-		LDA		byte_574
-		STA		byte_576
+		STA		_tmp575
+		LDA		_tmp574
+		STA		_tmp576
 		JSR		_generate_new_map_sub3
 		LDX		#$09
 		JSR		_mul_rand
@@ -2618,18 +2621,18 @@ loc_593F1:
 		LDA		#$47
 		SEC
 		SBC		_ptr0
-		STA		byte_575
+		STA		_tmp575
 		JSR		_generate_new_map_sub3
 		LDA		#$00
-		STA		byte_575
+		STA		_tmp575
 		JSR		_generate_new_map_sub3
 		LDA		#$48
-		STA		byte_575
+		STA		_tmp575
 		JSR		_generate_new_map_sub3
-		LDX		byte_574
+		LDX		_tmp574
 		INX
 		INX
-		STX		byte_574
+		STX		_tmp574
 		CPX		#$4C
 		BCC		loc_593F1
 		JSR		_generate_new_mapD
@@ -2641,7 +2644,7 @@ loc_593F1:
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_write:
 		PHA
-		BUFPOS	_ptr0,byte_573,byte_574,#$4C,#>[_wram_map_buf]	; DST=(byte_574*#$4C+byte_573)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_tmp573,_tmp574,#$4C,#>[_wram_map_buf]	; DST=(_tmp574*#$4C+_tmp573)+#>[_wram_map_buf]00
 		LDY		#$00
 		PLA
 		STA		(_ptr0),Y
@@ -2651,7 +2654,7 @@ _isle_map_tile_write:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read577_0:
-		BUFPOS	_ptr0,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_tmp577,_tmp578,#$4C,#>[_wram_map_buf]	; DST=(_tmp578*#$4C+_tmp577)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		RTS
@@ -2660,7 +2663,7 @@ _isle_map_tile_read577_0:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read572_2:
-		BUFPOS	_tmp2,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
+		BUFPOS	_tmp2,_tmp577,_tmp578,#$4C,#>[_wram_map_buf]	; DST=(_tmp578*#$4C+_tmp577)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_tmp2),Y
 		RTS
@@ -2669,7 +2672,7 @@ _isle_map_tile_read572_2:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_read575:
-		BUFPOS	_ptr0,byte_575,byte_576,#$4C,#>[_wram_map_buf]	; DST=(byte_576*#$4C+byte_575)+#>[_wram_map_buf]00
+		BUFPOS	_ptr0,_tmp575,_tmp576,#$4C,#>[_wram_map_buf]	; DST=(_tmp576*#$4C+_tmp575)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		RTS
@@ -2696,39 +2699,39 @@ _generate_new_mapA:
 		JSR		_mul_rand
 		CLC
 		ADC		#$1A
-		STA		byte_573
-		STA		byte_575
+		STA		_tmp573
+		STA		_tmp575
 		LDX		#$19
 		JSR		_mul_rand
 		CLC
 		ADC		#$1A
-		STA		byte_574
-		STA		byte_576
+		STA		_tmp574
+		STA		_tmp576
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapB:
 		LDX		#$04
 		JSR		_mul_rand
-		STA		byte_57F
-		STA		byte_57E
+		STA		_tmp57F
+		STA		_tmp57E
 		JSR		_generate_new_mapB_0
-		LDA		byte_573
-		STA		byte_575
-		LDA		byte_574
-		STA		byte_576
-		LDA		byte_57F
+		LDA		_tmp573
+		STA		_tmp575
+		LDA		_tmp574
+		STA		_tmp576
+		LDA		_tmp57F
 		EOR		#$04
-		STA		byte_57F
-		STA		byte_57E
+		STA		_tmp57F
+		STA		_tmp57E
 		JSR		_generate_new_mapB_0
-		LDA		byte_573
-		STA		byte_575
-		LDA		byte_574
-		STA		byte_576
+		LDA		_tmp573
+		STA		_tmp575
+		LDA		_tmp574
+		STA		_tmp576
 		LDX		#$04
 		JSR		_mul_rand
-		STA		byte_57F
+		STA		_tmp57F
 		JMP		_generate_new_mapB_1
 
 
@@ -2740,18 +2743,18 @@ _generate_new_mapB_0:
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_594F0
-		INC		byte_57E
+		INC		_tmp57E
 loc_594F0:
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_594FA
-		DEC		byte_57E
+		DEC		_tmp57E
 loc_594FA:
 		JSR		_rand
 		CMP		#$18
 		BCS		loc_59507
-		LDA		byte_57F
-		STA		byte_57E
+		LDA		_tmp57F
+		STA		_tmp57E
 loc_59507:
 		JSR		_generate_new_mapB_0A
 		JMP		_generate_new_mapB_0
@@ -2766,18 +2769,18 @@ _generate_new_mapB_1:
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_59520
-		INC		byte_57E
+		INC		_tmp57E
 loc_59520:
 		JSR		_rand
 		AND		#$01
 		BEQ		loc_5952A
-		DEC		byte_57E
+		DEC		_tmp57E
 loc_5952A:
 		JSR		_rand
 		CMP		#$14
 		BCS		loc_59537
-		LDA		byte_57F
-		STA		byte_57E
+		LDA		_tmp57F
+		STA		_tmp57E
 loc_59537:
 		JSR		_generate_new_mapB_0A
 		JMP		_generate_new_mapB_1
@@ -2790,16 +2793,16 @@ _generate_new_mapF:
 		JSR		_mul_rand
 		CLC
 		ADC		#$17
-		STA		byte_57C
+		STA		_tmp57C
 loc_59549:
 		LDX		#$4C
 		JSR		_mul_rand
-		STA		byte_575
+		STA		_tmp575
 		LDX		#$4C
 		JSR		_mul_rand
-		STA		byte_576
+		STA		_tmp576
 		JSR		_generate_new_mapF_0
-		DEC		byte_57C
+		DEC		_tmp57C
 		BNE		loc_59549
 		JSR		_generate_new_map_sub5
 		JMP		_generate_new_map_sub5
@@ -2811,15 +2814,15 @@ _generate_new_mapF_0:
 		JSR		_mul_rand
 		CLC
 		ADC		#$17
-		STA		byte_57D
-		LDA		byte_575
-		STA		byte_577
-		LDA		byte_576
-		STA		byte_578
+		STA		_tmp57D
+		LDA		_tmp575
+		STA		_tmp577
+		LDA		_tmp576
+		STA		_tmp578
 loc_5957F:
 		LDX		#$08
 		JSR		_mul_rand
-		STA		byte_57E
+		STA		_tmp57E
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_map_buf_end_test
 		BCS		locret_595BA
@@ -2828,7 +2831,7 @@ loc_5957F:
 		LDA		#$05
 		STA		(_ptr0),Y
 loc_595B5:
-		DEC		byte_57D
+		DEC		_tmp57D
 		BNE		loc_5957F
 locret_595BA:
 		RTS
@@ -2839,37 +2842,37 @@ _generate_new_mapC:
 		JSR		_mul_rand
 		TAX
 		INX
-		STX		byte_580
+		STX		_tmp580
 loc_595C5:
 		LDX		#$3E
 		JSR		_mul_rand
 		CLC
 		ADC		#$03
-		STA		byte_575
+		STA		_tmp575
 		LDX		#$3E
 		JSR		_mul_rand
 		CLC
 		ADC		#$03
-		STA		byte_576
+		STA		_tmp576
 		LDX		#$06
 		JSR		_mul_rand
 		ADC		#$01
-		STA		byte_581
+		STA		_tmp581
 loc_595E5:
 		LDX		#$07
 		JSR		_mul_rand
 		SEC
 		SBC		#$03
 		CLC
-		ADC		byte_575
-		STA		byte_577
+		ADC		_tmp575
+		STA		_tmp577
 		LDX		#$07
 		JSR		_mul_rand
 		SEC
 		SBC		#$03
 		CLC
-		ADC		byte_576
-		STA		byte_578
+		ADC		_tmp576
+		STA		_tmp578
 		JSR		_rand
 		CMP		#$34
 		BCC		loc_59610
@@ -2878,76 +2881,76 @@ loc_595E5:
 loc_59610:
 		JSR		_generate_new_map_sub0
 loc_59613:
-		DEC		byte_581
+		DEC		_tmp581
 		BNE		loc_595E5
-		DEC		byte_580
+		DEC		_tmp580
 		BNE		loc_595C5
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapF_0A:
-		LDA		byte_57E
+		LDA		_tmp57E
 		AND		#$07
-		STA		byte_57E
-		LDX		byte_57E
-		LDA		byte_577
+		STA		_tmp57E
+		LDX		_tmp57E
+		LDA		_tmp577
 		CLC
-		ADC		byte_5965E,X
-		STA		byte_577
-		LDA		byte_578
+		ADC		_map_gen_data0,X
+		STA		_tmp577
+		LDA		_tmp578
 		CLC
-		ADC		byte_59666,X
-		STA		byte_578
+		ADC		_map_gen_data1,X
+		STA		_tmp578
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapB_0A:
-		LDA		byte_57E
+		LDA		_tmp57E
 		AND		#$07
-		STA		byte_57E
-		LDX		byte_57E
-		LDA		byte_575
+		STA		_tmp57E
+		LDX		_tmp57E
+		LDA		_tmp575
 		CLC
-		ADC		byte_5965E,X
-		STA		byte_575
-		LDA		byte_576
+		ADC		_map_gen_data0,X
+		STA		_tmp575
+		LDA		_tmp576
 		CLC
-		ADC		byte_59666,X
-		STA		byte_576
+		ADC		_map_gen_data1,X
+		STA		_tmp576
 		RTS
-byte_5965E:
+_map_gen_data0:
 		.BYTE	$00,$01,$01,$01
 		.BYTE	$00,$FF,$FF,$FF
-byte_59666:
+_map_gen_data1:
 		.BYTE	$FF,$FF,$00,$01
 		.BYTE	$01,$01,$00,$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub0:
 		LDA		#$00
-		STA		byte_579
+		STA		_tmp579
 loc_59673:
-		LDX		byte_579
-		LDA		byte_575
+		LDX		_tmp579
+		LDA		_tmp575
 		CLC
-		ADC		byte_596CF,X
-		STA		byte_577
-		LDA		byte_576
+		ADC		_map_gen_data3,X
+		STA		_tmp577
+		LDA		_tmp576
 		CLC
-		ADC		byte_59700,X
-		STA		byte_578
-		LDA		byte_5969E,X
+		ADC		_map_gen_data4,X
+		STA		_tmp578
+		LDA		_map_gen_data2,X
 		BEQ		loc_59692
 		JSR		_generate_new_map_sub1
 loc_59692:
-		LDX		byte_579
+		LDX		_tmp579
 		INX
-		STX		byte_579
+		STX		_tmp579
 		CPX		#$31
 		BCC		loc_59673
 		RTS
 
-byte_5969E:
+_map_gen_data2:
 		.BYTE	$00,$00,$03,$03,$03,$00,$00
 		.BYTE	$00,$03,$02,$02,$02,$03,$00
 		.BYTE	$03,$02,$02,$02,$02,$02,$03
@@ -2955,7 +2958,7 @@ byte_5969E:
 		.BYTE	$03,$02,$02,$02,$02,$02,$03
 		.BYTE	$00,$03,$02,$02,$02,$03,$00
 		.BYTE	$00,$00,$03,$03,$03,$00,$00
-byte_596CF:
+_map_gen_data3:
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
@@ -2963,7 +2966,7 @@ byte_596CF:
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
 		.BYTE	$00,$01,$02,$03,$04,$05,$06
-byte_59700:
+_map_gen_data4:
 		.BYTE	$00,$00,$00,$00,$00,$00,$00
 		.BYTE	$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$02,$02,$02,$02,$02,$02,$02
@@ -2975,39 +2978,39 @@ byte_59700:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub3:
 		LDA		#$00
-		STA		byte_57A
+		STA		_tmp57A
 loc_59736:
-		LDX		byte_57A
-		LDA		byte_575
+		LDX		_tmp57A
+		LDA		_tmp575
 		CLC
-		ADC		byte_59771,X
-		STA		byte_577
-		LDA		byte_576
+		ADC		_map_gen_data6,X
+		STA		_tmp577
+		LDA		_tmp576
 		CLC
-		ADC		byte_59781,X
-		STA		byte_578
-		LDA		byte_59761,X
+		ADC		_map_gen_data7,X
+		STA		_tmp578
+		LDA		_map_gen_data5,X
 		BEQ		loc_59755
 		JSR		_generate_new_map_sub1
 loc_59755:
-		LDX		byte_57A
+		LDX		_tmp57A
 		INX
-		STX		byte_57A
+		STX		_tmp57A
 		CPX		#$10
 		BCC		loc_59736
 		RTS
 
-byte_59761:
+_map_gen_data5:
 		.BYTE	$00,$03,$03,$00
 		.BYTE	$03,$02,$02,$03
 		.BYTE	$03,$02,$02,$03
 		.BYTE	$00,$03,$03,$00
-byte_59771:
+_map_gen_data6:
 		.BYTE	$00,$01,$02,$03
 		.BYTE	$00,$01,$02,$03
 		.BYTE	$00,$01,$02,$03
 		.BYTE	$00,$01,$02,$03
-byte_59781:
+_map_gen_data7:
 		.BYTE	$00,$00,$00,$00
 		.BYTE	$01,$01,$01,$01
 		.BYTE	$02,$02,$02,$02
@@ -3039,10 +3042,10 @@ loc_597CA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_map_buf_end_test:
-		LDA		byte_577
+		LDA		_tmp577
 		CMP		#$4C
 		BCS		loc_597DD
-		LDA		byte_578
+		LDA		_tmp578
 		CMP		#$4C
 		BCS		loc_597DD
 		CLC
@@ -3053,7 +3056,7 @@ loc_597DD:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub4:
-		LDA		byte_575
+		LDA		_tmp575
 		BPL		loc_597EA
 		CMP		#$FC
 		BCC		loc_59800
@@ -3062,7 +3065,7 @@ loc_597EA:
 		CMP		#$4A
 		BCS		loc_59800
 loc_597EE:
-		LDA		byte_576
+		LDA		_tmp576
 		BPL		loc_597F9
 		CMP		#$FC
 		BCC		loc_59800
@@ -3080,27 +3083,27 @@ loc_59800:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub5:
 		LDA		#$00
-		STA		byte_575
-		STA		byte_576
+		STA		_tmp575
+		STA		_tmp576
 loc_5980A:
 		JSR		_isle_map_tile_read575				; OPTIMIZED size
 		BMI		loc_5988D
 		BEQ		loc_5988D
 		LDA		#$00
-		STA		byte_57B
+		STA		_tmp57B
 		STY		_tmp4
 loc_59835:
 		LDY		_tmp4
 		CPY		#$04
 		BCS		loc_59883
-		LDA		byte_575
+		LDA		_tmp575
 		CLC
-		ADC		byte_599B1,Y
-		STA		byte_577
-		LDA		byte_576
+		ADC		_map_gen_data8,Y
+		STA		_tmp577
+		LDA		_tmp576
 		CLC
-		ADC		byte_599B5,Y
-		STA		byte_578
+		ADC		_map_gen_data9,Y
+		STA		_tmp578
 		JSR		_generate_map_buf_end_test
 		BCS		loc_5987B
 		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
@@ -3111,27 +3114,27 @@ loc_59835:
 loc_5987B:
 		CLC
 loc_5987C:
-		ROL		byte_57B
+		ROL		_tmp57B
 		INC		_tmp4
 		BNE		loc_59835
 loc_59883:
-		LDX		byte_57B
+		LDX		_tmp57B
 		LDA		_cur_graphs_button_press_idxAD,X
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_5988D:
-		INC		byte_575
-		LDA		byte_575
+		INC		_tmp575
+		LDA		_tmp575
 		CMP		#$4C
 		BCS		loc_5989A
 		JMP		loc_5980A
 loc_5989A:
-		INC		byte_576
-		LDA		byte_576
+		INC		_tmp576
+		LDA		_tmp576
 		CMP		#$4C
 		BCS		locret_598AC
 		LDA		#$00
-		STA		byte_575
+		STA		_tmp575
 		JMP		loc_5980A
 locret_598AC:
 		RTS
@@ -3145,8 +3148,8 @@ _cur_graphs_button_press_idxAD:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapD:
 		LDA		#$00
-		STA		byte_575
-		STA		byte_576
+		STA		_tmp575
+		STA		_tmp576
 loc_598C5:
 		JSR		_isle_map_tile_read575				; OPTIMIZED size
 		CMP		#$03
@@ -3154,7 +3157,7 @@ loc_598C5:
 		JMP		loc_59991
 loc_598EC:
 		LDA		#$00
-		STA		byte_57B
+		STA		_tmp57B
 		STY		_tmp4
 loc_598F3:
 		LDY		_tmp4
@@ -3162,35 +3165,35 @@ loc_598F3:
 		BCC		loc_598FC
 		JMP		loc_59987
 loc_598FC:
-		LDA		byte_575
+		LDA		_tmp575
 		CLC
-		ADC		byte_599B1,Y
-		STA		byte_577
-		LDA		byte_576
+		ADC		_map_gen_data8,Y
+		STA		_tmp577
+		LDA		_tmp576
 		CLC
-		ADC		byte_599B5,Y
-		STA		byte_578
+		ADC		_map_gen_data9,Y
+		STA		_tmp578
 		JSR		_generate_map_buf_end_test
 		BCC		loc_59957
 		LDY		_tmp4
-		LDA		byte_599B1,Y
+		LDA		_map_gen_data8,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		CLC
-		ADC		byte_575
-		STA		byte_577
-		LDA		byte_599B5,Y
+		ADC		_tmp575
+		STA		_tmp577
+		LDA		_map_gen_data9,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		CLC
-		ADC		byte_576
-		STA		byte_578
+		ADC		_tmp576
+		STA		_tmp578
 		LDX		#$4C
 		MULXA
 		CLC
-		ADC		byte_577
+		ADC		_tmp577
 		STA		_tmp2
 		TXA
 		ADC		#>[_wram_map_buf]
@@ -3208,37 +3211,37 @@ loc_59957:
 loc_5997C:
 		CLC
 loc_5997D:
-		ROL		byte_57B
+		ROL		_tmp57B
 		INC		_tmp4
 		BEQ		loc_59987
 		JMP		loc_598F3
 loc_59987:
-		LDX		byte_57B
-		LDA		byte_599B9,X
+		LDX		_tmp57B
+		LDA		_map_gen_dataA,X
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_59991:
-		INC		byte_575
-		LDA		byte_575
+		INC		_tmp575
+		LDA		_tmp575
 		CMP		#$4C
 		BCS		loc_5999E
 		JMP		loc_598C5
 loc_5999E:
-		INC		byte_576
-		LDA		byte_576
+		INC		_tmp576
+		LDA		_tmp576
 		CMP		#$4C
 		BCS		locret_599B0
 		LDA		#$00
-		STA		byte_575
+		STA		_tmp575
 		JMP		loc_598C5
 locret_599B0:
 		RTS
 
-byte_599B1:
+_map_gen_data8:
 		.BYTE	$FF,$01,$00,$00
-byte_599B5:
+_map_gen_data9:
 		.BYTE	$00,$00,$01,$FF
-byte_599B9:
+_map_gen_dataA:
 		.BYTE	$00,$00,$00,$07
 		.BYTE	$00,$15,$10,$13
 		.BYTE	$00,$17,$12,$14
