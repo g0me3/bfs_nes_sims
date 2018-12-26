@@ -1988,10 +1988,11 @@ _event01_city_growt:
 		JMP		_register_new_event				; use this only once even if your is small again
 
 ; =============== S U B	R O U T	I N E =======================================
+;
 _event06_total_jam:
 		LDA		_city._traf_lvl_avr.INT			; very high traffic value above $700
 		BMI		nullsub_4						; test if already displayed for current loop
-		CMP		#$07
+		CMP		#$07							; TODO,
 		BCC		nullsub_4						; to trigger this event needed
 		ORA		#$80
 		STA		_city._traf_lvl_avr.INT			; set flag to avoid triggering before next loop
@@ -2011,7 +2012,8 @@ _event07_traffic:
 _event08_crime:
 		LDA		_city._crime_lvl_avr.INT		; crime above $700 average (old values)
 		BMI		nullsub_4						; new values are up to 1.6
-		CMP		#$07							; TODO, recalibrate me!
+;		CMP		#$07							; REDUNDANT, recalibrate me!
+		CMP		#$01							; FIX, recalibrated to new values range 0-1.9
 		BCC		nullsub_4
 		ORA		#$80
 		STA		_city._crime_lvl_avr.INT		; this flag reset when value recalculated

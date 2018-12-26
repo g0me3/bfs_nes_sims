@@ -2453,7 +2453,7 @@ nullsub_7:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1510B2:
-		JSR		_traffic_dencity_area_read
+		JSR		_traffic_area_read
 		BCC		locret_1510D8
 		STA		_ptr0
 		LDA		_tmp534
@@ -2731,7 +2731,7 @@ loc_1512D9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_traffic_dencity_area_read:
+_traffic_area_read:
 		LDX		#$00
 		LDA		_tmp_tile_pos._ROW
 		LSR

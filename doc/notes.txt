@@ -25,6 +25,7 @@ MISC#11. There are some special secret button codes in the NES version.
 	MISC#11.4 You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, disasterS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
 MISC#12. Destruction/corruption logic for map objects avoid corruptions of the raw bulldozered grounds. Only flood as a special case can corrupt it. Why at least nuclear pollution can't do the same?
 MISC#13. Note, that Monster appearance logic (see BUGS#15) doesn't use high pollution zones as a destination point, as stated in the Scenario message and as actually work in the original Micropolis code. For random disaster the starting and destination point is random. For scenario disaster selected to start near the center and walk toward the sea. The area it crosses there corresponds to the industrial zone with high pollution. So literally he DOES attracted to high pollution areas.
+MISC#14. As I see in the Micropolis sources, the Drive test for traffic calculation tries to drive from R to C and I, from I back to R, but for some reason from C either to R, C and I. The same behaviour ported to the NES version. So most of the C areas does not generate any traffic unless they are in a particular position near the other areas and as a side effect this not preventing of developement of C areas.
 
 	WHAT'S UNFINISHED IN THE GAME
 
@@ -86,6 +87,7 @@ UNFINISHED#18.TODO Pollution value calculated once per THREAD1 loop, but used cu
 UNFINISHED#19.FIXED RAM addresses $5F6/$5F7 in the main city data array never used by any part of the game. However, they reside at the beginning of average states of the city. The only missing average here is Traffic Level average, which currently assigned to other RAM address $656.
 UNFINISHED#20. Unless the SNES version, Casino present in this game does not add a special income to the cash flow.
 UNFINISHED#21. The unused tiles with indexes $ED-$FC represents the drawbridge tiles in opened state. The same drawbridges inmplemented in the SNES version, they may be opened or closed depending on time. There is no code for this in the NES version at all.
+UNFINISHED#22. Roads included in pollution calculation as a entities of value on the map, but has no impact for overall pollution value, because in the NES version there is no possible to fetch animation tile with traffic which used in original Micropolis source. So traffic does not counts at all now.
 
 	ORIGINAL GAME BUGS
 
@@ -293,6 +295,7 @@ FF		-							-		-
 - Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
 - Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
 - While fixing BUG#27 by rearranging the RAM variables which also need to be saved with the City map and data, also rearranged the Difficult setting variable which properly fixed BUGS#20 too, also the configuration window positions saved with the city as well.
+- Fixed issue in MISC#14 section, now drive from C to C areas are forbidden.
 - Swapped the correct values for corresponding buttons in Graphs screen, also Tax Income value used instead of Money higher nibbles for "Cash Flow" button.
 - Rescaled and rebalanced some values after fixing some calculation bugs. This may also change the overall game mechanics and difficulty.
 - "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting SLOW.
@@ -318,3 +321,5 @@ So this is restored and fixed the original bug at the same time.
 - Ship object goes completely invisible when stuck on the edge of the map on in the ponds.
 - The train object goes invisible on the Water/Rails tiles and never comes back in some cases.
 - During the New City mode game (or other maybe), sometimes some unknown object is floating around the screen with garbled sprites. Looks like there is a tornado obj handler broken somehow.
+- Negative city money at some point (maybe not mine?)
+- Deterogating of roads continues even if you fixed your funds on the budget screen.

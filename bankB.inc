@@ -25,7 +25,7 @@ _THREAD1_MAIN:
 		JSR		_interpolate_police_fire_maps	; police and fire maps are initially updated in prev routine
 		FJSR	_power_grid_recalc,SRAM,PRGA	; power connections and consumption recalc
 		JSR		_land_value_recalc				; land map and average recalc
-		JSR		_crime_lvl_avr_recalc			; crime map and average recalc
+		JSR		_crime_recalc			; crime map and average recalc
 		JSR		_population_dencity_recalc		; population dencity and with migration point
 		LDA		#$FF
 		STA		_thread1_flags					; disable all ctitical sections, now all priorities are
@@ -92,7 +92,7 @@ _rci_meters_calc_skip:
 		JSR		_population_growth_recalc		; we have pop growth recalc here for the first time
 		JSR		_map_corruption_tiles_animate	; and animate again. if not animate it will stay forever
 .default_city_calcs:
-		JSR		_traffic_dencity_smooth			; soften traffic dencity map, TODO: test me, maybe too soft?
+		JSR		_traffic_smooth			; soften traffic dencity map, TODO: test me, maybe too soft?
 		JSR		_map_corruption_tiles_animate	; ANIMATE AGAIN!!!
 		FJSR	_events_selector,SRAM,PRGA		; now chek if the events messages need to be displayed
 .game_stop_loop:
@@ -131,7 +131,7 @@ loc_11E135:
 		BNE		loc_11E153						; set of delay counters and masks, which
 		LDA		#$40							; are always 0, so when you get here and change
 		JSR		_critical_section_enter			; speed, at least two other calculations will
-		JSR		_crime_lvl_avr_recalc			; be forced
+		JSR		_crime_recalc			; be forced
 		LDA		#$40
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -187,7 +187,7 @@ loc_11E1A2:
 		STX		_tmp_map_pos._COL
 		STY		_tmp_map_pos._ROW
 		JSR		_get_cur_building_tile			; read the actual tile index
-		JSR		_collect_map_tile_stats			; collect info
+		JSR		_map_tile_stats_collect			; collect info
 		PLA										; now we have stats about
 		TAY										; how much buildings/transport etc.
 		PLA										; and ready to calculate next
@@ -323,7 +323,7 @@ loc_11E23D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_collect_map_tile_stats:
+_map_tile_stats_collect:
 		LDY		_last_map_tile_read
 ;		CPY		#_MAP_BRIDGE_WATER_LR			; UNFINISHED: here they planned to animate
 ;		BNE		loc_11E2EA						; drawbridges
@@ -367,7 +367,7 @@ loc_11E32B:
 		BEQ		loc_11E33A						; calculate only real building indexes
 		LDA		_cur_map_tile_is_inside_a_building_flag
 		BNE		loc_11E33A
-		JMP		_collect_general_buildings_stats; here goes buildings stats
+		JMP		_general_buildings_collect		; here goes buildings stats
 loc_11E33A:
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_RAIL
@@ -606,7 +606,7 @@ loc_11E4BA:
 		JMP		_transport_deterogate_test		; common transport deterogation test
 
 ; =============== S U B	R O U T	I N E =======================================
-_collect_general_buildings_stats:
+_general_buildings_collect:
 		JSR		_test_power_grid_map_bit		; test if building is powered
 		STA		_tmp_last_read_map_tile_power_state	; remember this
 		BEQ		loc_11E4F1
@@ -737,9 +737,9 @@ loc_11E5C8:
 		JSR		_get_life_ratio
 		JMP		_R_develop_up
 .drop_R_down:
-		LDA		_tmpE8							; when got here with positive lever
-		CMP		#$82							; after random test, then add 106
-		BCS		locret_11E5FA					; and test against random again
+		LDA		_tmpE8							; when negative or small positive
+		CMP		#$82							; add 106 and test against random again
+		BCS		locret_11E5FA					; to decide to develop down or not
 		ADC		#$67
 		CMP		_tmpE9
 		BCS		locret_11E5FA					; chance 20/256 you skip it
@@ -770,6 +770,231 @@ locret_11E623:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+_R_twin_areas_cleanup:
+		LDA		_last_map_tile_read				; test if we currently at
+		CMP		#_MAP_R_AREA_TWINA0				; double area
+		BCC		locret_11E72B
+		LDX		#$01
+		JSR		_tmp_map_pos_backup				; backup curpos slot 1
+		LDA		_last_map_tile_read
+		SEC
+		SBC		#_MAP_R_AREA_TWINA0				; calc what twin area exactly
+		TAY										; out of four
+		LDA		_tmp_map_pos._COL				; calculate where the other side
+		CLC										; of the building according
+		ADC		_twin_area_col_list,Y			; to possible positions,
+		STA		_tmp_map_pos._COL				; move to that area
+		LDA		_tmp_map_pos._ROW
+		CLC
+		ADC		_twin_area_row_list,Y
+		STA		_tmp_map_pos._ROW
+		TYA										; backup cur idx
+		PHA
+		JSR		_map_tile_read					; then test if twin area has
+		TAX										; correct counterpart (if not damaged)
+		PLA
+		TAY
+		TXA										; restore Y, keep A in X meanwhile, then restore
+		CMP		_R_twin_idx_test_list,Y			; here is the counterparts list
+		BEQ		loc_11E726						; if all is right, do nothing
+		LDX		#$01
+		JSR		_tmp_map_pos_restore			; if other part is broken, remove
+		LDA		#_MAP_R_AREA14					; current part as well
+		JMP		_map_tile_write
+loc_11E726:
+		LDX		#$01
+		JMP		_tmp_map_pos_restore
+locret_11E72B:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_R_develop_down:
+		JSR		_map_tile_read					; if twin buildings, destroy them
+		CMP		#_MAP_R_AREA_TWINA0				; they destroyed instantly if develop
+		BNE		loc_11F4C9						; goes down
+		LDA		#_MAP_R_AREA14					; TODO, optimize me
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		RTS
+loc_11F4C9:
+		CMP		#_MAP_R_AREA_TWINA1
+		BNE		loc_11F4EA
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._ROW
+		RTS
+loc_11F4EA:
+		CMP		#_MAP_R_AREA_TWINB0
+		BNE		loc_11F50B
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._COL
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		RTS
+loc_11F50B:
+		CMP		#_MAP_R_AREA_TWINB1
+		BNE		loc_11F52C
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		LDA		#_MAP_R_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._COL
+		RTS
+loc_11F52C:
+		LDX		_life_ratio_idx					; if life ratio is low
+		BEQ		locret_11F550					; or low development
+		LDA		_cur_area_develop_state			; nothing to develop down
+		BEQ		locret_11F550
+		CMP		#$18
+		BCC		loc_11F548						; low developed degrades fast
+		SEC										; high developer decrades slow
+		SBC		#$18							; with growth rate down
+		LSR
+		LSR
+		LSR
+		JSR		_R_area_new_state_set			; new_level = (level-24)/8
+		LDA		#$FF
+		JMP		_pop_growth_map_update			; decrease population growth
+loc_11F548:
+		LSR
+		LSR										; new_level = (level/4)-1
+		SEC
+		SBC		#$01
+		JMP		_map_tile_write					; may degrade to 0 here
+locret_11F550:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_R_develop_up:
+		JSR		_read_pollution_map_nibble
+		CMP		#$08
+		BCS		locret_11F3BE
+		JSR		_map_tile_read
+		CMP		#$05
+		BCS		loc_11F393
+		LDA		_cur_area_develop_state
+		CMP		#$09
+		BCS		loc_11F382
+		LDY		_last_map_tile_read
+		INY
+		TYA
+		JMP		_map_tile_write
+loc_11F382:
+		JSR		_read_pop_dencity_map_nibble
+		CMP		#$04
+		BCC		locret_11F3BE
+		LDA		#$00
+		JSR		_R_area_new_state_set
+		LDA		#$01
+		JMP		_pop_growth_map_update
+loc_11F393:
+		CMP		#$15
+		BCS		locret_11F40D
+		CMP		#$14
+		BNE		loc_11F3F5
+		LDA		_tmp_map_pos._ROW
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._ROW
+		JSR		_map_tile_read
+		CMP		#$14
+		BNE		loc_11F3BF
+		LDA		#$16
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		#$15
+		JMP		_map_tile_write
+locret_11F3BE:
+		RTS
+loc_11F3BF:
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._COL
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._COL
+		JSR		_map_tile_read
+		CMP		#$14
+		BNE		loc_11F3EB
+		LDA		#$18
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		LDA		#$17
+		JMP		_map_tile_write
+loc_11F3EB:
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		RTS
+loc_11F3F5:
+		LDA		_cur_area_develop_state
+		CMP		#$28
+		BCS		locret_11F40D
+		LDA		_cur_area_develop_state
+		LSR
+		LSR
+		LSR
+		SEC
+		SBC		#$01
+		JSR		_R_area_new_state_set
+		LDA		#$01
+		JMP		_pop_growth_map_update
+locret_11F40D:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_R_area_new_state_set:
+		STA		_tmpE6							; state = _MAP_R_AREA05 + life_idx*4 + new_state
+		LDA		_life_ratio_idx
+		ASL
+		ASL
+		ADC		_tmpE6
+		ADC		#_MAP_R_AREA05
+		JMP		_map_tile_write
+
+; =============== S U B	R O U T	I N E =======================================
 _C_areas_develop:
 		LDX		#C_AREA_WIDX
 		JSR		_inc_RCI_counts					; count areas number
@@ -779,56 +1004,57 @@ _C_areas_develop:
 		TAY
 		LDA		_C_area_develop_levels_list,Y	; increment overall dev sum for C
 		STA		_cur_area_develop_state
-		JSR		_adc_RCI_level
+		JSR		_adc_RCI_level					; beginning is the same as for R
 		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
-		CMP		#$20
+		CMP		#_MAP_C_AREA_DEF
 		BNE		loc_11E644
 		LDX		#UNDEVELOPED_WIDX
 ;		INX
 ;		INX
 loc_11E644:
-		JSR		_inc_areas_stats
-		JSR		_C_twin_areas_cleanup
-		LDA		#$06
-		JSR		_rand_clamp_A
-		CMP		_cur_area_develop_state
+		JSR		_inc_areas_stats				; so we collected statistics, cleanup twins...
+		JSR		_C_twin_areas_cleanup			; time to developement
+		LDA		#$06							; develop range here is smaller, so less
+		JSR		_rand_clamp_A					; random test, 6/dev_state
+		CMP		_cur_area_develop_state			; skip traffic test for low developed areas
 		BCS		loc_11E661
-		LDA		#C_AREA_BIDX
+		LDA		#C_AREA_BIDX					; drive from C to R or I areas now
 		JSR		_traffic_calc
-		BCS		loc_11E661
+		BCS		loc_11E661						; if drive not success, drop down developement here
 		JSR		_get_life_ratio
 		JMP		_C_develop_down
 loc_11E661:
-		JSR		_rand
+		JSR		_rand							; 1/3 chance to develop up
 		AND		#$03
 		BNE		locret_11E6A1
 		JSR		_rand
 		STA		_tmpE9
-		LDA		#$00
+;		LDA		#$00							; REDUNDANT, does nothing, maybe were non-zero
+;		CLC										; earlier to make constant growth
+;		ADC		_city._delta._C
+		LDA		_city._delta._C					; FIX
 		CLC
-		ADC		_city._delta._C
-		CLC
-		ADC		#$80
+		ADC		#$80							; shift to 0-255 range
 		LDY		_tmp_last_read_map_tile_power_state
-		BNE		loc_11E67D
+		BNE		loc_11E67D						; if not powered, set negative value
 		LDA		#$48
 loc_11E67D:
 		STA		_tmpE8
 		CMP		#$7F
-		BCC		loc_11E68F
-		SBC		#$67
-		CMP		_tmpE9
-		BCC		loc_11E68F
+		BCC		loc_11E68F						; if negative, then do develop down
+		SBC		#$67							; chance to develop up for positive
+		CMP		_tmpE9							; delta-103/256 {25-153/256 range}
+		BCC		loc_11E68F						; more delta, more percent
 		JSR		_get_life_ratio
 		JMP		_C_develop_up
 loc_11E68F:
-		LDA		_tmpE8
-		CMP		#$82
-		BCS		locret_11E6A1
-		ADC		#$67
-		CMP		_tmpE9
-		BCS		locret_11E6A1
+		LDA		_tmpE8							; also for negative or small positive
+		CMP		#$82							; values add 106 and drop the dice again
+		BCS		locret_11E6A1					; there is a small chance to skip it
+		ADC		#$67							; also as for R when you miss the chance
+		CMP		_tmpE9							; to gro up with large delta, you won't
+		BCS		locret_11E6A1					; develop at all.
 		JSR		_get_life_ratio
 		JMP		_C_develop_down
 locret_11E6A1:
@@ -847,11 +1073,11 @@ _C_twin_areas_cleanup:
 		TAY
 		LDA		_tmp_map_pos._COL
 		CLC
-		ADC		_twin_area_ofsX_list,Y
+		ADC		_twin_area_col_list,Y
 		STA		_tmp_map_pos._COL
 		LDA		_tmp_map_pos._ROW
 		CLC
-		ADC		_twin_area_ofsY_list,Y
+		ADC		_twin_area_row_list,Y
 		STA		_tmp_map_pos._ROW
 		TYA
 		PHA
@@ -873,46 +1099,165 @@ locret_11E6E6:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_R_twin_areas_cleanup:
-		LDA		_last_map_tile_read				; test if we currently at
-		CMP		#_MAP_R_AREA_TWINA0				; double area
-		BCC		locret_11E72B
-		LDX		#$01
-		JSR		_tmp_map_pos_backup				; backup curpos slot 1
-		LDA		_last_map_tile_read
-		SEC
-		SBC		#_MAP_R_AREA_TWINA0				; calc what twin area exactly
-		TAY										; out of four
-		LDA		_tmp_map_pos._COL				; calculate where the other side
-		CLC										; of the building according
-		ADC		_twin_area_ofsX_list,Y			; to possible positions,
-		STA		_tmp_map_pos._COL				; move to that area
+_C_develop_down:
+		JSR		_map_tile_read					; remove twins
+		CMP		#_MAP_C_AREA_TWINA0
+		BNE		loc_11F575
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
 		LDA		_tmp_map_pos._ROW
 		CLC
-		ADC		_twin_area_ofsY_list,Y
+		ADC		#$02
 		STA		_tmp_map_pos._ROW
-		TYA										; backup cur idx
-		PHA
-		JSR		_map_tile_read					; then test if twin area has
-		TAX										; correct counterpart (if not damaged)
-		PLA
-		TAY
-		TXA										; restore Y, keep A in X meanwhile, then restore
-		CMP		_R_twin_idx_test_list,Y			; here is the counterparts list
-		BEQ		loc_11E726						; if all is right, do nothing
-		LDX		#$01
-		JSR		_tmp_map_pos_restore			; if other part is broken, remove
-		LDA		#_MAP_R_AREA14					; current part as well
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		RTS
+loc_11F575:
+		CMP		#_MAP_C_AREA_TWINA1
+		BNE		loc_11F596
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._ROW
+		RTS
+loc_11F596:
+		CMP		#_MAP_C_AREA_TWINB0
+		BNE		loc_11F5B7
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._COL
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		RTS
+loc_11F5B7:
+		CMP		#_MAP_C_AREA_TWINB1
+		BNE		loc_11F5D8
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		LDA		#_MAP_C_AREA14
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._COL
+		RTS
+loc_11F5D8:
+		LDA		_cur_area_develop_state			; for low C developement
+		SEC										; not decrease growth
+		SBC		#$02
+		BCC		loc_11F5E8
+		JSR		_C_area_new_state_set
+		LDA		#$FF
+		JMP		_pop_growth_map_update
+loc_11F5E8:
+		LDA		_cur_area_develop_state			; less than 1 only 0
+		CMP		#$01
+		BNE		locret_11F5F4
+		LDA		#_MAP_C_AREA_DEF
 		JMP		_map_tile_write
-loc_11E726:
-		LDX		#$01
-		JMP		_tmp_map_pos_restore
-locret_11E72B:
+locret_11F5F4:
 		RTS
 
-_twin_area_ofsX_list:
+; =============== S U B	R O U T	I N E =======================================
+_C_develop_up:
+		JSR		_map_tile_read
+		CMP		#$35
+		BCS		locret_11F48C
+		CMP		#$34
+		BNE		loc_11F474
+		LDA		_tmp_map_pos._ROW
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._ROW
+		JSR		_map_tile_read
+		CMP		#$34
+		BNE		loc_11F43D
+		LDA		#$36
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		#$35
+		JMP		_map_tile_write
+loc_11F43D:
+		LDA		_tmp_map_pos._ROW
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._COL
+		CLC
+		ADC		#$02
+		STA		_tmp_map_pos._COL
+		JSR		_map_tile_read
+		CMP		#$34
+		BNE		loc_11F46A
+		LDA		#$38
+		JSR		_map_tile_write
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		LDA		#$37
+		JMP		_map_tile_write
+
+loc_11F46A:
+		LDA		_tmp_map_pos._COL
+		SEC
+		SBC		#$02
+		STA		_tmp_map_pos._COL
+		RTS
+loc_11F474:
+		JSR		_read_land_val_map_nibble
+		LSR
+		CMP		_cur_area_develop_state
+		BCC		locret_11F48C
+		LDA		_cur_area_develop_state
+		CMP		#$05
+		BCS		locret_11F48C
+		JSR		_C_area_new_state_set
+		LDA		#$01
+		JMP		_pop_growth_map_update
+locret_11F48C:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_C_area_new_state_set:
+		STA		_tmpE6
+		LDA		_life_ratio_idx					; state = _MAP_C_AREA01 +life_idx*5 + new_state
+		ASL
+		ASL
+		ADC		_life_ratio_idx
+		ADC		_tmpE6
+		ADC		#_MAP_C_AREA01
+		JMP		_map_tile_write
+
+_twin_area_col_list:
 		.BYTE	$00,$00,$02,$FE
-_twin_area_ofsY_list:
+_twin_area_row_list:
 		.BYTE	$02,$FE,$00,$00
 _C_twin_idx_test_list:
 		.BYTE	_MAP_C_AREA_TWINA1,_MAP_C_AREA_TWINA0,_MAP_C_AREA_TWINB1,_MAP_C_AREA_TWINB0
@@ -982,6 +1327,51 @@ loc_11E7A5:
 		JMP		_I_develop_down
 locret_11E7B7:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_I_develop_down:
+		LDA		#$02							; the only area with no twins
+		JSR		_rand_clamp_A					; the only area with pure random life ratio
+		STA		_life_ratio_idx
+		LDA		_cur_area_develop_state			; so it will grow or raize randomly
+		SEC
+		SBC		#$02
+		BCC		loc_11F60D						; the rest is the same as for C
+		JSR		_I_area_new_state_set
+		LDA		#$FF
+		JMP		_pop_growth_map_update
+loc_11F60D:
+		LDA		_cur_area_develop_state
+		CMP		#$01
+		BNE		locret_11F619
+		LDA		#_MAP_I_AREA_DEF
+		JMP		_map_tile_write
+locret_11F619:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_I_develop_up:
+		LDA		#$02
+		JSR		_rand_clamp_A
+		STA		_life_ratio_idx
+		LDA		_cur_area_develop_state
+		CMP		#$04
+		BCS		locret_11F4A4
+		JSR		_I_area_new_state_set
+		LDA		#$01
+		JMP		_pop_growth_map_update
+locret_11F4A4:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_I_area_new_state_set:
+		STA		_tmpE6
+		LDA		_life_ratio_idx					; state = _MAP_I_AREA01 + life_idx*4 + new_state
+		ASL
+		ASL
+		ADC		_tmpE6
+		ADC		#_MAP_I_AREA01
+		JMP		_map_tile_write
 
 ; =============== S U B	R O U T	I N E =======================================
 _collect_other_buildings_stats:
@@ -1131,7 +1521,6 @@ loc_11E8AD:
 locret_11E8B9:
 		RTS
 
-
 ; =============== S U B	R O U T	I N E =======================================
 _inc_RCI_counts:
 		INC		_RCI_counts,X
@@ -1261,7 +1650,7 @@ loc_11E94F:
 		BEQ		loc_11E96D
 		DEC		_tmp6D2							; retry one tile back
 		LDA		_tmp6D1							; and try another turn
-		CLC
+		CLC										; (or maybe the same one randomly)
 		ADC		#$03
 		STA		_tmp6D1							; retarget
 		LDA		#$05
@@ -1375,6 +1764,20 @@ _drive_stack_pop:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; NOTE, here is the copy of the original Micropolis code which tries to drive
+; from R to all other destinations including stadiums, etc. except R itself.
+; C however drives to any area including C itself but not to ports/police
+; stations or stadiums, which odd because C depends on Airports and also odd
+; since drive woll stop immediately at the start because it's already at C.
+; I drives to R only.
+;
+; ok, as we could see here, the C drive tests will be succesfull any time
+; even if no other areas near it. it will be satisfied by itself, return
+; back to the starting point. This prevents the proper traffic being generated
+; by C areas most of the time.
+;
+; FIX, let's fix it and see what will happen
+;
 _destination_test:
 		LDX		#$00							; here we will test if our current road
 loc_11EA1E:										; touched any useful destination point
@@ -1384,21 +1787,31 @@ loc_11EA1E:										; touched any useful destination point
 		LDA		_last_map_tile_read
 		LDX		_tmp6CC							; here is idx for currently selected
 		BNE		loc_11EA37						; area
-		CMP		#_MAP_C_AREA_DEF				; for area R test if we near C or I
-		BCC		.look_for_next_area				; areas or near police station
-		CMP		#_MAP_STADIUM					; ports or power stations
-		BCC		.no_need_to_drive
+		CMP		#_MAP_C_AREA_DEF				; for area R test if we reached C or I
+		BCC		.look_for_next_area				; areas or police station or
+;		CMP		#_MAP_STADIUM					; sea port or any power station
+; FIX, lets expand the destination points for R to all
+; possible buildings
+		CMP		#_MAP_INTERNAL_BUILD0
+; -
+		BCC		.reached_destination
 		BCS		.look_for_next_area
 loc_11EA37:
 		DEX
-		BNE		loc_11EA40						; for I areas test if we near
-		CMP		#_MAP_POLICE_STATION			; other I areas and R or C
+		BNE		loc_11EA40
+; FIX, let's prevent C to C destinations also
+		CMP		#_MAP_C_AREA_DEF				; drive to R
+		BCC		.reached_destination
+		CMP		#_MAP_I_AREA_DEF				; skip C areas
+		BCC		.look_for_next_area
+; -
+		CMP		#_MAP_POLICE_STATION			; the rest is I only
 		BCS		.look_for_next_area
-		BCC		.no_need_to_drive
+		BCC		.reached_destination
 loc_11EA40:
-		CMP		#_MAP_C_AREA_DEF				; for C areas look if we near
+		CMP		#_MAP_C_AREA_DEF				; for I areas look if we reached
 		BCS		.look_for_next_area				; R areas only
-.no_need_to_drive:
+.reached_destination:
 		CLC
 		RTS
 .look_for_next_area:
@@ -1422,11 +1835,11 @@ loc_11EA55:
 		LDY		_last_map_tile_read				; we take
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_RAIL
-		BNE		loc_11EA76						; if rails, no pollution applied
-		JSR		_read_traffic_dencity_map_nibble; if roads, update pollution map
+		BNE		loc_11EA76						; if rails, no traffic applied
+		JSR		_read_traffic_map_nibble		; if roads, update traffic map
 		CLC
 		ADC		#$02
-		JSR		_write_traffic_dencity_map_nibble
+		JSR		_write_traffic_map_nibble
 loc_11EA76:
 		LDX		_tmp6D0							; loop untill all items over
 		DEX
@@ -1453,13 +1866,13 @@ loc_11EA91:
 		STY		_tmpE6							; for all surroinding tiles
 		LDA		_tmp_map_pos._COL				; around 2x2 building
 		CLC
-		ADC		_small_building_surrond_tiles_ofsX_list,Y
+		ADC		_small_building_surrond_tiles_col_list,Y
 		STA		_tmp_map_pos._COL				;  24
 		CMP		#$4C							; 0**6
 		BCS		loc_11EABA						; 1**7
 		LDA		_tmp_map_pos._ROW				;  35
 		CLC										;
-		ADC		_small_building_surrond_tiles_ofsY_list,Y
+		ADC		_small_building_surrond_tiles_row_list,Y
 		STA		_tmp_map_pos._ROW
 		CMP		#$4C
 		BCS		loc_11EABA
@@ -1480,9 +1893,9 @@ loc_11EAC6:
 		SEC
 		RTS
 
-_small_building_surrond_tiles_ofsX_list:
+_small_building_surrond_tiles_col_list:
 		.BYTE	$FF,$FF,$00,$00,$01,$01,$02,$02
-_small_building_surrond_tiles_ofsY_list:
+_small_building_surrond_tiles_row_list:
 		.BYTE	$00,$01,$FF,$02,$FF,$02,$00,$01
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1498,10 +1911,10 @@ loc_11EAEC:
 		LDA		#$00
 		STA		_tmp_area_pos._COL
 loc_11EAF1:
-		JSR		_calc_map_area_poll_lvl_avr
+		JSR		_pollution_recalc
 		LDA		_tmpE6
 		BEQ		loc_11EB70
-		JSR		_tmp_area_pos_to_tmp_map_pos_calc
+		JSR		_tmp_area_pos_to_tmp_map_pos_convert
 		LDA		_tmpE7
 		JSR		_write_tmp_map_div4_mul13_nibble
 		JSR		sub_11F10B
@@ -1515,7 +1928,7 @@ loc_11EAF1:
 		ASL
 		STA		_tmpE8
 		JSR		_surronding_map_are_non_destructable_tile_sum
-		JSR		_tmp_area_pos_to_tmp_map_pos_calc
+		JSR		_tmp_area_pos_to_tmp_map_pos_convert
 		JSR		_read_pollution_map_nibble
 		ASL
 		ASL
@@ -1529,7 +1942,7 @@ loc_11EAF1:
 		LDA		#$00
 loc_11EB28:
 		STA		_tmpE8
-		JSR		_tmp_area_pos_to_tmp_map_pos_calc
+		JSR		_tmp_area_pos_to_tmp_map_pos_convert
 		JSR		_read_crime_map_nibble
 		CMP		#$0B
 		BCC		loc_11EB3E
@@ -1672,9 +2085,9 @@ loc_11EC3B:
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_map_area_poll_lvl_avr:
-		LDA		#$00
-		STA		_tmpE6
+_pollution_recalc:
+		LDA		#$00							; calculate pollution level
+		STA		_tmpE6							; for currently selected area 4x4 tile
 		STA		_tmpE7
 		LDA		_tmp_area_pos._ROW
 		ASL
@@ -1686,19 +2099,19 @@ loc_11EC58:
 		ASL
 		STA		_tmp_map_pos._COL
 loc_11EC60:
-		JSR		_get_cur_building_tile
-		LDY		_last_map_tile_read
+		JSR		_get_cur_building_tile			; scan area for roads/buildings
+		LDY		_last_map_tile_read				; rails also included as value entity
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#$38
+		AND		#_FL_TRANSPORT|_FL_BUILDING
 		BEQ		loc_11EC71
 		LDA		#$01
-		STA		_tmpE6
+		STA		_tmpE6							; when any of these are present, set flag
 loc_11EC71:
-		JSR		_get_map_tile_pollution_ratio
+		JSR		_get_pollution_ratio			; increment pollution ratio
 		TYA
 		CLC
 		ADC		_tmpE7
-		BCC		loc_11EC7C
+		BCC		loc_11EC7C						; clamp to 255
 		LDA		#$FF
 loc_11EC7C:
 		STA		_tmpE7
@@ -1787,7 +2200,7 @@ loc_11ED64:
 ; =============== S U B	R O U T	I N E =======================================
 _get_RCI_area_develop_state:
 		LDA		_last_map_tile_read
-		CMP		#$20
+		CMP		#_MAP_C_AREA_DEF
 		BCS		loc_11ED7C
 		TAY
 		LDA		_R_area_develop_levels_list,Y
@@ -1796,18 +2209,18 @@ _get_RCI_area_develop_state:
 		LSR
 		RTS
 loc_11ED7C:
-		CMP		#$40
+		CMP		#_MAP_I_AREA_DEF
 		BCS		loc_11ED88
 		SEC
-		SBC		#$20
+		SBC		#_MAP_C_AREA_DEF
 		TAY
 		LDA		_C_area_develop_levels_list,Y
 		RTS
 loc_11ED88:
-		CMP		#$50
+		CMP		#_MAP_POLICE_STATION
 		BCS		loc_11ED94
 		SEC
-		SBC		#$40
+		SBC		#_MAP_I_AREA_DEF
 		TAY
 		LDA		_I_area_develop_levels_list,Y
 		RTS
@@ -1834,7 +2247,7 @@ _interpolate_police_fire_maps:
 ;
 ; start from the beginning of the map in 0,0 position
 ;
-_crime_lvl_avr_recalc:
+_crime_recalc:
 		LDA		#$00
 		STA		_tmp6CC							; CRIME_SUM here is overall sum of crime levels on map
 		STA		_tmp6CC+1
@@ -1921,7 +2334,7 @@ loc_11EE51:
 		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
-		JSR		_calc_tmp_map_div4_mul13_surrond_sum_0
+		JSR		_calc_tmp_map_div4_mul13_surrond_sum
 		JSR		_read_tmp_map_div4_mul13_nibble
 		CLC
 		ADC		_tmpE7
@@ -1944,61 +2357,63 @@ loc_11EE69:
 		BCC		loc_11EE4C
 		RTS
 
+; REDUNDANT, exact copy of _calc_tmp_map_div4_mul13_surrond_sum
+; with _add_tmp_map_div4_mul13_nibble as well. merged
 ; =============== S U B	R O U T	I N E =======================================
-_calc_tmp_map_div4_mul13_surrond_sum_0:
-		LDA		_tmp_map_pos._COL
-		CMP		#$04
-		BCC		loc_11EE99
-		SBC		#$04
-		STA		_tmp_map_pos._COL
-		JSR		_add_tmp_map_div4_mul13_nibble_0
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$04
-		STA		_tmp_map_pos._COL
-loc_11EE99:
-		LDA		_tmp_map_pos._COL
-		CMP		#$48
-		BCS		loc_11EEB1
-		ADC		#$04
-		STA		_tmp_map_pos._COL
-		JSR		_add_tmp_map_div4_mul13_nibble_0
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$04
-		STA		_tmp_map_pos._COL
-loc_11EEB1:
-		LDA		_tmp_map_pos._ROW
-		CMP		#$04
-		BCC		loc_11EEC9
-		SBC		#$04
-		STA		_tmp_map_pos._ROW
-		JSR		_add_tmp_map_div4_mul13_nibble_0
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$04
-		STA		_tmp_map_pos._ROW
-loc_11EEC9:
-		LDA		_tmp_map_pos._ROW
-		CMP		#$48
-		BCS		locret_11EEE1
-		ADC		#$04
-		STA		_tmp_map_pos._ROW
-		JSR		_add_tmp_map_div4_mul13_nibble_0
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$04
-		STA		_tmp_map_pos._ROW
-locret_11EEE1:
-		RTS
-
+;_calc_tmp_map_div4_mul13_surrond_sum_0:
+;		LDA		_tmp_map_pos._COL
+;		CMP		#$04
+;		BCC		loc_11EE99
+;		SBC		#$04
+;		STA		_tmp_map_pos._COL
+;		JSR		_add_tmp_map_div4_mul13_nibble_0
+;		LDA		_tmp_map_pos._COL
+;		CLC
+;		ADC		#$04
+;		STA		_tmp_map_pos._COL
+;loc_11EE99:
+;		LDA		_tmp_map_pos._COL
+;		CMP		#$48
+;		BCS		loc_11EEB1
+;		ADC		#$04
+;		STA		_tmp_map_pos._COL
+;		JSR		_add_tmp_map_div4_mul13_nibble_0
+;		LDA		_tmp_map_pos._COL
+;		SEC
+;		SBC		#$04
+;		STA		_tmp_map_pos._COL
+;loc_11EEB1:
+;		LDA		_tmp_map_pos._ROW
+;		CMP		#$04
+;		BCC		loc_11EEC9
+;		SBC		#$04
+;		STA		_tmp_map_pos._ROW
+;		JSR		_add_tmp_map_div4_mul13_nibble_0
+;		LDA		_tmp_map_pos._ROW
+;		CLC
+;		ADC		#$04
+;		STA		_tmp_map_pos._ROW
+;loc_11EEC9:
+;		LDA		_tmp_map_pos._ROW
+;		CMP		#$48
+;		BCS		locret_11EEE1
+;		ADC		#$04
+;		STA		_tmp_map_pos._ROW
+;		JSR		_add_tmp_map_div4_mul13_nibble_0
+;		LDA		_tmp_map_pos._ROW
+;		SEC
+;		SBC		#$04
+;		STA		_tmp_map_pos._ROW
+;locret_11EEE1:
+;		RTS
+;
 ; =============== S U B	R O U T	I N E =======================================
-_add_tmp_map_div4_mul13_nibble_0:
-		JSR		_read_tmp_map_div4_mul13_nibble
-		CLC
-		ADC		_tmpE7
-		STA		_tmpE7
-		RTS
+;_add_tmp_map_div4_mul13_nibble:
+;		JSR		_read_tmp_map_div4_mul13_nibble_0
+;		CLC
+;		ADC		_tmpE7
+;		STA		_tmpE7
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _interpolate_tmp_with_select_poll_popg_popd_crime_land_to_tmp_map:
@@ -2284,7 +2699,13 @@ loc_11F0D3:
 ; 3 - if coal power or sea/air port, or fires
 ; F - if flooded ground
 ; 0 - other
-_get_map_tile_pollution_ratio:
+;
+; NOTE, there is no dependency on roads/traffic values, because
+; we work with raw map indexes, not the traffic indexes
+;
+; TODO, add roads to overall value
+;
+_get_pollution_ratio:
 		LDY		#$02
 		LDA		_last_map_tile_read
 		CMP		#_MAP_POLICE_STATION			; upper tile range for developed I
@@ -2508,14 +2929,14 @@ loc_11F296:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_traffic_dencity_smooth:
+_traffic_smooth:
 		LDA		#$00
 loc_11F2AD:
 		STA		_tmp_map_pos._ROW
 		LDA		#$00
 loc_11F2B2:
 		STA		_tmp_map_pos._COL
-		JSR		_read_traffic_dencity_map_nibble
+		JSR		_read_traffic_map_nibble
 		CMP		#$03
 		BCS		loc_11F2C0
 		LDA		#$00
@@ -2530,7 +2951,7 @@ loc_11F2CA:
 		SEC
 		SBC		#$04
 loc_11F2CD:
-		JSR		_write_traffic_dencity_map_nibble
+		JSR		_write_traffic_map_nibble
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$02
@@ -2622,396 +3043,6 @@ loc_11F350:
 sub_11F362:
 		LDA		#$00
 		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_R_develop_up:
-		JSR		_read_pollution_map_nibble
-		CMP		#$08
-		BCS		locret_11F3BE
-		JSR		_map_tile_read
-		CMP		#$05
-		BCS		loc_11F393
-		LDA		_cur_area_develop_state
-		CMP		#$09
-		BCS		loc_11F382
-		LDY		_last_map_tile_read
-		INY
-		TYA
-		JMP		_map_tile_write
-loc_11F382:
-		JSR		_read_pop_dencity_map_nibble
-		CMP		#$04
-		BCC		locret_11F3BE
-		LDA		#$00
-		JSR		_R_area_new_state_set
-		LDA		#$01
-		JMP		_pop_growth_map_update
-loc_11F393:
-		CMP		#$15
-		BCS		locret_11F40D
-		CMP		#$14
-		BNE		loc_11F3F5
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
-		JSR		_map_tile_read
-		CMP		#$14
-		BNE		loc_11F3BF
-		LDA		#$16
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#$15
-		JMP		_map_tile_write
-locret_11F3BE:
-		RTS
-loc_11F3BF:
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
-		JSR		_map_tile_read
-		CMP		#$14
-		BNE		loc_11F3EB
-		LDA		#$18
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#$17
-		JMP		_map_tile_write
-loc_11F3EB:
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		RTS
-loc_11F3F5:
-		LDA		_cur_area_develop_state
-		CMP		#$28
-		BCS		locret_11F40D
-		LDA		_cur_area_develop_state
-		LSR
-		LSR
-		LSR
-		SEC
-		SBC		#$01
-		JSR		_R_area_new_state_set
-		LDA		#$01
-		JMP		_pop_growth_map_update
-locret_11F40D:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_C_develop_up:
-		JSR		_map_tile_read
-		CMP		#$35
-		BCS		locret_11F48C
-		CMP		#$34
-		BNE		loc_11F474
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
-		JSR		_map_tile_read
-		CMP		#$34
-		BNE		loc_11F43D
-		LDA		#$36
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#$35
-		JMP		_map_tile_write
-
-loc_11F43D:
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
-		JSR		_map_tile_read
-		CMP		#$34
-		BNE		loc_11F46A
-		LDA		#$38
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#$37
-		JMP		_map_tile_write
-
-loc_11F46A:
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		RTS
-loc_11F474:
-		JSR		_read_land_val_map_nibble
-		LSR
-		CMP		_cur_area_develop_state
-		BCC		locret_11F48C
-		LDA		_cur_area_develop_state
-		CMP		#$05
-		BCS		locret_11F48C
-		JSR		_C_area_new_state_set
-		LDA		#$01
-		JMP		_pop_growth_map_update
-locret_11F48C:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_I_develop_up:
-		LDA		#$02
-		JSR		_rand_clamp_A
-		STA		_life_ratio_idx
-		LDA		_cur_area_develop_state
-		CMP		#$04
-		BCS		locret_11F4A4
-		JSR		_I_area_new_state_set
-		LDA		#$01
-		JMP		_pop_growth_map_update
-locret_11F4A4:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_R_develop_down:
-		JSR		_map_tile_read					; if twin buildings, destroy them
-		CMP		#_MAP_R_AREA_TWINA0				; they destroyed instantly if develop
-		BNE		loc_11F4C9						; goes down
-		LDA		#_MAP_R_AREA14					; TODO, optimize me
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		RTS
-loc_11F4C9:
-		CMP		#_MAP_R_AREA_TWINA1
-		BNE		loc_11F4EA
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
-		RTS
-loc_11F4EA:
-		CMP		#_MAP_R_AREA_TWINB0
-		BNE		loc_11F50B
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		RTS
-loc_11F50B:
-		CMP		#_MAP_R_AREA_TWINB1
-		BNE		loc_11F52C
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
-		RTS
-loc_11F52C:
-		LDX		_life_ratio_idx					; if life ratio is low
-		BEQ		locret_11F550					; or low development
-		LDA		_cur_area_develop_state			; nothing to develop down
-		BEQ		locret_11F550
-		CMP		#$18
-		BCC		loc_11F548						; low developed degrades fast
-		SEC										; high developer decrades slow
-		SBC		#$18							; with growth rate down
-		LSR
-		LSR
-		LSR
-		JSR		_R_area_new_state_set			; new_level = (level-24)/8
-		LDA		#$FF
-		JMP		_pop_growth_map_update			; decrease population growth
-loc_11F548:
-		LSR
-		LSR										; new_level = (level/4)-1
-		SEC
-		SBC		#$01
-		JMP		_map_tile_write					; may degrade to 0 here
-locret_11F550:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_C_develop_down:
-		JSR		_map_tile_read
-		CMP		#$35
-		BNE		loc_11F575
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		RTS
-loc_11F575:
-		CMP		#$36
-		BNE		loc_11F596
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
-		RTS
-loc_11F596:
-		CMP		#$37
-		BNE		loc_11F5B7
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		RTS
-loc_11F5B7:
-		CMP		#$38
-		BNE		loc_11F5D8
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#$34
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
-		RTS
-loc_11F5D8:
-		LDA		_cur_area_develop_state
-		SEC
-		SBC		#$02
-		BCC		loc_11F5E8
-		JSR		_C_area_new_state_set
-		LDA		#$FF
-		JMP		_pop_growth_map_update
-loc_11F5E8:
-		LDA		_cur_area_develop_state
-		CMP		#$01
-		BNE		locret_11F5F4
-		LDA		#$20
-		JMP		_map_tile_write
-locret_11F5F4:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_I_develop_down:
-		LDA		#$02
-		JSR		_rand_clamp_A
-		STA		_life_ratio_idx
-		LDA		_cur_area_develop_state
-		SEC
-		SBC		#$02
-		BCC		loc_11F60D
-		JSR		_I_area_new_state_set
-		LDA		#$FF
-		JMP		_pop_growth_map_update
-loc_11F60D:
-		LDA		_cur_area_develop_state
-		CMP		#$01
-		BNE		locret_11F619
-		LDA		#$40
-		JMP		_map_tile_write
-locret_11F619:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_R_area_new_state_set:
-		STA		_tmpE6							; state = _MAP_R_AREA05 + life_idx*4 + new_state
-		LDA		_life_ratio_idx
-		ASL
-		ASL
-		ADC		_tmpE6
-		ADC		#_MAP_R_AREA05
-		JMP		_map_tile_write
-
-; =============== S U B	R O U T	I N E =======================================
-_C_area_new_state_set:
-		STA		_tmpE6
-		LDA		_life_ratio_idx					; state = _MAP_C_AREA01 +life_idx*5 + new_state
-		ASL
-		ASL
-		ADC		_life_ratio_idx
-		ADC		_tmpE6
-		ADC		#_MAP_C_AREA01
-		JMP		_map_tile_write
-
-; =============== S U B	R O U T	I N E =======================================
-_I_area_new_state_set:
-		STA		_tmpE6
-		LDA		_life_ratio_idx					; state = _MAP_I_AREA01 + life_idx*4 + new_state
-		ASL
-		ASL
-		ADC		_tmpE6
-		ADC		#_MAP_I_AREA01
-		JMP		_map_tile_write
 
 ; =============== S U B	R O U T	I N E =======================================
 _pop_growth_map_update:
@@ -3107,7 +3138,7 @@ _read_buf_pos_div4_mul13_4bit_nibble:
 		JMP		_read_buf_pos_4bit_nibble_ex
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_traffic_dencity_map_nibble:
+_read_traffic_map_nibble:
 		LDXY	_traffic_map
 		TYA
 		PHA
@@ -3320,7 +3351,7 @@ loc_11F801:
 		JMP		_write_buf_pos_4bit_nibble_ex
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_traffic_dencity_map_nibble:
+_write_traffic_map_nibble:
 		LDXY	_traffic_map
 		CMP		#$10
 		BCC		loc_11F82C
@@ -3451,7 +3482,7 @@ loc_11F8BB:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tmp_area_pos_to_tmp_map_pos_calc:
+_tmp_area_pos_to_tmp_map_pos_convert:
 		LDA		_tmp_area_pos._COL
 		ASL
 		ASL
@@ -3471,7 +3502,7 @@ _heavy_traffic_report_test:
 		PUSHB	_mmc5_mul0_shadow
 		STX		_tmp_map_pos._COL
 		STY		_tmp_map_pos._ROW
-		JSR		_read_traffic_dencity_map_nibble
+		JSR		_read_traffic_map_nibble
 		CMP		#$0A
 		BCC		loc_11F93E
 		LDA		#$18
@@ -4099,6 +4130,17 @@ locret_11FF87:
 
 ; =============== S U B	R O U T	I N E =======================================
 ; called once at the end of the year when city RCI levels not zero from PRGA
+; although this is not the same average calulation as for other values,
+; it's also wrong and does not the average value and not the same as in
+; original Micropolis code.
+; here we have average calculated by formula:
+; total_sum/(1.00+(count/256)), which mean we have the same equation as for
+; when we need to calc some price without taxes.
+; (price+taxes)/1.rate = price
+; if price for example 100, and tax is 25%, then price without taxes would be
+; 100/1.25 = 80. here we have the same equation for traffic, but out of full
+; sum of traffic values we have remove the percent of areas with traffix summarized
+; instead of integer value it treated as FRAC portion of 1.xx fixed point number.
 ;
 _traf_lvl_avr_recalc:
 		LDY		#$00
@@ -4113,10 +4155,10 @@ loc_11FF97:
 		LDA		#$00
 loc_11FF9C:
 		STA		_tmp_map_pos._COL				; columns
-		JSR		_read_land_val_map_nibble	; read land value nibble here (4x4 blocks)
+		JSR		_read_land_val_map_nibble		; read land value nibble here (4x4 blocks)
 ;		CMP		#$00							; REDUNDANT, flag already set here
 		BEQ		loc_11FFBB
-		JSR		_read_traffic_dencity_map_nibble; read traffic dencity value for area (2x2 blocks)
+		JSR		_read_traffic_map_nibble		; read traffic dencity value for area (2x2 blocks)
 		CLC
 		ADC		_tmp6CC							; sum traffic map values
 		STA		_tmp6CC
@@ -4136,7 +4178,7 @@ loc_11FFBB:
 		CMP		#$4C
 		BCC		loc_11FF97
 ; NOTE, traffic average here calculated different from other places
-; this gives more reliable results somehow
+; this gives more reliable results somehow, but still not correct average
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
