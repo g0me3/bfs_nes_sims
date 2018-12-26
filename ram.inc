@@ -194,6 +194,9 @@ word_6C:
 		.BYTE	0,0
 _tmp6E:
 		.BYTE	0,0
+
+_tmp70	EQU		.
+
 _anim_pos_is_load:
 		.BYTE	0
 byte_71:

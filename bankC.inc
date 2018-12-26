@@ -105,24 +105,24 @@ loc_1360DD:
 _game_state02_map_scroll:
 		LDA		byte_3C
 		AND		#$03
-		BEQ		loc_136105
+		BEQ		.mini_map_wait_for_scrolls
 		LSR
-		BCC		loc_1360F7
-		JSR		sub_136775
-		BCS		loc_136102
+		BCC		.mini_map_hor_queue
+		JSR		sub_136775						; vert map ppu data queue
+		BCS		.j_game_state_common
 		LDA		byte_3C
 		AND		#$FE
 		STA		byte_3C
 		JMP		_game_state_common
-loc_1360F7:
+.mini_map_hor_queue:
 		JSR		sub_136750
-		BCS		loc_136102
+		BCS		.j_game_state_common
 		LDA		byte_3C
 		AND		#$FD
 		STA		byte_3C
-loc_136102:
+.j_game_state_common:
 		JMP		_game_state_common
-loc_136105:
+.mini_map_wait_for_scrolls:
 		LDA		#$36
 		STA		_MMC5_CHR_BANKSA+2
 		JSR		_map_scroll_mode_minimap_draw
@@ -130,56 +130,56 @@ loc_136105:
 		LDA		_cur_screen_tile._COL
 		ORA		_cur_screen_tile._ROW
 		AND		#$01
-		BNE		loc_136128
+		BNE		.mini_map_continue_scroll
 		LDA		_pad0_held
 		AND		#$40
-		BNE		loc_136171
+		BNE		.button_B_held
 		LDA		#$00
-		STA		_scr_mode_idx
+		STA		_scr_mode_idx					; exit mini-map mode, when B released
 		JSR		_scroll_msg_reset
 		JMP		_game_state_common
-loc_136128:
-		LDA		_anim_pos_is_load
+.mini_map_continue_scroll:
+		LDA		_tmp70
 		AND		#$03
-		BEQ		loc_13614A
-		LSR
-		BCC		loc_13613F
-		INC		_cur_screen_tile._COL
+		BEQ		.mini_map_continue_vert_scroll
+		LSR										; horizontal scroll needed
+		BCC		.mini_map_continue_left_scroll
+		INC		_cur_screen_tile._COL			; right scroll needed
 		LDA		_cur_screen_tile._COL
 		CMP		#$40
-		BCC		loc_13616A
+		BCC		.mini_map_scroll_done				; wrap to 0
 		LDA		#$00
 		STA		_cur_screen_tile._COL
-		BEQ		loc_13616A
-loc_13613F:
-		DEC		_cur_screen_tile._COL
-		BPL		loc_13616A
+		BEQ		.mini_map_scroll_done
+.mini_map_continue_left_scroll:
+		DEC		_cur_screen_tile._COL			; wrap to 3F
+		BPL		.mini_map_scroll_done
 		LDA		#$3F
 		STA		_cur_screen_tile._COL
-		JMP		loc_13616A
-loc_13614A:
-		LDA		_anim_pos_is_load
+		JMP		.mini_map_scroll_done
+.mini_map_continue_vert_scroll:
+		LDA		_tmp70
 		AND		#$0C
-		BEQ		loc_13616A
+		BEQ		.mini_map_scroll_done
 		AND		#$04
-		BEQ		loc_136162
-		INC		_cur_screen_tile._ROW
+		BEQ		.mini_map_continue_down_scroll
+		INC		_cur_screen_tile._ROW			; up scroll needed
 		LDA		_cur_screen_tile._ROW
 		CMP		#$3C
-		BCC		loc_13616A
+		BCC		.mini_map_scroll_done
 		LDA		#$00
 		STA		_cur_screen_tile._ROW
-		BEQ		loc_13616A
-loc_136162:
+		BEQ		.mini_map_scroll_done
+.mini_map_continue_down_scroll:
 		DEC		_cur_screen_tile._ROW
-		BPL		loc_13616A
+		BPL		.mini_map_scroll_done
 		LDA		#$3B
 		STA		_cur_screen_tile._ROW
-loc_13616A:
+.mini_map_scroll_done:
 		LDA		#$00
-		STA		_anim_pos_is_load
+		STA		_tmp70
 		JMP		_game_state_common
-loc_136171:
+.button_B_held:
 		LDA		_pad0_held
 		AND		#$0F
 		BEQ		loc_13617C
@@ -190,7 +190,7 @@ loc_13617C:
 loc_13617F:
 		LDA		_pad0_held
 		AND		#$0F
-		STA		_anim_pos_is_load
+		STA		_tmp70
 		AND		#$03
 		BEQ		loc_1361EA
 		LSR
@@ -430,9 +430,9 @@ loc_136325:
 		JMP		_bulldoze_area
 .other_builds:
 		CMP		#$04
-		BEQ		_build_garden_area
-		BCS		_bulid_large_buildings
-		LDA		_pad0_held						; here we start to build 1-tile
+		BEQ		_build_garden_area				; =4 - gardens selected
+		BCS		_bulid_large_buildings			; all above 4 - buildings
+		LDA		_pad0_held						; here we start to build single tiled objects
 		CMP		_pad0_prev_held					; areas - roads, rails, electrics
 		BNE		.something_changed				; buttons changes, test if we need to do something
 		LDA		_constr_cursor_tile._COL
@@ -449,8 +449,8 @@ loc_136325:
 		JMP		.cant_build_anything_beep
 loc_136358:
 		JSR		_build_cur_constr_cursor_area
-		JSR		sub_15055A
-		JSR		sub_1509D5
+		JSR		_adjust_surround_net_tiles
+		JSR		_calc_constr_area_update_params
 		LDA		#$FF
 		STA		_hud_money_redraw_req
 		LDA		_constr_cursor_tile._COL
@@ -475,11 +475,11 @@ _build_garden_area:
 loc_136389:
 		JSR		_get_cur_building_price
 		JSR		_get_cur_constr_cursor_map_tile
-		FJSRA	sub_B83A7,PRG7,PRGD
+		FJSRA	_is_building_available_here,PRG7,PRGD
 		BCS		.cant_build_anything_beep
 		JSR		_build_cur_constr_cursor_area
-		JSR		sub_15055A
-		JSR		sub_1509D5
+		JSR		_adjust_surround_net_tiles
+		JSR		_calc_constr_area_update_params
 		LDA		#$FF
 		STA		_hud_money_redraw_req
 		JSR		_apu_se_small_build
@@ -487,7 +487,7 @@ loc_136389:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_build_large_buildings:
+_bulid_large_buildings:
 		LDA		_pad0_autorep_press
 		BPL		loc_1363F5
 		LDA		_const_palette_selected_idx
@@ -499,11 +499,11 @@ _build_large_buildings:
 loc_1363BE:
 		JSR		_get_cur_building_price
 		JSR		_get_cur_constr_cursor_map_tile
-		FJSRA	sub_B83A7,PRG7,PRGD
+		FJSRA	_is_building_available_here,PRG7,PRGD
 		BCS		.cant_build_anything_beep
 		JSR		_build_cur_constr_cursor_area
-		JSR		sub_15055A
-		JSR		sub_1509D5
+		JSR		_adjust_surround_net_tiles
+		JSR		_calc_constr_area_update_params
 		LDA		#$FF
 		STA		_hud_money_redraw_req
 		JSR		_apu_se_large_build
@@ -529,7 +529,7 @@ _bulldoze_area:
 ;		JSR		_get_cur_building_price			; bulldoze price ($1)
 		JSR		_bulldoze_a_building
 		BCS		.fail
-		JSR		sub_150551
+		JSR		_adjust_surround_net_tilesCC
 		JSR		sub_1509CF
 		LDA		#$FF
 		STA		_hud_money_redraw_req
@@ -1032,7 +1032,7 @@ sub_13675A:
 sub_136761:
 		JSR		_ppu_queue_empty_test_0
 		BCS		locret_136774
-		JSR		sub_136858
+		JSR		_map_full_screen_pos_calc
 		JSR		sub_1368BD
 		JSR		sub_136935
 		LDA		#$00
@@ -1045,7 +1045,7 @@ locret_136774:
 sub_136775:
 		JSR		_ppu_queue_empty_test_0
 		BCS		locret_136780
-		JSR		sub_136858
+		JSR		_map_full_screen_pos_calc
 		JMP		sub_136781
 locret_136780:
 		RTS
@@ -1141,7 +1141,7 @@ locret_136857:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136858:
+_map_full_screen_pos_calc:
 		LDA		_cur_screen_tile._ROW
 		LSR
 		SEC
@@ -4119,7 +4119,7 @@ locret_137F29:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1500F1:
+_swap_constr_area_update_params:
 		LDA		byte_53
 		LDX		byte_5D
 		STA		byte_5D
@@ -4144,7 +4144,7 @@ sub_1500F1:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_15011A:
-		JSR		sub_1500F1
+		JSR		_swap_constr_area_update_params
 		LDA		#$00
 		STA		byte_5D
 		STA		byte_5C

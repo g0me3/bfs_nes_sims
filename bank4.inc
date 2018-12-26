@@ -130,7 +130,7 @@ loc_7011D:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
 loc_7011E:
-		LDA		_anim_pos_is_load199,Y
+		LDA		byte_77199,Y
 		EXTQMOVA
 		INY
 		DEC		_tmp4
@@ -149,7 +149,7 @@ loc_70166:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_70167:
-		LDA		_anim_pos_is_load1B1,Y
+		LDA		byte_771B1,Y
 		PPUQMOVA
 		INY
 		DEC		_tmp4
@@ -161,14 +161,14 @@ loc_70196:
 		PPUQEND
 		RTS
 
-_anim_pos_is_load199:
+byte_77199:
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
-_anim_pos_is_load1B1:
+byte_771B1:
 		.BYTE	$04,$05,$06,$09
 		.BYTE	$14,$15,$16,$19
 		.BYTE	$04,$07,$08,$09
@@ -205,14 +205,14 @@ loc_701D5:
 		STA		_tmp_ptrC3+1
 		JSR		_game_msg_presents_pos_calc
 		LDX		_ptr0+1
-		LDY		_anim_pos_is_load20D,X
+		LDY		byte_7720D,X
 		JSR		_game_msg_presents_icon_line_draw
 		PLA
 		DEC		_ptr0+1
 		BPL		loc_701D5
 		RTS
 
-_anim_pos_is_load20D:
+byte_7720D:
 		.BYTE	$00,$03,$06
 
 _game_msg_presentss_list:
@@ -1168,12 +1168,12 @@ off_70F43:
 		.WORD	asc_70F5F
 		.WORD	aATown_
 		.WORD	aYourPopulationIs
-		.WORD	_anim_pos_is_loadF88
+		.WORD	byte_77F88
 aCongratulations:		.BYTE	" Congratulations!",$F
 asc_70F5F:				.BYTE	" ",$40,$24,$30," becomes",$F
 aATown_:				.BYTE	"a town.",$F
 aYourPopulationIs:		.BYTE	" Your population is",$F
-_anim_pos_is_loadF88:				.BYTE	$40,$23,$30,".",$F
+byte_77F88:				.BYTE	$40,$23,$30,".",$F
 
 _msg02_city:
 		.WORD	off_70F8F
@@ -1196,7 +1196,7 @@ off_70FD8:
 		.WORD	asc_70F5F
 		.WORD	aACapital_
 		.WORD	aYourPopulationIs
-		.WORD	_anim_pos_is_loadF88
+		.WORD	byte_77F88
 							;	" Congratulations!",$F
 							;	" ",$40,$24,$30," becomes",$F
 aACapital_:				.BYTE	"a capital.",$F
@@ -1210,7 +1210,7 @@ off_70FEF:
 		.WORD	asc_70F5F
 		.WORD	aAMetropolis_
 		.WORD	aYourPopulationIs
-		.WORD	_anim_pos_is_loadF88
+		.WORD	byte_77F88
 							;	" Congratulations!",$F
 							;	" ",$40,$24,$30," becomes",$F
 aAMetropolis_:			.BYTE	"a metropolis.",$F
@@ -1224,7 +1224,7 @@ off_71009:
 		.WORD	asc_70F5F
 		.WORD	aAMegalopolis_
 		.WORD	aYourPopulationIs
-		.WORD	_anim_pos_is_loadF88
+		.WORD	byte_77F88
 							;	" Congratulations!",$F
 							;	" ",$40,$24,$30," becomes",$F
 aAMegalopolis_:			.BYTE	"a megalopolis.",$F

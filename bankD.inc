@@ -548,36 +548,36 @@ _build_cur_constr_cursor_area:
 		JSR		_sram_on
 		LDA		_cur_build_store_tile_idx		; previously calcularet duild tile idx
 		CMP		#$FF
-		BNE		.instant_build_single_tile		; if !=FF, then instant 1x1 tile here
+		BNE		.instant_build_single_tile		; if !=FF, then custom 1x1 tile here
 		JSR		_get_build_construc_data_ptr
 		LDY		#$00
 loc_150518:
-		LDA		(_tmp_ptrC3),Y					; read actual build tile or special tiles
+		LDA		(_tmp_ptrC3),Y					; read building data tiles from lib
 		BMI		loc_150531
-		LDX		_const_palette_selected_idx		; actual goes here
+		LDX		_const_palette_selected_idx		; top-left corner of the building starts here
 		CPX		#$0B
-		BNE		loc_150527
+		BNE		loc_150527						; additional test for power station type
 		CLC
 		ADC		_cur_power_type_select_idx
 		BNE		loc_150531
 loc_150527:
 		CPX		#$0C
-		BNE		loc_150531
+		BNE		loc_150531						; additional test for airport
 		LDX		_cur_port_type_select_idx
 		BEQ		loc_150531
-		LDA		#$64
+		LDA		#_MAP_AIR_PORT
 loc_150531:
 		CMP		#$DF
-		BEQ		loc_150545
+		BEQ		loc_150545						; test if building data is over
 		STY		_ptr0
 		STA		_ptr0+1
-		LDA		(_tmp_ptrC5),Y
+		LDA		(_tmp_ptrC5),Y					; read building scheme
 		TAY
 		LDA		_ptr0+1
-		STA		(_tmp_ptrC1),Y
+		STA		(_tmp_ptrC1),Y					; put byte into the map
 		LDY		_ptr0
 		INY
-		BNE		loc_150518
+		BNE		loc_150518						; repeat
 loc_150545:
 		JMP		_sram_off
 .instant_build_single_tile:
@@ -586,35 +586,34 @@ loc_150545:
 		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150551:
+_adjust_surround_net_tilesCC:
 		JSR		_sram_on
 		LDX		byte_CC
-		DEX
-		JMP		sub_150560
+		JMP		_adjust_surround_net_tiles_ex
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_15055A:
+_adjust_surround_net_tiles:
 		JSR		_sram_on
 		LDX		_cur_selected_buildings_size
-		DEX
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150560:
-		LDA		off_150585,X
+_adjust_surround_net_tiles_ex:
+		DEX
+		LDA		_surround_tiles_lib_lo,X
 		STA		word_D0
-		LDA		off_150589,X
+		LDA		_surround_tiles_lib_hi,X
 		STA		word_D0+1
 		LDY		#$00
 loc_15056C:
 		LDA		(word_D0),Y
 		CMP		#$80
 		BEQ		loc_150581
-		JSR		sub_1505E3
+		JSR		_get_building_tile_map_ptr
 		BCS		loc_15057E
 		STY		byte_D4
-		JSR		sub_150636
+		JSR		_adjust_conjunction_tiles
 		LDY		byte_D4
 loc_15057E:
 		INY
@@ -622,47 +621,119 @@ loc_15057E:
 loc_150581:
 		JMP		_sram_off
 
-off_150585:
-		.BYTE	<[byte_15058D]
-		.BYTE	<[byte_150598]
-		.BYTE	<[byte_1505A9]
-		.BYTE	<[byte_1505C2]
-off_150589:
-		.BYTE	>[byte_15058D]
-		.BYTE	>[byte_150598]
-		.BYTE	>[byte_1505A9]
-		.BYTE	>[byte_1505C2]
-byte_15058D:
-		.BYTE	$00,$FF,$FF,$00,$00
-		.BYTE	$00,$01,$00,$00,$01
+_surround_tiles_lib_lo:
+		.BYTE	<[_surround_tiles0_list]
+		.BYTE	<[_surround_tiles1_list]
+		.BYTE	<[_surround_tiles2_list]
+		.BYTE	<[_surround_tiles3_list]
+_surround_tiles_lib_hi:
+		.BYTE	>[_surround_tiles0_list]
+		.BYTE	>[_surround_tiles1_list]
+		.BYTE	>[_surround_tiles2_list]
+		.BYTE	>[_surround_tiles3_list]
+
+; surrounding tiles 1x1 building (2=*)
+; -0-
+; 123
+; -4-
+;
+_surround_tiles0_list:
+		.BYTE	$00,$FF
+		.BYTE	$FF,$00
+		.BYTE	$00,$00
+		.BYTE	$01,$00
+		.BYTE	$00,$01
 		.BYTE	$80
-byte_150598:
-		.BYTE	$00,$FF,$01,$FF,$FF,$00,$02,$00
-		.BYTE	$FF,$01,$02,$01,$00,$02,$01,$02
+
+; surrounding tiles 2x2 building
+; -01-
+; 2*-3
+; 4--5
+; -67-
+;
+_surround_tiles1_list:
+		.BYTE	$00,$FF
+		.BYTE	$01,$FF
+		.BYTE	$FF,$00
+		.BYTE	$02,$00
+		.BYTE	$FF,$01
+		.BYTE	$02,$01
+		.BYTE	$00,$02
+		.BYTE	$01,$02
 		.BYTE	$80
-byte_1505A9:
-		.BYTE	$00,$FF,$01,$FF,$02,$FF,$FF,$00,$03,$00,$FF,$01
-		.BYTE	$03,$01,$FF,$02,$03,$02,$00,$03,$01,$03,$02,$03
+
+; surrounding tiles 3x3 building
+; -013-
+; 4*--5
+; 6---7
+; 8---9
+; -ABC-
+;
+_surround_tiles2_list:
+		.BYTE	$00,$FF
+		.BYTE	$01,$FF
+		.BYTE	$02,$FF
+		.BYTE	$FF,$00
+		.BYTE	$03,$00
+		.BYTE	$FF,$01
+		.BYTE	$03,$01
+		.BYTE	$FF,$02
+		.BYTE	$03,$02
+		.BYTE	$00,$03
+		.BYTE	$01,$03
+		.BYTE	$02,$03
 		.BYTE	$80
-byte_1505C2:
-		.BYTE	$00,$FF,$01,$FF,$02,$FF,$03,$FF,$FF,$00,$04,$00,$FF,$01,$04,$01
-		.BYTE	$FF,$02,$04,$02,$FF,$03,$04,$03,$00,$04,$01,$04,$02,$04,$03,$04
+
+; surrounding tiles 3x3 building
+; -0123-
+; 4*---5
+; 6----7
+; 8----9
+; A----B
+; -CDEF-
+;
+_surround_tiles3_list:
+		.BYTE	$00,$FF
+		.BYTE	$01,$FF
+		.BYTE	$02,$FF
+		.BYTE	$03,$FF
+		.BYTE	$FF,$00
+		.BYTE	$04,$00
+		.BYTE	$FF,$01
+		.BYTE	$04,$01
+		.BYTE	$FF,$02
+		.BYTE	$04,$02
+		.BYTE	$FF,$03
+		.BYTE	$04,$03
+		.BYTE	$00,$04
+		.BYTE	$01,$04
+		.BYTE	$02,$04
+		.BYTE	$03,$04
 		.BYTE	$80
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1505E3:
+; looks like too much bounds checking with no actual reason..
+; when the building is build at the map side, the first two test
+; are enough to check if it out of right/bottom bounds,
+; and test 2 is enough to test left/top bounds
+;
+; return C=0 if ptr calculated,
+; 		 C=1 out of bounds
+;		word_D2 - ptr to map tile
+;
+_get_building_tile_map_ptr:
 		INY
 		CLC
 		ADC		_cur_constr_cursor_map_pos._COL
 		STA		byte_511
 		CMP		#$4C
-		BCS		loc_150634
+		BCS		.out_of_bounds					; out of bounds test 0
 		LDA		(word_D0),Y
 		CLC
 		ADC		_cur_constr_cursor_map_pos._ROW
 		STA		byte_512
 		CMP		#$4C
-		BCS		loc_150634
+		BCS		.out_of_bounds					; out of bounds test 1
 		LDX		#$4C
 		MULXA
 		CLC
@@ -678,317 +749,421 @@ sub_1505E3:
 		LDA		word_D2+1
 		ADC		#>[_wram_map_buf]
 		STA		word_D2+1
-		CMP		#>[_wram_map_buf]
-		BCC		loc_150634
-		CMP		#>[_power_grid_map_buf]
-		BCC		loc_150632
-		BNE		loc_150634
+		CMP		#>[_wram_map_buf]				; OUT UF BOUNDS TEST 2!!
+		BCC		.out_of_bounds
+		CMP		#>[_power_grid_map_buf]			; out of bounds test 3
+		BCC		.calc_ok
+		BNE		.out_of_bounds
 		LDA		word_D2
-		CMP		#<[_power_grid_map_buf]
-		BCS		loc_150634
-loc_150632:
+		CMP		#<[_power_grid_map_buf]			; out of bounds test 4
+		BCS		.out_of_bounds
+.calc_ok:
 		CLC
 		RTS
-loc_150634:
+.out_of_bounds:
 		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150636:
+_adjust_conjunction_tiles:
 		LDY		#$00
 		STY		byte_D5
-		LDA		(word_D2),Y
-		CMP		#$91
+		LDA		(word_D2),Y						; get surrounding map tile
+		CMP		#_MAP_ROAD_LR					; all you need is electro/transport tile here
 		BCC		locret_150644
-		CMP		#$B2
+		CMP		#_MAP_GRASS
 		BCC		loc_150645
 locret_150644:
 		RTS
 loc_150645:
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR					; ok, check what exactly tile is here
 		BCS		loc_15065C
-		JSR		sub_1506BC
-		JSR		sub_150696
-		LDX		byte_D5
-		LDA		byte_150686,X
-		CLC
-		ADC		#$91
-		LDY		#$00
-		STA		(word_D2),Y
-		RTS
+		JSR		_test_conjunction_road_tiles	; test for more roads near surrounding tile
+		LDA		#_MAP_ROAD_LR					; OPTIMIZED
+		BNE		loc_150674						; -
+;		JSR		_clamp_conjunction_flags		; REDUNDANT
+;		LDX		byte_D5
+;		LDA		_tile_conjunctions_table,X		; calc new bend of the road
+;		CLC
+;		ADC		#_MAP_ROAD_LR
+;		LDY		#$00
+;		STA		(word_D2),Y						; store current surrounding tile
+;		RTS
 loc_15065C:
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCS		loc_150673
-		JSR		sub_150725
-		JSR		sub_150696
-		LDX		byte_D5
-		LDA		byte_150686,X
-		CLC
-		ADC		#$9C
-		LDY		#$00
-		STA		(word_D2),Y
-		RTS
+		JSR		_test_conjunction_rail_tiles	; rails here
+		LDA		#_MAP_RAIL_LR					; OPTIMIZED
+		BNE		loc_150674						; -
+;		JSR		_clamp_conjunction_flags		; REDUNDANT
+;		LDX		byte_D5
+;		LDA		_tile_conjunctions_table,X
+;		CLC
+;		ADC		#_MAP_RAIL_LR
+;		LDY		#$00
+;		STA		(word_D2),Y
+;		RTS
 loc_150673:
-		JSR		sub_1507AE
-		JSR		sub_150696
+		JSR		_test_conjunction_electro_tiles	; electro here
+		LDA		#_MAP_ELECTRO_LR
+loc_150674:
+		PHA										; OPTIMIZED
+		JSR		_clamp_conjunction_flags
+		PLA
 		LDX		byte_D5
-		LDA		byte_150686,X
 		CLC
-		ADC		#$A7
+		ADC		_tile_conjunctions_table,X
 		LDY		#$00
 		STA		(word_D2),Y
 		RTS
-byte_150686:
+;		JSR		_clamp_conjunction_flags		; REDUNDANT
+;		LDX		byte_D5
+;		LDA		_tile_conjunctions_table,X
+;		CLC
+;		ADC		#_MAP_ELECTRO_LR
+;		LDY		#$00
+;		STA		(word_D2),Y
+;		RTS
+
+_tile_conjunctions_table:
 		.BYTE	$00,$00,$00,$00,$01,$02,$03,$08,$01,$04,$05,$09,$01,$06,$07,$0A
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150696:
+_clamp_conjunction_flags:
 		LDA		byte_D5
 		LDX		byte_511
-		BEQ		loc_1506AA
+		BEQ		loc_1506AA						; test for side cases
 		CPX		#$4B
 		BEQ		loc_1506A5
 		BCS		loc_1506AA
 		BCC		loc_1506AC
 loc_1506A5:
-		AND		#$0E
+		AND		#$0E							; remove right side flag
 		JMP		loc_1506AC
 loc_1506AA:
-		AND		#$0D
+		AND		#$0D							; remove left side flag
 loc_1506AC:
 		LDX		byte_512
-		BNE		loc_1506B3
+		BNE		loc_1506B3						; the same for top side
 		AND		#$07
 loc_1506B3:
 		CPX		#$4B
-		BCC		loc_1506B9
+		BCC		loc_1506B9						; and bottom sides
 		AND		#$0B
 loc_1506B9:
 		STA		byte_D5
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1506BC:
-		JSR		sub_150817
-		JSR		sub_150857
-		BCS		loc_1506D4
-		CMP		#$B8
-		BEQ		loc_1506D3
-		CMP		#$B9
-		BEQ		loc_1506D3
-		CMP		#$E1
-		BEQ		loc_1506D3
-		CLC
-		BCC		loc_1506D4
-loc_1506D3:
-		SEC
+_test_conjunction_road_tiles:
+		JSR		_get_tile_above
+		JSR		_is_tile_a_road
+		BCS		loc_1506D4						; yes if C=1
+		JSR		_is_tile_a_road_cross_ud		; OPTIMIZED
+; REDUNDANT
+;		CMP		#_MAP_ROAD_RAIL_UD				; test for additional UD tiles
+;		BEQ		loc_1506D3						;
+;		CMP		#_MAP_ELECTRO_ROAD_LR
+;		BEQ		loc_1506D3
+;		CMP		#_MAP_WATER_ROAD_UD
+;		BEQ		loc_1506D3
+;		CLC
+;		BCC		loc_1506D4
+;loc_1506D3:
+;		SEC
 loc_1506D4:
-		ROL		byte_D5
-		JSR		sub_150852
-		JSR		sub_150857
-		BCS		loc_1506EE
-		CMP		#$B8
-		BEQ		loc_1506ED
-		CMP		#$B9
-		BEQ		loc_1506ED
-		CMP		#$E1
-		BEQ		loc_1506ED
-		CLC
-		BCC		loc_1506EE
-loc_1506ED:
-		SEC
+		ROL		byte_D5							; memorize the result
+		JSR		_get_tile_below
+		JSR		_is_tile_a_road
+		BCS		loc_1506EE						; once again, may be optimized
+		JSR		_is_tile_a_road_cross_ud		; OPTIMIZSED
+;		CMP		#_MAP_ROAD_RAIL_UD				; REDUNDANT
+;		BEQ		loc_1506ED
+;		CMP		#_MAP_ELECTRO_ROAD_LR
+;		BEQ		loc_1506ED
+;		CMP		#_MAP_WATER_ROAD_UD
+;		BEQ		loc_1506ED
+;		CLC
+;		BCC		loc_1506EE
+;loc_1506ED:
+;		SEC
 loc_1506EE:
-		ROL		byte_D5
-		JSR		sub_150833
-		JSR		sub_150857
+		ROL		byte_D5							; more results
+		JSR		_get_tile_leftmost
+		JSR		_is_tile_a_road
 		BCS		loc_150708
-		CMP		#$B7
-		BEQ		loc_150707
-		CMP		#$BA
-		BEQ		loc_150707
-		CMP		#$E0
-		BEQ		loc_150707
-		CLC
-		BCC		loc_150708
-loc_150707:
-		SEC
+		JSR		_is_tile_a_road_cross_lr		; OPTIMIZED
+;		CMP		#_MAP_ROAD_RAIL_LR				; REDUNDANT
+;		BEQ		loc_150707
+;		CMP		#_MAP_ELECTRO_ROAD_UD
+;		BEQ		loc_150707
+;		CMP		#_MAP_WATER_ROAD_LR
+;		BEQ		loc_150707
+;		CLC
+;		BCC		loc_150708
+;loc_150707:
+;		SEC
 loc_150708:
 		ROL		byte_D5
-		JSR		sub_15084D
-		JSR		sub_150857
+		JSR		_get_tile_rightmost
+		JSR		_is_tile_a_road
 		BCS		loc_150722
-		CMP		#$B7
-		BEQ		loc_150721
-		CMP		#$BA
-		BEQ		loc_150721
-		CMP		#$E0
-		BEQ		loc_150721
-		CLC
-		BCC		loc_150722
-loc_150721:
-		SEC
+		JSR		_is_tile_a_road_cross_lr		; OPTIMIZED
+;		CMP		#_MAP_ROAD_RAIL_LR				; REDUNDANT
+;		BEQ		loc_150721
+;		CMP		#_MAP_ELECTRO_ROAD_UD
+;		BEQ		loc_150721
+;		CMP		#_MAP_WATER_ROAD_LR
+;		BEQ		loc_150721
+;		CLC
+;		BCC		loc_150722
+;loc_150721:
+;		SEC
 loc_150722:
 		ROL		byte_D5
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150725:
-		MOVW	_tmp6,word_D2
-		JSR		sub_150817
-		JSR		sub_150863
-		BCS		loc_150745
-		CMP		#$B7
-		BEQ		loc_150744
-		CMP		#$BB
-		BEQ		loc_150744
-		CMP		#$E3
-		BEQ		loc_150744
+_is_tile_a_road_cross_ud:
+		CMP		#_MAP_ROAD_RAIL_UD
+		BEQ		loc_1506ED
+		CMP		#_MAP_ELECTRO_ROAD_LR
+		BEQ		loc_1506ED
+		CMP		#_MAP_WATER_ROAD_UD
+		BEQ		loc_1506ED
 		CLC
-		BCC		loc_150745
-loc_150744:
+		RTS
+loc_1506ED:
 		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_is_tile_a_road_cross_lr:
+		CMP		#_MAP_ROAD_RAIL_LR
+		BEQ		loc_1506ED
+		CMP		#_MAP_ELECTRO_ROAD_UD
+		BEQ		loc_1506ED
+		CMP		#_MAP_WATER_ROAD_LR
+		BEQ		loc_1506ED
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_test_conjunction_rail_tiles:
+		MOVW	_tmp6,word_D2
+		JSR		_get_tile_above
+		JSR		_is_tile_a_rail
+		BCS		loc_150745
+		JSR		_is_tile_a_rail_cross_ud		; OPTIMIZED
+;		CMP		#_MAP_ROAD_RAIL_LR				; REDUNDANT
+;		BEQ		loc_150744
+;		CMP		#_MAP_ELECTRO_RAIL_LR
+;		BEQ		loc_150744
+;		CMP		#_MAP_WATER_RAIL_UD
+;		BEQ		loc_150744
+;		CLC
+;		BCC		loc_150745
+;loc_150744:
+;		SEC
 loc_150745:
 		ROL		byte_D5
 		MOVW	_tmp6,word_D2
-		JSR		sub_150852
-		JSR		sub_150863
+		JSR		_get_tile_below
+		JSR		_is_tile_a_rail
 		BCS		loc_150767
-		CMP		#$B7
-		BEQ		loc_150766
-		CMP		#$BB
-		BEQ		loc_150766
-		CMP		#$E3
-		BEQ		loc_150766
-		CLC
-		BCC		loc_150767
-loc_150766:
-		SEC
+		JSR		_is_tile_a_rail_cross_ud		; OPTIMIZED
+;		CMP		#_MAP_ROAD_RAIL_LR				; REDUNDANT
+;		BEQ		loc_150766
+;		CMP		#_MAP_ELECTRO_RAIL_LR
+;		BEQ		loc_150766
+;		CMP		#_MAP_WATER_RAIL_UD
+;		BEQ		loc_150766
+;		CLC
+;		BCC		loc_150767
+;loc_150766:
+;		SEC
 loc_150767:
 		ROL		byte_D5
 		MOVW	_tmp6,word_D2
-		JSR		sub_150833
-		JSR		sub_150863
+		JSR		_get_tile_leftmost
+		JSR		_is_tile_a_rail
 		BCS		loc_150789
-		CMP		#$B8
-		BEQ		loc_150788
-		CMP		#$BC
-		BEQ		loc_150788
-		CMP		#$E2
-		BEQ		loc_150788
-		CLC
-		BCC		loc_150789
-loc_150788:
-		SEC
+		JSR		_is_tile_a_rail_cross_lr		; OPTIMIZED
+;		CMP		#_MAP_ROAD_RAIL_UD				; REDUNDANT
+;		BEQ		loc_150788
+;		CMP		#_MAP_ELECTRO_RAIL_UD
+;		BEQ		loc_150788
+;		CMP		#_MAP_WATER_RAIL_LR
+;		BEQ		loc_150788
+;		CLC
+;		BCC		loc_150789
+;loc_150788:
+;		SEC
 loc_150789:
 		ROL		byte_D5
 		MOVW	_tmp6,word_D2
-		JSR		sub_15084D
-		JSR		sub_150863
+		JSR		_get_tile_rightmost
+		JSR		_is_tile_a_rail
 		BCS		loc_1507AB
-		CMP		#$B8
-		BEQ		loc_1507AA
-		CMP		#$BC
-		BEQ		loc_1507AA
-		CMP		#$E2
-		BEQ		loc_1507AA
-		CLC
-		BCC		loc_1507AB
-loc_1507AA:
-		SEC
+		JSR		_is_tile_a_rail_cross_lr		; OPTIMIZED
+;		CMP		#_MAP_ROAD_RAIL_UD				; REDUNDANT
+;		BEQ		loc_1507AA
+;		CMP		#_MAP_ELECTRO_RAIL_UD
+;		BEQ		loc_1507AA
+;		CMP		#_MAP_WATER_RAIL_LR
+;		BEQ		loc_1507AA
+;		CLC
+;		BCC		loc_1507AB
+;loc_1507AA:
+;		SEC
 loc_1507AB:
 		ROL		byte_D5
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1507AE:
-		JSR		sub_150817
-		JSR		sub_1508AC
-		BCS		loc_1507C6
-		CMP		#$BA
-		BEQ		loc_1507C5
-		CMP		#$BC
-		BEQ		loc_1507C5
-		CMP		#$E5
-		BEQ		loc_1507C5
+_is_tile_a_rail_cross_ud:
+		CMP		#_MAP_ROAD_RAIL_LR
+		BEQ		loc_150744
+		CMP		#_MAP_ELECTRO_RAIL_LR
+		BEQ		loc_150744
+		CMP		#_MAP_WATER_RAIL_UD
+		BEQ		loc_150744
 		CLC
-		BCC		loc_1507C6
-loc_1507C5:
+		RTS
+loc_150744:
 		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_is_tile_a_rail_cross_lr:
+		CMP		#_MAP_ROAD_RAIL_UD
+		BEQ		loc_150744
+		CMP		#_MAP_ELECTRO_RAIL_UD
+		BEQ		loc_150744
+		CMP		#_MAP_WATER_RAIL_LR
+		BEQ		loc_150744
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_test_conjunction_electro_tiles:
+		JSR		_get_tile_above
+		JSR		_is_tile_a_electro
+		BCS		loc_1507C6
+		JSR		_is_tile_a_electro_cross_ud		; OPTIMIZED
+;		CMP		#_MAP_ELECTRO_ROAD_UD			; REDUNDANT
+;		BEQ		loc_1507C5
+;		CMP		#_MAP_ELECTRO_RAIL_UD
+;		BEQ		loc_1507C5
+;		CMP		#_MAP_WATER_ELECTRIC_UD
+;		BEQ		loc_1507C5
+;		CLC
+;		BCC		loc_1507C6
+;loc_1507C5:
+;		SEC
 loc_1507C6:
 		ROL		byte_D5
-		JSR		sub_150852
-		JSR		sub_1508AC
+		JSR		_get_tile_below
+		JSR		_is_tile_a_electro
 		BCS		loc_1507E0
-		CMP		#$BA
-		BEQ		loc_1507DF
-		CMP		#$BC
-		BEQ		loc_1507DF
-		CMP		#$E5
-		BEQ		loc_1507DF
-		CLC
-		BCC		loc_1507E0
-loc_1507DF:
-		SEC
+		JSR		_is_tile_a_electro_cross_ud		; OPTIMIZED
+;		CMP		#_MAP_ELECTRO_ROAD_UD			; REDUNDANT
+;		BEQ		loc_1507DF
+;		CMP		#_MAP_ELECTRO_RAIL_UD
+;		BEQ		loc_1507DF
+;		CMP		#_MAP_WATER_ELECTRIC_UD
+;		BEQ		loc_1507DF
+;		CLC
+;		BCC		loc_1507E0
+;loc_1507DF:
+;		SEC
 loc_1507E0:
 		ROL		byte_D5
-		JSR		sub_150833
-		JSR		sub_1508AC
+		JSR		_get_tile_leftmost
+		JSR		_is_tile_a_electro
 		BCS		loc_1507FA
-		CMP		#$B9
-		BEQ		loc_1507F9
-		CMP		#$BB
-		BEQ		loc_1507F9
-		CMP		#$E4
-		BEQ		loc_1507F9
-		CLC
-		BCC		loc_1507FA
-loc_1507F9:
-		SEC
+		JSR		_is_tile_a_electro_cross_lr		; OPTIMIZED
+;		CMP		#_MAP_ELECTRO_ROAD_LR			; REDUNDANT
+;		BEQ		loc_1507F9
+;		CMP		#_MAP_ELECTRO_RAIL_LR
+;		BEQ		loc_1507F9
+;		CMP		#_MAP_WATER_ELECTRIC_LR
+;		BEQ		loc_1507F9
+;		CLC
+;		BCC		loc_1507FA
+;loc_1507F9:
+;		SEC
 loc_1507FA:
 		ROL		byte_D5
-		JSR		sub_15084D
-		JSR		sub_1508AC
+		JSR		_get_tile_rightmost
+		JSR		_is_tile_a_electro
 		BCS		loc_150814
-		CMP		#$B9
-		BEQ		loc_150813
-		CMP		#$BB
-		BEQ		loc_150813
-		CMP		#$E4
-		BEQ		loc_150813
-		CLC
-		BCC		loc_150814
-loc_150813:
-		SEC
+		JSR		_is_tile_a_electro_cross_lr		; OPTIMIZED
+;		CMP		#_MAP_ELECTRO_ROAD_LR			; OPTIMIZED
+;		BEQ		loc_150813
+;		CMP		#_MAP_ELECTRO_RAIL_LR
+;		BEQ		loc_150813
+;		CMP		#_MAP_WATER_ELECTRIC_LR
+;		BEQ		loc_150813
+;		CLC
+;		BCC		loc_150814
+;loc_150813:
+;		SEC
 loc_150814:
 		ROL		byte_D5
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150817:
-		DEC		_tmp6+1
-		DEC		word_D2+1
-		LDA		word_D2+1
-		CMP		#$60
-		BCC		loc_150828
-loc_150821:
-		LDY		#$B4
-		LDA		(word_D2),Y
-		INC		word_D2+1
+_is_tile_a_electro_cross_ud:
+		CMP		#_MAP_ELECTRO_ROAD_UD
+		BEQ		loc_1507C5
+		CMP		#_MAP_ELECTRO_RAIL_UD
+		BEQ		loc_1507C5
+		CMP		#_MAP_WATER_ELECTRIC_UD
+		BEQ		loc_1507C5
+		CLC
 		RTS
-loc_150828:
-		LDA		word_D2
-		CMP		#$4C
-		BCS		loc_150821
-		LDA		#$FF
-		INC		word_D2+1
+loc_1507C5:
+		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150833:
+_is_tile_a_electro_cross_lr:
+		CMP		#_MAP_ELECTRO_ROAD_LR
+		BEQ		loc_1507C5
+		CMP		#_MAP_ELECTRO_RAIL_LR
+		BEQ		loc_1507C5
+		CMP		#_MAP_WATER_ELECTRIC_LR
+		BEQ		loc_1507C5
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_tile_above:
+		DEC		_tmp6+1
+		DEC		word_D2+1						; test one tile above surronding ones
+		LDA		word_D2+1
+		CMP		#>[_wram_map_buf]
+		BCC		loc_150828						; rough out of bounds test again
+loc_150821:
+		LDY		#$B4
+		LDA		(word_D2),Y						; read it
+		INC		word_D2+1
+		RTS
+loc_150828:
+		LDA		word_D2							; precise out of bounds test
+		CMP		#$4C
+		BCS		loc_150821
+		LDA		#$FF
+		INC		word_D2+1						; read nothing, return
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_tile_leftmost:
 		DEC		_tmp6+1
 		DEC		word_D2+1
 		LDA		word_D2+1
-		CMP		#$60
+		CMP		#>[_wram_map_buf]
 		BCC		loc_150844
 loc_15083D:
 		LDY		#$FF
@@ -1003,22 +1178,22 @@ loc_150844:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_15084D:
+_get_tile_rightmost:
 		LDY		#$01
 		LDA		(word_D2),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150852:
+_get_tile_below:
 		LDY		#$4C
 		LDA		(word_D2),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150857:
-		CMP		#$91
+_is_tile_a_road:
+		CMP		#_MAP_ROAD_LR
 		BCC		loc_150861
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BCS		loc_150861
 		SEC
 		RTS
@@ -1027,14 +1202,14 @@ loc_150861:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150863:
-		CMP		#$7D
+_is_tile_a_rail:
+		CMP		#_MAP_TRAIN_STATION				; special case for train station
 		BEQ		loc_150873
-		CMP		#$88
-		BCC		loc_150877
-		CMP		#$9C
+		CMP		#_MAP_INTERNAL_BUILD8			; we can be inside the building only
+		BCC		loc_150877						; if we in train station...
+		CMP		#_MAP_RAIL_LR
 		BCC		loc_150875
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCS		loc_150875
 loc_150873:
 		SEC
@@ -1043,22 +1218,25 @@ loc_150875:
 		CLC
 		RTS
 loc_150877:
-		CMP		#$80
-		BCC		loc_150875
-		PHA
-		AND		#$0F
-		ASL
+		CMP		#_MAP_INTERNAL_BUILD0			; the same calcs as for train object
+		BCC		loc_150875						; for detecting it is inside train
+		PHA										; station, here we treat any tile of
+		AND		#$0F							; train station as a straight rail line
+;		ASL										; REDUNDANT
 		TAX
 		LDA		_tmp6
 		SEC
-		SBC		byte_15089C,X
-		STA		_tmp6
-		INX
-		LDA		_tmp6+1
-		SBC		byte_15089C,X
-		STA		_tmp6+1
+		SBC		_special_tiles_ofs_list,X		; REDUNDANT, the same list here used, but
+		STA		_tmp6							; with 16-bit redundancy
+;		INX										; REDUNDANT, always 0, simple 8bit subtract
+;		LDA		_tmp6+1
+;		SBC		byte_15089C,X
+;		STA		_tmp6+1
+		BCS		loc_150898						; OPTIMIZED
+		DEC		_tmp6+1							; -
+loc_150898:										; -
 		LDA		(_tmp6),Y
-		CMP		#$7D
+		CMP		#_MAP_TRAIN_STATION				; test for actual building tile idx
 		BNE		loc_150899
 		PLA
 		SEC
@@ -1067,16 +1245,18 @@ loc_150899:
 		PLA
 		CLC
 		RTS
-byte_15089C:
-		.BYTE	$4C,$00,$4D,$00,$01,$00,$98,$00,$99,$00,$9A,$00,$4E,$00,$02,$00
+
+; REDUNDANT
+;byte_15089C:
+;		.BYTE	$4C,$00,$4D,$00,$01,$00,$98,$00,$99,$00,$9A,$00,$4E,$00,$02,$00
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1508AC:
-		CMP		#$90
+_is_tile_a_electro:
+		CMP		#_MAP_GROUND0
 		BCC		loc_1508B8
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_1508BA
-		CMP		#$B2
+		CMP		#_MAP_GRASS
 		BCS		loc_1508BA
 loc_1508B8:
 		SEC
@@ -1235,7 +1415,7 @@ sub_1509CF:
 		BNE		loc_1509DF
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1509D5:
+_calc_constr_area_update_params:
 		LDA		#$00
 		STA		byte_CE
 		STA		byte_CF
@@ -1281,7 +1461,7 @@ loc_150A15:
 		LDA		#$FF
 		STA		byte_5D
 		STA		byte_5C
-		JMP		sub_1500F1
+		JMP		_swap_constr_area_update_params
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_constr_cursor_map_ofs:

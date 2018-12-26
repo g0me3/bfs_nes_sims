@@ -456,7 +456,8 @@ _test_for_valid_vert_road_water_joint:
 		BEQ		.valid_water_joint
 		CMP		#_MAP_BRIDGE_WATER_UD
 		BEQ		.valid_water_joint
-		BNE		.invalid_water_joint
+		CLC
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_electric_water_joint:
@@ -489,7 +490,8 @@ _test_for_valid_vert_electric_water_joint:
 		BEQ		loc_B8359
 		CMP		#_MAP_WATER_RAIL_UD
 		BEQ		loc_B8359
-		BNE		loc_B8357
+		CLC
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_rail_water_joint:
@@ -526,129 +528,126 @@ _test_for_valid_vert_rail_water_joint:
 		BEQ		loc_B838B
 		CMP		#_MAP_WATER_ELECTRIC_UD
 		BEQ		loc_B838B
-		BNE		loc_B8389
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B83A7:
-		LDA		#$FF
-		STA		_cur_build_store_tile_idx
-		LDA		_city._game_flags
-		AND		#$10
-		BEQ		loc_B83B4
 		CLC
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_is_building_available_here:
+		LDA		#$FF
+		STA		_cur_build_store_tile_idx		; set default building flag
+		LDA		_city._game_flags
+		AND		#$10
+		BEQ		loc_B83B4						; no test if debug mode
+		CLC										; C=0 - allowed
+		RTS
 loc_B83B4:
-		LDY		#$00
+		LDY		#$00							; test all tiles under the future building
 loc_B83B6:
 		STY		_ptr0
-		LDA		(_tmp_ptrC5),Y
+		LDA		(_tmp_ptrC5),Y					; according to scheme
 		CMP		#$80
 		BEQ		loc_B83CA
 		TAY
-		LDA		(_tmp_ptrC1),Y
-		JSR		sub_B83D0
+		LDA		(_tmp_ptrC1),Y					; read and test if we can build here something
+		JSR		_test_build_available_tile
 		LDY		_ptr0
 		INY
-		BCC		loc_B83B6
+		BCC		loc_B83B6						; C here is a result of JSR!
 ;locret_B83C9:
-		RTS
+		RTS										; C=1 here, forbid
 loc_B83CA:
 		JMP		_money_subtract					; OPTIMIZED
-;		BCS		locret_B83C9					; REDUNDANT, it will exit anyway with correct C
+;		BCS		locret_B83C9					; REDUNDANT, exit anyway with correct C no need to recheck
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B83D0:
+_test_build_available_tile:
 		PHA
-		LDA		_const_palette_selected_idx
+		LDA		_const_palette_selected_idx		; present buildings?
 		CMP		#$0D
-		BNE		loc_B83E1
-		LDY		_cur_present_select_idx
-		LDA		_city._presents_list,Y
+		BNE		.regular_test
+		LDY		_cur_present_select_idx			; yes, try specual case of
+		LDA		_city._presents_list,Y			; water claim present
 		CMP		#$05
-		BEQ		loc_B8441
-loc_B83E1:
+		BEQ		.water_claim_test
+.regular_test:
 		PLA
+		CMP		#_MAP_GROUND0					; not grounds, forbid alwaya
+		BCC		.forbid							; can't autobulldoze buildings
 		CMP		#_MAP_GROUND0
-		BCC		.true
-		CMP		#_MAP_GROUND0
-		BEQ		loc_B842C
+		BEQ		.allow
 		PHA
-		LDA		_city._game_flags
+		LDA		_city._game_flags				; test for autobuldoze flag
 		LSR
-		BCC		loc_B843E
-		LDA		_const_palette_selected_idx
+		BCC		.no_auto_bulldoze_here
+		LDA		_const_palette_selected_idx		; special case for train station present
 		CMP		#$0D
 		BNE		loc_B8401
 		LDY		_cur_present_select_idx
 		LDA		_city._presents_list,Y
 		CMP		#$0E
-		BEQ		loc_B8453
+		BEQ		.train_station_test
 loc_B8401:
 		PLA
-loc_B8402:
+.regular_bulldoze:
 		LDY		_const_palette_selected_idx
 		CPY		#$04
-		BEQ		loc_B8410
-		CMP		#_MAP_ELECTRO_LR
-		BCC		.true
+		BEQ		.common_bulldoze_test			; skip additional check for parks
+		CMP		#_MAP_ELECTRO_LR				; buildings can be build above electic wires
+		BCC		.forbid
 		CMP		#_MAP_GRASS
-		BCC		loc_B8436
-loc_B8410:
-		CMP		#_MAP_CORRUPTED
+		BCC		.electo_wires_bulldoze			; bulldoze wires
+.common_bulldoze_test:
+		CMP		#_MAP_CORRUPTED					; all including grass and trees are forbidden
 		BCC		loc_B842E
-		BEQ		loc_B8426
-		CMP		#_MAP_SHORE0
-		BCC		.true
+		BEQ		.allow_with_bulldoze			; can bulldoze corrupted map
+		CMP		#_MAP_SHORE0					; mixed tiles are forbinned
+		BCC		.forbid
 		CMP		#_MAP_WATER_ROAD_LR
-		BCC		loc_B8426
+		BCC		.allow_with_bulldoze			; here is the reange for sea shores and grounds
 		CMP		#_MAP_CORRUPT0
-		BCC		.true
-		CMP		#_MAP_BRIDGE_WATER_LR
-		BCS		.true
-loc_B8426:
-		INCW	_cur_building_price
-loc_B842C:
+		BCC		.forbid
+		CMP		#_MAP_BRIDGE_WATER_LR			; the rest of forbiddent tiles are for fire, etc
+		BCS		.forbid
+.allow_with_bulldoze:
+		INCW	_cur_building_price				; increment bulldoze price
+.allow:
 		CLC
 		RTS
 loc_B842E:
-		LDA		_const_palette_selected_idx
+		LDA		_const_palette_selected_idx		; can bulldoze parks as well, but can't rebulldoze it
 		CMP		#$04
-		BNE		loc_B8426
-		BEQ		.true
-loc_B8436:
-		LDA		_const_palette_selected_idx
+		BNE		.allow_with_bulldoze
+		BEQ		.forbid
+.electo_wires_bulldoze:
+		LDA		_const_palette_selected_idx		; the same here for electrics
 		CMP		#$02
-		BNE		loc_B8426
-		BEQ		.true
-loc_B843E:
+		BNE		.allow_with_bulldoze
+		BEQ		.forbid
+.no_auto_bulldoze_here:
 		PLA
-.true:
+.forbid:
 		SEC
 		RTS
-loc_B8441:
+.water_claim_test:
 		PLA
-		CMP		#_MAP_WATER
-		BCC		loc_B8450
+		CMP		#_MAP_WATER						; water claims only full watered area including shores
+		BCC		.regular_bulldoze
 		CMP		#_MAP_GROUND01
 		BCC		.false
 		CMP		#_MAP_WATER_ROUTE
-		BNE		loc_B8450
+		BNE		.regular_bulldoze
 .false:
-;		CLC										; REDUNDANT, C=0 already here
+		CLC
 		RTS
-loc_B8450:
-		JMP		loc_B8402
-loc_B8453:
+.train_station_test:
 		PLA
 		CMP		#_MAP_RAIL_LR
-		BCC		loc_B845E
+		BCC		.regular_bulldoze
 		CMP		#_MAP_ELECTRO_LR
-		BCS		loc_B845E
+		BCS		.regular_bulldoze
 ;		CLC										; REDUNDANT, C=0 already here
 		RTS
-loc_B845E:
-		JMP		loc_B8402
 
 ; =============== S U B	R O U T	I N E =======================================
 ; subtracts the delta amount from money if possible, return C=0 if sucess
@@ -1270,8 +1269,8 @@ _bank_scr_sub7_already_loan_draw:
 		LDX		#$00
 		LDA		_city._loan_period
 loc_B8C1C:
-		CMP		#$0A
-		BCC		loc_B8C25
+		CMP		#$0A							; quick and dirty decimal conversion
+		BCC		loc_B8C25						; number cannot be higher than 20
 		SBC		#$0A
 		INX
 		BNE		loc_B8C1C
@@ -1283,24 +1282,24 @@ loc_B8C25:
 		PPUQMOVB	#$26,OP_NOP,0
 		PPUQMOVB	#$02,OP_NOP,0
 		LDY		_ptr0+1
-		LDA		byte_B8CB7,Y
+		LDA		_loan_font_tiles_top_list,Y
 		PPUQMOVA
 		LDY		_ptr0
-		LDA		byte_B8CB7,Y
+		LDA		_loan_font_tiles_top_list,Y
 		PPUQMOVA
 		PPUQMOVB	#$16,OP_NOP,0
 		PPUQMOVB	#$27,OP_NOP,0
 		PPUQMOVB	#$02,OP_NOP,0
 		LDY		_ptr0+1
-		LDA		byte_B8CC3,Y
+		LDA		_loan_font_tiles_bottom_list,Y
 		PPUQMOVA
 		LDY		_ptr0
-		LDA		byte_B8CC3,Y
+		LDA		_loan_font_tiles_bottom_list,Y
 		PPUQMOVA
 		PPUQEND
 		INC		_tmp118+2
 		EXTQSTART
-		EXTQMOVB	#$F6,OP_NOP,0
+		EXTQMOVB	#$F6,OP_NOP,0				; set extnt as well
 		EXTQMOVB	#$5E,OP_NOP,0
 		EXTQMOVB	#$02,OP_NOP,0
 		EXTQMOVB	#$D8,OP_NOP,0
@@ -1312,9 +1311,10 @@ loc_B8C25:
 		EXTQMOVA
 		EXTQEND
 		JMP		_bank_scr_common_spr_draw_pos3F
-byte_B8CB7:
+
+_loan_font_tiles_top_list:
 		.BYTE	$CA,$CB,$CC,$CD,$CE,$CF,$EA,$EB,$EC,$ED,$EE,$EF
-byte_B8CC3:
+_loan_font_tiles_bottom_list:
 		.BYTE	$DA,$DB,$DC,$DD,$DE,$DF,$FA,$FB,$FC,$FD,$FE,$FF
 
 ; =============== S U B	R O U T	I N E =======================================
