@@ -420,6 +420,23 @@ _apu_dpcm_disable_flag:
 _apu_se80_loop_counter:
 		.BYTE	0
 
+		_tpos	_info_maps_rect_pos
+
+		_tpos	_map_start_pos
+
+		_tpos	_map_pos
+
+		_tpos	_map_tmp_pos
+
+		_tpos	_tmp_map_pos
+
+_tmp_map_pos_backup_buf_Y:
+		.BYTE	0,0,0
+_tmp_map_pos_backup_buf_X:
+		.BYTE	0,0,0
+
+		_tpos	_tmp_area_pos
+
 		ECHO "-------------"
 		ECHO "zero ram free:",[$100-.]
 		ECHO "-------------"
@@ -488,7 +505,7 @@ _max_tax_rate:
 _taxes_income:
 		.BYTE	0,0,0
 
-		_tpos	_info_maps_rect_pos
+;		_tpos	_info_maps_rect_pos
 
 _info_maps_menu_extra_value_backup:
 		.BYTE	0
@@ -545,15 +562,25 @@ _new_city_button_to_change_flags:
 byte_15F:
 		.BYTE	0
 
+		ORG	$160
+
 		_tarray	_stack_upper,$50
 
 		_tarray	_stack_lower,$50
 
+		ORG	$200
+
 		_tarray	_spr_buf,$100
+
+		ORG	$300
 
 		_tarray	_ppu_queue_buf,$100
 
+		ORG	$400
+
 		_tarray	_extnt_queue_buf,$100
+
+		ORG	$500
 
 _pad0_autorep_delay:
 		.BYTE	0
@@ -578,7 +605,7 @@ _screen_pal_cur_bg_idx:
 
 		_tpos _prev_constr_cursor_tile
 
-		_tpos	_cur_constr_cursor_map_pos
+		_tpos _cur_constr_cursor_map_pos
 
 _tmp511:
 		.BYTE	0
@@ -698,11 +725,11 @@ _train_hide_mode:
 _train_turns_counter:
 		.BYTE	0
 
-		_tpos	_map_start_pos
-
-		_tpos	_map_pos
-
-		_tpos	_map_tmp_pos
+;		_tpos	_map_start_pos
+;
+;		_tpos	_map_pos
+;
+;		_tpos	_map_tmp_pos
 
 _tmp579:
 		.BYTE	0
@@ -936,7 +963,7 @@ _counters_area_size	EQU	[.-_total_RCI_counts]
 _corruption_anim_flag:
 		.BYTE	0
 
-		_tpos _tmp_map_pos
+;		_tpos _tmp_map_pos
 
 _last_map_tile_read:
 		.BYTE	0
@@ -962,18 +989,17 @@ _cur_area_develop_state:
 
 		_tfix8_8	_prev_RCI_levels_sum
 
-;		.BYTE	0		; *unused*
-;		.BYTE	0		; *unused*
 _popul_last_year:
-		.BYTE	0,0,0
-_tmp_map_pos_backup_buf_Y:
-		.BYTE	0,0,0
-_tmp_map_pos_backup_buf_X:
 		.BYTE	0,0,0
 
 		_tpos	_max_popul_dencity_pos
 
-		_tpos	_tmp_area_pos
+;_tmp_map_pos_backup_buf_Y:
+;		.BYTE	0,0,0
+;_tmp_map_pos_backup_buf_X:
+;		.BYTE	0,0,0
+;
+;		_tpos	_tmp_area_pos
 
 _life_ratio_idx:
 		.BYTE	0

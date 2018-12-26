@@ -3095,7 +3095,7 @@ _smooth_woods_edges:
 ;		STY		_tmp4
 .woods_area_loop:
 ;		LDY		_tmp4							; end loop test comes first correct here
-;		CPY		#$04							; then read current surrounding tile
+;		CPY		#$04							; then read current nearest tile
 ;		BCS		.put_woods_pixel				; let do the same as for other sub
 		STY		_tmp4
 		LDA		_map_pos._COL

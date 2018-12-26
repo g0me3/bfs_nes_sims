@@ -22,11 +22,11 @@ _THREAD1_MAIN:
 		FJSR	_RCI_meters_recalc,SRAM,PRGA	; probably should be after clearing values here?
 		JSR		_overall_stats_clear			; clear statistic counters and average values
 		JSR		_overall_stats_recalc			; collect statistic for current map
-		JSR		_interpolate_police_fire_maps	; police and fire maps are initially updated in prev routine
+		JSR		_smooth_police_and_fire_maps	; police and fire maps are initially updated in prev routine
 		FJSR	_power_grid_recalc,SRAM,PRGA	; power connections and consumption recalc
-		JSR		_land_value_recalc				; land map and average recalc
-		JSR		_crime_recalc			; crime map and average recalc
-		JSR		_popul_dencity_recalc		; population dencity and with migration point
+		JSR		_land_value_and_pollution_recalc; land map and average recalc
+		JSR		_crime_recalc					; crime map and average recalc
+		JSR		_popul_dencity_recalc			; population dencity and with migration point
 		LDA		#$FF
 		STA		_thread1_flags					; disable all ctitical sections, now all priorities are
 		STA		_thread1_flags+1				; reset
@@ -56,7 +56,7 @@ _rci_meters_calc_skip:
 		JSR		_overall_stats_recalc			; collect stats one more time
 		LDA		#$03
 		STA		_thread0_flags+1
-		JSR		_interpolate_police_fire_maps	; do the same as on start, but with some
+		JSR		_smooth_police_and_fire_maps	; do the same as on start, but with some
 		LDA		#$00							; priority masking
 		STA		_thread0_flags+1
 		JSR		_map_corruption_tiles_animate	; animate map again. a lot of them here
@@ -115,11 +115,11 @@ _rci_meters_calc_skip:
 		LDY		_city._game_speed				; for the rest of recalculations we have three
 		LDA		_game_core_speed_mask_list,Y	; three speed options. all recalcs for fast mode go
 		AND		_city._cur_week					; every 16 weeks, normal - every 8, slow - every 4.
-;		CMP		_land_value_recalc_delay_list,Y	; land values calculated first within each delay
+;		CMP		_land_value_and_pollution_recalc_delay_list,Y	; land values calculated first within each delay
 		BNE		loc_11E135						; period, at counter 0
 		LDA		#$A0							; all these recalcs are time consuming, so time for
 		JSR		_critical_section_enter			; complete this loop increased with a number of
-		JSR		_land_value_recalc				; calcs performes, so for fast modes they just skip
+		JSR		_land_value_and_pollution_recalc; calcs performes, so for fast modes they just skip
 		LDA		#$A0							; all except main evaluations
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -131,7 +131,7 @@ loc_11E135:
 		BNE		loc_11E153						; set of delay counters and masks, which
 		LDA		#$40							; are always 0, so when you get here and change
 		JSR		_critical_section_enter			; speed, at least two other calculations will
-		JSR		_crime_recalc			; be forced
+		JSR		_crime_recalc					; be forced
 		LDA		#$40
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -148,7 +148,7 @@ loc_11E153:
 		JSR		_critical_section_leave			; animate map corruptions every time we exit the
 		JSR		_map_corruption_tiles_animate	; long routine.
 loc_11E171:
-		JSR		_disasters_handlers_select		; and finally at the end of the week we select the
+		JSR		_disasters_selector				; and finally at the end of the week we select the
 		JSR		_map_corruption_tiles_animate	; desister if enabled manually or for scenario
 		JMP		_THREAD1_LOOP
 
@@ -156,7 +156,7 @@ _power_grid_recalc_delay_mask:
 		.BYTE	$03,$00,$00,$00
 _game_core_speed_mask_list:
 		.BYTE	$0F,$07,$03,$00
-;_land_value_recalc_delay_list:
+;_land_value_and_pollution_recalc_delay_list:
 ;		.BYTE	$00,$00,$00,$00					; REDUNDAT, actually this not needed, because all zeroes
 _crime_recalc_delay_list:
 		.BYTE	$04,$02,$01,$00
@@ -249,7 +249,7 @@ loc_11E1F2:
 		LDA		_obj_active_flags				; no airports - no flying objects
 		AND		#$FC							; remove existing if airport destroyed
 		STA		_obj_active_flags
-; NEW: re-implement another ship starting procedures, not intended to be used in original version
+; NEW: re-implemented another ship starting procedures, not intended to be used in original version
 ; -
 loc_11E23F:
 		LDA		_sea_ports_count
@@ -337,7 +337,7 @@ _map_tile_stats_collect:
 loc_11E2FB:
 		CPY		#_MAP_GROUND					; no need to do somerhing with
 		BNE		loc_11E308
-		INCW	_ground_count		; count bulldozered grounds for owerview screen
+		INCW	_ground_count					; count bulldozered grounds for owerview screen
 		RTS
 loc_11E308:
 ;		LDA		_last_map_tile_read				; REDUNDANT, _last_map_tile_read here still in Y
@@ -440,10 +440,10 @@ loc_11E396:
 		JSR		_rand							; current tile
 		CMP		#$F4							; or with probability 12/256
 		BCC		loc_11E3B2						; burn this near tile
-		JSR		_fire_cur_map_tile
+		JSR		_burn_cur_map_tile
 loc_11E3B2:
 		JSR		_back_from_near_tmp_map_pos_tile; return to to the cur tile, repeat
-loc_11E3B5:										; for all 4 surrounding tiles
+loc_11E3B5:										; for all 4 nearest tiles
 		DEX
 		BPL		loc_11E396
 		RTS
@@ -455,7 +455,7 @@ _flooded_tile_collect:
 		DEC		_disaster_tiles_to_flood_count	; when counter drops zero
 		LDY		#$03
 .do_flood:
-		TYA										; do test floods for all surrounding tiles
+		TYA										; do test floods for all nearest tiles
 		PHA										; store counter for now
 		JSR		_rand							; with probability 1/8 do flood
 		AND		#$07
@@ -882,7 +882,7 @@ locret_11F550:
 
 ; =============== S U B	R O U T	I N E =======================================
 _R_develop_up:
-		JSR		_read_pollution_map_nibble		; even if you have good delta and other stuff
+		JSR		_read_pollution_map		; even if you have good delta and other stuff
 		CMP		#$08							; hight area pollution disable the grow up
 		BCS		locret_11F3BE
 		JSR		_map_tile_read
@@ -1160,7 +1160,7 @@ loc_11F46A:
 		SUBB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F474:
-		JSR		_read_land_val_map_nibble		; C grow up depends on land value
+		JSR		_read_land_value_map			; C grow up depends on land value
 		LSR										; divided by two 0-7
 		CMP		_cur_area_develop_state			; if area dev state higher
 		BCC		locret_11F48C					; there is no growth
@@ -1756,7 +1756,7 @@ loc_11EA55:
 		LDA		_map_tiles_flags_tbl,Y
 		AND		#_FL_RAIL
 		BNE		loc_11EA76						; if rails, no traffic applied
-		JSR		_read_traffic_map_nibble		; if roads, update traffic map
+		JSR		_read_traffic_map		; if roads, update traffic map
 		CLC
 		ADC		#$02
 		JSR		_write_traffic_map_nibble
@@ -1819,7 +1819,7 @@ _small_building_surrond_tiles_row_list:
 		.BYTE	$00,$01,$FF,$02,$FF,$02,$00,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-_land_value_recalc:
+_land_value_and_pollution_recalc:
 		JSR		_clear_tmp_map_buf				; prepare tmp map buffer
 		LDA		#$00							; 19x19 4-bit nibbles
 		STA		_tmp6CC
@@ -1837,50 +1837,50 @@ _land_value_recalc:
 		JSR		_get_area_map_pos				; convert area pos to map pos
 		LDA		_tmpE7
 		JSR		_write_tmp_map_19_19			; store value, 255 always clamped to 15 here
-		JSR		sub_11F10B
-		STA		_tmpE6
-		LDA		#$0F
+		JSR		_get_dist_to_max_popul			; calculate distance between current point
+		STA		_tmpE6							; and max population dencity area calculated on previous
+		LDA		#$0F							; iteration
 		SEC
-		SBC		_tmpE6
+		SBC		_tmpE6							; scale E8 = (15-E6)*16
 		ASL
 		ASL
 		ASL
 		ASL
 		STA		_tmpE8
-		JSR		_surronding_map_are_protected_tile_sum
-		JSR		_get_area_map_pos
-		JSR		_read_pollution_map_nibble
+		JSR		_get_nearest_areas_prot_tiles_count	; 6D3 = sum*2
+		JSR		_get_area_map_pos				; convert to map pos again
+		JSR		_read_pollution_map				; read previous pollution map nibble for selected area
 		ASL
 		ASL
 		ASL
 		ASL
-		STA		_tmpE6
+		STA		_tmpE6							; E6 = pollution*16
 		LDA		_tmpE8
 		SEC
 		SBC		_tmpE6
-		BCS		loc_11EB28
+		BCS		loc_11EB28						; clamp to 0 if negative
 		LDA		#$00
 loc_11EB28:
-		STA		_tmpE8
-		JSR		_get_area_map_pos
-		JSR		_read_crime_map_nibble
+		STA		_tmpE8							; E8 = E8 - E6 = (pollution*16)-((15-popul_dist)*16)
+		JSR		_get_area_map_pos				; some kind of "pollution ratio"
+		JSR		_read_crime_map					; get crive value from previous iteration
 		CMP		#$0B
-		BCC		loc_11EB3E
-		LDA		_tmpE8
+		BCC		loc_11EB3E						; crime level less than 11 out of 15 is ok
+		LDA		_tmpE8							; higher crime level decreases the pollution ratio
 		SBC		#$14
 		BCS		loc_11EB3C
 		LDA		#$00
 loc_11EB3C:
 		STA		_tmpE8
 loc_11EB3E:
-		LDA		_tmpE8
-		CLC
+		LDA		_tmpE8							; now, sum ratio with prot tiles count
+		CLC										; clamp to FF
 		ADC		_tmp6D3
 		BCC		loc_11EB48
 		LDA		#$FF
 loc_11EB48:
-		LSR
-		LSR
+		LSR										; rescale land_value = E8/32+E8/64, rough division
+		LSR										; by ~27
 		LSR
 		LSR
 		LSR
@@ -1888,19 +1888,19 @@ loc_11EB48:
 		LSR
 		CLC
 		ADC		_tmpE8
-		BNE		loc_11EB57
+		BNE		loc_11EB57						; can't be zero, clamped to 1
 		LDA		#$01
 loc_11EB57:
 		PHA
 		CLC
-		ADC		_tmp6CC
+		ADC		_tmp6CC							; summing
 		STA		_tmp6CC
 		BCC		loc_11EB64
 		INC		_tmp6CC+1
 loc_11EB64:
-		INCW	_tmp6CE
+		INCW	_tmp6CE							; increment counter of summed areas
 		PLA
-		JSR		_write_land_val_map_nibble
+		JSR		_write_land_value_map			; write down recalculated land value
 .pollution_scan_next:
 		INC		_tmp_area_pos._COL
 		LDA		_tmp_area_pos._COL
@@ -1914,20 +1914,17 @@ loc_11EB7D:
 		BEQ		loc_11EB8A
 		JMP		.pollution_scan_row
 loc_11EB8A:
-		LDA		_tmp6CE
-		ORA		_tmp6CE+1
+		LDA		_tmp6CE							; test if dividend is zero, then
+		ORA		_tmp6CE+1						; put the result = 0 as is
 		BNE		loc_11EB9A
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE7
+		MOVWI	_tmpE6,0
 		BEQ		loc_11EBB7
 loc_11EB9A:
-; BUG, WRONG AVERAGE CALC!
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6CC
-; -
+; BUG, WRONG AVERAGE CALC!
 ; FIX, rescale average
 		LDA		_tmp6CE							; fast divide to 8 in FIXED POINT!
 		ASL										; you may think i multiply, NO!
@@ -1948,16 +1945,16 @@ loc_11EBB7:
 		STA		_tmp6D1
 		STA		_tmp6D2
 		STA		_tmp6D3
-		JSR		_interpolate_tmp_to_select_poll_popg_popd_crime_land_maps
-		JSR		_interpolate_tmp_with_select_poll_popg_popd_crime_land_to_tmp_map
+		JSR		_smooth_tmp_map_to_select_map	; smooth tmp_map, store to pollution data
+		JSR		_merge_tmp_map_with_select_map	; merge two maps together, store to tmp map
 		LDA		#$00
 loc_11EBDA:
-		STA		_tmp_map_pos._ROW
-		LDA		#$00
+		STA		_tmp_map_pos._ROW				; very unoptimal, we copy tmp map to pollution
+		LDA		#$00							; map back again counting the average at the same time
 loc_11EBDF:
 		STA		_tmp_map_pos._COL
-		JSR		_read_tmp_map_div4_mul13_nibble
-		PHA
+		JSR		_read_tmp_map_19_19				; read nibble, increment counter of non-zero areas
+		PHA										; summing non-zero values
 		CMP		#$00
 		BEQ		loc_11EBFE
 		INCW	_tmp6D0
@@ -1968,7 +1965,7 @@ loc_11EBDF:
 		INC		_tmp6D3
 loc_11EBFE:
 		PLA
-		JSR		_write_pollution_map_nibble
+		JSR		_write_pollution_map_nibble		; write back to the pollution map
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
@@ -1979,12 +1976,11 @@ loc_11EBFE:
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EBDA
-; BUG, another wrong average calc
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
 		MOVW	_tmpE7,_tmp6D2
-; -
+; BUG, another wrong average calc
 ; FIX, rescale average
 		LDA		_tmp6D0							; fast divide to 8 in FIXED POINT!
 		ASL										; you may think i multiply, NO!
@@ -2068,7 +2064,7 @@ loc_11ECAF:
 		BEQ		loc_11ECF4
 		JSR		_get_RCI_area_develop_state
 		STA		_tmpE7
-		JSR		_read_tmp_map_div4_mul13_nibble
+		JSR		_read_tmp_map_19_19
 		CLC
 		ADC		_tmpE7
 		JSR		_write_tmp_map_19_19
@@ -2086,9 +2082,9 @@ loc_11ECF4:
 		BNE		loc_11ECAA
 		LDY		#$02							; population dencity select
 		STY		_tmp6C4
-		JSR		_interpolate_tmp_to_select_poll_popg_popd_crime_land_maps
-		JSR		_interpolate_tmp_with_select_poll_popg_popd_crime_land_to_tmp_map
-		JSR		_interpolate_tmp_to_select_poll_popg_popd_crime_land_maps
+		JSR		_smooth_tmp_map_to_select_map
+		JSR		_merge_tmp_map_with_select_map
+		JSR		_smooth_tmp_map_to_select_map
 		LDA		#$04
 		JSR		_critical_section_leave			; FIXME, section set and leave outside of this proc
 		LDA		_tmp6D0
@@ -2149,15 +2145,15 @@ loc_11ED94:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_interpolate_police_fire_maps:
-		LDA		#$00
+_smooth_police_and_fire_maps:
+		LDA		#$00								; for police map first
 		STA		_tmp6C4
-		JSR		_interpolate_select_police_fire_to_tmp_map_div2
-		JSR		_interpolate_tmp_to_select_police_fire_map_div4
-		LDA		#$01
+		JSR		_smooth_select_to_tmp_map_10_10
+		JSR		_merge_tmp_map_with_select_map_10_10; store to selected map
+		LDA		#$01								; then for fire map
 		STA		_tmp6C4
-		JSR		_interpolate_select_police_fire_to_tmp_map_div2
-		JMP		_interpolate_tmp_to_select_police_fire_map_div4
+		JSR		_smooth_select_to_tmp_map_10_10
+		JMP		_merge_tmp_map_with_select_map_10_10; store to selected map
 
 ; =============== S U B	R O U T	I N E =======================================
 ; all maps here are 16 times smaller than game map
@@ -2178,7 +2174,7 @@ loc_11EDBB:
 		LDA		#$00
 loc_11EDC0:
 		STA		_tmp_map_pos._COL				; set cur COL
-		JSR		_read_land_val_map_nibble	; read LAND value nibble [0-15]
+		JSR		_read_land_value_map			; read LAND value nibble [0-15]
 		BEQ		loc_11EDF1						; skip if zero value, no crime
 		STA		_tmpE7
 		INCW	_tmp6D0							; increment lands counter
@@ -2245,7 +2241,7 @@ loc_11EE3B:
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
-_interpolate_tmp_to_select_poll_popg_popd_crime_land_maps:
+_smooth_tmp_map_to_select_map:
 		LDA		#$00
 loc_11EE4C:
 		STA		_tmp_map_pos._ROW
@@ -2254,8 +2250,8 @@ loc_11EE51:
 		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
-		JSR		_calc_tmp_map_div4_mul13_surrond_sum
-		JSR		_read_tmp_map_div4_mul13_nibble
+		JSR		_get_tmp_map_19_19_nearest_sum
+		JSR		_read_tmp_map_19_19
 		CLC
 		ADC		_tmpE7
 		LSR
@@ -2264,7 +2260,7 @@ loc_11EE51:
 		BCC		loc_11EE69
 		LDA		#$0F
 loc_11EE69:
-		JSR		_write_select_poll_popg_popd_crime_land_tmp_maps_nibble
+		JSR		_write_select_map
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
@@ -2277,10 +2273,10 @@ loc_11EE69:
 		BCC		loc_11EE4C
 		RTS
 
-; REDUNDANT, exact copy of _calc_tmp_map_div4_mul13_surrond_sum
+; REDUNDANT, exact copy of _get_tmp_map_19_19_nearest_sum
 ; with _add_tmp_map_div4_mul13_nibble as well. merged
 ; =============== S U B	R O U T	I N E =======================================
-;_calc_tmp_map_div4_mul13_surrond_sum_0:
+;_get_tmp_map_19_19_nearest_sum_0:
 ;		LDA		_tmp_map_pos._COL
 ;		CMP		#$04
 ;		BCC		loc_11EE99
@@ -2329,33 +2325,33 @@ loc_11EE69:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_add_tmp_map_div4_mul13_nibble:
-;		JSR		_read_tmp_map_div4_mul13_nibble_0
+;		JSR		_read_tmp_map_19_19_0
 ;		CLC
 ;		ADC		_tmpE7
 ;		STA		_tmpE7
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_interpolate_tmp_with_select_poll_popg_popd_crime_land_to_tmp_map:
+_merge_tmp_map_with_select_map:
 		LDA		#$00
 loc_11EEED:
-		STA		_tmp_map_pos._ROW
-		LDA		#$00
+		STA		_tmp_map_pos._ROW				; all routines here gets the map coordinates
+		LDA		#$00							; and then converts them to 19x19 map coords
 loc_11EEF2:
 		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
-		JSR		_calc_tmp_map_div4_mul13_surrond_sum
-		JSR		_read_select_pol_popg_popd_crime_land_tmp_maps_nibble
+		JSR		_get_tmp_map_19_19_nearest_sum	; calculates sum of 4 nearest tiles
+		JSR		_read_select_map				; middle value taken from merging map
 		CLC
 		ADC		_tmpE7
+		LSR										; rough average by 4
 		LSR
-		LSR
-		CMP		#$0F
+		CMP		#$0F							; clamp tp $F
 		BCC		loc_11EF0A
 		LDA		#$0F
 loc_11EF0A:
-		JSR		_write_tmp_map_19_19
+		JSR		_write_tmp_map_19_19			; write tmp map back
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
@@ -2369,17 +2365,14 @@ loc_11EF0A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_tmp_map_div4_mul13_surrond_sum:
+_get_tmp_map_19_19_nearest_sum:
 		LDA		_tmp_map_pos._COL
 		CMP		#$04
 		BCC		loc_11EF3A
 		SBC		#$04
 		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_map_div4_mul13_nibble
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$04
-		STA		_tmp_map_pos._COL
+		ADDB	_tmp_map_pos._COL,#$04
 loc_11EF3A:
 		LDA		_tmp_map_pos._COL
 		CMP		#$48
@@ -2387,10 +2380,7 @@ loc_11EF3A:
 		ADC		#$04
 		STA		_tmp_map_pos._COL
 		JSR		_add_tmp_map_div4_mul13_nibble
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$04
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$04
 loc_11EF52:
 		LDA		_tmp_map_pos._ROW
 		CMP		#$04
@@ -2398,10 +2388,7 @@ loc_11EF52:
 		SBC		#$04
 		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_map_div4_mul13_nibble
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$04
-		STA		_tmp_map_pos._ROW
+		ADDB	_tmp_map_pos._ROW,#$04
 loc_11EF6A:
 		LDA		_tmp_map_pos._ROW
 		CMP		#$48
@@ -2409,23 +2396,20 @@ loc_11EF6A:
 		ADC		#$04
 		STA		_tmp_map_pos._ROW
 		JSR		_add_tmp_map_div4_mul13_nibble
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$04
-		STA		_tmp_map_pos._ROW
+		SUBB	_tmp_map_pos._ROW,#$04
 locret_11EF82:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _add_tmp_map_div4_mul13_nibble:
-		JSR		_read_tmp_map_div4_mul13_nibble
+		JSR		_read_tmp_map_19_19
 		CLC
 		ADC		_tmpE7
 		STA		_tmpE7
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_interpolate_tmp_to_select_police_fire_map_div4:
+_merge_tmp_map_with_select_map_10_10:
 		LDA		#$00
 loc_11EF8E:
 		STA		_tmp_map_pos._ROW
@@ -2434,8 +2418,8 @@ loc_11EF93:
 		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
-		JSR		_calc_tmp_map_div8_mulA_surrond_sum
-		JSR		_read_tmp_map_div8_mulA_nibble
+		JSR		_get_tmp_map_10_10_nearest_sum
+		JSR		_read_tmp_map_10_10
 		CLC
 		ADC		_tmpE7
 		LSR
@@ -2444,7 +2428,7 @@ loc_11EF93:
 		BCC		loc_11EFAB
 		LDA		#$0F
 loc_11EFAB:
-		JSR		_write_select_police_fire_tmp_maps_nibble
+		JSR		_write_select_map_10_10
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$08
@@ -2458,7 +2442,7 @@ loc_11EFAB:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_tmp_map_div8_mulA_surrond_sum:
+_get_tmp_map_10_10_nearest_sum:
 		LDA		_tmp_map_pos._COL
 		CMP		#$08
 		BCC		loc_11EFDB
@@ -2507,14 +2491,14 @@ locret_11F023:
 
 ; =============== S U B	R O U T	I N E =======================================
 _add_tmp_map_div8_mulA_nibble:
-		JSR		_read_tmp_map_div8_mulA_nibble
+		JSR		_read_tmp_map_10_10
 		CLC
 		ADC		_tmpE7
 		STA		_tmpE7
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_interpolate_select_police_fire_to_tmp_map_div2:
+_smooth_select_to_tmp_map_10_10:
 		LDA		#$00
 loc_11F02F:
 		STA		_tmp_map_pos._ROW
@@ -2523,8 +2507,8 @@ loc_11F034:
 		STA		_tmp_map_pos._COL
 		LDA		#$00
 		STA		_tmpE7
-		JSR		_calc_select_police_fire_tmp_surrond_sum
-		JSR		_read_select_police_fire_tmp_map_nibble
+		JSR		_get_select_map_10_10_nearest_sum
+		JSR		_read_select_map_10_10
 		CLC
 		ADC		_tmpE7
 		LSR
@@ -2532,7 +2516,7 @@ loc_11F034:
 		BCC		loc_11F04B
 		LDA		#$0F
 loc_11F04B:
-		JSR		_write_tmp_map_div8_mulA_nibble
+		JSR		_write_tmp_map_10_10
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$08
@@ -2546,56 +2530,44 @@ loc_11F04B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_select_police_fire_tmp_surrond_sum:
+_get_select_map_10_10_nearest_sum:
 		LDA		_tmp_map_pos._COL
 		CMP		#$08
 		BCC		loc_11F07B
 		SBC		#$08
 		STA		_tmp_map_pos._COL
-		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$08
-		STA		_tmp_map_pos._COL
+		JSR		_add_select_map_10_10
+		ADDB	_tmp_map_pos._COL,#$08
 loc_11F07B:
 		LDA		_tmp_map_pos._COL
 		CMP		#$44
 		BCS		loc_11F093
 		ADC		#$08
 		STA		_tmp_map_pos._COL
-		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$08
-		STA		_tmp_map_pos._COL
+		JSR		_add_select_map_10_10
+		SUBB	_tmp_map_pos._COL,#$08
 loc_11F093:
 		LDA		_tmp_map_pos._ROW
 		CMP		#$08
 		BCC		loc_11F0AB
 		SBC		#$08
 		STA		_tmp_map_pos._ROW
-		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$08
-		STA		_tmp_map_pos._ROW
+		JSR		_add_select_map_10_10
+		ADDB	_tmp_map_pos._ROW,#$08
 loc_11F0AB:
 		LDA		_tmp_map_pos._ROW
 		CMP		#$44
 		BCS		locret_11F0C3
 		ADC		#$08
 		STA		_tmp_map_pos._ROW
-		JSR		_add_select_police_fire_recalc
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$08
-		STA		_tmp_map_pos._ROW
+		JSR		_add_select_map_10_10
+		SUBB	_tmp_map_pos._ROW,#$08
 locret_11F0C3:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_add_select_police_fire_recalc:
-		JSR		_read_select_police_fire_tmp_map_nibble
+_add_select_map_10_10:
+		JSR		_read_select_map_10_10
 		CLC
 		ADC		_tmpE7
 		STA		_tmpE7
@@ -2660,7 +2632,7 @@ locret_11F10A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_11F10B:
+_get_dist_to_max_popul:
 		LDA		_max_popul_dencity_pos._COL		; calculate rough approximation of
 		LSR										; distance to maximum population area
 		LSR
@@ -2683,7 +2655,7 @@ loc_11F11B:
 		ADC		#$01
 loc_11F12D:
 		CLC
-		ADC		_tmpE6
+		ADC		_tmpE6							; clamp to $0E
 		CMP		#$0E
 		BCC		locret_11F136
 		LDA		#$0E
@@ -2864,7 +2836,7 @@ loc_11F2AD:
 		LDA		#$00
 loc_11F2B2:
 		STA		_tmp_map_pos._COL
-		JSR		_read_traffic_map_nibble
+		JSR		_read_traffic_map
 		CMP		#$03
 		BCS		loc_11F2C0
 		LDA		#$00
@@ -2944,9 +2916,9 @@ _corrupt_ground_tiles_list:
 ; {land_value-pollution}*7-52
 ;
 _get_growth_ratio:
-		JSR		_read_pollution_map_nibble
+		JSR		_read_pollution_map
 		STA		_tmpE7
-		JSR		_read_land_val_map_nibble
+		JSR		_read_land_value_map
 		SEC
 		SBC		_tmpE7
 		BCS		loc_11F350
@@ -2990,9 +2962,9 @@ _pop_growth_map_update:
 ;  if a > 8    ratio 3
 ;
 _get_life_ratio:
-		JSR		_read_pollution_map_nibble
+		JSR		_read_pollution_map
 		STA		_tmpE7
-		JSR		_read_land_val_map_nibble
+		JSR		_read_land_value_map
 		SEC
 		SBC		_tmpE7
 		LDX		#$00
@@ -3010,21 +2982,21 @@ loc_11F66E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_select_pol_popg_popd_crime_land_tmp_maps_nibble:
+_read_select_map:
 		LDY		_tmp6C4
-		BEQ		_read_pollution_map_nibble
+		BEQ		_read_pollution_map
 		DEY
 		BEQ		_read_pop_growth_map_nibble
 		DEY
 		BEQ		_read_pop_dencity_map_nibble
 		DEY
-		BEQ		_read_crime_map_nibble
+		BEQ		_read_crime_map
 		DEY
-		BEQ		_read_land_val_map_nibble
-		BNE		_read_tmp_map_div4_mul13_nibble
+		BEQ		_read_land_value_map
+		BNE		_read_tmp_map_19_19
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_pollution_map_nibble:
+_read_pollution_map:
 		LDXY	_pollution_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
@@ -3039,17 +3011,17 @@ _read_pop_dencity_map_nibble:
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_crime_map_nibble:
+_read_crime_map:
 		LDXY	_crime_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_land_val_map_nibble:
+_read_land_value_map:
 		LDXY	_land_val_map
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_tmp_map_div4_mul13_nibble:
+_read_tmp_map_19_19:
 		LDXY	_tmp_map
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3068,7 +3040,7 @@ _read_buf_pos_div4_mul13_4bit_nibble:
 		JMP		_read_buf_pos_4bit_nibble_ex
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_traffic_map_nibble:
+_read_traffic_map:
 		LDXY	_traffic_map
 		TYA
 		PHA
@@ -3082,14 +3054,14 @@ _read_traffic_map_nibble:
 		JMP		_read_buf_pos_4bit_nibble_ex
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_select_police_fire_tmp_map_nibble:
+_read_select_map_10_10:
 		LDY		_tmp6C4
 		BEQ		_read_police_radius_map_nibble
 		DEY
 		BEQ		_read_fire_radius_map_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_read_tmp_map_div8_mulA_nibble:
+_read_tmp_map_10_10:
 		LDXY	_tmp_map
 		BNE		_read_buf_pos_div8_mulA_4bit_nibble
 
@@ -3150,44 +3122,44 @@ loc_11F748:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_surronding_map_are_protected_tile_sum:
-		LDA		#$00
-		STA		_tmp6D3
-		JSR		_map_area_protected_tiles_count
-		ASL		_tmp6D3
-		ASL		_tmp6D3
-		DEC		_tmp_area_pos._ROW
-		BMI		loc_11F761
-		JSR		_map_area_protected_tiles_count
+_get_nearest_areas_prot_tiles_count:
+		LDA		#$00							; for currently selected area 4x4 tiles
+		STA		_tmp6D3							; we will calc sum of protected tiles
+		JSR		_get_area_prot_tiles_count		; in all surrountings areas and the
+		ASL		_tmp6D3							; area itself, excluding areas out
+		ASL		_tmp6D3							; of the map edges
+		DEC		_tmp_area_pos._ROW				;  1
+		BMI		loc_11F761						; 304
+		JSR		_get_area_prot_tiles_count		;  2
 loc_11F761:
 		INC		_tmp_area_pos._ROW
 		INC		_tmp_area_pos._ROW
 		LDA		_tmp_area_pos._ROW
 		CMP		#$13
 		BCS		loc_11F771
-		JSR		_map_area_protected_tiles_count
+		JSR		_get_area_prot_tiles_count
 loc_11F771:
 		DEC		_tmp_area_pos._ROW
 		DEC		_tmp_area_pos._COL
 		BMI		loc_11F77C
-		JSR		_map_area_protected_tiles_count
+		JSR		_get_area_prot_tiles_count
 loc_11F77C:
 		INC		_tmp_area_pos._COL
 		INC		_tmp_area_pos._COL
 		LDA		_tmp_area_pos._COL
 		CMP		#$13
 		BCS		loc_11F78C
-		JSR		_map_area_protected_tiles_count
+		JSR		_get_area_prot_tiles_count
 loc_11F78C:
 		DEC		_tmp_area_pos._COL
-		ASL		_tmp6D3
+		ASL		_tmp6D3							; result = sum*2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_area_protected_tiles_count:
-		LDA		_tmp_area_pos._ROW
-		ASL
-		ASL
+_get_area_prot_tiles_count:
+		LDA		_tmp_area_pos._ROW				; for 4x4 selected area, calc
+		ASL										; map pos and sum all prot tiles
+		ASL										; if any inside this area
 		STA		_tmp_map_pos._ROW
 loc_11F79B:
 		LDA		_tmp_area_pos._COL
@@ -3213,7 +3185,7 @@ loc_11F7B1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_select_poll_popg_popd_crime_land_tmp_maps_nibble:
+_write_select_map:
 		LDY		_tmp6C4
 		BEQ		_write_pollution_map_nibble
 		DEY
@@ -3223,7 +3195,7 @@ _write_select_poll_popg_popd_crime_land_tmp_maps_nibble:
 		DEY
 		BEQ		_write_crime_map_nibble
 		DEY
-		BEQ		_write_land_val_map_nibble
+		BEQ		_write_land_value_map
 		BNE		_write_tmp_map_19_19
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3247,7 +3219,7 @@ _write_crime_map_nibble:
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_land_val_map_nibble:
+_write_land_value_map:
 		LDXY	_land_val_map
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
@@ -3300,14 +3272,14 @@ loc_11F82C:
 		JMP		_write_buf_pos_4bit_nibble_ex
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_select_police_fire_tmp_maps_nibble:
+_write_select_map_10_10:
 		LDY		_tmp6C4
 		BEQ		_write_police_radius_map_nibble
 		DEY
 		BEQ		_write_fire_radius_map_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_tmp_map_div8_mulA_nibble:
+_write_tmp_map_10_10:
 		LDXY	_tmp_map
 		BNE		_write_buf_pos_div8_mulA_4bit_nibble
 
@@ -3432,7 +3404,7 @@ _heavy_traffic_report_test:
 		PUSHB	_mmc5_mul0_shadow
 		STX		_tmp_map_pos._COL
 		STY		_tmp_map_pos._ROW
-		JSR		_read_traffic_map_nibble
+		JSR		_read_traffic_map
 		CMP		#$0A
 		BCC		loc_11F93E
 		LDA		#$18
@@ -3460,8 +3432,8 @@ _I_area_develop_levels_list:
 		.BYTE	$00,$01,$02,$03,$04,$01,$02,$03,$04
 
 ; =============== S U B	R O U T	I N E =======================================
-_disasters_handlers_select:
-		JSR		_disasters_trigger_for_scenario_mode
+_disasters_selector:
+		JSR		_scenario_disasters_selector
 		LDA		_disasters_flags
 		BEQ		locret_11FB47
 		LSR
@@ -3474,7 +3446,7 @@ loc_11FB2C:
 loc_11FB32:
 		LSR
 		BCC		loc_11FB38
-		JMP		_airplane_disaster_active_set
+		JMP		_airplane_disaster_request
 loc_11FB38:
 		LSR
 		BCC		loc_11FB3E
@@ -3520,7 +3492,7 @@ _fire_disaster_start_common:
 		AND		#_FL_FLAMMABLE|_FL_BUILDING
 		CMP		#_FL_FLAMMABLE|_FL_BUILDING
 		BNE		loc_11FB73						; check for flammable tiles
-		JSR		_fire_cur_map_tile				; destroy the rest
+		JSR		_burn_cur_map_tile				; destroy the rest
 		JSR		_goto_alert_start				; points to very last burnt tile only
 loc_11FB73:
 		PLA
@@ -3663,7 +3635,7 @@ loc_11FC6E:
 		JMP		_goto_alert_start
 
 ; =============== S U B	R O U T	I N E =======================================
-_airplane_disaster_active_set:
+_airplane_disaster_request:
 		LDA		#$01
 		STA		_airplane_crash_req				; for some reason, airplane crash
 		LDA		_disasters_flags				; handler in another place in system
@@ -3818,7 +3790,7 @@ _pollute_cur_map_tile:
 		BNE		_corrupt_cur_map_tile
 
 ; =============== S U B	R O U T	I N E =======================================
-_fire_cur_map_tile:
+_burn_cur_map_tile:
 		LDA		#_MAP_FIRE						; put fire tile on map
 		BNE		_corrupt_cur_map_tile
 
@@ -3965,7 +3937,7 @@ loc_11FE83:
 
 ; =============== S U B	R O U T	I N E =======================================
 _nuclear_meltdown_disaster_start:
-		LDA		#$00
+		LDA		#$00							; first find a nuclear station
 loc_11FE8A:
 		STA		_tmp_map_pos._ROW
 		LDA		#$00
@@ -3987,17 +3959,17 @@ loc_11FE9F:
 		BNE		loc_11FE8A
 		RTS
 loc_11FEB4:
-		JSR		_fire_cur_map_tile
+		JSR		_burn_cur_map_tile				; burn the nuclear station
 		LDX		#$00
 loc_11FEB9:
-		TXA
+		TXA										; now spread the pollution
 		PHA
 		PUSHB	_tmp_map_pos._COL
 		PUSHB	_tmp_map_pos._ROW
 		LDA		#$1F
-		JSR		_rand_clamp_A
-		CLC
-		ADC		_tmp_map_pos._COL
+		JSR		_rand_clamp_A					; are or nuclear waste zone
+		CLC										; is a square 30x30 tiles around station
+		ADC		_tmp_map_pos._COL				; with clamp to the edges of the map
 		SBC		#$0F
 		CMP		#$4B
 		BCS		loc_11FEEA
@@ -4010,7 +3982,7 @@ loc_11FEB9:
 		CMP		#$4B
 		BCS		loc_11FEEA
 		STA		_tmp_map_pos._ROW
-		JSR		_pollute_cur_map_tile
+		JSR		_pollute_cur_map_tile			; put the nuclear pollution tile
 loc_11FEEA:
 		POPB	_tmp_map_pos._ROW
 		POPB	_tmp_map_pos._COL
@@ -4018,39 +3990,36 @@ loc_11FEEA:
 		TAX
 		INX
 		CPX		#$50
-		BNE		loc_11FEB9
+		BNE		loc_11FEB9						; 80 tiles per square zone (about 11%)
 		LDY		#$0C
-		FJSR	_city_history_write,SRAM,PRGA
+		FJSR	_city_history_write,SRAM,PRGA	; write down history record
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _goto_alert_start:
-		LDA		_tmp_map_pos._COL
-		STA		_goto_dst_tile._COL
-		LDA		_tmp_map_pos._ROW
-		STA		_goto_dst_tile._ROW
+		MOVW	_goto_dst_tile,_tmp_map_pos
 		LDA		#$01
 		STA		_goto_alert_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_disasters_trigger_for_scenario_mode:
+_scenario_disasters_selector:
 		LDA		_cur_game_mode					; only for scenario mode
 		CMP		#$02
 		BNE		locret_11FF87
-		LDA		_city._didaster_delay		; all disasters are stopped, exit now
+		LDA		_city._didaster_delay			; all disasters are stopped, exit now
 		BEQ		locret_11FF87
-		DEC		_city._didaster_delay		; decrease
+		DEC		_city._didaster_delay			; decrease
 		LDX		_scenario_idx					; X = _scenario_idx
 		CPX		#$05
 		BNE		loc_11FF34
-		LDA		_city._didaster_delay		; scenario 5 - "RIO", flood occurs 15 times
+		LDA		_city._didaster_delay			; scenario 5 - "RIO", flood occurs 15 times
 		AND		#$0F							; until it stop
 		BNE		locret_11FF87
 		JMP		_flood_disaster_start
 loc_11FF34:
-		LDA		_city._didaster_delay		; one another scenarios we need here extra test
+		LDA		_city._didaster_delay			; one another scenarios we need here extra test
 		BNE		locret_11FF87					; if delay still not 0, skip
 		CPX		#$00
 		BNE		loc_11FF40						; finally test for disaster start by scenario idx
@@ -4121,10 +4090,10 @@ loc_11FF97:
 		LDA		#$00
 loc_11FF9C:
 		STA		_tmp_map_pos._COL				; columns
-		JSR		_read_land_val_map_nibble		; read land value nibble here (4x4 blocks)
+		JSR		_read_land_value_map			; read land value nibble here (4x4 blocks)
 ;		CMP		#$00							; REDUNDANT, flag already set here
 		BEQ		loc_11FFBB
-		JSR		_read_traffic_map_nibble		; read traffic dencity value for area (2x2 blocks)
+		JSR		_read_traffic_map				; read traffic dencity value for area (2x2 blocks)
 		CLC
 		ADC		_tmp6CC							; sum traffic map values
 		STA		_tmp6CC

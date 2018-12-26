@@ -4403,12 +4403,12 @@ _map_tiles_flags_tbl:
 		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DE
 		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DF
 ; Water based roads
-; BUG! no road flags here!
-;		.BYTE	_FL_PROTECTED|_FL_WATER								; E0
-;		.BYTE	_FL_PROTECTED|_FL_WATER								; E1
-; FIX
-		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; E0
-		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; E1
+; UNFINISHED! no road flags here!
+		.BYTE	_FL_PROTECTED|_FL_WATER								; E0
+		.BYTE	_FL_PROTECTED|_FL_WATER								; E1
+; TODO
+;		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; E0
+;		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; E1
 ; Water based rails, here see, rails flag set!
 		.BYTE	_FL_RAIL|_FL_PROTECTED|_FL_WATER					; E2
 		.BYTE	_FL_RAIL|_FL_PROTECTED|_FL_WATER					; E3
@@ -4422,12 +4422,12 @@ _map_tiles_flags_tbl:
 		.BYTE	0													; E9
 		.BYTE	0													; EA
 ; Water based road bridges
-; BUG, again no roads flag!
-;		.BYTE	_FL_PROTECTED|_FL_WATER								; EB
-;		.BYTE	_FL_PROTECTED|_FL_WATER								; EC
-; FIX
-		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; EB
-		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; EC
+; UNFINISHED, no roads flag!
+		.BYTE	_FL_PROTECTED|_FL_WATER								; EB
+		.BYTE	_FL_PROTECTED|_FL_WATER								; EC
+; TODO
+;		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; EB
+;		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; EC
 ; Water based opened road bridges tiles
 		.BYTE	_FL_PROTECTED|_FL_WATER								; ED
 		.BYTE	_FL_PROTECTED|_FL_WATER								; EE

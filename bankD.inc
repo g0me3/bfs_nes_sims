@@ -2847,7 +2847,7 @@ gui_ctrl_menu_icon_pos_calc:
 		WRAPB	_tmp2,_tmp3,_tmp0,_tmp6,#$20
 		CIADDB	_tmp1,_cur_screen_tile._ROW,_tmp5,NONE,#$1E
 		WRAPA	_tmp4,_tmp5,#$02,#$1E
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#>[_MMC5_EXRAM]	; DST=(_ptr0+1*#$20+_ptr0)+#>[_MMC5_EXRAM]00
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#>[_MMC5_EXRAM]	; DST=(_ptr0+1*#$20+_ptr0)+_MMC5_EXRAM
 		RTS
 
 ; FIX: merged version of two following functions without using arrays of
@@ -4638,7 +4638,7 @@ loc_B8095:
 ;		CIADDB	_tmp1,_cur_screen_tile._ROW,#$1A,NONE,#$1E
 ;		CIADDB	_tmp0,_cur_screen_tile._COL,#$0E,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$06,#$20
-;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4657,7 +4657,7 @@ _hud_str_pos_calc_and_queue:
 		CIADDB	_tmp1,_cur_screen_tile._ROW,_tmp3,NONE,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._COL,_tmp2,NONE,#$20
 		WRAPB	_tmp2,_tmp3,_tmp0,_tmp4,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_ptr0,OP_NOP,0
@@ -4677,6 +4677,6 @@ loc_59B93:
 		PPUQEND
 		RTS
 
-		SECTION_ENDS	D00, "PRGC INTERGACE MAIN ENGINE PART2"
+		SECTION_ENDS	D00, "PRGC INTERFACE MAIN ENGINE PART2"
 
 		BANK_END FD,$C000

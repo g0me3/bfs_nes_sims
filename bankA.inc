@@ -2422,7 +2422,7 @@ loc_1051F3:
 _exit:
 		RTS
 
-		SECTION_ENDS B03, "PRGB EVENTS AND DISASTERS SELECTORS"
+		SECTION_ENDS B03, "PRGB EVENTS SELECTOR"
 
 ; ---------------------------------------------------------------------------
 ; -----------------S-C-R-O-L-L--M-E-S-S-A-G-E-S--M-A-N-A-G-R-----------------

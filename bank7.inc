@@ -295,7 +295,7 @@ loc_B823F:
 
 ; =============== S U B	R O U T	I N E =======================================
 _water_tile_build_select:
-		DEC		_tmp_ptrC1+1					; get four surrounding tiles
+		DEC		_tmp_ptrC1+1					; get four nearest tiles
 		LDY		#$B4							; upper, lower, left, right
 		LDA		(_tmp_ptrC1),Y
 		PHA										; push upper
@@ -314,7 +314,7 @@ _water_tile_build_select:
 		LDA		_constr_palette_selected_idx
 		CMP		#$01
 		BNE		.no_roads_on_water				; here we build roads on water
-		PLA										; pop surrounding tiles in reverse order
+		PLA										; pop nearest tiles in reverse order
 		JSR		_test_for_valid_hor_road_water_joint
 		BCS		.valid_left_road_water_joint
 		PLA
