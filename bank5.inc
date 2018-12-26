@@ -902,7 +902,7 @@ loc_884FC:
 		TAX
 		LDA		_tmp15
 		SEC
-		SBC		byte_8858C,X
+		SBC		_special_tiles_ofs_list,X
 		STA		_ptr18
 		LDA		_tmp15+1
 		SBC		#$00
@@ -916,7 +916,7 @@ loc_8855B:
 		TAX
 		LDA		_tmp15
 		SEC
-		SBC		byte_8858C,X
+		SBC		_special_tiles_ofs_list,X
 		STA		_ptr18
 		LDA		_tmp15+1
 		SBC		#$00
@@ -944,8 +944,9 @@ loc_88570:
 ;		RTS
 		BNE		.continue_move_set				; OPTIMIZE size
 
-byte_8858C:
-		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02
+; REDUNDANT
+;_special_tiles_ofs_list:
+;		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl10_monster:

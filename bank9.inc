@@ -30,8 +30,8 @@ loc_A0024:
 		CPY		#$04
 		BNE		loc_A001C
 		LDA		#$00
-		STA		_info_maps_cur_row
-		STA		_info_maps_cur_col
+		STA		_mini_map_cur_row
+		STA		_mini_map_cur_col
 		STA		_fund_request_tax+1
 		STA		_game_msg_wnd_active_flag
 		LDA		#$14
@@ -112,13 +112,14 @@ _scr_res_wnd_close:
 		STX		byte_56
 		STX		_scr_res_control_flags
 		STX		_game_core_stop_flag
+		STX		_scr_res_idx					; FIX BUGS#19
 		INX
 		LDA		#$18
 		STA		byte_55
 		LDA		#$14
 		STA		byte_57
-		LDA		#$44
-		STA		_cur_game_cursor_scr_pos._COL
+		LDA		#$44							; NOTE: always the same cursor pos
+		STA		_cur_game_cursor_scr_pos._COL	; after exit any screen resourse
 		LDA		#$30
 		STA		_cur_game_cursor_scr_pos._ROW
 		JSR		_flush_wait_0
@@ -167,7 +168,7 @@ loc_EA050:
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9
 		JSR		_spr_finish
-		FJSRA	_scr_res_cursor_pos_clamp,PRG6,PRG9
+		FJSRA	_scr_res_cursor_move,PRG6,PRG9
 		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
 		JSR		_scr_res_hndl_common_exec
 		BIT		_scr_res_control_flags
@@ -215,8 +216,8 @@ _scr_res_hndl_common_exec:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl7_A_new_city_gen_init:
 		LDA		#$00
-		STA		_info_maps_cur_col
-		STA		_info_maps_cur_row
+		STA		_mini_map_cur_col
+		STA		_mini_map_cur_row
 		STA		byte_140
 		STA		byte_141
 		STA		_cur_info_maps_button_idx
@@ -237,7 +238,7 @@ _scr_res_hndl7_B_new_city_gen_input:
 		JSR		sub_EA405
 loc_EA0EC:
 		JSR		_wait_for_nmi
-		JSR		_maps_info_draw
+		JSR		_mini_map_draw
 		BIT		_scr_res_control_flags
 		BMI		loc_EA0EC
 		LDA		#$20
@@ -730,15 +731,15 @@ _scr_res_hndl0_A_info_maps_draw:
 		ASL
 		CLC
 		ADC		#$3C
-		STA		byte_138
+		STA		_info_maps_rect_pos._ROW
 		LDA		_cur_map_wnd_pos._COL
 		ASL
 		CLC
 		ADC		#$45
-		STA		byte_139
+		STA		_info_maps_rect_pos._COL
 		JSR		sub_EAE37
 		JSR		_info_maps_date_draw_ex
-		JSR		sub_EADB2
+		JSR		_info_maps_popul_HUD_draw
 		LDA		#$00
 		STA		byte_13C
 		INC		_scr_res_idx
@@ -752,19 +753,24 @@ _scr_res_hndl0_A_info_maps_draw:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_B_info_maps_input:
 		JSR		_info_maps_date_draw
-		JSR		sub_EADB2
-		JSR		sub_EADC9
+		JSR		_info_maps_popul_HUD_draw
+;		JSR		sub_EADC9						; REDUNDANT
+; OPTIMIZED
+		LDX		#$10
+		STX		_spr_buf_pos
+		FJSRA	_info_maps_spr_rect_draw,PRG7,PRG9
+; -
 		JSR		_info_maps_spr_arrows_hide
 		BIT		_scr_res_control_flags
 		BPL		loc_EA554
-		JMP		sub_EA617
+		JMP		_info_maps_push_A_button_test
 loc_EA554:
 		BIT		byte_13C
 		BPL		loc_EA580
 		BVC		loc_EA563
 		LDA		#$40
 		STA		_scr_res_control_flags
-		JMP		sub_EA5F2
+		JMP		_info_maps_exit
 loc_EA563:
 		LDA		byte_13C
 		AND		#$0F
@@ -780,13 +786,13 @@ loc_EA563:
 loc_EA580:
 		LDA		_fiscal_year_results_draw_req
 		BEQ		loc_EA588
-		JMP		sub_EA605
+		JMP		_budget_screen_force
 loc_EA588:
 		LDA		byte_107
 		BNE		loc_EA5BA
 		BIT		_pad0_held
 		BVC		loc_EA594
-		JMP		sub_EADE0
+		JMP		_info_maps_arrows_move
 loc_EA594:
 		LDA		#$00
 		STA		_scr_res_control_flags
@@ -797,8 +803,8 @@ loc_EA594:
 		STA		_apu_se_flags+1
 		LDA		#$80
 		STA		_game_core_state
-		JSR		sub_EA662
-		BCC		sub_EA5F2
+		JSR		_info_maps_get_hover_button_idx
+		BCC		_info_maps_exit
 		LDA		_cur_info_maps_button_idx
 		STA		_prev_info_maps_button_idx
 		STX		_cur_info_maps_button_idx
@@ -810,7 +816,7 @@ loc_EA5BA:
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 _scr_res_hndl0_AB_info_maps_redraw:
-		FJSRA	_info_maps_buttons_redraw,PRG6,PRG9
+		FJSRA	_info_maps_button_redraw,PRG6,PRG9
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw_ex:
@@ -822,8 +828,8 @@ _scr_res_hndl0_AB_info_maps_redraw_ex:
 		JSR		_wait_for_nmi
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
-		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
-		JMP		_maps_info_draw
+		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
+		JMP		_mini_map_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_key:
@@ -835,13 +841,13 @@ locret_EA5F1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA5F2:
-		LDA		byte_138
+_info_maps_exit:
+		LDA		_info_maps_rect_pos._ROW
 		SEC
 		SBC		#$3C
 		LSR
 		STA		_cur_map_wnd_pos._ROW
-		LDA		byte_139
+		LDA		_info_maps_rect_pos._COL
 		SEC
 		SBC		#$45
 		LSR
@@ -849,9 +855,9 @@ sub_EA5F2:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA605:
+_budget_screen_force:
 		LDA		#$80
-		STA		byte_13B
+		STA		_budget_screen_return_to_info_maps_flag
 		LDA		#$02
 		STA		_scr_res_idx
 		LDA		#$10
@@ -859,17 +865,17 @@ sub_EA605:
 		JMP		_pal_fade_out
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA617:
+_info_maps_push_A_button_test:
 		BIT		_pad0_autorep_press
-		BPL		loc_EA65F
+		BPL		.no_buttons_redraw
 		LDA		byte_13C
-		BNE		loc_EA65F
+		BNE		.no_buttons_redraw
 		LDA		#$20
 		STA		_apu_se_flags+1
 		PUSHB	_scr_res_control_flags
-		JSR		sub_EA662
+		JSR		_info_maps_get_hover_button_idx
 		PLA
-		BCC		loc_EA65F
+		BCC		.no_buttons_redraw
 		STA		_scr_res_control_flags
 		STX		_ptr0
 		BCS		loc_EA637
@@ -884,14 +890,14 @@ loc_EA637:
 		STA		_prev_info_maps_button_idx
 		LDA		_ptr0
 		STA		_cur_info_maps_button_idx
-		FJSRA	_info_maps_buttons_redraw,PRG6,PRG9
+		FJSRA	_info_maps_button_redraw,PRG6,PRG9
 		POPB	_prev_info_maps_button_idx
 		POPB	_cur_info_maps_button_idx
-loc_EA65F:
-		JMP		_maps_info_draw
+.no_buttons_redraw:
+		JMP		_mini_map_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA662:
+_info_maps_get_hover_button_idx:
 		LDY		_cur_game_cursor_scr_pos._ROW
 		CPY		#$40
 		BCC		loc_EA6A2
@@ -935,14 +941,14 @@ loc_EA6A2:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA6A4:
-		INC		_info_maps_cur_row
-		LDA		_info_maps_cur_row
+		INC		_mini_map_cur_row
+		LDA		_mini_map_cur_row
 		CMP		#$13
 		BNE		locret_EA6EE
 		LDA		#$00
 		STA		_scr_res_control_flags
-		STA		_info_maps_cur_row
-		STA		_info_maps_cur_col
+		STA		_mini_map_cur_row
+		STA		_mini_map_cur_col
 		LDX		_scr_res_idx
 		CPX		#$0A
 		BCS		loc_EA6C3
@@ -969,21 +975,21 @@ locret_EA6EE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA6EF:
+_mini_map_ppu_pos_queue:
 		PHA
-		LDA		_info_maps_cur_row
+		LDA		_mini_map_cur_row
 		ASL
 		TAY
-		LDA		_info_maps_ppu_col_ofs_list,Y
+		LDA		_mini_map_ppu_col_ofs_list,Y
 		LDX		_scr_res_idx
 		CPX		#$0A
 		BCC		loc_EA702
 		SBC		#$06
 		CLC
 loc_EA702:
-		ADC		_info_maps_cur_col
+		ADC		_mini_map_cur_col
 		STA		_tmp2
-		LDA		_info_maps_ppu_col_ofs_list+1,Y
+		LDA		_mini_map_ppu_col_ofs_list+1,Y
 		STA		_tmp3
 		PPUQSTART
 		LDY		_extnt_queue_pos_head
@@ -1010,39 +1016,39 @@ loc_EA702:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info_line_draw:
+_mini_map_line_draw:
 		LDA		_cur_info_maps_button_idx
 		JSR		_switch
-		.WORD	_maps_info0_draw
-		.WORD	_maps_info1_draw
-		.WORD	_maps_info2356_draw
-		.WORD	_maps_info2356_draw
-		.WORD	_maps_info4_draw
-		.WORD	_maps_info2356_draw
-		.WORD	_maps_info2356_draw
-		.WORD	_maps_info2356_draw
-		.WORD	_maps_info89_draw
-		.WORD	_maps_info89_draw
+		.WORD	_mini_map0_draw
+		.WORD	_mini_map1_draw
+		.WORD	_mini_map2356_draw
+		.WORD	_mini_map2356_draw
+		.WORD	_mini_map4_draw
+		.WORD	_mini_map2356_draw
+		.WORD	_mini_map2356_draw
+		.WORD	_mini_map2356_draw
+		.WORD	_mini_map89_draw
+		.WORD	_mini_map89_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info0_draw:
-		LDA		_info_maps_cur_row
+_mini_map0_draw:
+		LDA		_mini_map_cur_row
 		ASL
 		TAY
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		ASL
 		ASL
-		ADC		off_EB623,Y
+		ADC		_mini_map_wram_ofs_list,Y
 		STA		_ptr0
-		LDA		off_EB623+1,Y
+		LDA		_mini_map_wram_ofs_list+1,Y
 		ADC		#$00
 		STA		_ptr0+1
 		JSR		sub_EAA8B
 		JMP		sub_EA94A
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info1_draw:
-		JSR		_maps_info0_draw
+_mini_map1_draw:
+		JSR		_mini_map0_draw
 		LDA		_tmp4
 		CMP		#$5C
 		BCC		locret_EA7B6
@@ -1058,7 +1064,7 @@ loc_EA786:
 		SBC		#$03
 loc_EA789:
 		STA		_tmp4
-		LDA		_info_maps_cur_row
+		LDA		_mini_map_cur_row
 		ASL
 		TAY
 		CLC
@@ -1068,7 +1074,7 @@ loc_EA789:
 		LDA		#>[_power_grid_map_buf]
 		ADC		word_EB57A+1,Y
 		STA		_ptr0+1
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		LSR
 		JSR		_adc_ptr0_0
 		JSR		sub_EA8DF
@@ -1087,12 +1093,12 @@ locret_EA7B6:
 ;		.BYTE	$DB,$D9,$DA,$DB,$D8,$D8
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info2356_draw:
+_mini_map2356_draw:
 		LDY		#$00
 		LDA		_cur_info_maps_button_idx
 		ASL
 		TAY
-		LDX		_info_maps_cur_row
+		LDX		_mini_map_cur_row
 		CLC
 		LDA		off_EB5A0,Y
 		ADC		byte_EB66F,X
@@ -1100,8 +1106,8 @@ _maps_info2356_draw:
 		LDA		off_EB5A0+1,Y
 		ADC		#$00
 		STA		_ptr0+1
-		LDX		_info_maps_cur_col
-		LDA		_info_maps_cur_row
+		LDX		_mini_map_cur_col
+		LDA		_mini_map_cur_row
 		AND		#$01
 		STA		_tmp6
 		BEQ		loc_EA7F4
@@ -1111,7 +1117,7 @@ loc_EA7F4:
 		LSR
 		JSR		_adc_ptr0_0
 		LDY		#$00
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		AND		#$01
 		CMP		_tmp6
 		BNE		loc_EA80D
@@ -1142,7 +1148,7 @@ loc_EA82B:
 		LSR
 		BNE		loc_EA831
 loc_EA82E:
-		JMP		_maps_info0_draw
+		JMP		_mini_map0_draw
 loc_EA831:
 		TAX
 		LDA		byte_EA83D,X
@@ -1160,8 +1166,8 @@ byte_EA855:
 		.BYTE	$D0,$D0,$D0,$D0,$D0,$D0,$90,$90
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info4_draw:
-		LDA		_info_maps_cur_row
+_mini_map4_draw:
+		LDA		_mini_map_cur_row
 		ASL
 		TAY
 		CLC
@@ -1171,7 +1177,7 @@ _maps_info4_draw:
 		LDA		#>[_traffic_density_map_buf]
 		ADC		word_EB57A+1,Y
 		STA		_ptr0+1
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		JSR		_adc_ptr0_0
 		JSR		_get_info_map_block_sum
 		LSR		_tmp5
@@ -1180,7 +1186,7 @@ _maps_info4_draw:
 		STA		_tmp6
 		LSR
 		BNE		loc_EA888
-		JMP		_maps_info0_draw
+		JMP		_mini_map0_draw
 loc_EA888:
 		TAY
 		LDA		byte_EA83D,Y
@@ -1190,12 +1196,12 @@ loc_EA888:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info89_draw:
+_mini_map89_draw:
 		LDY		#$00
 		LDA		_cur_info_maps_button_idx
 		ASL
 		TAY
-		LDX		_info_maps_cur_row
+		LDX		_mini_map_cur_row
 		CLC
 		LDA		off_EB5A0,Y
 		ADC		byte_EB682,X
@@ -1203,12 +1209,12 @@ _maps_info89_draw:
 		LDA		off_EB5A0+1,Y
 		ADC		#$00
 		STA		_ptr0+1
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		LSR
 		LSR
 		JSR		_adc_ptr0_0
 		LDY		#$00
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		AND		#$02
 		BNE		loc_EA8C8
 		LDA		(_ptr0),Y
@@ -1224,7 +1230,7 @@ loc_EA8CC:
 		STA		_tmp6
 		TAX
 		BNE		loc_EA8D4
-		JMP		_maps_info0_draw
+		JMP		_mini_map0_draw
 loc_EA8D4:
 		LDA		byte_EB55A,X
 		STA		_tmp4
@@ -1236,7 +1242,7 @@ loc_EA8D4:
 sub_EA8DF:
 		LDA		#$00
 		STA		_tmp5
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		AND		#$01
 		BNE		sub_EA909
 		LDY		#$00
@@ -1498,7 +1504,7 @@ loc_EAA99:
 loc_EAA9B:
 		LDX		#$00
 loc_EAA9D:
-		CMP		byte_EAE92,X
+		CMP		_mini_map_building_types_list0,X
 		BCC		loc_EAAA9
 		INX
 		CPX		#$12
@@ -1506,7 +1512,7 @@ loc_EAA9D:
 loc_EAAA7:
 		BCS		loc_EAAA7
 loc_EAAA9:
-		LDA		byte_EAEA4,X
+		LDA		_mini_map_building_types_list1,X
 		CMP		#$0E
 		BNE		loc_EAAB6
 		JSR		sub_EAB64
@@ -1611,7 +1617,7 @@ sub_EAB64:
 		TAX
 		LDA		_ptr0
 		SEC
-		SBC		byte_EB5B4,X
+		SBC		_special_tiles_ofs_list,X
 		STA		_tmp4
 		LDA		_ptr0+1
 		SBC		#$00
@@ -1620,17 +1626,17 @@ sub_EAB64:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_maps_info_draw:
+_mini_map_draw:
 		JSR		_flush_test_wait_0
 		DEC		_mmc5_operation_in_progress_flag
-		LDA		_info_maps_cur_col
+		LDA		_mini_map_cur_col
 		LSR
 		LSR
 		TAY
 		LDA		byte_EB753,Y
-		JSR		sub_EA6EF
+		JSR		_mini_map_ppu_pos_queue
 loc_EAB8B:
-		JSR		_maps_info_line_draw
+		JSR		_mini_map_line_draw
 		LDX		_tmp2
 		LDA		_tmp4
 		STA		_ppu_queue_buf,X
@@ -1639,15 +1645,15 @@ loc_EAB8B:
 		LDA		_tmp5
 		STA		_extnt_queue_buf,X
 		INC		_tmp3
-		INC		_info_maps_cur_col
-		LDY		_info_maps_cur_col
+		INC		_mini_map_cur_col
+		LDY		_mini_map_cur_col
 		TYA
 		CMP		byte_EB758,Y
 		BCC		loc_EAB8B
 		CMP		#$13
 		BNE		loc_EABB8
 		LDA		#$00
-		STA		_info_maps_cur_col
+		STA		_mini_map_cur_col
 		JSR		sub_EA6A4
 loc_EABB8:
 		LDX		_tmp2
@@ -1700,10 +1706,10 @@ loc_EAC0A:
 		LDA		_cur_info_maps_button_idx
 		STA		_prev_info_maps_button_idx
 		STY		_cur_info_maps_button_idx
-		FJSRA	_info_maps_buttons_redraw,PRG6,PRG9
+		FJSRA	_info_maps_button_redraw,PRG6,PRG9
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
-		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
+		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
 		RTS
 loc_EAC3C:
 		LDY		_cur_info_maps_button_idx
@@ -1748,7 +1754,7 @@ sub_EAC82:
 		PUSHB	_cur_info_maps_button_idx
 		LDA		#$0D
 		STA		_cur_info_maps_button_idx
-		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
+		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
 		POPB	_cur_info_maps_button_idx
 		LDY		_cur_info_maps_button_idx
 		LDA		byte_EB6A9,Y
@@ -1779,14 +1785,14 @@ sub_EACD9:
 ; =============== S U B	R O U T	I N E =======================================
 sub_EACE4:
 		LDA		#$00
-		STA		_info_maps_cur_row
+		STA		_mini_map_cur_row
 loc_EACE9:
 		PPUQSTART
-		LDA		_info_maps_cur_row
+		LDA		_mini_map_cur_row
 		ASL
 		PHA
 		TAY
-		LDA		_info_maps_ppu_col_ofs_list,Y
+		LDA		_mini_map_ppu_col_ofs_list,Y
 		LDY		_scr_res_idx
 		CPY		#$0A
 		BCC		loc_EACFD
@@ -1797,7 +1803,7 @@ loc_EACFD:
 		PLA
 		TAY
 		INX
-		LDA		_info_maps_ppu_col_ofs_list+1,Y
+		LDA		_mini_map_ppu_col_ofs_list+1,Y
 		STA		_ppu_queue_buf,X
 		STA		_ptr0+1
 		INX
@@ -1823,18 +1829,18 @@ loc_EAD3A:
 		LDA		_scr_res_idx
 		CMP		#$0D
 		BCC		loc_EAD58
-		LDA		_info_maps_cur_row
+		LDA		_mini_map_cur_row
 		CMP		#$08
 		BCC		loc_EAD58
 		FJSRA	sub_B966E,PRG7,PRG9
 loc_EAD58:
 		JSR		_wait_for_nmi
-		INC		_info_maps_cur_row
-		LDA		_info_maps_cur_row
+		INC		_mini_map_cur_row
+		LDA		_mini_map_cur_row
 		CMP		#$13
 		BCC		loc_EACE9
 		LDA		#$00
-		STA		_info_maps_cur_row
+		STA		_mini_map_cur_row
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1873,18 +1879,19 @@ locret_EADB1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EADB2:
+_info_maps_popul_HUD_draw:
 		MOVD	_ptr0,_popul_cur
 		JSR		_hex_to_dec9999999
 		LDA		#$16
 		JMP		_printf_num_lib
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-sub_EADC9:
-		LDX		#$10
-		STX		_spr_buf_pos
-		FJSRA	_map_info_spr_rect_draw,PRG7,PRG9
-		RTS
+;sub_EADC9:
+;		LDX		#$10
+;		STX		_spr_buf_pos
+;		FJSRA	_info_maps_spr_rect_draw,PRG7,PRG9
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_spr_arrows_hide:
@@ -1898,7 +1905,7 @@ loc_EADD7:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EADE0:
+_info_maps_arrows_move:
 		LDA		#$28
 		STA		_scr_res_control_flags
 		STA		_game_core_state
@@ -1919,7 +1926,7 @@ loc_EADF4:
 loc_EAE02:
 		JSR		sub_EAE0D
 loc_EAE05:
-		FJSRA	_map_info_spr_arrows_draw,PRG7,PRG9
+		FJSRA	_info_maps_spr_arrows_draw,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1933,20 +1940,20 @@ sub_EAE0D:
 		LSR
 		BCC		loc_EAE28
 loc_EAE19:
-		LDA		byte_138,X
+		LDA		_info_maps_rect_pos,X
 		CMP		byte_EB751,X
 		BCS		locret_EAE36
 		CLC
 		ADC		#$02
-		STA		byte_138,X
+		STA		_info_maps_rect_pos,X
 		RTS
 loc_EAE28:
-		LDA		byte_138,X
+		LDA		_info_maps_rect_pos,X
 		CMP		byte_EB74F,X
 		BEQ		locret_EAE36
 		SEC
 		SBC		#$02
-		STA		byte_138,X
+		STA		_info_maps_rect_pos,X
 locret_EAE36:
 		RTS
 
@@ -1985,9 +1992,9 @@ byte_EAE86:
 		.BYTE	$10,$01,$10,$01
 byte_EAE8A:
 		.BYTE	$00,$02,$04,$06,$04,$06,$00,$02
-byte_EAE92:
+_mini_map_building_types_list0:
 		.BYTE	$20,$40,$50,$80,$90,$91,$A7,$B2,$B4,$B5,$B6,$B9,$BD,$CE,$E0,$E2,$E6,$FF
-byte_EAEA4:
+_mini_map_building_types_list1:
 		.BYTE	$84,$86,$85,$80,$0E,$01,$00,$80,$02,$01,$03,$00,$80,$03,$02,$00,$03,$01
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2973,8 +2980,9 @@ off_EB5A0:
 		.WORD	_land_value_map_buf
 		.WORD	_fire_radius_map_buf
 		.WORD	_police_radius_map_buf
-byte_EB5B4:
-		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
+; REDUNDANT
+;_special_tiles_ofs_list:
+;		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
 byte_EB5C3:
 		.BYTE	$51,$52,$55,$B1,$54,$FF,$FF,$FF,$57,$FF,$FF,$FF,$B3,$FF,$FF,$FF
 		.BYTE	$5C,$5C,$5C,$5C,$5E,$FF,$FF,$FF,$5E,$FF,$FF,$FF,$5E,$FF,$FF,$FF
@@ -2984,7 +2992,7 @@ byte_EB5E3:
 byte_EB603:
 		.BYTE	$50,$50,$D0,$10,$50,$FF,$FF,$FF,$D0,$FF,$FF,$FF,$10,$FF,$FF,$FF
 		.BYTE	$50,$50,$50,$50,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF
-off_EB623:
+_mini_map_wram_ofs_list:
 		.WORD	_wram_map_buf
 		.WORD	_wram_map_buf+$130
 		.WORD	_wram_map_buf+$260
@@ -3004,7 +3012,7 @@ off_EB623:
 		.WORD	_wram_map_buf+$1300
 		.WORD	_wram_map_buf+$1430
 		.WORD	_wram_map_buf+$1560
-_info_maps_ppu_col_ofs_list:
+_mini_map_ppu_col_ofs_list:
 		.BYTE	$09,$25
 		.BYTE	$29,$25
 		.BYTE	$49,$25

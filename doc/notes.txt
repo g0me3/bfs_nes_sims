@@ -27,7 +27,7 @@
 - TODO	BUGS#16
 - TODO	BUGS#17
 - TODO	BUGS#18
-- TODO	BUGS#19
+- Fixed	BUGS#19
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work properly. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#9 4-frame animation for Helicopter. Have no idea wether it was removed on purpose or by accident. 4-frame looks much more blinking, maybe epilepsy issues?

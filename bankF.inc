@@ -309,49 +309,58 @@ loc_18A213:
 		STA		_frames_div4_counter
 		LDA		#$00
 		STA		_spr_buf_pos
-		LDA		_scr_mode_idx
-		BEQ		loc_18A258
-		LDA		_scr_res_idx
-		CMP		#$01
-		BNE		loc_18A2A1
-		LDA		_cur_info_maps_button_idx
-		BNE		loc_18A2A1
-loc_18A258:
-		PUSHB	_prg_prg8000_shadow
+		LDA		_scr_mode_idx					; test if we currently ingame
+		BEQ		.do_ingame_work					; jump directly to ingame handlers then
+; BUG! here, this var never cleared upon exiting of any screen
+; resources, it may be either zero/non zero during the game
+; but only after entering the info maps mode it will be 1
+; so we get here any time even just open the hint message window
+; and if we visited info maps recently and not opened any
+; other screens before that, the cursor will stay on the
+; screen with incorrect CHR bank data every time
+; you press a button.
+		LDA		_scr_res_idx					; if in any other mode, test if we
+		CMP		#$01							; at the info screens
+		BNE		.skip_ingame_work				; skip if no
+		LDA		_cur_info_maps_button_idx		; also skip if any other maps except
+		BNE		.skip_ingame_work				; overall city maps are displayed
+.do_ingame_work:
+		PUSHB	_prg_prg8000_shadow				; save prg banks for now
 		PUSHB	_prg_prgA000_shadow
 		LDA		#$F5
-		STA		_prg_prg8000_shadow
+		STA		_prg_prg8000_shadow				; set default obj handlers bank 5+D
 		STA		_MMC5_PRG_PAGES+1
 		LDA		#$FD
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		LDA		_scr_mode_idx
+		LDA		_scr_mode_idx					; when we got here
 		CMP		#$01
-		BEQ		loc_18A284
+		BEQ		loc_18A284						; for all modes except 1 draw cursor
 		PHA
 		JSR		_spr_game_interface_cursor_draw
 		PLA
-		BNE		loc_18A27C
-		JSR		_goto_alert_spr_draw
-loc_18A27C:
+		BNE		.skip_goto
+		JSR		_goto_alert_spr_draw			; only ingame (_scr_mode_idx = 0) also draw "GOTO"
+.skip_goto:
 		LDA		_obj_active_flags
-		BEQ		loc_18A284
+		BEQ		loc_18A284						; draw objexts if any as well,
 		JSR		_obj_handlers
 loc_18A284:
-		LDA		_scr_mode_idx
-		BEQ		loc_18A28D
-		LDA		_obj_active_flags
-		BNE		loc_18A28D
-loc_18A28D:
-		LDA		_scr_res_window_opened_flag
-		BNE		loc_18A295
+;		LDA		_scr_mode_idx					; REDUNDANT, some kind of leftovers without
+;		BEQ		loc_18A28D						; an actual work, two checks doing nothing
+;		LDA		_obj_active_flags
+;		BNE		loc_18A28D						; expecially this one lol
+;loc_18A28D:
+		LDA		_scr_res_window_opened_flag		; all modes except displaying a messages
+		BNE		.skip_spr_finish				; will close sprites here
 		JSR		_spr_finish
-loc_18A295:
+.skip_spr_finish:
 		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-loc_18A2A1:
+
+.skip_ingame_work:
 		LDA		_game_wnd_spr_mode_flag
 		BNE		loc_18A2D6
 		LDA		_city._game_speed
@@ -3701,6 +3710,17 @@ _switch:
 		STA		_ptr0+1
 		POPB	_ptr0
 		JMP		(_ptr0)
+
+; +0 +1 +2 +3
+; 00 82 87 8E +00
+; 80 81 86 8D +4C
+; 83 84 85 8C +98
+; 88 89 8A 8B +E4
+
+_special_tiles_ofs_list:
+		.BYTE	$4C,$4D,$01
+		.BYTE	$98,$99,$9A,$4E,$02
+		.BYTE	$E4,$E5,$E6,$E7,$9B,$4F,$03
 
 _buildings_prices_list:
 		.WORD	1

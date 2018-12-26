@@ -1118,7 +1118,7 @@ sub_1508E6:
 		STA		byte_CE
 		LDA		byte_15095B,X
 		STA		byte_CF
-		LDA		byte_15093D,X
+		LDA		_special_tiles_ofs_list,X
 		STA		_ptr0
 		LDA		word_C1
 		SEC
@@ -1151,8 +1151,9 @@ loc_150930:
 		LDA		#$00
 		STA		_money_delta+1
 		RTS
-byte_15093D:
-		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
+; REDUNDANT
+;_special_tiles_ofs_list:
+;		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
 byte_15094C:
 		.BYTE	$00,$01,$01,$00,$01,$02,$02,$02,$00,$01,$02,$03,$03,$03,$03
 byte_15095B:

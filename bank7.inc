@@ -854,6 +854,7 @@ loc_B864D:
 		STA		_tmp4
 		MOVWO	_ptr0,_spr_raw_title_cursor
 		JMP		_spr_raw_send
+
 _spr_raw_title_cursor:
 		.BYTE	$00,$F4,$03,$20
 		.BYTE	$00,$F5,$03,$28
@@ -861,6 +862,7 @@ _spr_raw_title_cursor:
 		.BYTE	$08,$F7,$03,$20
 		.BYTE	$08,$F8,$03,$28
 		.BYTE	$FF
+
 _title_cursor_pos_list:
 		.BYTE	$68,$A8,$C8,$88
 _tlm_res_title_main:
@@ -1402,7 +1404,7 @@ _scr_res_hndl1_B_graphs_input:
 		BPL		locret_B8E3F
 		LDA		#$20
 		STA		_apu_se_flags+1
-		JMP		sub_B8E7C
+		JMP		_graphs_get_hover_button_idx
 loc_B8E30:
 		JSR		_flush_test_wait
 		JMP		sub_B8EFB
@@ -1447,7 +1449,7 @@ _spr_graphs_period_start_year:
 		.BYTE	$C7,$B0,$00,$49
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8E7C:
+_graphs_get_hover_button_idx:
 		LDA		_cur_game_cursor_scr_pos._COL
 		CMP		#$18
 		BCC		nullsub_9
@@ -1912,13 +1914,13 @@ loc_B9243:
 		STA		byte_597
 		JSR		_current_funds_calc
 		BCC		loc_B927C
-		LDA		byte_13B
-		BEQ		loc_B9271
-		JSR		_pal_fade_out
+		LDA		_budget_screen_return_to_info_maps_flag
+		BEQ		.budget_normal_exit
+		JSR		_pal_fade_out					; exit from budget screen to info maps screen
 		LDA		#$00
-		STA		_scr_res_idx
+		STA		_scr_res_idx					; set the info maps index, NOT CLEAR IT HERE!
 		STA		_fiscal_year_results_draw_req
-		STA		byte_13B
+		STA		_budget_screen_return_to_info_maps_flag
 		LDA		#$48
 		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$28
@@ -1926,7 +1928,7 @@ loc_B9243:
 		LDA		#$10
 		STA		_scr_res_control_flags
 		RTS
-loc_B9271:
+.budget_normal_exit:
 		LDA		#$00
 		STA		_fiscal_year_results_draw_req
 		LDA		#$40
@@ -2173,12 +2175,13 @@ loc_B948A:
 		CPX		#$06
 		BEQ		loc_B94A9
 		MOVWO	_ptr0,byte_B94B5
-		JMP		_spr_raw_send_0
+		JMP		_spr_raw_insert
 loc_B94A9:
 		MOVWO	_ptr0,byte_B94BE
-		JMP		_spr_raw_send_0
+		JMP		_spr_raw_insert
 locret_B94B4:
 		RTS
+
 byte_B94B5:
 		.BYTE	$A0,$43,$00,$BB
 		.BYTE	$A0,$44,$00,$C3
@@ -2191,28 +2194,28 @@ byte_B94C7:
 		.BYTE	$02,$02,$02,$00,$00,$02
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_info_spr_rect_draw:
+_info_maps_spr_rect_draw:
 		LDA		#$00
 		STA		_tmp3
-		LDA		byte_138
+		LDA		_info_maps_rect_pos._ROW
 		STA		_tmp2
-		LDA		byte_139
+		LDA		_info_maps_rect_pos._COL
 		STA		_tmp4
 		MOVWO	_ptr0,_spr_map_info_rect
-		JMP		_spr_raw_send_0
+		JMP		_spr_raw_insert
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_info_spr_arrows_draw:
-		LDA		byte_138
+_info_maps_spr_arrows_draw:
+		LDA		_info_maps_rect_pos._ROW
 		STA		_tmp2
-		LDA		byte_139
+		LDA		_info_maps_rect_pos._COL
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp3
 		MOVWO	_ptr0,_spr_map_info_arrows
 
 ; =============== S U B	R O U T	I N E =======================================
-_spr_raw_send_0:
+_spr_raw_insert:
 		LDY		#$00
 		LDX		_spr_buf_pos
 loc_B9500:
@@ -2243,6 +2246,7 @@ loc_B9500:
 loc_B952A:
 		STX		_spr_buf_pos
 		RTS
+
 _spr_map_info_rect:
 		.BYTE	$00,$04,$00,$00
 		.BYTE	$00,$05,$00,$2F

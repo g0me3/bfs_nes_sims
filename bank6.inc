@@ -6,23 +6,23 @@
 		SECTION_START 7904
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_buttons_redraw:
+_info_maps_button_redraw:
 		EXTQSTART
-;		LDY		_cur_info_maps_button_idx				; REDUNDANT as fuck
-;		LDA		_info_maps_button_idx_list,Y			; special value for disabling
-;		TAY												; released button draw, never used
-;		CMP		#$08									; default value here is B, so we draw
-;		BEQ		loc_A0199								; dummy release always
+;		LDY		_cur_info_maps_button_idx		; REDUNDANT as fuck
+;		LDA		_info_maps_button_idx_list,Y	; special value for disabling
+;		TAY										; released button draw, never used
+;		CMP		#$08							; default value here is B, so we draw
+;		BEQ		loc_A0199						; dummy release always
 		LDY		_prev_info_maps_button_idx
-		CPY		#$FF									; FIX: let's fix logic, skip release here instead
-		BEQ		loc_A0199								; -
+		CPY		#$FF							; FIX: let's fix logic, skip release here instead
+		BEQ		loc_A0199						; -
 		LDA		_info_maps_button_idx_list,Y
-		JSR		_button_released_extnt_queue			; draw released button
+		JSR		_button_released_extnt_queue	; draw released button
 loc_A0199:
 		LDY		_cur_info_maps_button_idx
-;		CPY		#$0B									; REDUNDANT, cur info never gets 0B value,
-;		BEQ		_button_press_exit						; never, here we have logic flaw or mistake
-		LDA		_info_maps_button_idx_list,Y			; now draw new pushed button or default 0
+;		CPY		#$0B							; REDUNDANT, cur info never gets 0B value,
+;		BEQ		_button_press_exit				; never, here we have logic flaw or mistake
+		LDA		_info_maps_button_idx_list,Y	; now draw new pushed button or default 0
 
 ; !FALLTHROUGH!
 
@@ -31,8 +31,8 @@ _button_pressed_extnt_queue:
 		ASL
 		PHA
 		TAY
-		LDA		_info_buttons_extnt_lib,Y				; get the released button extnt
-		AND		#$C0									; and change them to pressed extnt
+		LDA		_info_buttons_extnt_lib,Y		; get the released button extnt
+		AND		#$C0							; and change it to pressed extnt
 		ORA		#$04
 		STA		_tmp2
 		LDA		_info_buttons_extnt_lib+1,Y
@@ -40,7 +40,7 @@ _button_pressed_extnt_queue:
 		ORA		#$04
 		STA		_tmp3
 		PLA
-		JSR		_button_extnt_data_queue				; send data
+		JSR		_button_extnt_data_queue		; send data
 _button_press_exit:
 		EXTQEND
 		RTS
@@ -51,24 +51,24 @@ _button_press_exit:
 ;
 _graphs_buttons_redraw:
 		EXTQSTART
-		CPY		#$FF									; get index of redraw button in Y
-		BEQ		loc_A01CC								; skip release redraw on enter
+		CPY		#$FF							; get index of redraw button in Y
+		BEQ		loc_A01CC						; skip release redraw on enter
 		TYA
 		CLC
-;		ADC		#$0A									; REDUNDANT, removed unused lines
-		ADC		#$08									; FIX, new lib offset
-		JSR		_button_released_extnt_queue			; use common functions
+;		ADC		#$0A							; REDUNDANT, removed unused lines
+		ADC		#$08							; FIX, new lib offset
+		JSR		_button_released_extnt_queue	; use common functions
 loc_A01CC:
 		LDY		_cur_graphs_button_press_idx
-;		BPL		loc_A01D4								; the same for push button
+;		BPL		loc_A01D4						; the same for push button
 ;		EXTQEND
 ;		RTS
-		BMI		_button_press_exit						; OPTIMIZED
+		BMI		_button_press_exit				; OPTIMIZED
 ;loc_A01D4:
 		TYA
 		CLC
-;		ADC		#$0A									; REDUNDANT
-		ADC		#$08									; FIX
+;		ADC		#$0A							; REDUNDANT
+		ADC		#$08							; FIX
 		JMP		_button_pressed_extnt_queue
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -136,43 +136,43 @@ _info_maps_button_idx_list:
 ;
 ;_info_buttons_extnt_hdr_lib:
 ;			;	+	+	+	-	+	+	+	-
-;		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43		; 00 info map button 0
-;		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43		; 01 info map button 1
-;		.BYTE	$84,$5D,$02,$03,$A4,$5D,$02,$03		; 02 info map button 2
-;		.BYTE	$C4,$5D,$02,$03,$E4,$5D,$02,$03		; 03 info map button 3
-;		.BYTE	$04,$5E,$02,$03,$24,$5E,$02,$03		; 04 info map button 4
-;		.BYTE	$44,$5E,$02,$43,$64,$5E,$02,$43		; 05 info map button 5
-;		.BYTE	$84,$5E,$02,$43,$A4,$5E,$02,$43		; 06 info map button 6
-;		.BYTE	$C4,$5E,$02,$03,$E4,$5E,$02,$03		; 07 info map button 7
-;		.BYTE	$02,$5D,$02,$04,$22,$5D,$02,$04		; 08 info map dummy button push, *unused*
-;		.BYTE	$42,$5D,$02,$04,$62,$5D,$02,$04		; 09 info map dummy button release FIX, now *unused* too
-;		.BYTE	$23,$5D,$02,$83,$43,$5D,$02,$83		; 08 -0A graphs button 0
-;		.BYTE	$63,$5D,$02,$03,$83,$5D,$02,$03		; 09 -0B graphs button 1
-;		.BYTE	$A3,$5D,$02,$43,$C3,$5D,$02,$43		; 0A -0C graphs button 2
-;		.BYTE	$E3,$5D,$02,$83,$03,$5E,$02,$83		; 0B -0D graphs button 3
-;		.BYTE	$23,$5E,$02,$C3,$43,$5E,$02,$C3		; 0C -0E graphs button 4
-;		.BYTE	$63,$5E,$02,$03,$83,$5E,$02,$03		; 0D -0F graphs button 5
-;		.BYTE	$A3,$5E,$02,$03,$C3,$5E,$02,$03		; 10 graphs dummy button push, *unused*
-;		.BYTE	$E3,$5E,$02,$03,$03,$5F,$02,$03		; 11 graphs dummy button release, *unused*
+;		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43	; 00 info map button 0
+;		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43	; 01 info map button 1
+;		.BYTE	$84,$5D,$02,$03,$A4,$5D,$02,$03	; 02 info map button 2
+;		.BYTE	$C4,$5D,$02,$03,$E4,$5D,$02,$03	; 03 info map button 3
+;		.BYTE	$04,$5E,$02,$03,$24,$5E,$02,$03	; 04 info map button 4
+;		.BYTE	$44,$5E,$02,$43,$64,$5E,$02,$43	; 05 info map button 5
+;		.BYTE	$84,$5E,$02,$43,$A4,$5E,$02,$43	; 06 info map button 6
+;		.BYTE	$C4,$5E,$02,$03,$E4,$5E,$02,$03	; 07 info map button 7
+;		.BYTE	$02,$5D,$02,$04,$22,$5D,$02,$04	; 08 info map dummy button push, *unused*
+;		.BYTE	$42,$5D,$02,$04,$62,$5D,$02,$04	; 09 info map dummy button release
+;		.BYTE	$23,$5D,$02,$83,$43,$5D,$02,$83	; 08 -0A graphs button 0
+;		.BYTE	$63,$5D,$02,$03,$83,$5D,$02,$03	; 09 -0B graphs button 1
+;		.BYTE	$A3,$5D,$02,$43,$C3,$5D,$02,$43	; 0A -0C graphs button 2
+;		.BYTE	$E3,$5D,$02,$83,$03,$5E,$02,$83	; 0B -0D graphs button 3
+;		.BYTE	$23,$5E,$02,$C3,$43,$5E,$02,$C3	; 0C -0E graphs button 4
+;		.BYTE	$63,$5E,$02,$03,$83,$5E,$02,$03	; 0D -0F graphs button 5
+;		.BYTE	$A3,$5E,$02,$03,$C3,$5E,$02,$03	; 10 graphs dummy button push, *unused*
+;		.BYTE	$E3,$5E,$02,$03,$03,$5F,$02,$03	; 11 graphs dummy button release, *unused*
 
 ; FIX
 ; let's reuse them on purpose now.
 ;
 _info_buttons_extnt_hdr_lib:
-		.BYTE	$04,$5D,$02,$00,$24,$5D,$02,$00		; 00 info map button 0
-		.BYTE	$44,$5D,$02,$00,$64,$5D,$02,$00		; 01 info map button 1
-		.BYTE	$84,$5D,$02,$00,$A4,$5D,$02,$00		; 02 info map button 2
-		.BYTE	$C4,$5D,$02,$00,$E4,$5D,$02,$00		; 03 info map button 3
-		.BYTE	$04,$5E,$02,$00,$24,$5E,$02,$00		; 04 info map button 4
-		.BYTE	$44,$5E,$02,$00,$64,$5E,$02,$00		; 05 info map button 5
-		.BYTE	$84,$5E,$02,$00,$A4,$5E,$02,$00		; 06 info map button 6
-		.BYTE	$C4,$5E,$02,$00,$E4,$5E,$02,$00		; 07 info map button 7
-		.BYTE	$23,$5D,$02,$00,$43,$5D,$02,$00		; 08 graphs button 0
-		.BYTE	$63,$5D,$02,$00,$83,$5D,$02,$00		; 09 graphs button 1
-		.BYTE	$A3,$5D,$02,$00,$C3,$5D,$02,$00		; 0A graphs button 2
-		.BYTE	$E3,$5D,$02,$00,$03,$5E,$02,$00		; 0B graphs button 3
-		.BYTE	$23,$5E,$02,$00,$43,$5E,$02,$00		; 0C graphs button 4
-		.BYTE	$63,$5E,$02,$00,$83,$5E,$02,$00		; 0D graphs button 5
+		.BYTE	$04,$5D,$02,$00,$24,$5D,$02,$00	; 00 info map button 0
+		.BYTE	$44,$5D,$02,$00,$64,$5D,$02,$00	; 01 info map button 1
+		.BYTE	$84,$5D,$02,$00,$A4,$5D,$02,$00	; 02 info map button 2
+		.BYTE	$C4,$5D,$02,$00,$E4,$5D,$02,$00	; 03 info map button 3
+		.BYTE	$04,$5E,$02,$00,$24,$5E,$02,$00	; 04 info map button 4
+		.BYTE	$44,$5E,$02,$00,$64,$5E,$02,$00	; 05 info map button 5
+		.BYTE	$84,$5E,$02,$00,$A4,$5E,$02,$00	; 06 info map button 6
+		.BYTE	$C4,$5E,$02,$00,$E4,$5E,$02,$00	; 07 info map button 7
+		.BYTE	$23,$5D,$02,$00,$43,$5D,$02,$00	; 08 graphs button 0
+		.BYTE	$63,$5D,$02,$00,$83,$5D,$02,$00	; 09 graphs button 1
+		.BYTE	$A3,$5D,$02,$00,$C3,$5D,$02,$00	; 0A graphs button 2
+		.BYTE	$E3,$5D,$02,$00,$03,$5E,$02,$00	; 0B graphs button 3
+		.BYTE	$23,$5E,$02,$00,$43,$5E,$02,$00	; 0C graphs button 4
+		.BYTE	$63,$5E,$02,$00,$83,$5E,$02,$00	; 0D graphs button 5
 
 _info_buttons_extnt_lib:
 		.BYTE	$43,$43	; 00
@@ -223,12 +223,12 @@ _graphs_period_button_extnt_send:
 		EXTQSTART
 loc_A0238:
 		LDA		_graphs_period_buttons_extnt_hdrs,Y	; very smart solution here
-		BNE		loc_A0245							; and very dumb before now
+		BNE		loc_A0245						; and very dumb before now
 		EXTQMOVB	_tmp2,OP_NOP,0
 		LDY		#$FE
 loc_A0245:
-		EXTQMOVA									; queue is 2 byte long
-		INY											; the second byte is 0
+		EXTQMOVA								; queue is 2 byte long
+		INY										; the second byte is 0
 		CPY		#$FF
 		BNE		loc_A0238
 		EXTQEND
@@ -240,7 +240,7 @@ _graphs_period_buttons_extnt_hdrs:
 		.BYTE	$C3,$5E,$02,$00,$03,$5F,$02,$00
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_header_and_menu_draw:
+_info_maps_header_and_legend_redraw:
 		JSR		_flush_wait_0					; routine from BANK9!
 		LDA		_cur_info_maps_button_idx		; convert cur menu idx into
 		BEQ		loc_A0262						; if map header idx = 0
@@ -253,85 +253,73 @@ loc_A0262:
 		CLC										; then select one of 4 maps idxes
 		ADC		_info_maps_city_map_modes_idx	; adding index of city map menu
 loc_A0266:
-		ASL
-		TAX
-		LDA		_info_screen_header_nt_lib,X	; manual hacky put the queue buf data
-		STA		_ptr0
-		LDA		_info_screen_header_nt_lib+1,X
-		STA		_ptr0+1
+		PHA										; OPTIMIZED
+		MOVWO	_ptr0,_info_screen_header_nt_lib; OPTIMIZED
 		MOVWO	_tmp2,_ppu_queue_buf
-		TXA
-		PHA
+		PLA										; OPTIMIZED
+		PHA										; -
 		PPUQSTART
 		STX		_tmp4
 		JSR		_strcpy_ex
 		PPUQEND
-		PLA										; the same for extnt
-		TAX
-		LDA		_info_screen_header_extnt_lib,X
-		STA		_ptr0
-		LDA		_info_screen_header_extnt_lib+1,X
-		STA		_ptr0+1
+		MOVWO	_ptr0,_info_screen_legends_nt_lib
+		PPUQSTART								; because of additional list for nt idxes
+		JSR		_strcpy_lib
+		PPUQEND
+;		JSR		_flush_wait_0					; FIX, one wait just enough, or else you will see how it draw
+		MOVWO	_ptr0,_info_screen_header_extnt_lib
 		MOVWO	_tmp2,_extnt_queue_buf
+		PLA										; OPTIMIZED
 		EXTQSTART
 		STX		_tmp4
 		JSR		_strcpy_ex
 		EXTQEND
-		JSR		_flush_wait_0
-		MOVWO	_ptr0,off_A046F
-		MOVWO	_tmp2,_ppu_queue_buf
-		PPUQSTART
-		JSR		_strcpy_lib_ex
-		PPUQEND
-		MOVWO	_ptr0,off_A0479
-		MOVWO	_tmp2,_extnt_queue_buf
+		MOVWO	_ptr0,_info_screen_legends_extnt_lib
 		EXTQSTART
-		JSR		_strcpy_lib_ex
+		JSR		_strcpy_lib
 		EXTQEND
 		JMP		_flush_wait_0
 
 ; =============== S U B	R O U T	I N E =======================================
-_strcpy_lib_ex:
+_strcpy_lib:
 		STX		_tmp4
 		LDX		_cur_info_maps_button_idx
-		LDA		byte_A0308,X
-		ASL
-		TAY
-		LDA		(_ptr0),Y
-		TAX
-		INY
-		LDA		(_ptr0),Y
-		STA		_ptr0
-		STX		_ptr0+1
+		LDA		_info_screen_legends_idx_list,X
 
 ; =============== S U B	R O U T	I N E =======================================
 _strcpy_ex:
+		ASL										; calc idx
+		TAY
+		LDA		(_ptr0),Y						; fetch ptr
+		TAX
+		INY
+		LDA		(_ptr0),Y
+		STX		_ptr0							; store ptr
+		STA		_ptr0+1
 		LDY		#$00
-		STY		_tmp5
+		STY		_tmp5							; set src pos to 0
 		BEQ		loc_A02FD
 loc_A02F1:
 		LDY		_tmp4
-		STA		(_tmp2),Y
-		INC		_tmp4
-		INC		_tmp5
+		STA		(_tmp2),Y						; store dst byte
+		INC		_tmp4							; increment dst, can't be more than 256
+		INC		_tmp5							; increment src, and hi ptr nibble if >256
 		BNE		loc_A02FD
 		INC		_ptr0+1
 loc_A02FD:
-		LDY		_tmp5
-		LDA		(_ptr0),Y
+		LDY		_tmp5							; repeat
+		LDA		(_ptr0),Y						; read src byte
 		CMP		#$FF
-		BNE		loc_A02F1
-		LDX		_tmp4
+		BNE		loc_A02F1						; send if not end of buf
+		LDX		_tmp4							; X = head pos of dst buf
 		RTS
-byte_A0308:
-		.BYTE	$00,$01,$02,$03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$04
 
 ; =============== S U B	R O U T	I N E =======================================
-_scr_res_cursor_pos_clamp:
-		LDA		_scr_res_control_flags
-		AND		#$20
+_scr_res_cursor_move:
+		LDA		_scr_res_control_flags			; for resources with a free cursor
+		AND		#$20							; like graphs and info maps
 		BNE		locret_A0323
-		LDA		_pad0_held
+		LDA		_pad0_held						; test for D-Pad movements only
 		AND		#$0F
 		BNE		loc_A0324
 locret_A0323:
@@ -339,30 +327,30 @@ locret_A0323:
 loc_A0324:
 		LDX		#$00
 		LDY		#$03
-		LDA		_pad0_held
+		LDA		_pad0_held						; fetch held buttons, keep in A
 loc_A032A:
 		LSR
-		BCC		loc_A0341
-		PHA
-		LDA		_cur_game_cursor_scr_pos,X
+		BCC		loc_A0341						; shift d-pad bits in order R, L, U, D
+		PHA										; save d-pad bits for now
+		LDA		_cur_game_cursor_scr_pos,X		; get cur pos
 		CLC
-		ADC		byte_A0374,Y
-		CMP		byte_A0378,X
+		ADC		_scr_res_cursor_speed,Y			; increment position for 4 directions
+		CMP		_scr_res_cursor_min_pos_list,X	; test for limits
 		BCC		loc_A0340
-		CMP		byte_A037A,X
+		CMP		_scr_res_cursor_max_pos_list,X
 		BCS		loc_A0340
-		STA		_cur_game_cursor_scr_pos,X
+		STA		_cur_game_cursor_scr_pos,X		; if not at the side of the screen, store
 loc_A0340:
-		PLA
+		PLA										; restore d-pad bits
 loc_A0341:
-		CPY		#$02
-		BNE		loc_A0346
-		INX
+		CPY		#$02							; Y is dpad pos idx, 0,1 - hor, 2,3 - vert
+		BNE		loc_A0346						; so test if we should switch X to Y
+		INX										; switch once at Y 02
 loc_A0346:
 		DEY
-		BPL		loc_A032A
+		BPL		loc_A032A						; loop until all 4 dpad tested
 		LDA		#$00
-		STA		_cur_game_cursor_area
+		STA		_cur_game_cursor_area			; not used the same way as ingame
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -370,22 +358,22 @@ _scr_res_cursor_draw:
 		LDA		_scr_res_control_flags
 		AND		#$08
 		BNE		locret_A0360
-		LDA		_spr_buf_pos
-		BEQ		_scr_res_cursor_spr_insert_ex
-		PHA
-		JSR		_scr_res_cursor_spr_insert_ex_0
-		POPB	_spr_buf_pos
+		LDA		_spr_buf_pos					; draw new cursor always from 0
+		BEQ		_scr_res_cursor_spr_insert_ex	; if already 0, jump directly
+		PHA										; if no, save old position
+		JSR		_scr_res_cursor_spr_insert_ex_0	; draw and return here
+		POPB	_spr_buf_pos					; then restore
 locret_A0360:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_cursor_spr_insert_ex_0:
 		LDA		#$00
+		STA		_spr_buf_pos					; FIX if already 0, no need to store
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_cursor_spr_insert_ex:
-		STA		_spr_buf_pos
-		STA		_spr_insert_args._idx
+		STA		_spr_insert_args._idx			; in any cases A here is 0
 		STA		_spr_insert_args._attr
 		LDA		_cur_game_cursor_scr_pos._COL
 		STA		_spr_insert_args._pos._COL
@@ -393,100 +381,95 @@ _scr_res_cursor_spr_insert_ex:
 		STA		_spr_insert_args._pos._ROW
 		JMP		_spr_lib_attr_insert
 
-byte_A0374:
+; all directions has it's own speed just for convinience to correspond
+; to the d-pad index counter
+;
+_scr_res_cursor_speed:
 		.BYTE	$FE,$02,$FE,$02
-byte_A0378:
+_scr_res_cursor_min_pos_list:
 		.BYTE	$08,$18
-byte_A037A:
+_scr_res_cursor_max_pos_list:
 		.BYTE	$E9,$D9
 
-off_A046F:
-		.BYTE	>[byte_A04B9]
-		.BYTE	<[byte_A04B9]
-		.BYTE	>[byte_A055B]
-		.BYTE	<[byte_A055B]
-		.BYTE	>[byte_A05C1]
-		.BYTE	<[byte_A05C1]
-		.BYTE	>[byte_A0627]
-		.BYTE	<[byte_A0627]
-		.BYTE	>[byte_A0483]
-		.BYTE	<[byte_A0483]
-off_A0479:
-		.BYTE	>[byte_A0525]
-		.BYTE	<[byte_A0525]
-		.BYTE	>[byte_A058E]
-		.BYTE	<[byte_A058E]
-		.BYTE	>[byte_A05F4]
-		.BYTE	<[byte_A05F4]
-		.BYTE	>[byte_A065A]
-		.BYTE	<[byte_A065A]
-		.BYTE	>[byte_A04EF]
-		.BYTE	<[byte_A04EF]
-byte_A0483:
-		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$83
-		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$A2,$24
-		.BYTE	$08,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$09,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$FF
-byte_A04B9:
+_info_screen_legends_idx_list:
+		.BYTE	$00,$01,$02,$03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$04
+_info_screen_legends_nt_lib:
+		.WORD	_info_screen_legend_nt00	; trees/rivers/buildings/clear 4-color
+		.WORD	_info_screen_legend_nt01	; 2-buttons on/off
+		.WORD	_info_screen_legend_nt02	; + pos -
+		.WORD	_info_screen_legend_nt03	; min/max
+		.WORD	_info_screen_legend_nt04	; clear
+_info_screen_legends_extnt_lib:
+		.WORD	_info_screen_legend_extnt00
+		.WORD	_info_screen_legend_extnt01
+		.WORD	_info_screen_legend_extnt02
+		.WORD	_info_screen_legend_extnt03
+		.WORD	_info_screen_legend_extnt04
+_info_screen_legend_nt00:
 		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$83
 		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$A2,$24
 		.BYTE	$08,$DE,$69,$6A,$6B,$DE,$6C,$6D,$6E,$C2,$24,$09,$DE,$79,$7A,$7B
 		.BYTE	$51,$7C,$7D,$7E,$7F,$FF
-byte_A04EF:
-		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$83
-		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$A2,$5C
-		.BYTE	$08,$01,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$09,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$FF
-byte_A0525:
+_info_screen_legend_extnt00:
 		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$83
 		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$A2,$5C
 		.BYTE	$08,$C1,$43,$43,$43,$01,$43,$43,$43,$C2,$5C,$09,$41,$43,$43,$43
 		.BYTE	$50,$43,$43,$43,$43,$FF
-byte_A055B:
+_info_screen_legend_nt01:
 		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$22,$32,$9D,$A4,$83
 		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$23,$33,$9E,$A5,$A2,$24
 		.BYTE	$07,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$07,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$FF
-byte_A058E:
+_info_screen_legend_extnt01:
 		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$84,$84,$04,$04,$83
 		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$84,$84,$04,$04,$A2,$5C
 		.BYTE	$07,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$07,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$FF
-byte_A05C1:
+_info_screen_legend_nt02:
 		.BYTE	$82,$25,$8C,$DE,$DE,$22,$50,$00,$50,$28,$50,$00,$28,$5F,$32,$83
 		.BYTE	$25,$8C,$DE,$DE,$23,$50,$00,$50,$28,$50,$00,$28,$5F,$33,$A2,$24
 		.BYTE	$07,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$07,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$FF
-byte_A05F4:
+_info_screen_legend_extnt02:
 		.BYTE	$82,$5D,$8C,$01,$01,$83,$90,$D0,$50,$D0,$D0,$10,$10,$10,$83,$83
 		.BYTE	$5D,$8C,$01,$01,$83,$90,$D0,$50,$D0,$D0,$10,$10,$10,$83,$A2,$5C
 		.BYTE	$07,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$07,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$FF
-byte_A0627:
+_info_screen_legend_nt03:
 		.BYTE	$82,$25,$8C,$DE,$DE,$8E,$50,$50,$00,$BE,$CE,$28,$50,$50,$9E,$83
 		.BYTE	$25,$8C,$DE,$DE,$8F,$50,$50,$00,$BF,$CF,$28,$50,$50,$9F,$A2,$24
 		.BYTE	$07,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$07,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$FF
-byte_A065A:
+_info_screen_legend_extnt03:
 		.BYTE	$82,$5D,$8C,$01,$01,$83,$90,$90,$D0,$C3,$C3,$D0,$D0,$D0,$83,$83
 		.BYTE	$5D,$8C,$01,$01,$83,$90,$90,$D0,$C3,$C3,$D0,$D0,$D0,$83,$A2,$5C
 		.BYTE	$07,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$07,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$FF
+_info_screen_legend_nt04:
+		.BYTE	$82,$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$83
+		.BYTE	$25,$8C,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$DE,$A2,$24
+		.BYTE	$08,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24,$09,$DF,$DF,$DF,$DF
+		.BYTE	$DF,$DF,$DF,$DF,$DF,$FF
+_info_screen_legend_extnt04:
+		.BYTE	$82,$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$83
+		.BYTE	$5D,$8C,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$A2,$5C
+		.BYTE	$08,$01,$01,$01,$01,$01,$01,$01,$01,$C2,$5C,$09,$01,$01,$01,$01
+		.BYTE	$01,$01,$01,$01,$01,$FF
 _info_screen_header_nt_lib:
-		.WORD	_info_screen_header_nt00
-		.WORD	_info_screen_header_nt01
-		.WORD	_info_screen_header_nt02
-		.WORD	_info_screen_header_nt03
-		.WORD	_info_screen_header_nt04
-		.WORD	_info_screen_header_nt05
-		.WORD	_info_screen_header_nt06
-		.WORD	_info_screen_header_nt07
-		.WORD	_info_screen_header_nt08
-		.WORD	_info_screen_header_nt09
-		.WORD	_info_screen_header_nt0A
-		.WORD	_info_screen_header_nt0B
-		.WORD	_info_screen_header_nt0C
-		.WORD	_info_screen_header_nt0D
+		.WORD	_info_screen_header_nt00		; City Map Comprehensive
+		.WORD	_info_screen_header_nt01		; City Map Residental
+		.WORD	_info_screen_header_nt02		; City Map Commercial
+		.WORD	_info_screen_header_nt03		; City Map Industrial
+		.WORD	_info_screen_header_nt04		; Power Grid
+		.WORD	_info_screen_header_nt05		; Population Dencity
+		.WORD	_info_screen_header_nt06		; Population Rate of Growth
+		.WORD	_info_screen_header_nt07		; Traffic Dencity
+		.WORD	_info_screen_header_nt08		; Pollution Dencity
+		.WORD	_info_screen_header_nt09		; Crime Rate
+		.WORD	_info_screen_header_nt0A		; Land Value
+		.WORD	_info_screen_header_nt0B		; City Service Fire Radius
+		.WORD	_info_screen_header_nt0C		; City Service Police Radius
+		.WORD	_info_screen_header_nt0D		; -blank header- used to clear line
 _info_screen_header_extnt_lib:
 		.WORD	_info_screen_header_extnt00
 		.WORD	_info_screen_header_extnt00
@@ -506,43 +489,58 @@ _info_screen_header_nt00:
 		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
 		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$43,$6F,$6D,$70
 		.BYTE	$72,$65,$68,$65,$6E,$73,$69,$76,$65,$DF,$DF,$DF,$FF
-_info_screen_header_extnt00:
-		.BYTE	$A9,$5C,$13,$01,$01,$01,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$01,$01,$01,$C9,$5C,$13,$01,$01,$01,$0B,$0B,$0B,$0B
-		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$01,$01,$01,$FF
-_info_screen_header_extnt0D:
-		.BYTE	$A2,$5C,$1B,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$C2,$5C
-		.BYTE	$1B,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$FF
-_info_screen_header_nt02:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
-		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$20,$43,$6F
-		.BYTE	$6D,$6D,$65,$72,$63,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
 _info_screen_header_nt01:
 		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
 		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$52,$65,$73
 		.BYTE	$69,$64,$65,$6E,$74,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
+_info_screen_header_nt02:
+		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
+		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$20,$43,$6F
+		.BYTE	$6D,$6D,$65,$72,$63,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
 _info_screen_header_nt03:
 		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$20,$20,$43,$69,$74,$79,$20,$4D,$61
 		.BYTE	$70,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$20,$49,$6E
 		.BYTE	$64,$75,$73,$74,$72,$69,$61,$6C,$20,$DF,$DF,$DF,$FF
+_info_screen_header_nt0B:
+		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$43,$69,$74,$79,$20,$53,$65,$72,$76
+		.BYTE	$69,$63,$65,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$46,$69,$72
+		.BYTE	$65,$20,$52,$61,$64,$69,$75,$73,$20,$DF,$DF,$DF,$FF
+_info_screen_header_nt0C:
+		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$43,$69,$74,$79,$20,$53,$65,$72,$76
+		.BYTE	$69,$63,$65,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$50,$6F,$6C,$69
+		.BYTE	$63,$65,$20,$52,$61,$64,$69,$75,$73,$DF,$DF,$DF,$FF
+_info_screen_header_extnt00:
+		.BYTE	$A9,$5C,$13,$01,$01,$01,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$01,$01,$01,$C9,$5C,$13,$01,$01,$01,$0B,$0B,$0B,$0B
+		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$01,$01,$01,$FF
 _info_screen_header_nt04:
 		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$50,$6F,$77
 		.BYTE	$65,$72,$20,$47,$72,$69,$64,$20,$20,$DF,$DF,$DF,$FF
+_info_screen_header_nt09:
+		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
+		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$43,$72,$69
+		.BYTE	$6D,$65,$20,$52,$61,$74,$65,$20,$20,$DF,$DF,$DF,$FF
+_info_screen_header_nt0A:
+		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
+		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$4C,$61,$6E
+		.BYTE	$64,$20,$56,$61,$6C,$75,$65,$20,$20,$DF,$DF,$DF,$FF
 _info_screen_header_extnt04:
 		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$01,$01,$01,$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$01,$01,$01,$FF
-_info_screen_header_nt08:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$20,$50,$6F,$6C,$6C,$75,$74
-		.BYTE	$69,$6F,$6E,$20,$44,$65,$6E,$73,$69,$74,$79,$20,$FF
-_info_screen_header_extnt08:
-		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$FF
+_info_screen_header_nt05:
+		.BYTE	$A9,$24,$13,$DF,$DF,$20,$20,$50,$6F,$70,$75,$6C,$61,$74,$69,$6F
+		.BYTE	$6E,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$20,$20,$20,$20,$44
+		.BYTE	$65,$6E,$73,$69,$74,$79,$20,$20,$20,$DF,$DF,$DF,$FF
+_info_screen_header_nt06:
+		.BYTE	$A9,$24,$13,$DF,$DF,$20,$20,$50,$6F,$70,$75,$6C,$61,$74,$69,$6F
+		.BYTE	$6E,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$52,$61,$74,$65,$20
+		.BYTE	$6F,$66,$20,$47,$72,$6F,$77,$74,$68,$DF,$DF,$DF,$FF
+_info_screen_header_extnt05:
+		.BYTE	$A9,$5C,$13,$01,$01,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$01,$01,$01,$C9,$5C,$13,$01,$01,$0B,$0B,$0B,$0B,$0B
+		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$01,$01,$01,$FF
 _info_screen_header_nt07:
 		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$20,$54,$72,$61,$66,$66
@@ -551,145 +549,166 @@ _info_screen_header_extnt07:
 		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$01,$8B,$8B,$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$01,$FF
-_info_screen_header_nt0A:
+_info_screen_header_nt08:
 		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$4C,$61,$6E
-		.BYTE	$64,$20,$56,$61,$6C,$75,$65,$20,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt09:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$43,$72,$69
-		.BYTE	$6D,$65,$20,$52,$61,$74,$65,$20,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt0C:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$43,$69,$74,$79,$20,$53,$65,$72,$76
-		.BYTE	$69,$63,$65,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$50,$6F,$6C,$69
-		.BYTE	$63,$65,$20,$52,$61,$64,$69,$75,$73,$DF,$DF,$DF,$FF
-_info_screen_header_nt0B:
-		.BYTE	$A9,$24,$13,$DF,$DF,$DF,$20,$43,$69,$74,$79,$20,$53,$65,$72,$76
-		.BYTE	$69,$63,$65,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$DF,$20,$46,$69,$72
-		.BYTE	$65,$20,$52,$61,$64,$69,$75,$73,$20,$DF,$DF,$DF,$FF
-_info_screen_header_nt05:
-		.BYTE	$A9,$24,$13,$DF,$DF,$20,$20,$50,$6F,$70,$75,$6C,$61,$74,$69,$6F
-		.BYTE	$6E,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$20,$20,$20,$20,$44
-		.BYTE	$65,$6E,$73,$69,$74,$79,$20,$20,$20,$DF,$DF,$DF,$FF
+		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$C9,$24,$13,$20,$50,$6F,$6C,$6C,$75,$74
+		.BYTE	$69,$6F,$6E,$20,$44,$65,$6E,$73,$69,$74,$79,$20,$FF
+_info_screen_header_extnt08:
+		.BYTE	$A9,$5C,$13,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$C9,$5C,$13,$8B,$8B,$8B,$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$FF
 _info_screen_header_nt0D:
 		.BYTE	$A2,$24,$1B,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$C2,$24
 		.BYTE	$1B,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$FF
-_info_screen_header_extnt05:
-		.BYTE	$A9,$5C,$13,$01,$01,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$01,$01,$01,$C9,$5C,$13,$01,$01,$0B,$0B,$0B,$0B,$0B
-		.BYTE	$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$01,$01,$01,$FF
-_info_screen_header_nt06:
-		.BYTE	$A9,$24,$13,$DF,$DF,$20,$20,$50,$6F,$70,$75,$6C,$61,$74,$69,$6F
-		.BYTE	$6E,$20,$20,$DF,$DF,$DF,$C9,$24,$13,$DF,$DF,$52,$61,$74,$65,$20
-		.BYTE	$6F,$66,$20,$47,$72,$6F,$77,$74,$68,$DF,$DF,$DF,$FF
+_info_screen_header_extnt0D:
+		.BYTE	$A2,$5C,$1B,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$C2,$5C
+		.BYTE	$1B,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$FF
+
+		SECTION_END 7904
+
+		SECTION_START 902
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_common_draw:
-		LDA		_scr_res_idx
+		LDA		_scr_res_idx					; _scr_res_idx here already *2
 		BNE		loc_A0A9A
-		LDX		#$24
-		LDA		#$DF
-		JSR		_ppu_area_fill
-		LDA		#$10
-		STA		_cur_game_cursor_scr_pos._COL
-		LDA		#$62
+		LDA		#$10							; here is the only place with cursor reposition
+		STA		_cur_game_cursor_scr_pos._COL	; other screens uses its own cursors or
+		LDA		#$62							; ingame cursor position (at HUD info maps button)
 		STA		_cur_game_cursor_scr_pos._ROW
-		MOVWO	_ptr0,byte_A0B6A
-		JSR		_tlm_transfer
+		LDX		#$24							; for info maps screen
+		LDA		#$DF
+		JSR		_ppu_area_fill					; clear NT1 with DF (space)
 		LDX		#$2C
 		LDA		#$01
-		JSR		_ppu_area_fill
-		MOVWO	_ptr0,byte_A0BE3
+		JSR		_ppu_area_fill					; clear EXTNT mapper do NT3 with 01
+		MOVWO	_ptr0,_tlm_info_maps_nt_common
+;		JSR		_tlm_transfer					; REDUNDANT, merged
+;		MOVWO	_ptr0,_tlm_info_maps_extnt_common
 		JMP		_tlm_transfer
 loc_A0A9A:
-		CMP		#$02
-		BNE		loc_A0AA1
-		JMP		_scr_res1_draw
-loc_A0AA1:
-		CMP		#$04
-		BNE		loc_A0AA8
-		JMP		_scr_res2_draw
-loc_A0AA8:
-		CMP		#$06
-		BNE		loc_A0AAF
-		JMP		_scr_res3_draw
-loc_A0AAF:
-		CMP		#$08
-		BNE		loc_A0AB6
-		JMP		_scr_res4_draw
-loc_A0AB6:
-		CMP		#$0A
-		BNE		loc_A0ABD
-		JMP		_scr_res5_draw
-loc_A0ABD:
+; OPTIMIZED, 156 bytes less
+; -
 		CMP		#$0C
-		BNE		loc_A0AC4
-		JMP		_scr_res6_draw
-loc_A0AC4:
-		CMP		#$0E
-		BNE		locret_A0ACB
-		JMP		_scr_res7_draw
-locret_A0ACB:
-		RTS
-_scr_res1_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_scr1
-		POPB	_MMC5_NT_MODE
-		RTS
-_scr_res2_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_scr2
-		POPB	_MMC5_NT_MODE
-		RTS
-_scr_res3_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_scr3
-		POPB	_MMC5_NT_MODE
-		RTS
-_scr_res4_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_scr4
-		POPB	_MMC5_NT_MODE
-		RTS
-_scr_res5_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_scr5
-		POPB	_MMC5_NT_MODE
-		RTS
-_scr_res7_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_scr7
-		POPB	_MMC5_NT_MODE
-		RTS
-_scr_res6_draw:
-		PUSHB	_mmc5_nt_mode_shadow
-		LDA		#$24
-		STA		_MMC5_NT_MODE
+		BNE		loc_A0A9B
 		BIT		_city._bank_flags
-		BVC		loc_A0B5E
-		LDXY	_tlm_res_scr6A
-		BNE		loc_A0B62
-loc_A0B5E:
-		LDXY	_tlm_res_scr6B
-loc_A0B62:
+		BVS		loc_A0A9B
+		LDA		#$10
+loc_A0A9B:
+		TAY
+		LDX		_tlm_res_lib-2,Y
+		LDA		_tlm_res_lib-1,Y
+		TAY
+		PUSHB	_mmc5_nt_mode_shadow
+		LDA		#$24
+		STA		_MMC5_NT_MODE
 		JSR		_tlm_res_unpack
 		POPB	_MMC5_NT_MODE
 		RTS
-byte_A0B6A:
+; -
+; REDUNDANT
+;		CMP		#$02
+;		BNE		loc_A0AA1
+;		JMP		_scr_res1_draw
+;loc_A0AA1:
+;		CMP		#$04
+;		BNE		loc_A0AA8
+;		JMP		_scr_res2_draw
+;loc_A0AA8:
+;		CMP		#$06
+;		BNE		loc_A0AAF
+;		JMP		_scr_res3_draw
+;loc_A0AAF:
+;		CMP		#$08
+;		BNE		loc_A0AB6
+;		JMP		_scr_res4_draw
+;loc_A0AB6:
+;		CMP		#$0A
+;		BNE		loc_A0ABD
+;		JMP		_scr_res5_draw
+;loc_A0ABD:
+;		CMP		#$0C
+;		BNE		loc_A0AC4
+;		JMP		_scr_res6_draw
+;loc_A0AC4:
+;		CMP		#$0E
+;		BNE		locret_A0ACB
+;		JMP		_scr_res7_draw
+;locret_A0ACB:
+;		RTS
+;_scr_res1_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		JSRXY	_tlm_res_unpack,_tlm_res_scr1
+;		POPB	_MMC5_NT_MODE
+;		RTS
+;_scr_res2_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		JSRXY	_tlm_res_unpack,_tlm_res_scr2
+;		POPB	_MMC5_NT_MODE
+;		RTS
+;_scr_res3_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		JSRXY	_tlm_res_unpack,_tlm_res_scr3
+;		POPB	_MMC5_NT_MODE
+;		RTS
+;_scr_res4_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		JSRXY	_tlm_res_unpack,_tlm_res_scr4
+;		POPB	_MMC5_NT_MODE
+;		RTS
+;_scr_res5_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		JSRXY	_tlm_res_unpack,_tlm_res_scr5
+;		POPB	_MMC5_NT_MODE
+;		RTS
+;_scr_res7_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		JSRXY	_tlm_res_unpack,_tlm_res_scr7
+;		POPB	_MMC5_NT_MODE
+;		RTS
+;_scr_res6_draw:
+;		PUSHB	_mmc5_nt_mode_shadow
+;		LDA		#$24
+;		STA		_MMC5_NT_MODE
+;		BIT		_city._bank_flags
+;		BVC		loc_A0B5E
+;		LDXY	_tlm_res_scr6A
+;		BNE		loc_A0B62
+;loc_A0B5E:
+;		LDXY	_tlm_res_scr6B
+;loc_A0B62:
+;		JSR		_tlm_res_unpack
+;		POPB	_MMC5_NT_MODE
+;		RTS
+; -
+
+_tlm_res_lib:
+		.WORD	_tlm_res_scr1
+		.WORD	_tlm_res_scr2
+		.WORD	_tlm_res_scr3
+		.WORD	_tlm_res_scr4
+		.WORD	_tlm_res_scr5
+		.WORD	_tlm_res_scr6A
+		.WORD	_tlm_res_scr7
+		.WORD	_tlm_res_scr6B
+
+_tlm_info_maps_nt_common:
 		.BYTE	$24,$6D,$01,$AF,$24,$E1,$08,$D0,$D1,$D1,$D1,$D1,$D2,$DF,$D0,$24
 		.BYTE	$E9,$53,$D1,$24,$FC,$01,$D2,$25,$01,$D0,$D3,$25,$02,$84,$20,$30
 		.BYTE	$8C,$9C,$25,$82,$CC,$DE,$25,$03,$84,$21,$31,$8D,$9D,$25,$83,$CC
@@ -697,9 +716,9 @@ byte_A0B6A:
 		.BYTE	$0C,$1C,$0E,$1E,$25,$05,$90,$01,$11,$03,$13,$05,$15,$07,$17,$09
 		.BYTE	$19,$0B,$1B,$0D,$1D,$0F,$1F,$25,$06,$D0,$D4,$27,$01,$06,$D5,$D6
 		.BYTE	$D6,$D6,$D6,$D7,$25,$08,$D3,$D3,$25,$1C,$D3,$D4,$27,$68,$01,$D5
-		.BYTE	$27,$69,$53,$D6,$27,$7C,$01,$D7,$00
-byte_A0BE3:
-		.BYTE	$2C,$6D,$01,$82,$2C,$7B,$43,$42,$2C,$E8,$55,$81,$2D,$02,$84,$83
+		.BYTE	$27,$69,$53,$D6,$27,$7C,$01,$D7	; ,$00							; REDUNDANT
+;_tlm_info_maps_extnt_common:
+		.BYTE	$2C,$6D,$01,$82,$2C,$7B,$43,$42,$2C,$E8,$55,$81,$2D,$02,$84,$83	; MERGED
 		.BYTE	$83,$83,$83,$2D,$03,$84,$83,$83,$83,$83,$2D,$04,$90,$43,$43,$43
 		.BYTE	$43,$83,$83,$83,$83,$83,$83,$43,$43,$43,$43,$83,$83,$2D,$05,$90
 		.BYTE	$43,$43,$43,$43,$43,$43,$83,$83,$83,$83,$43,$43,$43,$43,$83,$83
@@ -707,8 +726,8 @@ byte_A0BE3:
 _tlm_res_scr2:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A0C35
-byte_A0C35:
+		.WORD	_tlm_scr2_rle0
+_tlm_scr2_rle0:
 		.BYTE	$E4,$3F,$DF,$00,$A5,$3D,$A6,$01,$A7,$B5,$2A,$00,$64,$AB,$01,$C6
 		.BYTE	$00,$65,$C0,$25,$00,$00,$B7,$8B,$00,$60,$64,$BB,$01,$D6,$00,$65
 		.BYTE	$D0,$87,$00,$79,$00,$DC,$63,$AC,$38,$DC,$02,$B7,$B5,$DC,$63,$B0
@@ -743,8 +762,8 @@ byte_A0C35:
 _tlm_res_scr5:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A0E1E
-byte_A0E1E:
+		.WORD	_tlm_scr5_rle0
+_tlm_scr5_rle0:
 		.BYTE	$E4,$41,$DD,$00,$A5,$39,$A6,$00,$A7,$23,$DD,$00,$B5,$25,$D1,$0C
 		.BYTE	$0C,$01,$13,$14,$D1,$3D,$D1,$05,$16,$05,$0E,$14,$13,$26,$D1,$00
 		.BYTE	$B7,$8A,$00,$5E,$0C,$4C,$41,$53,$54,$D1,$7D,$D1,$45,$56,$45,$4E
@@ -760,8 +779,8 @@ byte_A0E1E:
 _tlm_res_scr7:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A0EDD
-byte_A0EDD:
+		.WORD	_tlm_scr7_rle0
+_tlm_scr7_rle0:
 		.BYTE	$E4,$21,$DD,$00,$A5,$32,$A6,$00,$A7,$2A,$DD,$14,$B5,$00,$07,$25
 		.BYTE	$2E,$25,$32,$21,$34,$25,$00,$0E,$25,$37,$00,$0D,$21,$30,$00,$00
 		.BYTE	$B7,$8C,$00,$37,$0F,$47,$65,$6E,$65,$72,$61,$54,$65,$00,$4E,$65
@@ -788,8 +807,8 @@ byte_A0EDD:
 _tlm_res_scr6A:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A1043
-byte_A1043:
+		.WORD	_tlm_scr6A_rle0
+_tlm_scr6A_rle0:
 		.BYTE	$E4,$22,$DC,$00,$00,$37,$01,$00,$02,$26,$DC,$37,$11,$27,$DC,$00
 		.BYTE	$21,$4A,$22,$12,$00,$23,$28,$DC,$66,$04,$00,$05,$86,$00,$86,$65
 		.BYTE	$05,$00,$0C,$29,$DC,$62,$14,$01,$3F,$4F,$62,$19,$86,$00,$A6,$85
@@ -842,8 +861,8 @@ byte_A1043:
 _tlm_res_scr6B:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A134E
-byte_A134E:
+		.WORD	_tlm_scr6B_rle0
+_tlm_scr6B_rle0:
 		.BYTE	$E4,$22,$DC,$00,$00,$37,$01,$00,$02,$26,$DC,$37,$11,$27,$DC,$00
 		.BYTE	$21,$4A,$22,$12,$00,$23,$28,$DC,$66,$04,$00,$05,$86,$00,$86,$65
 		.BYTE	$05,$00,$0C,$29,$DC,$62,$14,$01,$3F,$4F,$62,$19,$86,$00,$A6,$85
@@ -903,8 +922,8 @@ byte_A134E:
 _tlm_res_scr1:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A16C9
-byte_A16C9:
+		.WORD	_tlm_scr1_rle0
+_tlm_scr1_rle0:
 		.BYTE	$E4,$49,$DC,$00,$A0,$2D,$A1,$00,$A2,$2F,$DC,$00,$B0,$23,$DE,$05
 		.BYTE	$07,$12,$01,$10,$08,$13,$23,$DE,$00,$B2,$94,$00,$5A,$05,$47,$52
 		.BYTE	$41,$50,$68,$53,$94,$00,$75,$00,$C0,$2D,$C1,$00,$C2,$E4,$2C,$DC
@@ -930,8 +949,8 @@ byte_A16C9:
 _tlm_res_scr4:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A182B
-byte_A182B:
+		.WORD	_tlm_scr4_rle0
+_tlm_scr4_rle0:
 		.BYTE	$E4,$40,$B6,$00,$A5,$3B,$A6,$03,$A7,$B6,$B6,$B5,$27,$00,$0C,$AE
 		.BYTE	$AC,$C5,$CA,$00,$C9,$C8,$C4,$C7,$C8,$AC,$C4,$CB,$26,$00,$00,$B7
 		.BYTE	$8A,$00,$5F,$0C,$BE,$BC,$D5,$DA,$00,$D9,$D8,$D4,$D7,$D8,$BC,$D4
@@ -966,8 +985,8 @@ byte_A182B:
 _tlm_res_scr3:
 		.WORD	$2400
 		.BYTE	1
-		.WORD	byte_A1A1A
-byte_A1A1A:
+		.WORD	_tlm_scr3_rle0
+_tlm_scr3_rle0:
 		.BYTE	$4F,$5B,$5C,$4F,$5C,$5B,$00,$C3,$3D,$C4,$01,$C5,$D3,$29,$00,$0E
 		.BYTE	$03,$09,$14,$19,$00,$05,$16,$01,$0C,$15,$01,$14,$09,$0F,$0E,$24
 		.BYTE	$00,$00,$D5,$8A,$00,$60,$0E,$43,$49,$54,$59,$00,$45,$76,$41,$4C
@@ -1005,6 +1024,6 @@ byte_A1A1A:
 		.BYTE	$04,$9F,$3E,$58,$3F,$00,$02,$38,$44,$08,$83,$07,$DF,$28,$00,$87
 		.BYTE	$03,$F0,$27,$00,$FF
 
-		SECTION_END 7904
+		SECTION_END 902
 
 		BANK_END F6,$A000

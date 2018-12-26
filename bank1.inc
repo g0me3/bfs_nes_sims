@@ -624,9 +624,9 @@ loc_2449E:
 ;		STA		(_tmp4),Y
 ;		BNE		loc_244DA
 loc_244D6:
-		LDA		_special_tiles_ofs_list,X		; OPTIMIZED
+		LDA		_special_tiles_ofs_list-1,X		; OPTIMIZED
 		TAY										; -
-		LDA		_special_tiles_list,X			; -
+		LDA		_special_tiles_list-1,X			; -
 		STA		(_tmp4),Y						; -
 		DEX										; -
 		BNE		loc_244D6						; -
@@ -651,19 +651,7 @@ loc_244EE:
 		LDA		_tmp6+1
 		RTS
 
-; +0 +1 +2 +3
-; 00 82 87 8E +00
-; 80 81 86 8D +4C
-; 83 84 85 8C +98
-; 88 89 8A 8B +E4
-
-_special_tiles_ofs_list:
-		.BYTE	$00
-		.BYTE	$4C,$4D,$01
-		.BYTE	$98,$99,$9A,$4E,$02
-		.BYTE	$E4,$E5,$E6,$E7,$9B,$4F,$03
 _special_tiles_list:
-		.BYTE	$00
 		.BYTE	$80,$81,$82
 		.BYTE	$83,$84,$85,$86,$87
 		.BYTE	$88,$89,$8A,$8B,$8C,$8D,$8E

@@ -439,9 +439,9 @@ _thread1_flags:
 		.BYTE	0,0
 _unref_13:
 		.BYTE	0,0,0
-_info_maps_cur_row:
+_mini_map_cur_row:
 		.BYTE	0
-_info_maps_cur_col:
+_mini_map_cur_col:
 		.BYTE	0
 _unref_14:
 		.BYTE	0,0
@@ -484,13 +484,12 @@ _taxes_income:
 		.BYTE	0,0
 byte_137:
 		.BYTE	0
-byte_138:
-		.BYTE	0
-byte_139:
-		.BYTE	0
+
+		_tpos	_info_maps_rect_pos
+
 byte_13A:
 		.BYTE	0
-byte_13B:
+_budget_screen_return_to_info_maps_flag:
 		.BYTE	0
 byte_13C:
 		.BYTE	0
