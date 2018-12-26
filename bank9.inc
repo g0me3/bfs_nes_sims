@@ -1762,9 +1762,7 @@ locret_EADB1:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EADB2:
-		MOVW	_ptr0,_popul_cur
-		LDA		_popul_cur+2
-		STA		_tmp2
+		MOVD	_ptr0,_popul_cur
 		JSR		_hex_to_dec9999999
 		LDA		#$16
 		JMP		_printf
@@ -1921,15 +1919,11 @@ loc_EAEEC:
 		STA		_tmp118+2
 		LDA		#$A0
 		STA		_scr_res_control_flags
-		MOVW	_ptr0,_taxes_collected
-		LDA		_taxes_collected+2
-		STA		_tmp2
+		MOVD	_ptr0,_taxes_collected
 		JSR		_hex_to_dec99999
 		LDA		#$01
 		JSR		_printf
-		MOVW	_ptr0,_city._money
-		LDA		_city._money+2
-		STA		_tmp2
+		MOVD	_ptr0,_city._money
 		JSR		_hex_to_dec9999999
 		LDA		#$12
 		JSR		_printf
@@ -1980,7 +1974,7 @@ loc_EAFD5:
 		BNE		loc_EAFD5
 		JSR		_tax_alloc_calc
 		JSR		_total_funds_calc
-		JSR		_current_funds_calc_0
+		JSR		_test_if_money_for_funds_are_enough
 		BCS		loc_EAFF8
 		LDA		#$08
 		JSR		_tax_alloc_clamp
@@ -2378,7 +2372,7 @@ _far_scr_res_hndl6_B_bank_input:
 _budget_funds_recalc:
 		FJSRA	_budget_scr_tax_adjust,PRG6,PRG9
 		JSR		_total_funds_calc
-		JSR		_current_funds_calc_0
+		JSR		_test_if_money_for_funds_are_enough
 		BCS		_taxes_alloc_draw
 		LDA		_tmp584
 		JSR		_tax_alloc_clamp
@@ -2387,7 +2381,15 @@ _budget_funds_recalc:
 
 ; =============== S U B	R O U T	I N E =======================================
 _taxes_alloc_draw:
-		JSR		_taxes_alloc_hex_to_dec9999
+;		JSR		_taxes_alloc_hex_to_dec9999		; REDUNDANT
+		LDA		_tmp584							; OPTIMIZE, unufication
+		AND		#$FE							; -
+		TAY										; -
+		LDA		_tax_alloc,Y					; -
+		STA		_ptr0							; -
+		LDA		_tax_alloc+1,Y					; -
+		STA		_ptr0+1							; -
+		JSR		_hex_to_dec9999					; -
 		LDY		_tmp584
 		LDA		byte_EB76C,Y
 		JSR		_printf
@@ -2413,7 +2415,7 @@ loc_EB328:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_current_funds_calc_0:
+_test_if_money_for_funds_are_enough:
 		LDY		#$00
 		LDX		#$03
 		SEC
@@ -3150,104 +3152,6 @@ locret_EB9FE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_taxes_alloc_hex_to_dec9999:
-		LDA		_tmp584
-		AND		#$FE
-		TAY
-		LDA		_tax_alloc,Y
-		STA		_ptr0
-		LDA		_tax_alloc+1,Y
-		STA		_ptr0+1
-
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec9999:
-		LDY		#$00
-		STY		_tmp2
-		LDX		#$03
-		BNE		_hex_to_dec_ex
-
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec99999:
-		LDX		#$04
-		BNE		_hex_to_dec_ex
-
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec9999999:
-		LDX		#$06
-		BNE		_hex_to_dec_ex
-
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec999999:
-		LDX		#$05
-
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec_ex:
-		LDY		#$00
-		STY		_tmp3
-		STY		_tmp4
-		STY		_tmp5
-		STY		_tmp6
-		STY		_tmp6+1
-loc_EBA2D:
-		LDY		#$00
-loc_EBA2F:
-		LDA		_ptr0
-		CMP		_hex_to_dec9999999_tbl2,X
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1,X
-		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0,X
-		BCC		loc_EBA58
-		LDA		_ptr0
-		SBC		_hex_to_dec9999999_tbl2,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0,X
-		STA		_tmp2
-		INY
-		BNE		loc_EBA2F
-loc_EBA58:
-		STY		_tmp2,X
-		DEX
-		BPL		loc_EBA2D
-		LDX		#$00
-loc_EBA5F:
-		LDA		_tmp2,X
-		STA		_ptr0+1,X
-		INX
-		CPX		#$06
-		BNE		loc_EBA5F
-		RTS
-
-_hex_to_dec9999999_tbl0:
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-		.BYTE	[[10000000 >> 16] & $FF]; $98
-_hex_to_dec9999999_tbl1:
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]  ; $42
-		.BYTE	[[10000000 >> 8] & $FF] ; $96
-_hex_to_dec9999999_tbl2:
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]  ; $40
-		.BYTE	[[10000000 >> 0] & $FF] ; $80
-
-; =============== S U B	R O U T	I N E =======================================
 ; input args: 16bit _ptr0 * reg X, store 24bit _ptr0/tmp2
 ;
 _mmc5_mul16to8_fast:
@@ -3550,5 +3454,115 @@ _fund_reqest_ofs_list:
 		.WORD	_fund_request_police
 		.WORD	_fund_request_trans
 		.WORD	_fund_request_education
+
+; =============== S U B	R O U T	I N E =======================================
+;_taxes_alloc_hex_to_dec9999:					; REDUNDANT
+;		LDA		_tmp584							; -
+;		AND		#$FE							; -
+;		TAY										; -
+;		LDA		_tax_alloc,Y					; -
+;		STA		_ptr0							; -
+;		LDA		_tax_alloc+1,Y					; -
+;		STA		_ptr0+1							; -
+;
+; !FALLTHROUGH!
+
+
+; ---------------------------------------------------------------------------
+; -------------H-E-X--T-O--D-E-C-I-M-A-L--C-O-N-V-E-R-T-E-R-S----------------
+; ---------------------------------------------------------------------------
+
+; =============== S U B	R O U T	I N E =======================================
+; input args, common:	_tmp0 (24-bit word)
+; output            :   _tmp0 (4 to 7 bytes array)
+;
+_hex_to_dec9999:
+		LDY		#$00
+		STY		_tmp2
+		LDX		#$03
+		BNE		_hex_to_dec_ex
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec99999:
+		LDX		#$04
+		BNE		_hex_to_dec_ex
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec999999:
+		LDX		#$05
+		BNE		_hex_to_dec_ex
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec9999999:
+		LDX		#$06
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec_ex:
+		LDY		#$00
+		STY		_tmp3						; prepare buffer
+		STY		_tmp4
+		STY		_tmp5
+		STY		_tmp6
+		STY		_tmp6+1
+loc_EBA2D:
+		LDY		#$00
+loc_EBA2F:
+		LDA		_ptr0						; from 10m to 10 back count
+		CMP		_hex_to_dec9999999_tbl2,X	; compare 24-bit value with table
+		LDA		_ptr0+1
+		SBC		_hex_to_dec9999999_tbl1,X
+		LDA		_tmp2
+		SBC		_hex_to_dec9999999_tbl0,X
+		BCC		loc_EBA58
+		LDA		_ptr0						; less than or equals, subtract
+		SBC		_hex_to_dec9999999_tbl2,X
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		_hex_to_dec9999999_tbl1,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		SBC		_hex_to_dec9999999_tbl0,X
+		STA		_tmp2
+		INY
+		BNE		loc_EBA2F
+loc_EBA58:
+		STY		_tmp2,X
+		DEX
+		BPL		loc_EBA2D
+		LDX		#$00
+loc_EBA5F:
+		LDA		_tmp2,X
+		STA		_ptr0+1,X
+		INX
+		CPX		#$06
+		BNE		loc_EBA5F
+		RTS
+
+_hex_to_dec9999999_tbl0:
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+		.BYTE	[[10000000 >> 16] & $FF]; $98
+_hex_to_dec9999999_tbl1:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+		.BYTE	[[10000000 >> 8] & $FF] ; $96
+_hex_to_dec9999999_tbl2:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
 		BANK_END F9,$C000

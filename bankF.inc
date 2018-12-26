@@ -77,7 +77,7 @@ loc_18A053:
 		INY
 		STY		_MMC5_PRG_PAGES+4
 		LDA		#$00
-		STA		byte_9
+		STA		_tmp9
 		LDA		#$C0
 		STA		_PAD1_REG
 		LDA		#$00
@@ -2096,48 +2096,6 @@ loc_18AEB4:
 ;		POPB	_prg_prg8000_shadow
 ;		STA		_MMC5_PRG_PAGES+1
 ;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; Simpliest routine to add raw sprites without attr control and clipping
-; uses different type of tmp on purpose, because it's called from NMI, and
-; _tmp0 may be used in other code as well as args are used different vars.
-;
-_spr_lib_raw_insert:
-		LDX		_spr_insert_raw_args._idx
-		LDA		_spr_lib_lo,X
-		STA		_tmp15
-		LDA		_spr_lib_hi,X
-		STA		_tmp15+1
-		DEC		_spr_insert_raw_args._pos._Y
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_88C9C:
-		LDA		(_tmp15),Y
-		CMP		#$80
-		BEQ		loc_88CC5
-		INY
-		CLC
-		ADC		_spr_insert_raw_args._pos._Y
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		CLC
-		ADC		_spr_insert_raw_args._pos._X
-		STA		_spr_buf,X
-		INX
-		JMP		loc_88C9C
-loc_88CC5:
-		STX		_spr_buf_pos
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; Merged versions of sprite routines. Maybe little slower in common,

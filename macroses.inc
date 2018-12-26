@@ -405,6 +405,24 @@ OP_ADD	EQU	3
 		INX
 	ENDM
 
+	; \t\tLDA\t\t(.*)\n\t\tLDX\t\t(.*)\n\t\tMULXA\n\t\tCLC\n\t\tADC\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tTXA\n\t\tADC\t\t(.*)\n\t\tSTA\t\t(.*)\n
+	; \t\tBUFPOS\t\4\,\3\,\1\,\2\,\5\t\; DST=\(\1*\2+\3\)+\500\n
+	;
+	; usage: BUFPOS DST,X,Y,WIDTH,PAGE
+	;				4   3 1 2     5
+	;
+	MAC	BUFPOS
+		LDA		{3}		; 1 y
+		LDX		{4}		; 2 width
+		MULXA
+		CLC
+		ADC		{2}		; 3 x
+		STA		{1}		; 4 dst
+		TXA
+		ADC		{5}		; 5 page
+		STA		{1}+1	; 6 dst+1
+	ENDM
+
 ;-----------------C-O-M-M-O-N-------------------
 
 	MAC BANK_START

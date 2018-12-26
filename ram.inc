@@ -5,21 +5,28 @@
 
 		ORG $0000
 
+_tmp0	EQU		.
+_tmp1	EQU		_tmp0+1
+
 _ptr0:
 		.BYTE	0,0
+_ptr2	EQU		.
 _tmp2:
 		.BYTE	0
 _tmp3:
 		.BYTE	0
+_ptr4	EQU		.
 _tmp4:
 		.BYTE	0
 _tmp5:
 		.BYTE	0
+_ptr6	EQU		.
 _tmp6:
 		.BYTE	0,0
+_tmp7	EQU		_tmp6+1
 _tmp8:
 		.BYTE	0
-byte_9:
+_tmp9:
 		.BYTE	0
 _ppu_ctrl_shadow:
 		.BYTE	0

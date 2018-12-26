@@ -113,7 +113,7 @@ _game_msg_extra_icons_set_tmp3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_pos_calc:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,_ptr0+1,NONE,#$1E
+		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp1,NONE,#$1E
 		CIADDB	_tmp2,_cur_screen_tile._X,_tmp2,NONE,#$20
 		LDA		#$20
 		SEC
@@ -132,15 +132,7 @@ loc_700DD:
 		LDA		#$00
 		STA		_tmp5
 loc_700E5:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_tmp2
-		STA		_tmp2
-		TXA
-		ADC		#$00
-		STA		_tmp3
+		BUFPOS	_tmp2,_tmp2,_tmp1,#$20,#$00	; DST=(_ptr0+1*#$20+_tmp2)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

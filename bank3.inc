@@ -14,100 +14,49 @@ _cur_money_draw:
 _cur_money_str_calc:
 		MOVD	_ptr0,_city._money
 		LDA		#$00
-		STA		_tmp3
-		LDY		#$01
-		LDX		#$06
+		STA		_tmp3							; tmp flag
+		LDY		#$01							; start writing number in buf +1 pos
+		LDX		#$06							; start with highest digit
 		LDA		#$DF
-		STA		_pre_ppu_buf
+		STA		_pre_ppu_buf					; fill leftmost byte with space or maybe $ later
 loc_58026:
-		JSR		_hex_to_dec_9999999
+		JSR		_get_dec_digit24				; extract decimal digit
 		CMP		#$00
-		BNE		loc_5803C
-		LDA		_tmp3
-		BNE		loc_5804F
-		CPX		#$00
-		BEQ		loc_5803C
-		LDA		#$DF
+		BNE		loc_5803C						; if no-zero, put a number
+		LDA		_tmp3							; if zero, then there are two opts
+		BNE		loc_5804F						; opt 1 flag clear
+		CPX		#$00							; here two more opts
+		BEQ		loc_5803C						; if last digit, put it as zero (number 0)
+		LDA		#$DF							; or else trim it, becaue this is not a number still
 		STA		_pre_ppu_buf,Y
 		BNE		loc_5804A
 loc_5803C:
-		STA		_pre_ppu_buf,Y
+		STA		_pre_ppu_buf,Y					; store non-zero number
 		LDA		_tmp3
-		BNE		loc_5804A
-		LDA		#$30
-		STA		_pre_ppu_buf-1,Y
-		DEC		_tmp3
+		BNE		loc_5804A						; if tmp flag set, we already done this
+		LDA		#$30							; if flag clear, then this is first
+		STA		_pre_ppu_buf-1,Y				; non zero letter, set $ symbol before it
+		DEC		_tmp3							; raise flag, we need this just once
 loc_5804A:
 		INY
 		DEX
-		BPL		loc_58026
+		BPL		loc_58026						; cycle
 		RTS
 loc_5804F:
-		LDA		#$00
-		STA		_pre_ppu_buf,Y
+		LDA		#$00							; opt 2 flag already set, so we have
+		STA		_pre_ppu_buf,Y					; zero inside number, put it as is
 		BEQ		loc_5804A
 
 ; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec_9999999:
-		LDA		#$00
-		STA		_tmp4
-loc_5805A:
-		SEC
-		LDA		_ptr0
-		SBC		_hex_to_dec_9999999_tbl0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec_9999999_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		_hex_to_dec_9999999_tbl2,X
-		STA		_tmp2
-		BCC		loc_58076
-		INC		_tmp4
-		BNE		loc_5805A
-loc_58076:
-		CLC
-		LDA		_ptr0
-		ADC		_hex_to_dec_9999999_tbl0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		_hex_to_dec_9999999_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		ADC		_hex_to_dec_9999999_tbl2,X
-		STA		_tmp2
-		LDA		_tmp4
-		RTS
-
-_hex_to_dec_9999999_tbl0:
-		.BYTE	[[1 >> 0] & $FF]		; $01
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]	; $40
-_hex_to_dec_9999999_tbl1:
-		.BYTE	[[1 >> 8] & $FF]		; $00
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]	; $42
-_hex_to_dec_9999999_tbl2:
-		.BYTE	[[1 >> 16] & $FF]		; $00
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-
-; =============== S U B	R O U T	I N E =======================================
+; screenY =  ((scrollX / 2) + 16) % 20
+; screenX =  ((scrollY / 2) + 1C) % 1E
+; lineLen =  (screenX < 20) ? 8 : (screenX - 1F)
+; wrapLen =  (screenX < 20) ? 0 : (8 - LineLen)
+; ppuOfs  = ((screenY * 20) + screenX) + 0x2000
+;
 _cur_money_str_pos_calc:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1C,NONE,#$1E
-		CIADDB	_ptr0,  _cur_screen_tile._X,#$16,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
 		CLC
 		ADC		#$07
 		CMP		#$20
@@ -125,18 +74,19 @@ loc_580D4:
 		LDA		#$00
 		STA		_tmp3
 loc_580DC:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_ptr0
-		BCC		loc_580F2
-		INX
-loc_580F2:
-		STA		_ptr0
-		TXA
-		ORA		#$20
-		STA		_ptr0+1
+;		LDA		_tmp1						; REDUNDANT
+;		LDX		#$20						; exactly the same as BUFPOS calcs
+;		MULXA								; but with different method of adding ofs
+;		CLC
+;		ADC		_tmp0
+;		BCC		loc_580F2
+;		INX
+l;oc_580F2:
+;		STA		_ptr0
+;		TXA
+;		ORA		#$20
+;		STA		_ptr0+1
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; FIX: regular macros takes less bytes
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -144,6 +94,7 @@ _cur_money_str_queue:
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_ptr0,OP_NOP,0
+loc_5810F:
 		PPUQMOVB	_ptr0+1,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_58110:
@@ -158,9 +109,10 @@ loc_58110:
 		LDA		#$00
 		STA		_tmp3
 		PPUQMOVB	_ptr0,OP_AND,#$E0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-		JMP		loc_58110
+;		PPUQMOVB	_ptr0+1,OP_NOP,0
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;		JMP		loc_58110
+		JMP		loc_5810F
 loc_5813D:
 		PPUQEND
 		RTS
@@ -400,15 +352,7 @@ loc_58308:
 		LDA		#$00
 		STA		_tmp5
 loc_58310:
-		LDA		_tmp2
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_tmp3
-		STA		_tmp2
-		TXA
-		ADC		#$00
-		STA		_tmp3
+		BUFPOS	_tmp2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -594,15 +538,7 @@ loc_584BA:
 		LDA		#$00
 		STA		_tmp5
 loc_584C2:
-		LDA		_tmp2
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_tmp3
-		STA		_tmp2
-		TXA
-		ADC		#$00
-		STA		_tmp3
+		BUFPOS	_tmp2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -611,12 +547,10 @@ _game_msg_presents_line_clear:
 		LDY		#$0B
 		EXTQMOVB	_tmp2,OP_NOP,0
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
+		EXTQMOVB	_tmp4,OP_NOP,0
 		STA		_tmp6
 		LDA		_tmp5
 		STA		_tmp6+1
-		INX
 loc_584FB:
 		TYA
 		EXTQMOVA
@@ -1154,11 +1088,9 @@ loc_58963:
 		STA		_tmp4
 		LDA		#$00
 		STA		_tmp5
-
 		PPUQMOVB	_tmp2,OP_AND,#$E0
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
-
 loc_58990:
 		CPY		#$FF
 		BNE		loc_58950
@@ -1174,16 +1106,16 @@ loc_58998:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_select_popul_num:
-		CMP		#$00
-		BEQ		loc_589A4
-		CMP		#$01
-		BEQ		loc_589B9
-loc_589A4:
+;		CMP		#$00							; REDUNDANT
+;		BEQ		loc_589A4						; -
+;		CMP		#$01							; -
+;		BEQ		loc_589B9						; -
+;loc_589A4:
 		MOVD	_tmp_popul_hex,_popul_cur
-		JMP		loc_589C8
-loc_589B9:
-		MOVDI	_tmp_popul_hex,10000			; request for fixed amount of
-loc_589C8:										; citizens, not used anywhere
+;		JMP		loc_589C8						; -
+;loc_589B9:										; REDUNDANT
+;		MOVDI	_tmp_popul_hex,10000			; request for fixed amount of
+;loc_589C8:										; citizens, not used anywhere
 		TYA
 		PHA
 		LDY		#$05
@@ -1193,13 +1125,13 @@ loc_589CC:
 loc_589D1:
 		SEC
 		LDA		_tmp_popul_hex
-		SBC		_hex_to_dec_999999_tbl0_0,Y
+		SBC		_hex_to_dec_tbl0,Y
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		SBC		_hex_to_dec_999999_tbl1_0,Y
+		SBC		_hex_to_dec_tbl1,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		SBC		_hex_to_dec_999999_tbl2_0,Y
+		SBC		_hex_to_dec_tbl2,Y
 		STA		_tmp_popul_hex+2
 		BCC		loc_589FA
 		LDA		_tmp_popul_decimal_buf,Y
@@ -1210,13 +1142,13 @@ loc_589D1:
 loc_589FA:
 		CLC
 		LDA		_tmp_popul_hex
-		ADC		_hex_to_dec_999999_tbl0_0,Y
+		ADC		_hex_to_dec_tbl0,Y
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		ADC		_hex_to_dec_999999_tbl1_0,Y
+		ADC		_hex_to_dec_tbl1,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		ADC		_hex_to_dec_999999_tbl2_0,Y
+		ADC		_hex_to_dec_tbl2,Y
 		STA		_tmp_popul_hex+2
 		LDA		_tmp_popul_decimal_buf,Y
 		CLC
@@ -1227,27 +1159,6 @@ loc_589FA:
 		PLA
 		TAY
 		RTS
-_hex_to_dec_999999_tbl0_0:
-		.BYTE	[[1 >> 0] & $FF]		; $01
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-_hex_to_dec_999999_tbl1_0:
-		.BYTE	[[1 >> 8] & $FF]		; $00
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-_hex_to_dec_999999_tbl2_0:
-		.BYTE	[[1 >> 16] & $FF]		; $00
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
 
 ; =============== S U B	R O U T	I N E =======================================
 ; event	1 x
@@ -1368,8 +1279,8 @@ loc_58AA8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_pos_calc:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,_ptr0,NONE,#$1E
-		CIADDB	_tmp2,_cur_screen_tile._X,#$07,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._Y,_ptr0,NONE,#$1E
+		CIADDB	_tmp2,  _cur_screen_tile._X, #$07,NONE,#$20
 		LDA		#$20
 		SEC
 		SBC		_tmp2
@@ -1387,15 +1298,7 @@ loc_58AF0:
 		LDA		#$00
 		STA		_tmp4
 loc_58AF8:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_tmp2
-		STA		_ptr0+1
-		TXA
-		ADC		#$00
-		STA		_tmp2
+		BUFPOS	_tmp1,_tmp2,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp2)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1620,7 +1523,7 @@ _cur_year_str_queue:
 		STA		_tmp2
 		LDY		#$00
 loc_58DE7:
-		JSR		_hex_to_dec_9999
+		JSR		_get_dec_digit16
 		STA		_pre_ppu_buf,X
 		INX
 		INY
@@ -1630,16 +1533,16 @@ loc_58DE7:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec_9999:
+_get_dec_digit16:
 		LDA		#$00
 		STA		_tmp3
 loc_58DF9:
 		LDA		_ptr0
 		SEC
-		SBC		_hex_to_dec_9999_tbl,Y
+		SBC		_dec_digit16_tbl,Y
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		_hex_to_dec_9999_tbl+1,Y
+		SBC		_dec_digit16_tbl+1,Y
 		STA		_ptr0+1
 		BCC		loc_58E0E
 		INC		_tmp3
@@ -1647,13 +1550,19 @@ loc_58DF9:
 loc_58E0E:
 		LDA		_ptr0
 		CLC
-		ADC		_hex_to_dec_9999_tbl,Y
+		ADC		_dec_digit16_tbl,Y
 		STA		_ptr0
 		LDA		_ptr0+1
-		ADC		_hex_to_dec_9999_tbl+1,Y
+		ADC		_dec_digit16_tbl+1,Y
 		STA		_ptr0+1
 		LDA		_tmp3
 		RTS
+
+_dec_digit16_tbl:
+		.WORD	1000
+		.WORD	100
+		.WORD	10
+		.WORD	1
 
 ; =============== S U B	R O U T	I N E =======================================
 ; TODO: bank 9 different type of month display lib
@@ -1675,12 +1584,6 @@ loc_58E2E:
 		BNE		loc_58E2E
 		RTS
 
-_hex_to_dec_9999_tbl:
-		.WORD	1000
-		.WORD	100
-		.WORD	10
-		.WORD	1
-
 _months_lib:
 		.BYTE	_J,_A,_N
 		.BYTE	_F,_E,_B
@@ -1697,8 +1600,8 @@ _months_lib:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_pos_calc:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_ptr0,_cur_screen_tile._X,#$16,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
 		CLC
 		ADC		#$07
 		CMP		#$20
@@ -1716,16 +1619,16 @@ loc_58E97:
 		LDA		#$00
 		STA		_tmp3
 loc_58E9F:
-		LDA		_ptr0+1
+		LDA		_tmp1
 		LDX		#$20
 		MULXA
 		CLC
-		ADC		_ptr0
+		ADC		_tmp0
 		BCC		loc_58EB5
 		INX
 loc_58EB5:
-		STA		_ptr0
-		STX		_ptr0+1
+		STA		_tmp0
+		STX		_tmp1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1737,6 +1640,7 @@ _cur_date_str_queue:
 		LDA		_tmp3
 		STA		_tmp5
 		PPUQMOVB	_ptr0,OP_NOP,0
+loc_58ED9:
 		PPUQMOVB	_ptr0+1,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58EDA:
@@ -1751,9 +1655,10 @@ loc_58EDA:
 		LDA		#$00
 		STA		_tmp5
 		PPUQMOVB	_ptr0,OP_AND,#$E0
-		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_58EDA
+;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+;		PPUQMOVB	_tmp4,OP_NOP,0
+;		JMP		loc_58EDA
+		JMP		loc_58ED9
 loc_58F09:
 		PPUQEND
 		RTS
@@ -2427,15 +2332,7 @@ loc_593F1:
 ; =============== S U B	R O U T	I N E =======================================
 _isle_map_tile_write:
 		PHA
-		LDA		byte_574
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_573
-		STA		_ptr0
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_ptr0+1
+		BUFPOS	_ptr0,byte_573,byte_574,#$4C,#>[_wram_map_buf]	; DST=(byte_574*#$4C+byte_573)+#>[_wram_map_buf]00
 		LDY		#$00
 		PLA
 		STA		(_ptr0),Y
@@ -2590,15 +2487,7 @@ loc_5957F:
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_new_map_sub2
 		BCS		locret_595BA
-		LDA		byte_578
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_577
-		STA		_ptr0
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_ptr0+1
+		BUFPOS	_ptr0,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		BNE		loc_595B5
@@ -2793,15 +2682,7 @@ _generate_new_map_sub1:
 		PHA
 		JSR		_generate_new_map_sub2
 		BCS		loc_597C7
-		LDA		byte_578
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_577
-		STA		_ptr0
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_ptr0+1
+		BUFPOS	_ptr0,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		BEQ		loc_597C9
@@ -2868,15 +2749,7 @@ _generate_new_map_sub5:
 		STA		byte_575
 		STA		byte_576
 loc_5980A:
-		LDA		byte_576
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_575
-		STA		_ptr0
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_ptr0+1
+		BUFPOS	_ptr0,byte_575,byte_576,#$4C,#>[_wram_map_buf]	; DST=(byte_576*#$4C+byte_575)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		BMI		loc_5988D
@@ -2898,15 +2771,7 @@ loc_59835:
 		STA		byte_578
 		JSR		_generate_new_map_sub2
 		BCS		loc_5987B
-		LDA		byte_578
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_577
-		STA		_tmp2
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_tmp3
+		BUFPOS	_tmp2,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_tmp2),Y
 		BMI		loc_5987B
@@ -2952,15 +2817,7 @@ _generate_new_mapD:
 		STA		byte_575
 		STA		byte_576
 loc_598C5:
-		LDA		byte_576
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_575
-		STA		_ptr0
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_ptr0+1
+		BUFPOS	_ptr0,byte_575,byte_576,#$4C,#>[_wram_map_buf]	; DST=(byte_576*#$4C+byte_575)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_ptr0),Y
 		CMP		#$03
@@ -3015,15 +2872,7 @@ loc_598FC:
 		SEC
 		BCS		loc_5997D
 loc_59957:
-		LDA		byte_578
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		byte_577
-		STA		_tmp2
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_tmp3
+		BUFPOS	_tmp2,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
 		LDY		#$00
 		LDA		(_tmp2),Y
 		BEQ		loc_5997C
@@ -3154,27 +3003,20 @@ _mul_rand:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_draw:
-		JSR		_get_cur_popul
 		JSR		_cur_popul_str_calc
 		JSR		_cur_popul_str_pos_set
 		JSR		_cur_popul_str_queue
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_cur_popul:
-		MOVW	_ptr0,_popul_cur
-		LDA		_popul_cur+2
-		STA		_tmp2
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_calc:
+		MOVD	_ptr0,_popul_cur
 		LDA		#$00
 		STA		_tmp3
 		LDY		#$00
 		LDX		#$05
 loc_59A88:
-		JSR		_hex_to_dec_999999
+		JSR		_get_dec_digit24
 		CMP		#$00
 		BNE		loc_59A9E
 		LDA		_tmp3
@@ -3198,58 +3040,61 @@ loc_59AA8:
 		BEQ		loc_59AA3
 
 ; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec_999999:
+_get_dec_digit24:
 		LDA		#$00
 		STA		_tmp4
-loc_59AB3:
+loc_5805A:
 		SEC
 		LDA		_ptr0
-		SBC		_hex_to_dec_999999_tbl0,X
+		SBC		_hex_to_dec_tbl0,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		_hex_to_dec_999999_tbl1,X
+		SBC		_hex_to_dec_tbl1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		_hex_to_dec_999999_tbl2,X
+		SBC		_hex_to_dec_tbl2,X
 		STA		_tmp2
-		BCC		loc_59ACF
+		BCC		loc_58076
 		INC		_tmp4
-		BNE		loc_59AB3
-loc_59ACF:
+		BNE		loc_5805A
+loc_58076:
 		CLC
 		LDA		_ptr0
-		ADC		_hex_to_dec_999999_tbl0,X
+		ADC		_hex_to_dec_tbl0,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		ADC		_hex_to_dec_999999_tbl1,X
+		ADC		_hex_to_dec_tbl1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		ADC		_hex_to_dec_999999_tbl2,X
+		ADC		_hex_to_dec_tbl2,X
 		STA		_tmp2
 		LDA		_tmp4
 		RTS
 
-_hex_to_dec_999999_tbl0:
+_hex_to_dec_tbl0:
 		.BYTE	[[1 >> 0] & $FF]		; $01
 		.BYTE	[[10 >> 0] & $FF]		; $0A
 		.BYTE	[[100 >> 0] & $FF]		; $64
 		.BYTE	[[1000 >> 0] & $FF]		; $E8
 		.BYTE	[[10000 >> 0] & $FF]	; $10
 		.BYTE	[[100000 >> 0] & $FF]	; $A0
-_hex_to_dec_999999_tbl1:
+		.BYTE	[[1000000 >> 0] & $FF]	; $40
+_hex_to_dec_tbl1:
 		.BYTE	[[1 >> 8] & $FF]		; $00
 		.BYTE	[[10 >> 8] & $FF]		; $00
 		.BYTE	[[100 >> 8] & $FF]		; $00
 		.BYTE	[[1000 >> 8] & $FF]		; $03
 		.BYTE	[[10000 >> 8] & $FF]	; $27
 		.BYTE	[[100000 >> 8] & $FF]	; $86
-_hex_to_dec_999999_tbl2:
+		.BYTE	[[1000000 >> 8] & $FF]	; $42
+_hex_to_dec_tbl2:
 		.BYTE	[[1 >> 16] & $FF]		; $00
 		.BYTE	[[10 >> 16] & $FF]		; $00
 		.BYTE	[[100 >> 16] & $FF]		; $00
 		.BYTE	[[1000 >> 16] & $FF]	; $00
 		.BYTE	[[10000 >> 16] & $FF]	; $00
 		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_pos_set:
@@ -3290,13 +3135,10 @@ loc_59B48:
 _cur_popul_str_queue:
 		PPUQSTART
 		LDY		#$00
-		LDA		_ptr0
-
-
-		PPUQMOVA
+		PPUQMOVB	_ptr0,OP_NOP,0
+loc_59B65:
 		PPUQMOVB	_ptr0+1,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
-
 loc_59B66:
 		LDA		_pre_ppu_buf,Y
 		INY
@@ -3309,9 +3151,10 @@ loc_59B66:
 		LDA		#$00
 		STA		_tmp3
 		PPUQMOVB	_ptr0,OP_AND,#$E0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-		JMP		loc_59B66
+;		PPUQMOVB	_ptr0+1,OP_NOP,0
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;		JMP		loc_59B66
+		JMP		loc_59B65
 loc_59B93:
 		PPUQEND
 		RTS
@@ -3564,6 +3407,5 @@ _scroll_txt17_brownouts:
 		.BYTE	_B,_R,_O,_W,_N,_O,_U,_T,_S,__,__,_B,_U,_I,_L,_D,__,_A,_N,_O,_T,_H,_E,_R,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
 _scroll_txt18_heavy_traffic_repotrted:
 		.BYTE	_H,_E,_A,_V,_Y,__,_T,_R,_A,_F,_F,_I,_C,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
-
 
 		BANK_END F3,$C000

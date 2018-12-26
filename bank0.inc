@@ -1400,9 +1400,15 @@ loc_BB84:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; screenY = ((scrollY / 2) + _tmp1 + 1) % $1E
+; screenX = ((scrollX / 2) + _tmp2 + 0) % $20
+; lineLen = (32 - screenX) >= _tmp3 ? _tmp3 : (32 - screenX)
+; wrapLen = _tmp3 - lineLen
+; ppuOfs  = (screenY * 32) + screenX
+;
 _wnd_header_pos_calc:
-		CIADDB	_tmp4,_cur_screen_tile._Y,#$01,_ptr0+1,#$1E	; tmp4=((Y/2)+(ptr0+1)+1)%$1E
-		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,  #$20	; tmp5=((X/2)+tmp2)%$20
+		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
+		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
 		LDA		#$20
 		SEC
 		SBC		_tmp5
@@ -1412,23 +1418,15 @@ _wnd_header_pos_calc:
 		LDA		_tmp3
 		SEC
 		SBC		_tmp6
-		STA		_tmp6+1
+		STA		_tmp7
 		BNE		loc_BBE8
 loc_BBE0:
 		LDA		_tmp3
 		STA		_tmp6
 		LDA		#$00
-		STA		_tmp6+1
+		STA		_tmp7
 loc_BBE8:
-		LDA		_tmp4
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_tmp5
-		STA		_tmp4
-		TXA
-		ADC		#$00
-		STA		_tmp5
+		BUFPOS	_ptr4,_tmp5,_tmp4,#$20,#$00	; DST=(_tmp4*#$20+_tmp5)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1452,11 +1450,11 @@ loc_BC1C:										; -
 		PPUQMOVA
 		DEC		_tmp6
 		BNE		loc_BC1B
-		LDA		_tmp6+1
+		LDA		_tmp7
 		BEQ		loc_BC49
 		STA		_tmp6
 		LDA		#$00
-		STA		_tmp6+1
+		STA		_tmp7
 		PPUQMOVB	_tmp4,OP_AND,#$E0
 ;		PPUQMOVB	_tmp5,OP_ORA,#$20			; REDUNDANT, dupe of the code
 ;		PPUQMOVB	_tmp6,OP_NOP,0				; at the beginning of the loop,

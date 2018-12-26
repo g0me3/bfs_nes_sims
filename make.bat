@@ -6,7 +6,8 @@ pause 0
 
 :again
 
-del !simcity.nes
+del !simcity_prev.nes
+rename !simcity.nes !simcity_prev.nes
 
 cd nas
 

@@ -1933,75 +1933,6 @@ byte_B9163:
 		.BYTE	$BA,$DD,$BB,$DD,$BC,$DD,$BD,$DD,$BE,$DD
 
 ; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec9999999_1:
-		LDY		#$00
-		STY		_tmp2
-		LDX		#$03
-		LDY		#$00
-		STY		_tmp3
-		STY		_tmp4
-		STY		_tmp5
-		STY		_tmp6
-		STY		_tmp6+1
-loc_B917F:
-		LDY		#$00
-loc_B9181:
-		LDA		_ptr0
-		CMP		_hex_to_dec9999999_tbl2_1,X
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1_1,X
-		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0_1,X
-		BCC		loc_B91AA
-		LDA		_ptr0
-		SBC		_hex_to_dec9999999_tbl2_1,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1_1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0_1,X
-		STA		_tmp2
-		INY
-		BNE		loc_B9181
-loc_B91AA:
-		STY		_tmp2,X
-		DEX
-		BPL		loc_B917F
-		LDX		#$00
-loc_B91B1:
-		LDA		_tmp2,X
-		STA		_ptr0+1,X
-		INX
-		CPX		#$06
-		BNE		loc_B91B1
-		RTS
-_hex_to_dec9999999_tbl0_1:
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-		.BYTE	[[10000000 >> 16] & $FF]; $98
-_hex_to_dec9999999_tbl1_1:
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]  ; $42
-		.BYTE	[[10000000 >> 8] & $FF] ; $96
-_hex_to_dec9999999_tbl2_1:
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]  ; $40
-		.BYTE	[[10000000 >> 0] & $FF] ; $80
-
-; =============== S U B	R O U T	I N E =======================================
 _flush_wait:
 		JSR		_wait_for_nmi
 
@@ -2668,6 +2599,16 @@ loc_B9792:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+_wnd_common_cursor_spr_clear:
+		LDX		#$0F
+		LDA		#$FA
+loc_B97FC:
+		STA		_spr_buf,X
+		DEX
+		BPL		loc_B97FC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec9999999_0:
 		LDY		#$00
 		STY		_tmp2
@@ -2711,6 +2652,76 @@ loc_B97D9:
 		CPX		#$06
 		BNE		loc_B97D9
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hex_to_dec9999999_1:
+		LDY		#$00
+		STY		_tmp2
+		LDX		#$03
+		LDY		#$00
+		STY		_tmp3
+		STY		_tmp4
+		STY		_tmp5
+		STY		_tmp6
+		STY		_tmp6+1
+loc_B917F:
+		LDY		#$00
+loc_B9181:
+		LDA		_ptr0
+		CMP		_hex_to_dec9999999_tbl2_1,X
+		LDA		_ptr0+1
+		SBC		_hex_to_dec9999999_tbl1_1,X
+		LDA		_tmp2
+		SBC		_hex_to_dec9999999_tbl0_1,X
+		BCC		loc_B91AA
+		LDA		_ptr0
+		SBC		_hex_to_dec9999999_tbl2_1,X
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		_hex_to_dec9999999_tbl1_1,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		SBC		_hex_to_dec9999999_tbl0_1,X
+		STA		_tmp2
+		INY
+		BNE		loc_B9181
+loc_B91AA:
+		STY		_tmp2,X
+		DEX
+		BPL		loc_B917F
+		LDX		#$00
+loc_B91B1:
+		LDA		_tmp2,X
+		STA		_ptr0+1,X
+		INX
+		CPX		#$06
+		BNE		loc_B91B1
+		RTS
+_hex_to_dec9999999_tbl0_1:
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+		.BYTE	[[10000000 >> 16] & $FF]; $98
+_hex_to_dec9999999_tbl1_1:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+		.BYTE	[[10000000 >> 8] & $FF] ; $96
+_hex_to_dec9999999_tbl2_1:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+		.BYTE	[[10000000 >> 0] & $FF] ; $80
+
 _hex_to_dec9999999_tbl0_0:
 		.BYTE	[[10 >> 16] & $FF]		; $00
 		.BYTE	[[100 >> 16] & $FF]		; $00
@@ -2735,15 +2746,5 @@ _hex_to_dec9999999_tbl2_0:
 		.BYTE	[[100000 >> 0] & $FF]	; $A0
 		.BYTE	[[1000000 >> 0] & $FF]  ; $40
 		.BYTE	[[10000000 >> 0] & $FF] ; $80
-
-; =============== S U B	R O U T	I N E =======================================
-_wnd_common_cursor_spr_clear:
-		LDX		#$0F
-		LDA		#$FA
-loc_B97FC:
-		STA		_spr_buf,X
-		DEX
-		BPL		loc_B97FC
-		RTS
 
 		BANK_END F7,$A000

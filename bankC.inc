@@ -4129,15 +4129,7 @@ loc_137E86:
 		MOVWI	word_6C,$01DF
 		RTS
 loc_137E93:
-		LDA		_tmp_tile_pos._Y
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		_tmp_tile_pos._X
-		STA		_tmp6E
-		TXA
-		ADC		#>[_wram_map_buf]
-		STA		_tmp6E+1
+		BUFPOS	_tmp6E,_tmp_tile_pos._X,_tmp_tile_pos._Y,#$4C,#>[_wram_map_buf]	; DST=(_tmp_tile_pos._Y*#$4C+_tmp_tile_pos._X)+#>[_wram_map_buf]00
 		BNE		loc_137EB5
 loc_137EAF:
 		INCW	_tmp6E

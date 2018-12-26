@@ -372,15 +372,7 @@ loc_150288:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1502A2:
-		LDA		byte_75
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		byte_74
-		STA		byte_77
-		TXA
-		ADC		#$20
-		STA		byte_78
+		BUFPOS	byte_77,byte_74,byte_75,#$20,#$20	; DST=(byte_75*#$20+byte_74)+#$2000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2820,10 +2812,10 @@ byte_151375:
 
 ; =============== S U B	R O U T	I N E =======================================
 _calc_wnd_pos:
-		CIADDB	_ptr0,_cur_screen_tile._X,_tmp4,NONE,#$20
+		CIADDB	_tmp0,_cur_screen_tile._X,_tmp4,NONE,#$20
 		LDA		#$20
 		SEC
-		SBC		_ptr0
+		SBC		_tmp0
 		CMP		_tmp6
 		BEQ		loc_15139F
 		BCS		loc_15139F
@@ -2839,7 +2831,7 @@ loc_15139F:
 		LDA		#$00
 		STA		_tmp3
 loc_1513A7:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,_tmp5,NONE,#$1E
+		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp5,NONE,#$1E
 		CMP		#$1D
 		BNE		loc_1513C1
 		LDA		#$01
@@ -2852,15 +2844,7 @@ loc_1513C1:
 		LDA		#$00
 		STA		_tmp5
 loc_1513C9:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_ptr0
-		STA		_ptr0
-		TXA
-		ADC		#>[_MMC5_EXRAM]
-		STA		_ptr0+1
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#>[_MMC5_EXRAM]	; DST=(_ptr0+1*#$20+_ptr0)+#>[_MMC5_EXRAM]00
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

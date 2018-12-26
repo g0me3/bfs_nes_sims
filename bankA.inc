@@ -3,8 +3,14 @@
 
 		BANK_START $FA
 
+		SECTION_START B01
+
 ; =============== S U B	R O U T	I N E =======================================
-_year_to_str:
+; this routine called every year and calc last decimal digit of the year
+; number
+; used ti determide wether the 100year range graphs need to be updated
+;
+_test_for_new_decade:
 		MOVW	_tmpE6,_city._cur_year
 		LDY		#$02
 loc_10400C:
@@ -33,6 +39,8 @@ _hex_to_dec_999_tbl1:
 		.BYTE	[[10 >> 8] & $FF]		; $00
 		.BYTE	[[100 >> 8] & $FF]		; $00
 		.BYTE	[[1000 >> 8] & $FF]		; $03
+
+		SECTION_END B01
 
 ; =============== S U B	R O U T	I N E =======================================
 ; city_level_R/8

@@ -68,7 +68,7 @@ loc_11E0B1:
 		FJSR	_fiscal_year_over_calculations,SRAM,PRGA
 		FJSR	_city_stats_recalc,SRAM,PRGA
 		JSR		_map_corruption_tiles_animate
-		FJSR	_year_to_str,SRAM,PRGA
+		FJSR	_test_for_new_decade,SRAM,PRGA
 		LDA		_tmpE6
 		BNE		loc_11E0DB
 		FJSR	_graphs_100_year_data_update,SRAM,PRGA
@@ -4112,17 +4112,13 @@ loc_11FFBB:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_tmp6CC
-		STA		_tmpE7
-		LDA		_tmp6CC+1
-		STA		_tmpE8
+		MOVW	_tmpE7,_tmp6CC
 		JSR		_div_32to16
 		PUSHWI	$0266
 		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
-		POPB	_traffic_level_value
-		POPB	_traffic_level_value+1
+		POPW	_traffic_level_value
 		PLA
 		RTS
 
