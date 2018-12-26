@@ -122,7 +122,7 @@ _scr_res_wnd_close:
 		STA		_cur_game_cursor_scr_pos._COL	; after exit any screen resourse
 		LDA		#$30
 		STA		_cur_game_cursor_scr_pos._ROW
-		JSR		_flush_wait_0
+		JSR		_buffers_wait_flush
 		JSR		_pal_fade_out
 		LDA		_ppu_ctrl_shadow
 		AND		#$FC
@@ -148,11 +148,15 @@ _scr_res_common:
 		JSR		_scr_pal_bg_load				; FIX, now local
 		JSR		_wait_for_nmi
 		FJSRA	_scr_common_draw,PRG6,PRG9
-; -
+; NOTE
 ; for some reason attempting to use a regular handler system with no extra checks
-; lead to screen garbling... probably there is no proper sync somewhere
-; putting these draw routines here prevents from interrupting while in draw?
-; all there routines need render to be off, while other init functions aren't
+; lead to screen garbling... all functions although uses ppu queue buffers,
+; flushes them manually to ppu, so all these functions should be called
+; when render is off. neither of any code here does its own render off stuff
+;
+; in order to remove these functions from here and inserting them into main
+; sub list you need to remove all force flush code and make the nmi code do its
+; work correctly
 ;
 		JSR		_scr_res_hndl2_A_budget_draw
 		JSR		_scr_res_hndl3_A_city_eval_draw
@@ -1644,7 +1648,7 @@ sub_EAB64:
 
 ; =============== S U B	R O U T	I N E =======================================
 _mini_map_draw:
-		JSR		_flush_test_wait_0
+		JSR		_buffers_test_wait_flush
 		DEC		_mmc5_operation_in_progress_flag
 		LDA		_mini_map_cur_col
 		LSR
@@ -2141,19 +2145,6 @@ loc_EAFFD:
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl2_B_budget_input:
 		FJSRA	_scr_res_hndl2_B_budget_input,PRG7,PRG9
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_buffers_force_flush:
-		JSR		_ppu_dequeue					; do dequeue of nt data
-loc_EB043:
-		JSR		_extnt_dequeue					; then extnt
-		LDA		_ppu_queue_pos_tail				; if nt not flushed, repeat both
-		CMP		_ppu_queue_pos_head
-		BNE		_buffers_force_flush			; if flushed, here only extnt may
-		LDA		_extnt_queue_pos_tail			; need to flush, so let's optimize
-		CMP		_extnt_queue_pos_head			; it and jump only to extnt dequeue
-		BNE		loc_EB043
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2791,20 +2782,6 @@ loc_EB428:
 		JSR		_hex_to_dec9999999
 		LDA		#$13
 		JMP		_printf_num_lib
-
-; =============== S U B	R O U T	I N E =======================================
-_flush_wait_0:
-		JSR		_wait_for_nmi
-
-; =============== S U B	R O U T	I N E =======================================
-_flush_test_wait_0:
-		LDA		_extnt_queue_pos_head
-		CMP		_extnt_queue_pos_tail
-		BNE		_flush_wait_0
-		LDA		_ppu_queue_pos_head
-		CMP		_ppu_queue_pos_tail
-		BNE		_flush_wait_0
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _thread_lock_flag_set:

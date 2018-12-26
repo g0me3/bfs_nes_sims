@@ -175,11 +175,12 @@ loc_240FF:
 		PHA										; save current shifted flags
 		PUSHB	_tmp3							; save cycles max idx
 		JSR		_scenario_closed_icon_draw		; draw
-loc_2410B:
-		JSR		_ppu_dequeue					; wait for buffers flush
-		JSR		_extnt_dequeue					; TODO: there are a couple of
-		JSR		_ppu_queue_empty_compare		; 		similar routines copying around
-		BNE		loc_2410B						; 		they may be unified and merged
+;loc_2410B:
+;		JSR		_ppu_dequeue					; REDUNDANT, merged
+;		JSR		_extnt_dequeue
+;		JSR		_buffers_test_flush
+;		BNE		loc_2410B
+		JSR		_buffers_force_flush			; OPTIMIZED
 		POPB	_tmp3							; restore cycle max count
 		PLA
 loc_2411A:
@@ -692,11 +693,12 @@ _game_setup01_name_input_init:
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
 		JSR		_name_input_char_nt_queue
 		JSR		_name_input_char_extnt_queue
-loc_24549:
-		JSR		_ppu_dequeue					; TODO: merge me
-		JSR		_extnt_dequeue
-		JSR		_ppu_queue_empty_compare
-		BNE		loc_24549
+;loc_24549:
+;		JSR		_ppu_dequeue					; REDUNDANT, merged
+;		JSR		_extnt_dequeue
+;		JSR		_buffers_test_flush
+;		BNE		loc_24549
+		JSR		_buffers_force_flush			; OPTIMIZED
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		LDA		#$2C
@@ -744,7 +746,7 @@ _name_input_next_scr:
 		JSR		_name_input_clear_header_area
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_word
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_word
-		JMP		_wait_for_flush
+		JMP		_buffers_wait_flush
 loc_245C9:
 		LDA		#$0D
 		STA		_game_setup_sub_idx
@@ -759,7 +761,7 @@ _name_input_previous_scr:
 		JSR		_name_input_clear_header_area
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_input_name
-		JMP		_wait_for_flush
+		JMP		_buffers_wait_flush
 loc_245EE:
 		LDA		#$00
 		STA		_game_setup_sub_idx
@@ -769,16 +771,7 @@ loc_245EE:
 _name_input_clear_header_area:
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_clear_area
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_wait_for_flush:
-		JSR		_wait_for_nmi					; TODO: merge me
-		JSR		_ppu_queue_empty_compare
-		BNE		_wait_for_flush
-locret_2460A:
-		RTS
+		JMP		_buffers_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_select_cursor_draw:
@@ -821,7 +814,7 @@ loc_2464A:
 ;
 _name_input_button_push_draw:
 		LDA		byte_6DC+3						; push anim counter
-		BEQ		locret_2460A					; draw if non-zero
+		BEQ		locret_246DB					; draw if non-zero
 		DEC		byte_6DC+3						; decrease
 		LDY		byte_6DC+6						; get pressed button type
 		CPY		#$21
@@ -834,25 +827,21 @@ _name_input_button_push_draw:
 		BNE		loc_24676						; two special buttons here
 		JSRXY	_rle_nt_res_queue,_tlm_nt_space_press
 		JSRXY	_rle_extnt_res_queue,_tlm_extnt_space_press
-		JMP		_wait_for_flush					; FIX
+		JMP		_buffers_wait_flush					; FIX
 loc_24676:
 		CPY		#$0C
 		BNE		locret_246DB
 		JSRXY	_rle_nt_res_queue,_tlm_nt_back_button_press
 		JSRXY	_rle_extnt_res_queue,_tlm_extnt_back_button_press
-		JMP		_wait_for_flush					; FIX
+		JMP		_buffers_wait_flush					; FIX
 .push_wait:
 		CMP		#$01							; last anim frame, release buttons
-		BNE		locret_246DB					; all at once.
-		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
-		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
-		JMP		_wait_for_flush					; FIX
+		BEQ		_all_buttons_release_draw		; all at once.
+		RTS
 .draw_simple_button_press:
 		CMP		#$10							; if you press buttons fast, you may
 		BNE		loc_246AC						; reset the nt buttons animation and it won't release
-		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
-		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
-		JSR		_wait_for_flush					; so force all nt buttons to clear first
+		JSR		_all_buttons_release_draw		; so force all nt buttons to clear first
 loc_246AC:
 		LDA		#$A0							; this is a sprite effect
 		STA		_spr_insert_args._idx
@@ -879,6 +868,12 @@ loc_246C9:
 		STA		_spr_buf+$1A
 locret_246DB:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_all_buttons_release_draw:
+		JSRXY	_rle_nt_res_queue,_tlm_nt_all_buttons_release
+		JSRXY	_rle_extnt_res_queue,_tlm_extnt_all_buttons_release
+		JMP		_buffers_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_cursor_move_control:
@@ -996,7 +991,7 @@ _name_input_button_push_control:
 		STA		byte_6DC+3
 		JSRXY	_rle_nt_res_queue,_tlm_nt_end_press
 		JSRXY	_rle_extnt_res_queue,_tlm_extnt_end_press
-		JSR		_wait_for_flush
+		JSR		_buffers_wait_flush
 		JMP		_name_input_next_scr
 loc_247A1:
 		LDA		_tmp6CC
@@ -1372,16 +1367,6 @@ loc_24A53:
 loc_24A5E:
 		STA		_extnt_queue_buf,X
 		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_ppu_queue_empty_compare:
-		LDA		_ppu_queue_pos_tail
-		CMP		_ppu_queue_pos_head
-		BNE		locret_24A6E
-		LDA		_extnt_queue_pos_tail
-		CMP		_extnt_queue_pos_head
-locret_24A6E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

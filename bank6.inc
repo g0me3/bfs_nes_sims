@@ -241,7 +241,7 @@ _graphs_period_buttons_extnt_hdrs:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_header_and_legend_redraw:
-		JSR		_flush_wait_0					; routine from BANK9!
+		JSR		_buffers_wait_flush						; routine from BANK9!
 		LDA		_cur_info_maps_button_idx		; convert cur menu idx into
 		BEQ		loc_A0262						; if map header idx = 0
 		CMP		#$0D							; special case
@@ -266,7 +266,7 @@ loc_A0266:
 		PPUQSTART								; because of additional list for nt idxes
 		JSR		_strcpy_lib
 		PPUQEND
-;		JSR		_flush_wait_0					; FIX, one wait just enough, or else you will see how it draw
+;		JSR		_buffers_wait_flush						; FIX, one wait just enough, or else you will see how it draw
 		MOVWO	_ptr0,_info_screen_header_extnt_lib
 		MOVWO	_tmp2,_extnt_queue_buf
 		PLA										; OPTIMIZED
@@ -278,7 +278,7 @@ loc_A0266:
 		EXTQSTART
 		JSR		_strcpy_lib
 		EXTQEND
-		JMP		_flush_wait_0
+		JMP		_buffers_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
 _strcpy_lib:

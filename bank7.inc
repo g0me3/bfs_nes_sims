@@ -1565,7 +1565,7 @@ _scr_res_hndl1_B_graphs_input:
 		STA		_apu_se_flags+1
 		JMP		_graphs_get_hover_button_idx	; icons press switch
 loc_B8E30:
-		JSR		_flush_test_wait
+		JSR		_buffers_test_wait_flush
 		JMP		_graphs_data_draw_column
 loc_B8E36:
 		LDA		#$20
@@ -2012,20 +2012,6 @@ loc_B915F:
 		STA		_ptr0,Y
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_flush_wait:
-		JSR		_wait_for_nmi
-
-; =============== S U B	R O U T	I N E =======================================
-_flush_test_wait:
-		LDA		_extnt_queue_pos_head
-		CMP		_extnt_queue_pos_tail
-		BNE		_flush_wait
-		LDA		_ppu_queue_pos_head
-		CMP		_ppu_queue_pos_tail
-		BNE		_flush_wait
-		RTS
-
 ; ---------------------------------------------------------------------------
 ; -----------------B-U-D-G-E-T--S-C-R-E-N--H-A-N-D-L-E-R---------------------
 ; ---------------------------------------------------------------------------
@@ -2417,7 +2403,7 @@ loc_B958B:
 ;		FJSRA	_printf_txt_lib,PRG7,PRG9		; this sub were called from PRG9 as PRG7/PRG9
 ;		FJSRA	_printf_history_year,PRG7,PRG9	; here we call back PRG9 routine as far call
 ; -
-		JSR		_buffers_force_flush			; but this call not?! WHY?!
+		JSR		_buffers_force_flush			; but this call - not?! WHY?!
 		PPUQSTART
 		LDY		_tmp118+9
 		LDA		_history_delimiter_pos_list,Y

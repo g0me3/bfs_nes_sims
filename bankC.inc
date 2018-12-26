@@ -50,22 +50,22 @@ loc_13601B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state_common:
-		JSR		_game_cursor_input_control
+		JSR		_game_cursor_input_control		; do common background work
 		JSR		_spr_finish
 		JSR		_auto_goto_test
 		FJSRA	_constr_palette_state_update,PRG7,PRG3
-		LDA		_ppu_queue_pos_tail
-		SEC
-		SBC		_ppu_queue_pos_head
+		LDA		_ppu_queue_pos_tail				; calc ppu queues buffers fill
+		SEC										; then use it in overall test for
+		SBC		_ppu_queue_pos_head				; idle state
 		STA		_ptr0
 		LDA		_extnt_queue_pos_tail
 		SEC
 		SBC		_extnt_queue_pos_head
 		STA		_ptr0+1
-		LDA		byte_3C
-		EOR		#$03
-		ORA		_ptr0
-		ORA		_ptr0+1
+		LDA		byte_3C							; test for idle state, checking if
+		EOR		#$03							; any of critical state flags arent
+		ORA		_ptr0							; clear, so mean there is some pending
+		ORA		_ptr0+1							; requests still
 		ORA		byte_39
 		ORA		byte_3A
 		ORA		byte_3B
@@ -83,7 +83,7 @@ _game_state_common:
 		ORA		_hud_redraw_req
 		ORA		_game_msg_wnd_active_flag
 		ORA		_fiscal_year_results_draw_req
-		STA		_game_core_state
+		STA		_game_core_state				; any of these flags gives priority to this thread
 		JMP		_MAIN_LOOP
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -183,8 +183,10 @@ _game_state02_map_scroll:
 		LDA		_pad0_held
 		AND		#$0F
 		BEQ		loc_13617C
-		JSR		_ppu_queue_empty_test_0
-		BCC		loc_13617F
+;		JSR		_buffers_test_flush
+;		BCC		loc_13617F
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BEQ		loc_13617F
 loc_13617C:
 		JMP		_game_state_common
 loc_13617F:
@@ -569,8 +571,10 @@ _game_state05_constr_palette_redraw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state06_game_hud_redraw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_136472
+;		JSR		_buffers_test_flush
+;		BCS		loc_136472
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_136472
 		LDA		_cur_map_wnd_pos._COL
 		STA		byte_54
 		CLC
@@ -597,8 +601,10 @@ loc_136472:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0A_power_build_menu:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_136482
+;		JSR		_buffers_test_flush
+;		BCS		loc_136482
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_136482
 		JSR		_power_build_menu
 		LDA		#$00
 		STA		_power_build_menu_req
@@ -720,8 +726,10 @@ loc_1500E7:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0C_RCI_meter_redraw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_136548
+;		JSR		_buffers_test_flush
+;		BCS		loc_136548
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_136548
 		JSR		_RCI_meters_draw
 		LDA		#$00
 		STA		_RCI_meter_redraw_req
@@ -730,8 +738,10 @@ loc_136548:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0D_hud_date_redraw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_13655C
+;		JSR		_buffers_test_flush
+;		BCS		loc_13655C
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_13655C
 ;		FJSRA	_hud_date_draw,PRG7,PRG3
 		JSR		_hud_date_draw
 		LDA		#$00
@@ -741,8 +751,10 @@ loc_13655C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0E:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_136582
+;		JSR		_buffers_test_flush
+;		BCS		loc_136582
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_136582
 		INC		byte_535
 		LDA		_cur_map_wnd_pos._COL
 		STA		byte_54
@@ -763,8 +775,10 @@ loc_136582:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state0F_hud_money_redraw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_136595
+;		JSR		_buffers_test_flush
+;		BCS		loc_136595
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_136595
 ;		FJSRA	_hud_money_draw,PRGC,PRG3
 		JSR		_hud_money_draw
 		LDA		#$00
@@ -774,8 +788,10 @@ loc_136595:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state10_fiscal_year_draw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_1365C8
+;		JSR		_buffers_test_flush
+;		BCS		loc_1365C8
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_1365C8
 		LDA		#$02
 		STA		_scr_res_idx
 		STA		_scr_mode_idx
@@ -796,8 +812,10 @@ loc_1365C8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state11_hud_popul_redraw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_1365DC
+;		JSR		_buffers_test_flush
+;		BCS		loc_1365DC
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_1365DC
 ;		FJSRA	_hud_popul_draw,PRG7,PRG3
 		JSR		_hud_popul_draw
 		LDA		#$00
@@ -807,8 +825,10 @@ loc_1365DC:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state12_airport_build_menu:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_1365EC
+;		JSR		_buffers_test_flush
+;		BCS		loc_1365EC
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_1365EC
 		JSR		_airport_build_menu
 		LDA		#$00
 		STA		_airport_build_menu_req
@@ -817,8 +837,10 @@ loc_1365EC:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state16_hud_city_name_redraw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_136600
+;		JSR		_buffers_test_flush
+;		BCS		loc_136600
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_136600
 ;		FJSRA	_hud_city_name_draw,PRG7,PRG3
 		JSR		_hud_city_name_draw
 		LDA		#$00
@@ -984,8 +1006,10 @@ _set_game_state_idx:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_13671F:
-		JSR		_ppu_queue_empty_test_0
-		BCS		locret_136745
+;		JSR		_buffers_test_flush
+;		BCS		locret_136745
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		locret_136745
 		JSR		sub_136746
 		LDA		#$00
 		STA		byte_3A
@@ -1015,8 +1039,10 @@ sub_136746:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136750:
-		JSR		_ppu_queue_empty_test_0
-		BCS		locret_136759
+;		JSR		_buffers_test_flush
+;		BCS		locret_136759
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		locret_136759
 		JSR		sub_13675A
 		CLC
 locret_136759:
@@ -1030,8 +1056,10 @@ sub_13675A:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136761:
-		JSR		_ppu_queue_empty_test_0
-		BCS		locret_136774
+;		JSR		_buffers_test_flush
+;		BCS		locret_136774
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		locret_136774
 		JSR		_map_full_screen_pos_calc
 		JSR		sub_1368BD
 		JSR		sub_136935
@@ -1043,8 +1071,10 @@ locret_136774:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_136775:
-		JSR		_ppu_queue_empty_test_0
-		BCS		locret_136780
+;		JSR		_buffers_test_flush
+;		BCS		locret_136780
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		locret_136780
 		JSR		_map_full_screen_pos_calc
 		JMP		sub_136781
 locret_136780:
@@ -1569,12 +1599,12 @@ _building_name_and_cost_hud_draw:
 		LDA		#$F2
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		LDA		_ppu_queue_pos_head						; calc hud position
-		STA		_ptr0									; relative to current
-		LDA		_extnt_queue_pos_head					; screen scroll
+		LDA		_ppu_queue_pos_head						; backup queue buffers heads
+		STA		_ptr0
+		LDA		_extnt_queue_pos_head
 		STA		_ptr0+1
-		JSR		_building_name_and_cost_hud_pos_calc
-		LDA		_const_palette_selected_idx			; check for additional
+		JSR		_building_name_and_cost_hud_pos_calc	; calc relative nt pos
+		LDA		_const_palette_selected_idx				; check for additional
 		CMP		#$0B									; buildings
 		BNE		loc_136C1D
 		LDX		_cur_power_type_select_idx				; if power plant selected
@@ -1605,7 +1635,7 @@ loc_136C3A:
 		STA		_building_name_and_cost_hud_src_ofs
 		JSR		_building_name_and_cost_hud_nt_queue
 		JSR		_building_name_and_cost_hud_extnt_queue
-		LDA		_ptr0
+		LDA		_ptr0									; resore ppu queue buffers
 		STA		_ppu_queue_pos_head
 		LDA		_ptr0+1
 		STA		_extnt_queue_pos_head
@@ -2731,8 +2761,10 @@ _wnd_draw_line:
 		LDA		#$00
 		STA		_wnd_cur_line_num
 loc_137464:
-		JSR		_ppu_queue_empty_test_0
-		BCC		loc_13746A
+;		JSR		_buffers_test_flush
+;		BCC		loc_13746A
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BEQ		loc_13746A
 		RTS
 loc_13746A:
 		LDX		_wnd_lvl_idx
@@ -2805,8 +2837,10 @@ loc_1374D7:
 		SBC		#$01
 		STA		_wnd_cur_line_num
 loc_1374DC:
-		JSR		_ppu_queue_empty_test_0
-		BCC		loc_1374E2
+;		JSR		_buffers_test_flush
+;		BCC		loc_1374E2
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BEQ		loc_1374E2
 		RTS
 loc_1374E2:
 		LDA		_wnd_type,X
@@ -3069,8 +3103,8 @@ loc_137681:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_nt_line_queue0:
-		LDY		_ppu_queue_pos_head
-		LDX		#$00
+		LDY		_ppu_queue_pos_head				; as against other code, this one
+		LDX		#$00							; keep queue head in Y instead of X
 		LDA		_wnd_line_tmp_width
 		STA		_ptr0
 		LDA		_wnd_line_tmp_height
@@ -3587,8 +3621,10 @@ loc_137B1D:
 _constr_palette_redraw:
 		LDA		_constr_palette_redraw_req
 		BEQ		locret_137B5D
-		JSR		_ppu_queue_empty_test_0
-		BCS		locret_137B5D
+;		JSR		_buffers_test_flush
+;		BCS		locret_137B5D
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		locret_137B5D
 		LDA		_constr_palette_flags
 		STA		_tmp4
 		LDA		_constr_palette_flags+1
@@ -3795,8 +3831,10 @@ _ppu_extnt_byte_queue:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_137CD4:
-		JSR		_ppu_queue_empty_test_0
-		BCS		locret_137D0A
+;		JSR		_buffers_test_flush
+;		BCS		locret_137D0A
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		locret_137D0A
 		LDA		byte_53
 		BEQ		locret_137D0A
 		JSR		sub_137D20
@@ -3827,22 +3865,6 @@ locret_137D0A:
 sub_137D0B:
 		LDA		#$00
 		STA		byte_53
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; TODO: there are a couple of similar functions throught the files, otimize
-;
-_ppu_queue_empty_test_0:
-		LDA		_ppu_queue_pos_tail
-		CMP		_ppu_queue_pos_head
-		BNE		loc_137D1E
-		LDA		_extnt_queue_pos_tail
-		CMP		_extnt_queue_pos_head
-		BNE		loc_137D1E
-		CLC
-		RTS
-loc_137D1E:
-		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4274,8 +4296,10 @@ loc_150019:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state09_presents_building_name_and_cost_hud_draw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_150028
+;		JSR		_buffers_test_flush
+;		BCS		loc_150028
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_150028
 		JSR		_building_name_and_cost_hud_draw
 		LDA		#$00
 		STA		_presents_building_name_and_cost_hud_draw_req
@@ -4284,8 +4308,10 @@ loc_150028:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state14_presents_build_menu:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_150055
+;		JSR		_buffers_test_flush
+;		BCS		loc_150055
+		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		BNE		loc_150055
 		JSR		_spr_clear
 		LDA		#$00
 		STA		_wnd_lvl_idx

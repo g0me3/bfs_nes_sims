@@ -1538,8 +1538,10 @@ locret_58A9E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_draw:
-		JSR		_ppu_queue_empty_test
-		BCS		_game_msg_wnd_draw
+;		JSR		_buffers_test_flush			; REDUNDANT, merged
+;		BCS		_game_msg_wnd_draw
+		JSR		_buffers_test_flush		; OPTIMIZED, the same function
+		BNE		_game_msg_wnd_draw				; just test Z instead of C
 		LDA		#$00
 		STA		_tmp0
 loc_58AA8:
@@ -1757,20 +1759,6 @@ loc_59C76:
 		STA		_tmp2
 		LDA		_tmp5
 		STA		_tmp3
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_ppu_queue_empty_test:
-		LDA		_ppu_queue_pos_tail				; TODO: one more queue empty test lol
-		CMP		_ppu_queue_pos_head
-		BNE		loc_58CD4
-		LDA		_extnt_queue_pos_tail
-		CMP		_extnt_queue_pos_head
-		BNE		loc_58CD4
-		CLC
-		RTS
-loc_58CD4:
-		SEC
 		RTS
 
 		SECTION_END C01

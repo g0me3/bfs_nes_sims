@@ -69,13 +69,13 @@ loc_18A053:
 		STA		_MMC5_PRG_SIZE
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
-		LDY		#$FC
+		LDY		#$FC							; initial state of two switcheable banks FC, FD
 		STY		_prg_prg8000_shadow
 		STY		_MMC5_PRG_PAGES+1
 		INY
 		STY		_prg_prgA000_shadow
 		STY		_MMC5_PRG_PAGES+2
-		INY
+		INY										; two non-switcheable banks are FE, FF always
 		STY		_MMC5_PRG_PAGES+3
 		INY
 		STY		_MMC5_PRG_PAGES+4
@@ -96,9 +96,9 @@ loc_18A09D:
 		BPL		loc_18A09D
 ; OPTIMIZED
 ; -
-		STX		_MMC5_NT_FILL					; X here already $FF!
+		STX		_MMC5_NT_FILL					; X here = $FF
 		INX
-		STX		_MMC5_IRQ_ENABLE
+		STX		_MMC5_IRQ_ENABLE				; now X = $00
 		STX		_mmc5_sp_mode_shadow
 		STX		_MMC5_SP_MODE
 		STX		_mmc5_sp_scroll_shadow
@@ -143,7 +143,7 @@ loc_18A09D:
 ; -
 		JSR		_spr_clear
 		LDY		#$01
-		STY		_rand_seed
+		STY		_rand_seed						; initial state of rand $030201
 		INY
 		STY		_rand_seed+1
 		INY
@@ -516,18 +516,6 @@ loc_18A3CF:
 		PLA
 		RTI
 
-_pal_anim_table:
-		.BYTE	$36,$36,$36,$36,$36,$36
-		.BYTE	$26,$26,$26,$26,$26,$26
-		.BYTE	$16,$16,$16,$16,$16,$16,$16,$16
-		.BYTE	$06,$06,$06,$06,$06,$06
-		.BYTE	$16,$16,$16,$16,$16,$16,$16,$16
-		.BYTE	$26,$26,$26,$26,$26,$26
-_bitmasks:
-		.BYTE	$01,$02,$04,$08,$10,$20,$40,$80,$01,$02,$04
-_inv_bitmasks:
-		.BYTE	$80,$40,$20,$10,$08,$04,$02,$01
-
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_scrolls_reload:
 		LDA		_game_wnd_spr_mode_flag
@@ -829,6 +817,10 @@ loc_18A5D9:
 		BNE		loc_18A5D9
 		RTS
 
+; ---------------------------------------------------------------------------
+; ------------------P-P-U--D-E-Q-U-E-U-E--R-O-U-T-I-N-E-S--------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_dequeue:
 		LDA		_scr_mode_idx
@@ -933,24 +925,154 @@ _ppu_queues_reset:
 		STA		_extnt_queue_pos_head
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_spr_finish:
-		LDX		_spr_buf_pos
-		BNE		loc_18A763
+; -
+; HERE LIES ALL GALAXY OF VARIOUS PPU QUEUE SYNC ROUTINES! AMEN
+; -
 
 ; =============== S U B	R O U T	I N E =======================================
-_spr_clear:
-		LDX		#$00
-loc_18A763:
-		LDA		#$F4
-loc_18A765:
-		STA		_spr_buf,X
-		INX
-		INX
-		INX
-		INX
-		BNE		loc_18A765
+; ok, here we test buffers only
+;
+_buffers_test_flush:
+		LDA		_ppu_queue_pos_tail
+		CMP		_ppu_queue_pos_head
+		BNE		locret_24A6E
+		LDA		_extnt_queue_pos_tail
+		CMP		_extnt_queue_pos_head
+locret_24A6E:
 		RTS
+
+; force dequeue functions
+;
+; =============== S U B	R O U T	I N E =======================================
+; force flush buffers until empty
+;
+_buffers_force_flush:
+		JSR		_ppu_dequeue
+		JSR		_extnt_dequeue
+		JSR		_buffers_test_flush
+		BNE		_buffers_force_flush
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; REDUNDANT, exactly the same function
+;_wait_for_force_flush:
+;		JSR		_ppu_dequeue					; force flush buffers, render should be off!
+;		JSR		_extnt_dequeue
+;		JSR		_buffers_test_flush
+;		BNE		_wait_for_force_flush
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; a little bit optimized for speed function, but seems the actual benefit
+; very small, we may drop this function
+; REDUNDANT, merged
+;_buffers_force_flush:
+;		JSR		_ppu_dequeue					; do dequeue of nt data
+;loc_EB043:
+;		JSR		_extnt_dequeue					; then extnt
+;		LDA		_ppu_queue_pos_tail				; if nt not flushed, repeat both
+;		CMP		_ppu_queue_pos_head
+;		BNE		_buffers_force_flush			; if flushed, here only extnt may
+;		LDA		_extnt_queue_pos_tail			; need to flush, so let's optimize
+;		CMP		_extnt_queue_pos_head			; it and jump only to extnt dequeue
+;		BNE		loc_EB043
+;		RTS
+
+; wait dequeue functions
+;
+; =============== S U B	R O U T	I N E =======================================
+; wait for nmi to flush buffers, then wait until empty
+; may take a couple of nmi cycles
+;
+_buffers_wait_flush:
+		JSR		_wait_for_nmi
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+; little bit optimized function to test empty buffers first, then wait
+; if not empty, may save a little bit oc CPU time
+;
+_buffers_test_wait_flush:
+		JSR		_buffers_test_flush
+		BNE		_buffers_wait_flush
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; functionaly this entry the same as the previous one
+;
+;_flush_wait:
+;		JSR		_wait_for_nmi
+;
+; !FALLTHROUGH!
+;
+; =============== S U B	R O U T	I N E =======================================
+; again a little bit optimized function, if buffers are empty, no need
+; to wait for nmi... may get some speedup depending on where used
+;
+;_flush_test_wait:
+;		LDA		_extnt_queue_pos_head
+;		CMP		_extnt_queue_pos_tail
+;		BNE		_flush_wait
+;		LDA		_ppu_queue_pos_head
+;		CMP		_ppu_queue_pos_tail
+;		BNE		_flush_wait
+;		RTS
+
+; exactly the same routine from another bank
+;
+; =============== S U B	R O U T	I N E =======================================
+;_buffers_wait_flush_0:
+;		JSR		_wait_for_nmi
+;
+; !FALLTHROUGH!
+;
+; =============== S U B	R O U T	I N E =======================================
+;_flush_test_wait_0:
+;		LDA		_extnt_queue_pos_head
+;		CMP		_extnt_queue_pos_tail
+;		BNE		_buffers_wait_flush_0
+;		LDA		_ppu_queue_pos_head
+;		CMP		_ppu_queue_pos_tail
+;		BNE		_buffers_wait_flush_0
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; PRG3 routine, uses manualy flag setting, but only used once in loop waiting
+; for buffers are empty
+; REDUNDANT now
+;_buffers_test_flush:
+;		LDA		_ppu_queue_pos_tail
+;		CMP		_ppu_queue_pos_head
+;		BNE		loc_58CD4
+;		LDA		_extnt_queue_pos_tail
+;		CMP		_extnt_queue_pos_head
+;		BNE		loc_58CD4
+;		CLC
+;		RTS
+;loc_58CD4:
+;		SEC
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; PRGC routine the same as PRG3 above
+; REDUNDANT, merged
+;_buffers_test_flush_0:
+;		LDA		_ppu_queue_pos_tail
+;		CMP		_ppu_queue_pos_head
+;		BNE		loc_137D1E
+;		LDA		_extnt_queue_pos_tail
+;		CMP		_extnt_queue_pos_head
+;		BNE		loc_137D1E
+;		CLC
+;		RTS
+;loc_137D1E:
+;		SEC
+;		RTS
+
+; ---------------------------------------------------------------------------
+; ---------------------M-O-R-E--M-I-S-C--H-E-L-P-E-R-S-----------------------
+; ---------------------------------------------------------------------------
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_enable_restore:
@@ -1359,12 +1481,13 @@ _ppu_set_vert_increment:
 _map_buf_init:
 		JSR		_sram_on
 		LDX		#$00
-		MOVWO	_ptr0,_wram_map_buf
-		LDA		#$90
-		LDX		#$16
-		STA		_tmp2
-		STX		_tmp3
-		LDA		#$90
+		MOVWO	_ptr0,_wram_map_buf				; map buf ptr
+		MOVWI	_tmp2,$1690						; map buf size
+;		LDA		#$90
+;		LDX		#$16
+;		STA		_tmp2
+;		STX		_tmp3
+		LDA		#$90							; fill with bulldozered grounds
 		LDY		#$00
 loc_18AA19:
 		STA		(_ptr0),Y
@@ -1572,11 +1695,12 @@ loc_18AB8C:
 _gui_ctrl_menu_pos_list_ilit:
 		LDX		#$0B
 loc_18ABB5:
-		LDA		_gui_ctrl_menu_pos_data,X
-		STA		_gui_ctrl_menu_pos_list,X
+		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
+		STA		_gui_ctrl_menu_pos_list,X		; game configure windows
 		DEX
 		BPL		loc_18ABB5
 		RTS
+
 _gui_ctrl_menu_pos_data:
 		.BYTE	$02,$07
 		.BYTE	$04,$07
@@ -2002,6 +2126,27 @@ loc_18AEB4:
 ; ---------------------------------------------------------------------------
 
 ; =============== S U B	R O U T	I N E =======================================
+_spr_finish:
+		LDX		_spr_buf_pos
+		BNE		loc_18A763
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_spr_clear:
+		LDX		#$00
+loc_18A763:
+		LDA		#$F4
+loc_18A765:
+		STA		_spr_buf,X
+		INX
+		INX
+		INX
+		INX
+		BNE		loc_18A765
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 ; sprite insert routine with additional option to flip and overwrite both
 ; sprite flip and attributes. Used to draw the same sprites mirrored differently
 ; on screen with effects. cursors, rects, arrows, selection corners, etc..
@@ -2130,6 +2275,8 @@ loc_18AEB4:
 ; Merged versions of sprite routines. Maybe little slower in common,
 ; but i'm sure will not much slower in general.
 ;
+; sprite data for this routine in PRG2
+;
 _spr_lib_attr_insert:
 		PUSHB	_prg_prgA000_shadow
 		LDA		#$F2
@@ -2140,6 +2287,8 @@ _spr_lib_attr_insert:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; sprite data for this routine in PRG8
+;
 _spr_lib_clip_insert:
 		PUSHB	_prg_prg8000_shadow
 		LDA		#$F8
@@ -2153,6 +2302,8 @@ _spr_lib_clip_insert:
 
 ; =============== S U B	R O U T	I N E =======================================
 ; Common sprite insert routine for all different kind of sprites.
+;
+; the rest of common sprites are here in PRGF
 ;
 _spr_lib_insert_ex:
 		STA		_tmp17
@@ -2266,8 +2417,8 @@ _spr_lib_lo:
 		.BYTE	<[_spr29]
 		.BYTE	<[_spr2A]
 		.BYTE	<[_spr2B]
-		.BYTE	<[_spr2C]						; Mayor *unused*
-		.BYTE	<[_spr2D]						; Mayor *unused*
+		.BYTE	<[_spr2C]		; Mayor *unused*
+		.BYTE	<[_spr2D]		; Mayor *unused*
 		.BYTE	<[_spr2E]
 		.BYTE	<[_spr2F]
 		.BYTE	<[_spr30]
@@ -2275,8 +2426,8 @@ _spr_lib_lo:
 		.BYTE	<[_spr32]
 		.BYTE	<[_spr33]
 		.BYTE	<[_spr34]
-		.BYTE	<[_spr35]						; Mayor *unused*
-		.BYTE	<[_spr36]						; Mayor *unused*
+		.BYTE	<[_spr35]		; Mayor *unused*
+		.BYTE	<[_spr36]		; Mayor *unused*
 		.BYTE	<[_spr37]
 		.BYTE	<[_spr38]
 		.BYTE	<[_spr39]
@@ -3456,41 +3607,6 @@ locret_18BBEC:
 ;locret_18BBF7:
 ;		RTS
 
-_pal_bg_lib:
-		.BYTE	$0F,$36,$10,$12,$0F,$30,$10,$27,$0F,$36,$00,$16,$0F,$12,$28,$2A
-		.BYTE	$0F,$3C,$21,$12,$0F,$30,$10,$37,$0F,$36,$10,$16,$0F,$26,$39,$2B
-		.BYTE	$0F,$30,$14,$12,$0F,$39,$19,$29,$0F,$30,$28,$17,$0F,$30,$27,$08
-		.BYTE	$30,$3C,$25,$0F,$30,$3C,$11,$12,$30,$34,$24,$14,$30,$3C,$27,$06
-		.BYTE	$0F,$35,$30,$13,$0F,$35,$30,$28,$0F,$35,$30,$16,$0F,$35,$30,$1A
-		.BYTE	$0F,$3C,$10,$12,$0F,$30,$10,$37,$0F,$36,$10,$16,$0F,$12,$37,$29
-		.BYTE	$0F,$38,$27,$17,$0F,$0F,$27,$30,$0F,$2C,$19,$2A,$0F,$30,$16,$06
-		.BYTE	$0F,$30,$16,$34,$0F,$30,$11,$34,$0F,$30,$35,$14,$0F,$38,$28,$02
-		.BYTE	$0F,$30,$26,$17,$0F,$37,$2A,$12,$0F,$30,$1B,$16,$0F,$30,$15,$05
-		.BYTE	$0F,$30,$26,$17,$0F,$26,$0F,$15,$0F,$30,$2B,$12,$0F,$35,$23,$03
-		.BYTE	$0F,$30,$25,$0F,$0F,$30,$22,$26,$0F,$30,$23,$15,$0F,$12,$37,$29
-		.BYTE	$30,$0F,$37,$0A,$30,$35,$25,$15,$30,$24,$38,$0F,$30,$0F,$02,$12
-		.BYTE	$0F,$36,$10,$12,$0F,$30,$10,$27,$0F,$36,$00,$16,$0F,$12,$27,$0A
-		.BYTE	$0F,$36,$10,$12,$0F,$30,$10,$27,$0F,$36,$00,$16,$0F,$12,$27,$17
-		.BYTE	$0F,$36,$10,$12,$0F,$30,$10,$27,$0F,$36,$00,$16,$0F,$12,$28,$3C
-		.BYTE	$0F,$30,$26,$13,$0F,$30,$24,$0F,$0F,$30,$26,$28,$0F,$24,$16,$30
-		.BYTE	$0F,$30,$26,$17,$0F,$37,$2A,$12,$0F,$30,$2B,$16,$0F,$35,$23,$03
-		.BYTE	$0F,$30,$30,$08,$0F,$0F,$0F,$0F,$0F,$30,$1B,$16,$0F,$36,$26,$17
-		.BYTE	$0F,$30,$2A,$14,$0F,$32,$22,$02,$0F,$30,$26,$0F,$0F,$30,$16,$2C
-		.BYTE	$0F,$30,$30,$30,$0F,$30,$30,$30,$0F,$30,$30,$30,$0F,$30,$30,$30
-_pal_spr_lib:
-		.BYTE	$0F,$16,$00,$0F,$0F,$30,$35,$0F,$0F,$26,$18,$0F,$0F,$3C,$12,$0F
-		.BYTE	$0F,$15,$35,$0F,$0F,$1A,$35,$0F,$0F,$15,$27,$0F,$0F,$36,$16,$0F
-		.BYTE	$0F,$30,$15,$02,$0F,$30,$36,$0F,$0F,$26,$37,$05,$0F,$30,$30,$0F
-		.BYTE	$0F,$16,$10,$0F,$0F,$30,$35,$0F,$0F,$3C,$12,$0F,$0F,$35,$15,$0F
-		.BYTE	$0F,$30,$27,$15,$0F,$30,$27,$0F,$0F,$30,$0F,$22,$0F,$30,$22,$26
-		.BYTE	$0F,$30,$16,$34,$0F,$30,$36,$0F,$0F,$32,$17,$0F,$0F,$25,$36,$17
-		.BYTE	$0F,$0F,$16,$26,$0F,$30,$35,$0F,$0F,$26,$16,$06,$0F,$30,$16,$06
-		.BYTE	$0F,$30,$0F,$17,$0F,$30,$35,$0F,$0F,$30,$0F,$12,$0F,$0F,$0F,$0F
-		.BYTE	$0F,$0F,$30,$0F,$0F,$30,$35,$0F,$0F,$30,$0F,$12,$0F,$0F,$0F,$0F
-		.BYTE	$0F,$15,$35,$0F,$0F,$1A,$35,$0F,$0F,$15,$27,$0F,$0F,$1A,$23,$0F
-		.BYTE	$0F,$15,$35,$0F,$0F,$1A,$35,$0F,$0F,$15,$27,$0F,$0F,$23,$39,$0F
-		.BYTE	$0F,$16,$30,$28,$0F,$16,$30,$28,$0F,$16,$30,$28,$0F,$16,$30,$28
-
 ; =============== S U B	R O U T	I N E =======================================
 _rand_clamp:
 		PHA
@@ -3710,6 +3826,20 @@ _switch:
 		STA		_ptr0+1
 		POPB	_ptr0
 		JMP		(_ptr0)
+
+_bitmasks:
+		.BYTE	$01,$02,$04,$08,$10,$20,$40,$80,$01,$02,$04
+
+_inv_bitmasks:
+		.BYTE	$80,$40,$20,$10,$08,$04,$02,$01
+
+_pal_anim_table:
+		.BYTE	$36,$36,$36,$36,$36,$36
+		.BYTE	$26,$26,$26,$26,$26,$26
+		.BYTE	$16,$16,$16,$16,$16,$16,$16,$16
+		.BYTE	$06,$06,$06,$06,$06,$06
+		.BYTE	$16,$16,$16,$16,$16,$16,$16,$16
+		.BYTE	$26,$26,$26,$26,$26,$26
 
 ; +0 +1 +2 +3
 ; 00 82 87 8E +00

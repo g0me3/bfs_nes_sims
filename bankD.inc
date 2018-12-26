@@ -4065,18 +4065,18 @@ _game_hud_full_draw:
 		STA		_mmc5_operation_in_progress_flag
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		JSR		_ppu_flush_wait
+		JSR		_buffers_force_flush
 		JSR		sub_136761
-		JSR		_ppu_flush_wait
+		JSR		_buffers_force_flush
 		JSR		sub_13671F
 		LDA		#$03
 		STA		byte_3C
 loc_151F3B:
-		JSR		_ppu_flush_wait
+		JSR		_buffers_force_flush
 		JSR		_constr_palette_redraw
 		LDA		_constr_palette_redraw_req
 		BNE		loc_151F3B
-		JSR		_ppu_flush_wait
+		JSR		_buffers_force_flush
 		JSR		_building_name_and_cost_hud_draw
 		JSR		_RCI_meters_draw
 ;		FJSRA	_hud_date_draw,PRG7,PRG3
@@ -4087,9 +4087,9 @@ loc_151F3B:
 		JSR		_hud_popul_draw
 ;		FJSRA	_hud_city_name_draw,PRG7,PRG3
 		JSR		_hud_city_name_draw
-		JSR		_ppu_flush_wait
+		JSR		_buffers_force_flush
 loc_151F6D:
-		JSR		_ppu_flush_wait
+		JSR		_buffers_force_flush
 		JSR		sub_137CD4
 		LDA		byte_53
 		BNE		loc_151F6D
@@ -4098,15 +4098,6 @@ loc_151F6D:
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		JMP		_render_on
-
-
-; =============== S U B	R O U T	I N E =======================================
-_ppu_flush_wait:
-		JSR		_ppu_dequeue					; TODO: merge me
-		JSR		_extnt_dequeue
-		JSR		_ppu_queue_empty_test_0
-		BCS		_ppu_flush_wait
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_heavy_traffic_report_test:
