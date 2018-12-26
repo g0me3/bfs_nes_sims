@@ -665,7 +665,7 @@ _tmp533:
 		.BYTE	0
 _tmp534:
 		.BYTE	0
-_tmp535:
+_map_bg_anim_counter:
 		.BYTE	0
 _game_core_timer:
 		.BYTE	0

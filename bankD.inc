@@ -152,7 +152,7 @@ sub_150262:
 loc_150269:
 		TXA
 		PHA
-		JSR		sub_137E6E
+		JSR		_map_get_ppu_tile
 		PLA
 		TAX
 		INC		_tmp_tile_pos._COL
@@ -174,7 +174,7 @@ loc_150288:
 		TXA
 		PHA
 		SEC
-		JSR		sub_137E6E
+		JSR		_map_get_ppu_tile
 		PLA
 		TAX
 		INC		_tmp_tile_pos._ROW
@@ -1719,108 +1719,53 @@ _build_scheme_4_4:
 		.BYTE	$80
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150BF7:
-		CMP		#$60
-		BEQ		loc_150C2B
-		CMP		#$61
-		BEQ		loc_150C47
-		CMP		#$71
-		BEQ		loc_150C63
-		CMP		#$72
-		BEQ		loc_150C7E
-		CMP		#$63
-		BNE		loc_150C0E
-		JMP		loc_150C99
-loc_150C0E:
-		CMP		#$41
+; very unoptimal routine, uses the same function for all cases with just
+; different table offsets.
+;
+_map_get_animated_areas_ppu_tile:
+		CMP		#_MAP_COAL_POWER				; special cases for animated buildings
+		BEQ		.get_coal_power_ppu_tile
+		CMP		#_MAP_NUCLEAR_POWER
+		BEQ		.get_nuclear_power_ppu_tile
+		CMP		#_MAP_AMUSEMENT_PARK
+		BEQ		.get_amus_park_ppu_tile
+		CMP		#_MAP_ZOO
+		BEQ		.get_zoo_ppu_tile
+		CMP		#_MAP_STADIUM
+		BNE		.get_other_building_ppu_tile
+		JMP		.get_stadium_ppu_tile			; the last animated area is I developed
+.get_other_building_ppu_tile:
+		CMP		#_MAP_I_AREA01					; test if we get the developed zone
 		BCC		loc_150C16
-		CMP		#$49
-		BCC		loc_150C18
+		CMP		#[_MAP_I_AREA08+1]
+		BCC		.get_I_area_ppu_tile
 loc_150C16:
-		CLC
-		RTS
-loc_150C18:
+		CLC										; REDUNDANT, already C=0 here
+		RTS										; exit if this is not animated area
+.get_I_area_ppu_tile:
 		SEC
-		SBC		#$41
-		ASL
+		SBC		#_MAP_I_AREA01					; select corresponding handler to fetch animation
+		ASL										; ppu data
 		TAY
-		LDA		off_150DDF,Y
+		LDA		_I_area_ppu_anim_handlers_lib,Y
 		STA		_ptr0
 		INY
-		LDA		off_150DDF,Y
+		LDA		_I_area_ppu_anim_handlers_lib,Y
 		STA		_ptr0+1
 		JMP		(_ptr0)
-loc_150C2B:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150CBF,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150CBF,X
-		STA		word_6C
-		SEC
+.get_coal_power_ppu_tile:
+		ANIM_FETCH	_tlm_coal_pow_anim_lib,$03
 		RTS
-loc_150C47:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150D07,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150D07,X
-		STA		word_6C
-		SEC
+.get_nuclear_power_ppu_tile:
+		ANIM_FETCH	_tlm_nuclear_pow_anim_lib,$03
 		RTS
-loc_150C63:
-		LDA		_tmp535
-		AND		#$01
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150D4F,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150D4F,X
-		STA		word_6C
-		SEC
+.get_amus_park_ppu_tile:
+		ANIM_FETCH	_tlm_amus_park_anim_lib,$01
 		RTS
-loc_150C7E:
-		LDA		_tmp535
-		AND		#$01
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150D73,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150D73,X
-		STA		word_6C
-		SEC
+.get_zoo_ppu_tile:
+		ANIM_FETCH	_tlm_zoo_anim_lib,$01
 		RTS
-loc_150C99:
+.get_stadium_ppu_tile:
 		PHA
 		LDA		_stadium_anim_enable_flag
 		BNE		loc_150CA2
@@ -1829,25 +1774,10 @@ loc_150C99:
 		RTS
 loc_150CA2:
 		PLA
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150D97,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150D97,X
-		STA		word_6C
-		SEC
+		ANIM_FETCH	_tlm_stadium_anim_lib,$03
 		RTS
-byte_150CBF:
-		.BYTE	$87,$E0
+_tlm_coal_pow_anim_lib:
+		.BYTE	$87,$E0							; 4 frames, 3x3 tile
 		.BYTE	$87,$E0
 		.BYTE	$87,$E0
 		.BYTE	$87,$E0
@@ -1883,8 +1813,8 @@ byte_150CBF:
 		.BYTE	$87,$24
 		.BYTE	$87,$64
 		.BYTE	$87,$36
-byte_150D07:
-		.BYTE	$87,$F3
+_tlm_nuclear_pow_anim_lib:
+		.BYTE	$87,$F3							; 4 frames, 3x3 tile
 		.BYTE	$87,$F3
 		.BYTE	$87,$F3
 		.BYTE	$87,$F3
@@ -1920,8 +1850,8 @@ byte_150D07:
 		.BYTE	$87,$77
 		.BYTE	$87,$4A
 		.BYTE	$87,$4C
-byte_150D4F:
-		.BYTE	$D2,$31
+_tlm_amus_park_anim_lib:
+		.BYTE	$D2,$31							; 2 frames for 3x3
 		.BYTE	$D2,$D3
 		.BYTE	$D2,$41
 		.BYTE	$D2,$E3
@@ -1939,8 +1869,8 @@ byte_150D4F:
 		.BYTE	$92,$E5
 		.BYTE	$92,$33
 		.BYTE	$92,$D5
-byte_150D73:
-		.BYTE	$D2,$09
+_tlm_zoo_anim_lib:
+		.BYTE	$D2,$09							; 2 frames for 3x3
 		.BYTE	$D2,$D6
 		.BYTE	$D2,$19
 		.BYTE	$D2,$E6
@@ -1958,8 +1888,8 @@ byte_150D73:
 		.BYTE	$D2,$E8
 		.BYTE	$D2,$0B
 		.BYTE	$D2,$D8
-byte_150D97:
-		.BYTE	$00,$CE
+_tlm_stadium_anim_lib:
+		.BYTE	$00,$CE							; 4 frames, 3x3 tile
 		.BYTE	$00,$CE
 		.BYTE	$00,$CE
 		.BYTE	$00,$CE
@@ -1995,73 +1925,44 @@ byte_150D97:
 		.BYTE	$00,$DE
 		.BYTE	$00,$DE
 		.BYTE	$00,$DE
-off_150DDF:
-		.WORD	sub_150DEF
-		.WORD	sub_150E2B
-		.WORD	sub_150E67
-		.WORD	sub_150EA3
-		.WORD	sub_150EDF
-		.WORD	sub_150F1B
-		.WORD	sub_150F57
-		.WORD	sub_150F93
+
+_I_area_ppu_anim_handlers_lib:
+		.WORD	_I_area_ppu_anim1
+		.WORD	_I_area_ppu_anim2
+		.WORD	_I_area_ppu_anim3
+		.WORD	_I_area_ppu_anim4
+		.WORD	_I_area_ppu_anim5
+		.WORD	_I_area_ppu_anim6
+		.WORD	_I_area_ppu_anim7
+		.WORD	_I_area_ppu_anim8
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150DEF:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150E0B,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150E0B,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim1:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib1,$03
 		RTS
-byte_150E0B:
-		.BYTE	$87,$00
-		.BYTE	$87,$20
+_tlm_I_area_ppu_anim_lib1:
+		.BYTE	$87,$00		; 4 anim tiles for left top tile
+		.BYTE	$87,$20		; 4 frames for 2x2 total
 		.BYTE	$87,$40
 		.BYTE	$87,$60
-		.BYTE	$47,$10
+		.BYTE	$47,$10		; 4 for left bottom
 		.BYTE	$47,$30
 		.BYTE	$47,$50
 		.BYTE	$47,$70
-		.BYTE	$87,$11
+		.BYTE	$87,$11		; right bottom
 		.BYTE	$87,$31
 		.BYTE	$87,$51
 		.BYTE	$87,$71
-		.BYTE	$47,$A1
+		.BYTE	$47,$A1		; right top (same frame)
 		.BYTE	$47,$A1
 		.BYTE	$47,$A1
 		.BYTE	$47,$A1
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150E2B:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150E47,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150E47,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim2:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib2,$03
 		RTS
-byte_150E47:
+_tlm_I_area_ppu_anim_lib2:
 		.BYTE	$47,$02
 		.BYTE	$47,$22
 		.BYTE	$47,$42
@@ -2080,25 +1981,10 @@ byte_150E47:
 		.BYTE	$47,$63
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150E67:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150E83,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150E83,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim3:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib3,$03
 		RTS
-byte_150E83:
+_tlm_I_area_ppu_anim_lib3:
 		.BYTE	$87,$A4
 		.BYTE	$87,$A4
 		.BYTE	$87,$A4
@@ -2117,25 +2003,10 @@ byte_150E83:
 		.BYTE	$47,$65
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150EA3:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150EBF,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150EBF,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim4:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib4,$03
 		RTS
-byte_150EBF:
+_tlm_I_area_ppu_anim_lib4:
 		.BYTE	$47,$06
 		.BYTE	$47,$26
 		.BYTE	$47,$46
@@ -2154,25 +2025,10 @@ byte_150EBF:
 		.BYTE	$47,$67
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150EDF:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150EFB,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150EFB,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim5:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib5,$03
 		RTS
-byte_150EFB:
+_tlm_I_area_ppu_anim_lib5:
 		.BYTE	$47,$08
 		.BYTE	$47,$28
 		.BYTE	$47,$48
@@ -2191,25 +2047,10 @@ byte_150EFB:
 		.BYTE	$47,$C1
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150F1B:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150F37,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150F37,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim6:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib6,$03
 		RTS
-byte_150F37:
+_tlm_I_area_ppu_anim_lib6:
 		.BYTE	$47,$0A
 		.BYTE	$47,$C2
 		.BYTE	$47,$C2
@@ -2228,25 +2069,10 @@ byte_150F37:
 		.BYTE	$47,$C3
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150F57:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150F73,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150F73,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim7:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib7,$03
 		RTS
-byte_150F73:
+_tlm_I_area_ppu_anim_lib7:
 		.BYTE	$47,$C4
 		.BYTE	$47,$C4
 		.BYTE	$47,$C4
@@ -2265,25 +2091,10 @@ byte_150F73:
 		.BYTE	$47,$6D
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150F93:
-		LDA		_tmp535
-		AND		#$03
-		ASL
-		STA		_ptr0
-		TXA
-		ASL
-		ASL
-		ASL
-		ORA		_ptr0
-		TAX
-		LDA		byte_150FAF,X
-		STA		word_6C+1
-		INX
-		LDA		byte_150FAF,X
-		STA		word_6C
-		SEC
+_I_area_ppu_anim8:
+		ANIM_FETCH	_tlm_I_area_ppu_anim_lib8,$03
 		RTS
-byte_150FAF:
+_tlm_I_area_ppu_anim_lib8:
 		.BYTE	$47,$0E
 		.BYTE	$47,$2E
 		.BYTE	$47,$C6
@@ -2302,85 +2113,85 @@ byte_150FAF:
 		.BYTE	$47,$6F
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150FCF:
-		TAY
-		CMP		#$91
-		BCC		loc_150FF8
-		CMP		#$9C
-		BCC		loc_150FFF
-		CMP		#$B3
-		BEQ		loc_151029
-		CMP		#$B7
-		BCC		loc_150FF8
-		CMP		#$BB
-		BCC		loc_15101B
-		CMP		#$BE
-		BCC		loc_150FF8
-		CMP		#$CE
-		BCC		loc_151041
-		CMP		#$E0
-		BCC		loc_150FF8
-		CMP		#$E2
-		BCC		loc_15100D
-		CMP		#$E6
-		BEQ		loc_151035
-loc_150FF8:
+_map_get_single_ppu_tile_lib:
+;		TAY										; REDUNDANT
+		CMP		#_MAP_ROAD_LR					; ground put as is, unanimated
+		BCC		.map_put_tile_as_is
+		CMP		#_MAP_RAIL_LR
+		BCC		.map_put_roads_tile
+		CMP		#_MAP_THREE						; special case for tree
+		BEQ		.map_put_tree
+		CMP		#_MAP_ROAD_RAIL_LR				; roads rails and other, as is
+		BCC		.map_put_tile_as_is
+		CMP		#_MAP_ELECTRO_RAIL_LR			; cross roads
+		BCC		.map_put_road_cross
+		CMP		#_MAP_SHORE0					; water goes as is
+		BCC		.map_put_tile_as_is
+		CMP		#_MAP_WOODS0					; shores
+		BCC		.mpa_put_shores
+		CMP		#_MAP_WATER_ROAD_LR				; wodds as is
+		BCC		.map_put_tile_as_is
+		CMP		#_MAP_WATER_RAIL_LR				; water roads
+		BCC		.map_water_roads
+		CMP		#_MAP_FIRE
+		BEQ		.map_put_fire_tile
+.map_put_tile_as_is:
 		LDA		#$00
 		STA		_tmp533
 		TYA
 		RTS
-loc_150FFF:
-		TYA
+.map_put_roads_tile:
+;		TYA										; REDUNDANT
 		SEC
 		SBC		#$91
 		STA		_tmp534
 		LDA		#$02
 		STA		_tmp533
-		TYA
+;		TYA										; REDUNDANT
 		RTS
-loc_15100D:
-		TYA
+.map_water_roads:
+;		TYA
 		SEC
 		SBC		#$D1
 		STA		_tmp534
 		LDA		#$02
 		STA		_tmp533
-		TYA
+;		TYA
 		RTS
-loc_15101B:
-		TYA
+.map_put_road_cross:
+;		TYA
 		SEC
 		SBC		#$AC
 		STA		_tmp534
 		LDA		#$02
 		STA		_tmp533
-		TYA
+;		TYA
 		RTS
-loc_151029:
+.map_put_tree:
 		LDA		#$00
 		STA		_tmp534
 		LDA		#$08
 		STA		_tmp533
-		TYA
+;		TYA
 		RTS
-loc_151035:
+.map_put_fire_tile:
 		LDA		#$01
 		STA		_tmp534
 		LDA		#$08
 		STA		_tmp533
-		TYA
+;		TYA
 		RTS
-loc_151041:
+.mpa_put_shores:
 		SEC
 		SBC		#$BE
 		STA		_tmp534
 		LDA		#$04
 		STA		_tmp533
-		TYA
+;		TYA
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_15104E:
+_map_get_anim_single_tiles:
 		LDA		_tmp533
 		BNE		loc_151054
 		RTS
@@ -2396,7 +2207,7 @@ loc_151054:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_power_anim_tile:
-		LDA		_tmp535
+		LDA		_map_bg_anim_counter
 		AND		#$01
 		BEQ		nullsub_7
 		JSR		_get_powered_state
@@ -2404,11 +2215,13 @@ _get_power_anim_tile:
 		LDX		_tmp534
 		CPX		#$00
 		BNE		nullsub_7
-		MOVWI	word_6C,$0287
+		MOVWI	word_6C,$0287					; "power arrow" tile
 nullsub_7:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; totally unknown anim tiles selectors, unmatched with CHR ROM
+;
 ;_unref:
 ;		LDA		word_6C+1
 ;		AND		#$0F
@@ -2463,7 +2276,7 @@ _get_traffic_anim_tile:
 		ASL
 		ASL
 		STA		_ptr0
-		LDA		_tmp535
+		LDA		_map_bg_anim_counter
 		AND		#$03
 		ASL
 		ORA		_ptr0
@@ -2478,7 +2291,7 @@ locret_1510D8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_shores_anim_tile:
-		LDA		_tmp535
+		LDA		_map_bg_anim_counter
 		AND		#$01
 		ASL
 		STA		_ptr0
@@ -2496,7 +2309,7 @@ _get_shores_anim_tile:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_fire_trees_anim_tile:
-		LDA		_tmp535
+		LDA		_map_bg_anim_counter
 		AND		#$03
 		ASL
 		STA		_ptr0
@@ -3057,86 +2870,80 @@ byte_15174F:
 		.BYTE	$0B,$1E,$1D,$1C,$1B,$1A,$19,$18,$10
 byte_151758:
 		.BYTE	$0F,$09,$08,$07,$06,$05
-byte_15175E:
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$DF,$DF,$DF,$DF,$DF,$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3
-		.BYTE	$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5,$D1,$24,$34,$28,$38,$2C
-		.BYTE	$3C,$40,$50,$44,$54,$48,$58,$4C,$5C,$0B,$0B,$80,$0B,$0F,$D6,$D1
-		.BYTE	$25,$35,$29,$39,$2D,$3D,$41,$51,$45,$55,$49,$59,$4D,$5D,$0B,$0B
-		.BYTE	$81,$0B,$0F,$D6,$D1,$26,$36,$2A,$3A,$2E,$3E,$42,$52,$46,$56,$4A
-		.BYTE	$5A,$4E,$5E,$0B,$0B,$82,$0B,$0F,$D6,$D1,$27,$37,$2B,$3B,$2F,$3F
-		.BYTE	$43,$53,$47,$57,$4B,$5B,$4F,$5F,$0A,$0C,$7F,$0C,$0E,$D6,$D2,$D4
-		.BYTE	$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4
-		.BYTE	$D4,$D4,$D7
-byte_1517F1:
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$82,$82,$82,$82,$C2
-		.BYTE	$C2,$02,$02,$02,$02,$82,$82,$02,$02,$99,$99,$82,$99,$99,$01,$01
-		.BYTE	$82,$82,$82,$82,$C2,$C2,$02,$02,$02,$02,$82,$82,$02,$02,$19,$19
-		.BYTE	$02,$19,$19,$01,$01,$82,$82,$02,$02,$82,$82,$82,$82,$82,$82,$82
-		.BYTE	$82,$02,$02,$99,$99,$82,$99,$99,$01,$01,$82,$82,$02,$02,$82,$82
-		.BYTE	$82,$82,$82,$82,$82,$82,$02,$02,$99,$99,$82,$99,$99,$01,$01,$01
-		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$01,$01,$01
-off_151884:
-		.BYTE	<[byte_151A82]
-		.BYTE	<[byte_151A9A]
-		.BYTE	<[byte_151AA2]
-		.BYTE	<[byte_151AAA]
-		.BYTE	<[byte_151AB2]
-		.BYTE	<[byte_151ABA]
-		.BYTE	<[byte_151AC2]
-		.BYTE	<[byte_151ACA]
-		.BYTE	<[byte_151AD2]
-		.BYTE	<[byte_151ADA]
-		.BYTE	<[byte_151AE2]
-		.BYTE	<[byte_151AEA]
-		.BYTE	<[byte_151AF2]
-		.BYTE	<[byte_151AFA]
-		.BYTE	<[byte_151B02]
-		.BYTE	<[byte_151B0A]
-		.BYTE	<[byte_151B12]
-		.BYTE	<[byte_151B1A]
-		.BYTE	<[byte_151B22]
-		.BYTE	<[byte_151B2A]
-		.BYTE	<[byte_151B32]
-		.BYTE	<[byte_151B3A]
-		.BYTE	<[byte_151B42]
-		.BYTE	<[byte_151B4A]
-		.BYTE	<[byte_151B52]
-		.BYTE	<[byte_151A8A]
-		.BYTE	<[byte_151A92]
+_tlm_constr_palette_static_nt:
+		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
+		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
+		.BYTE	$D1,$24,$34,$28,$38,$2C,$3C,$40,$50,$44,$54,$48,$58,$4C,$5C,$0B,$0B,$80,$0B,$0F,$D6
+		.BYTE	$D1,$25,$35,$29,$39,$2D,$3D,$41,$51,$45,$55,$49,$59,$4D,$5D,$0B,$0B,$81,$0B,$0F,$D6
+		.BYTE	$D1,$26,$36,$2A,$3A,$2E,$3E,$42,$52,$46,$56,$4A,$5A,$4E,$5E,$0B,$0B,$82,$0B,$0F,$D6
+		.BYTE	$D1,$27,$37,$2B,$3B,$2F,$3F,$43,$53,$47,$57,$4B,$5B,$4F,$5F,$0A,$0C,$7F,$0C,$0E,$D6
+		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
+_tlm_constr_palette_static_extnt:
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+		.BYTE	$01,$82,$82,$82,$82,$C2,$C2,$02,$02,$02,$02,$82,$82,$02,$02,$99,$99,$82,$99,$99,$01
+		.BYTE	$01,$82,$82,$82,$82,$C2,$C2,$02,$02,$02,$02,$82,$82,$02,$02,$19,$19,$02,$19,$19,$01
+		.BYTE	$01,$82,$82,$02,$02,$82,$82,$82,$82,$82,$82,$82,$82,$02,$02,$99,$99,$82,$99,$99,$01
+		.BYTE	$01,$82,$82,$02,$02,$82,$82,$82,$82,$82,$82,$82,$82,$02,$02,$99,$99,$82,$99,$99,$01
+		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+_tlm_still_tiles_lib_lo:
+		.BYTE	<[_tlm_still_tiles_list00]
+		.BYTE	<[_tlm_still_tiles_list01]
+		.BYTE	<[_tlm_still_tiles_list02]
+		.BYTE	<[_tlm_still_tiles_list03]
+		.BYTE	<[_tlm_still_tiles_list04]
+		.BYTE	<[_tlm_still_tiles_list05]
+		.BYTE	<[_tlm_still_tiles_list06]
+		.BYTE	<[_tlm_still_tiles_list07]
+		.BYTE	<[_tlm_still_tiles_list08]
+		.BYTE	<[_tlm_still_tiles_list09]
+		.BYTE	<[_tlm_still_tiles_list0A]
+		.BYTE	<[_tlm_still_tiles_list0B]
+		.BYTE	<[_tlm_still_tiles_list0C]
+		.BYTE	<[_tlm_still_tiles_list0D]
+		.BYTE	<[_tlm_still_tiles_list0E]
+		.BYTE	<[_tlm_still_tiles_list0F]
+		.BYTE	<[_tlm_still_tiles_list10]
+		.BYTE	<[_tlm_still_tiles_list11]
+		.BYTE	<[_tlm_still_tiles_list12]
+		.BYTE	<[_tlm_still_tiles_list13]
+		.BYTE	<[_tlm_still_tiles_list14]
+		.BYTE	<[_tlm_still_tiles_list15]
+		.BYTE	<[_tlm_still_tiles_list16]
+		.BYTE	<[_tlm_still_tiles_list17]
+		.BYTE	<[_tlm_still_tiles_list18]
+		.BYTE	<[_tlm_still_tiles_list19]
+		.BYTE	<[_tlm_still_tiles_list1A]
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
-		.BYTE	<[byte_151B5A]
-		.BYTE	<[byte_151B62]
-		.BYTE	<[byte_151B6A]
-		.BYTE	<[byte_151B72]
-		.BYTE	<[byte_151B7A]
-		.BYTE	<[byte_151B82]
-		.BYTE	<[byte_151B8A]
-		.BYTE	<[byte_151B92]
-		.BYTE	<[byte_151B9A]
-		.BYTE	<[byte_151BA2]
-		.BYTE	<[byte_151BAA]
-		.BYTE	<[byte_151BB2]
-		.BYTE	<[byte_151BBA]
-		.BYTE	<[byte_151BC2]
-		.BYTE	<[byte_151BCA]
-		.BYTE	<[byte_151BD2]
-		.BYTE	<[byte_151BDA]
-		.BYTE	<[byte_151BE2]
-		.BYTE	<[byte_151BEA]
-		.BYTE	<[byte_151BF2]
-		.BYTE	<[byte_151BFA]
-		.BYTE	<[byte_151C02]
-		.BYTE	<[byte_151C0A]
-		.BYTE	<[byte_151C12]
-		.BYTE	<[byte_151C1A]
+		.BYTE	<[_tlm_still_tiles_list20]
+		.BYTE	<[_tlm_still_tiles_list21]
+		.BYTE	<[_tlm_still_tiles_list22]
+		.BYTE	<[_tlm_still_tiles_list23]
+		.BYTE	<[_tlm_still_tiles_list24]
+		.BYTE	<[_tlm_still_tiles_list25]
+		.BYTE	<[_tlm_still_tiles_list26]
+		.BYTE	<[_tlm_still_tiles_list27]
+		.BYTE	<[_tlm_still_tiles_list28]
+		.BYTE	<[_tlm_still_tiles_list29]
+		.BYTE	<[_tlm_still_tiles_list2A]
+		.BYTE	<[_tlm_still_tiles_list2B]
+		.BYTE	<[_tlm_still_tiles_list2C]
+		.BYTE	<[_tlm_still_tiles_list2D]
+		.BYTE	<[_tlm_still_tiles_list2E]
+		.BYTE	<[_tlm_still_tiles_list2F]
+		.BYTE	<[_tlm_still_tiles_list30]
+		.BYTE	<[_tlm_still_tiles_list31]
+		.BYTE	<[_tlm_still_tiles_list32]
+		.BYTE	<[_tlm_still_tiles_list33]
+		.BYTE	<[_tlm_still_tiles_list34]
+		.BYTE	<[_tlm_still_tiles_list35]
+		.BYTE	<[_tlm_still_tiles_list36]
+		.BYTE	<[_tlm_still_tiles_list37]
+		.BYTE	<[_tlm_still_tiles_list38]
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
@@ -3335,64 +3142,64 @@ off_151884:
 		.BYTE	<[byte_151EA4]
 		.BYTE	0
 		.BYTE	<[byte_151E26]
-off_151983:
-		.BYTE	>[byte_151A82]
-		.BYTE	>[byte_151A9A]
-		.BYTE	>[byte_151AA2]
-		.BYTE	>[byte_151AAA]
-		.BYTE	>[byte_151AB2]
-		.BYTE	>[byte_151ABA]
-		.BYTE	>[byte_151AC2]
-		.BYTE	>[byte_151ACA]
-		.BYTE	>[byte_151AD2]
-		.BYTE	>[byte_151ADA]
-		.BYTE	>[byte_151AE2]
-		.BYTE	>[byte_151AEA]
-		.BYTE	>[byte_151AF2]
-		.BYTE	>[byte_151AFA]
-		.BYTE	>[byte_151B02]
-		.BYTE	>[byte_151B0A]
-		.BYTE	>[byte_151B12]
-		.BYTE	>[byte_151B1A]
-		.BYTE	>[byte_151B22]
-		.BYTE	>[byte_151B2A]
-		.BYTE	>[byte_151B32]
-		.BYTE	>[byte_151B3A]
-		.BYTE	>[byte_151B42]
-		.BYTE	>[byte_151B4A]
-		.BYTE	>[byte_151B52]
-		.BYTE	>[byte_151A8A]
-		.BYTE	>[byte_151A92]
+_tlm_still_tiles_lib_hi:
+		.BYTE	>[_tlm_still_tiles_list00]
+		.BYTE	>[_tlm_still_tiles_list01]
+		.BYTE	>[_tlm_still_tiles_list02]
+		.BYTE	>[_tlm_still_tiles_list03]
+		.BYTE	>[_tlm_still_tiles_list04]
+		.BYTE	>[_tlm_still_tiles_list05]
+		.BYTE	>[_tlm_still_tiles_list06]
+		.BYTE	>[_tlm_still_tiles_list07]
+		.BYTE	>[_tlm_still_tiles_list08]
+		.BYTE	>[_tlm_still_tiles_list09]
+		.BYTE	>[_tlm_still_tiles_list0A]
+		.BYTE	>[_tlm_still_tiles_list0B]
+		.BYTE	>[_tlm_still_tiles_list0C]
+		.BYTE	>[_tlm_still_tiles_list0D]
+		.BYTE	>[_tlm_still_tiles_list0E]
+		.BYTE	>[_tlm_still_tiles_list0F]
+		.BYTE	>[_tlm_still_tiles_list10]
+		.BYTE	>[_tlm_still_tiles_list11]
+		.BYTE	>[_tlm_still_tiles_list12]
+		.BYTE	>[_tlm_still_tiles_list13]
+		.BYTE	>[_tlm_still_tiles_list14]
+		.BYTE	>[_tlm_still_tiles_list15]
+		.BYTE	>[_tlm_still_tiles_list16]
+		.BYTE	>[_tlm_still_tiles_list17]
+		.BYTE	>[_tlm_still_tiles_list18]
+		.BYTE	>[_tlm_still_tiles_list19]
+		.BYTE	>[_tlm_still_tiles_list1A]
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
-		.BYTE	>[byte_151B5A]
-		.BYTE	>[byte_151B62]
-		.BYTE	>[byte_151B6A]
-		.BYTE	>[byte_151B72]
-		.BYTE	>[byte_151B7A]
-		.BYTE	>[byte_151B82]
-		.BYTE	>[byte_151B8A]
-		.BYTE	>[byte_151B92]
-		.BYTE	>[byte_151B9A]
-		.BYTE	>[byte_151BA2]
-		.BYTE	>[byte_151BAA]
-		.BYTE	>[byte_151BB2]
-		.BYTE	>[byte_151BBA]
-		.BYTE	>[byte_151BC2]
-		.BYTE	>[byte_151BCA]
-		.BYTE	>[byte_151BD2]
-		.BYTE	>[byte_151BDA]
-		.BYTE	>[byte_151BE2]
-		.BYTE	>[byte_151BEA]
-		.BYTE	>[byte_151BF2]
-		.BYTE	>[byte_151BFA]
-		.BYTE	>[byte_151C02]
-		.BYTE	>[byte_151C0A]
-		.BYTE	>[byte_151C12]
-		.BYTE	>[byte_151C1A]
+		.BYTE	>[_tlm_still_tiles_list20]
+		.BYTE	>[_tlm_still_tiles_list21]
+		.BYTE	>[_tlm_still_tiles_list22]
+		.BYTE	>[_tlm_still_tiles_list23]
+		.BYTE	>[_tlm_still_tiles_list24]
+		.BYTE	>[_tlm_still_tiles_list25]
+		.BYTE	>[_tlm_still_tiles_list26]
+		.BYTE	>[_tlm_still_tiles_list27]
+		.BYTE	>[_tlm_still_tiles_list28]
+		.BYTE	>[_tlm_still_tiles_list29]
+		.BYTE	>[_tlm_still_tiles_list2A]
+		.BYTE	>[_tlm_still_tiles_list2B]
+		.BYTE	>[_tlm_still_tiles_list2C]
+		.BYTE	>[_tlm_still_tiles_list2D]
+		.BYTE	>[_tlm_still_tiles_list2E]
+		.BYTE	>[_tlm_still_tiles_list2F]
+		.BYTE	>[_tlm_still_tiles_list30]
+		.BYTE	>[_tlm_still_tiles_list31]
+		.BYTE	>[_tlm_still_tiles_list32]
+		.BYTE	>[_tlm_still_tiles_list33]
+		.BYTE	>[_tlm_still_tiles_list34]
+		.BYTE	>[_tlm_still_tiles_list35]
+		.BYTE	>[_tlm_still_tiles_list36]
+		.BYTE	>[_tlm_still_tiles_list37]
+		.BYTE	>[_tlm_still_tiles_list38]
 		.BYTE	0
 		.BYTE	0
 		.BYTE	0
@@ -3591,109 +3398,109 @@ off_151983:
 		.BYTE	>[byte_151EA4]
 		.BYTE	0
 		.BYTE	>[byte_151E26]
-byte_151A82:
+_tlm_still_tiles_list00:
 		.BYTE	$80,$00,$80,$10,$80,$11,$80,$01
-byte_151A8A:
+_tlm_still_tiles_list19:
 		.BYTE	$80,$04,$80,$14,$80,$15,$80,$05
-byte_151A92:
+_tlm_still_tiles_list1A:
 		.BYTE	$80,$02,$C0,$12,$C0,$13,$80,$03
-byte_151A9A:
+_tlm_still_tiles_list01:
 		.BYTE	$80,$06,$80,$16,$80,$17,$80,$07
-byte_151AA2:
+_tlm_still_tiles_list02:
 		.BYTE	$80,$08,$80,$18,$80,$19,$80,$09
-byte_151AAA:
+_tlm_still_tiles_list03:
 		.BYTE	$80,$0A,$80,$1A,$80,$1B,$80,$0B
-byte_151AB2:
+_tlm_still_tiles_list04:
 		.BYTE	$80,$0C,$80,$1C,$80,$1D,$80,$0D
-byte_151ABA:
+_tlm_still_tiles_list05:
 		.BYTE	$40,$0E,$80,$1E,$80,$1F,$80,$0F
-byte_151AC2:
+_tlm_still_tiles_list06:
 		.BYTE	$40,$20,$80,$30,$80,$31,$80,$21
-byte_151ACA:
+_tlm_still_tiles_list07:
 		.BYTE	$40,$22,$80,$32,$80,$33,$80,$23
-byte_151AD2:
+_tlm_still_tiles_list08:
 		.BYTE	$40,$24,$80,$34,$80,$35,$80,$25
-byte_151ADA:
+_tlm_still_tiles_list09:
 		.BYTE	$40,$26,$80,$36,$80,$37,$80,$27
-byte_151AE2:
+_tlm_still_tiles_list0A:
 		.BYTE	$40,$28,$80,$38,$80,$39,$80,$29
-byte_151AEA:
+_tlm_still_tiles_list0B:
 		.BYTE	$40,$2A,$80,$3A,$80,$3B,$80,$2B
-byte_151AF2:
+_tlm_still_tiles_list0C:
 		.BYTE	$40,$2C,$80,$3C,$80,$3D,$80,$2D
-byte_151AFA:
+_tlm_still_tiles_list0D:
 		.BYTE	$80,$2E,$80,$3E,$80,$3F,$80,$2F
-byte_151B02:
+_tlm_still_tiles_list0E:
 		.BYTE	$80,$40,$80,$50,$80,$51,$80,$41
-byte_151B0A:
+_tlm_still_tiles_list0F:
 		.BYTE	$80,$42,$80,$52,$80,$53,$80,$43
-byte_151B12:
+_tlm_still_tiles_list10:
 		.BYTE	$80,$44,$80,$54,$80,$55,$80,$45
-byte_151B1A:
+_tlm_still_tiles_list11:
 		.BYTE	$80,$46,$80,$56,$80,$57,$80,$47
-byte_151B22:
+_tlm_still_tiles_list12:
 		.BYTE	$80,$48,$80,$58,$80,$59,$80,$49
-byte_151B2A:
+_tlm_still_tiles_list13:
 		.BYTE	$80,$4A,$80,$5A,$80,$5B,$80,$4B
-byte_151B32:
+_tlm_still_tiles_list14:
 		.BYTE	$80,$4C,$80,$5C,$80,$5D,$80,$4D
-byte_151B3A:
+_tlm_still_tiles_list15:
 		.BYTE	$87,$A8,$87,$B8,$87,$B9,$87,$A9
-byte_151B42:
+_tlm_still_tiles_list16:
 		.BYTE	$87,$C8,$87,$D8,$87,$D9,$87,$C9
-byte_151B4A:
+_tlm_still_tiles_list17:
 		.BYTE	$81,$6C,$81,$7C,$81,$7D,$81,$6D
-byte_151B52:
+_tlm_still_tiles_list18:
 		.BYTE	$81,$6E,$81,$7E,$81,$7F,$81,$6F
-byte_151B5A:
+_tlm_still_tiles_list20:
 		.BYTE	$00,$4E,$00,$5E,$00,$5F,$00,$4F
-byte_151B62:
+_tlm_still_tiles_list21:
 		.BYTE	$00,$60,$00,$70,$00,$71,$00,$61
-byte_151B6A:
+_tlm_still_tiles_list22:
 		.BYTE	$00,$62,$00,$72,$00,$73,$00,$63
-byte_151B72:
+_tlm_still_tiles_list23:
 		.BYTE	$00,$64,$00,$74,$00,$75,$00,$65
-byte_151B7A:
+_tlm_still_tiles_list24:
 		.BYTE	$00,$66,$00,$76,$80,$77,$00,$67
-byte_151B82:
+_tlm_still_tiles_list25:
 		.BYTE	$00,$68,$80,$78,$80,$79,$00,$69
-byte_151B8A:
+_tlm_still_tiles_list26:
 		.BYTE	$00,$6A,$00,$7A,$00,$7B,$00,$6B
-byte_151B92:
+_tlm_still_tiles_list27:
 		.BYTE	$00,$6C,$40,$7C,$40,$7D,$00,$6D
-byte_151B9A:
+_tlm_still_tiles_list28:
 		.BYTE	$00,$6E,$80,$7E,$80,$7F,$00,$6F
-byte_151BA2:
+_tlm_still_tiles_list29:
 		.BYTE	$00,$80,$00,$90,$80,$91,$00,$81
-byte_151BAA:
+_tlm_still_tiles_list2A:
 		.BYTE	$00,$82,$40,$92,$80,$93,$00,$83
-byte_151BB2:
+_tlm_still_tiles_list2B:
 		.BYTE	$00,$84,$00,$94,$00,$95,$00,$85
-byte_151BBA:
+_tlm_still_tiles_list2C:
 		.BYTE	$00,$86,$00,$96,$00,$97,$00,$87
-byte_151BC2:
+_tlm_still_tiles_list2D:
 		.BYTE	$00,$88,$00,$98,$00,$99,$00,$89
-byte_151BCA:
+_tlm_still_tiles_list2E:
 		.BYTE	$00,$8A,$80,$9A,$80,$9B,$00,$8B
-byte_151BD2:
+_tlm_still_tiles_list2F:
 		.BYTE	$00,$8C,$80,$9C,$80,$9D,$00,$8D
-byte_151BDA:
+_tlm_still_tiles_list30:
 		.BYTE	$00,$8E,$00,$9E,$00,$9F,$00,$8F
-byte_151BE2:
+_tlm_still_tiles_list31:
 		.BYTE	$00,$A0,$00,$B0,$00,$B1,$00,$A1
-byte_151BEA:
+_tlm_still_tiles_list32:
 		.BYTE	$00,$A2,$80,$B2,$80,$B3,$00,$A3
-byte_151BF2:
+_tlm_still_tiles_list33:
 		.BYTE	$00,$A4,$80,$B4,$80,$B5,$00,$A5
-byte_151BFA:
+_tlm_still_tiles_list34:
 		.BYTE	$00,$A6,$80,$B6,$80,$B7,$00,$A7
-byte_151C02:
+_tlm_still_tiles_list35:
 		.BYTE	$07,$AA,$07,$BA,$07,$BB,$07,$AB
-byte_151C0A:
+_tlm_still_tiles_list36:
 		.BYTE	$07,$CA,$07,$DA,$07,$DB,$07,$CB
-byte_151C12:
+_tlm_still_tiles_list37:
 		.BYTE	$07,$88,$07,$98,$07,$99,$07,$89
-byte_151C1A:
+_tlm_still_tiles_list38:
 		.BYTE	$07,$8A,$07,$9A,$07,$9B,$07,$8B
 byte_151C22:
 		.BYTE	$40,$A8,$40,$B8,$40,$B9,$40,$A9

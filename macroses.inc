@@ -604,6 +604,37 @@ OP_ADD	EQU	3
 	#endif
 	ENDM
 
+	; tmp game specific, will optimize next iteration
+	; \t\tLDA\t\t_map_bg_anim_counter\n\t\tAND\t\t\#\$03\n\t\tASL\n\t\tSTA\t\t_ptr0\n\t\tTXA\n\t\tASL\n\t\tASL\n\t\tASL\n\t\tORA\t\t_ptr0\n\t\tTAX\n\t\tLDA\t\t([^\,]*)\,X\n\t\tSTA\t\tword_6C\+1\n\t\tINX\n\t\tLDA\t\t\1\,X\n\t\tSTA\t\tword_6C\n\t\tSEC\n
+	; \t\tLDA\t\t_map_bg_anim_counter\n\t\tAND\t\t\#\$01\n\t\tASL\n\t\tSTA\t\t_ptr0\n\t\tTXA\n\t\tASL\n\t\tASL\n\t\tORA\t\t_ptr0\n\t\tTAX\n\t\tLDA\t\t([^\,]*)\,X\n\t\tSTA\t\tword_6C\+1\n\t\tINX\n\t\tLDA\t\t\1\,X\n\t\tSTA\t\tword_6C\n\t\tSEC\n
+	; ANIM_FETCH <lib>, <delay>
+	;
+
+	MAC ANIM_FETCH
+		LDA		_map_bg_anim_counter
+		AND		#{2}
+		ASL
+		STA		_ptr0
+		TXA
+	#if {2}=$01
+		ASL
+		ASL
+	#endif
+	#if {2}=$03
+		ASL
+		ASL
+		ASL
+	#endif
+		ORA		_ptr0
+		TAX
+		LDA		{1},X
+		STA		word_6C+1
+		INX
+		LDA		{1},X
+		STA		word_6C
+		SEC
+	ENDM
+
 ;-----------------C-O-M-M-O-N-------------------
 
 	MAC BANK_START

@@ -127,19 +127,19 @@ loc_150019:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state02_map_scroll:
-		LDA		_gui_active_controls_flags
-		AND		#$03
+		LDA		_gui_active_controls_flags		; jump to map scroll if upper-left area are
+		AND		#$03							; filled with map, replacing the GUI
 		BEQ		.mini_map_wait_for_scrolls
 		LSR
-		BCC		.mini_map_hor_queue
-		JSR		sub_136775						; vert map ppu data queue
+		BCC		.mini_map_hor_queue				; or check which one still displayed
+		JSR		_map_scroll_top_redraw			; top side of map ppu data queue
 		BCS		.j_game_state_common
 		LDA		_gui_active_controls_flags
 		AND		#$FE
 		STA		_gui_active_controls_flags
 		JMP		_game_state_common
 .mini_map_hor_queue:
-		JSR		sub_136750
+		JSR		_map_scroll_left_redraw			; left side of map ppu data queue
 		BCS		.j_game_state_common
 		LDA		_gui_active_controls_flags
 		AND		#$FD
@@ -788,8 +788,8 @@ _game_state0E:
 ;		BCS		loc_136582
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136582
-		INC		_tmp535
-		LDA		_cur_map_wnd_pos._COL
+		INC		_map_bg_anim_counter			; increase animation counter for
+		LDA		_cur_map_wnd_pos._COL			; map bg objects
 		STA		_update_rect_left
 		CLC
 		ADC		#$18
@@ -1043,7 +1043,9 @@ _constr_palette_redraw:
 ;		BCS		locret_136745
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136745
-		JSR		sub_136746
+		JSR		_constr_palette_area_pos_calc
+		JSR		_constr_palette_static_nt_draw
+		JSR		_constr_palette_static_extnt_draw
 		LDA		#$00
 		STA		_constr_palette_redraw_req
 		LDA		_cur_map_wnd_pos._COL
@@ -1067,19 +1069,112 @@ locret_136745:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136746:
-		JSR		sub_1369B0
-		JSR		sub_136A19
-		JMP		sub_136A93
-
+_constr_palette_static_nt_draw:
+		LDY		#$00
+;		LDX		_ppu_queue_pos_tail				; BUG, load pos TAIL instead of head!
+		PPUQSTART								; FIX, does not make any difference because
+		MOVW	_ptr0,byte_7A					; we have both values the same at this point
+		MOVW	_tmp2,byte_7E
+loc_136A2D:
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		LDA		byte_7C
+		STA		_tmp4
+		ORA		#$80							; vertical draw flag set
+		PPUQMOVA
+		LDA		byte_7D
+		STA		_tmp5
+loc_136A47:
+		LDA		_tlm_constr_palette_static_nt,Y	; transposed construction palette nt
+		INY
+		PPUQMOVA
+		DEC		_tmp4
+		BNE		loc_136A47
+		LDA		_tmp5
+		BEQ		loc_136A75						; test for wrap
+		PPUQMOVB	_ptr0,OP_AND,#$1F			; do wrap vertical
+		PPUQMOVB	#$20,OP_NOP,0
+		LDA		_tmp5
+		STA		_tmp4
+		ORA		#$80
+		PPUQMOVA
+		LDA		#$00
+		STA		_tmp5
+		BEQ		loc_136A47
+loc_136A75:
+		INC		_ptr0
+		DEC		_tmp2
+		BNE		loc_136A2D						; test for hor wrap
+		DO_WRAP	_tmp2,_tmp3,loc_136A90			; do hor wrap
+		DEC		_ptr0
+		LDA		_ptr0
+		AND		#$E0
+		STA		_ptr0
+		JMP		loc_136A2D
+loc_136A90:
+		PPUQEND
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136750:
+_constr_palette_static_extnt_draw:
+		LDY		#$00
+;		LDX		_extnt_queue_pos_tail			; BUG, again load TAIL! why!?
+		EXTQSTART
+		LDA		byte_7A							; reload ppu offset but with
+		STA		_ptr0							; adjust to EXTNT RAM
+		LDA		byte_7B
+		CLC
+		ADC		#$3C
+		STA		_ptr0+1
+		MOVW	_tmp2,byte_7E
+loc_136AAA:
+		EXTQMOVB	_ptr0,OP_NOP,0				; the same vertical mode
+		EXTQMOVB	_ptr0+1,OP_NOP,0
+		LDA		byte_7C
+		STA		_tmp4
+		ORA		#$80
+		EXTQMOVA
+		LDA		byte_7D
+		STA		_tmp5
+loc_136AC4:
+		LDA		_tlm_constr_palette_static_extnt,Y
+		INY
+		EXTQMOVA
+		DEC		_tmp4
+		BNE		loc_136AC4
+		LDA		_tmp5
+		BEQ		loc_136AF2
+		EXTQMOVB	_ptr0,OP_AND,#$1F
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
+		LDA		_tmp5
+		STA		_tmp4
+		ORA		#$80
+		EXTQMOVA
+		LDA		#$00
+		STA		_tmp5
+		BEQ		loc_136AC4
+loc_136AF2:
+		INC		_ptr0
+		DEC		_tmp2
+		BNE		loc_136AAA
+		DO_WRAP	_tmp2,_tmp3,loc_136B0D
+		DEC		_ptr0
+		LDA		_ptr0
+		AND		#$E0
+		STA		_ptr0
+		JMP		loc_136AAA
+loc_136B0D:
+		EXTQEND
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_map_scroll_left_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_136759
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136759
-		JSR		sub_13675A
+		JSR		_constr_palette_area_pos_calc
+		JSR		_map_scroll_left_draw
 		CLC
 		RTS
 locret_136759:
@@ -1087,10 +1182,149 @@ locret_136759:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_13675A:
-		JSR		sub_1369B0
-		JMP		sub_136B10
+_map_scroll_left_draw:
+		PPUQSTART								; backup PPU queue positions to tmp vars
+		STX		byte_80							; which we will use instead
+		EXTQSTART
+		STX		byte_81
+		LDA		_cur_map_wnd_pos._COL			; calculate invalidate area
+		STA		_update_rect_right				; on the city map and starting position
+		SEC
+		SBC		#$07
+		STA		_update_rect_left
+		LDA		_cur_map_wnd_pos._ROW
+		STA		_update_rect_top
+		CLC
+		ADC		#$15
+		STA		_update_rect_bottom
+loc_136B2A:
+		LDA		_update_rect_left
+		CMP		_update_rect_right
+		BEQ		loc_136B56
+		STA		_tmp_tile_pos._COL
+		LDA		_update_rect_top
+		STA		_tmp_tile_pos._ROW
+		JSR		_map_scroll_left_column_draw
+		INC		_update_rect_left
+		DEC		byte_7E
+		BEQ		loc_136B43
+		INC		byte_7A
+		BNE		loc_136B2A
+loc_136B43:
+		LDA		byte_7A
+		AND		#$E0
+		STA		byte_7A
+		DO_WRAP	byte_7E,byte_7F,loc_136B56
+		JMP		loc_136B2A
+loc_136B56:
+		LDX		byte_80
+		PPUQEND
+		LDX		byte_81
+		EXTQEND
+		RTS
 
+; =============== S U B	R O U T	I N E =======================================
+_map_scroll_left_column_draw:
+		LDX		byte_80
+		PPUQMOVB	byte_7A,OP_NOP,0
+		PPUQMOVB	byte_7B,OP_NOP,0
+		PPUQMOVB	byte_7C,OP_ORA,#$80
+		STX		byte_80
+		LDX		byte_81
+		EXTQMOVB	byte_7A,OP_NOP,0
+		EXTQMOVB	byte_7B,OP_ADD,#$3C
+		LDA		byte_7C
+		STA		byte_82
+		ORA		#$80
+		EXTQMOVA
+		STX		byte_81
+		LDA		byte_7D
+		STA		byte_83
+loc_136B98:
+		SEC
+		JSR		_map_get_ppu_tile
+		LDX		byte_80
+		PPUQMOVB	word_6C,OP_NOP,0
+		STX		byte_80
+		LDX		byte_81
+		EXTQMOVB	word_6C+1,OP_NOP,0
+		STX		byte_81
+		INC		_tmp_tile_pos._ROW
+		CLC
+		DEC		byte_82
+		BNE		loc_136B98
+		DO_WRAP	byte_82,byte_83,locret_136BF8
+		LDX		byte_80
+		PPUQMOVB	byte_7A,OP_AND,#$1F
+		PPUQMOVB	#$20,OP_NOP,0
+		PPUQMOVB	byte_82,OP_ORA,#$80
+		STX		byte_80
+		LDX		byte_81
+		EXTQMOVB	byte_7A,OP_AND,#$1F
+		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
+		EXTQMOVB	byte_82,OP_ORA,#$80
+		STX		byte_81
+		JMP		loc_136B98
+locret_136BF8:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_constr_palette_area_pos_calc:
+		LDA		_cur_screen_tile._ROW			; simplified version of CIADDB/WRAP
+		LSR										; code
+		LDX		#$20							; row unchanged
+		MULXA
+		STA		_ptr0
+		LDA		_cur_screen_tile._COL			; calc redraw area
+		LSR
+		CLC
+		ADC		_ptr0
+		STA		byte_7A							; 7A/7B - ppu offset
+		TXA
+		ADC		#$20
+		STA		byte_7B
+		CMP		#$23
+		BNE		loc_1369E2
+		LDA		byte_7A
+		CMP		#$C0
+		BCC		loc_1369E2
+		SBC		#$C0
+		STA		byte_7A
+		LDA		#$20
+		STA		byte_7B
+loc_1369E2:
+		LDA		_cur_screen_tile._ROW			; 7C - height, 7D - height wrap
+		LSR
+		CMP		#$0A
+		BCC		loc_1369F5
+		SBC		#$09
+		STA		byte_7D
+		LDA		#$15
+		SBC		byte_7D
+		STA		byte_7C
+		BCS		loc_1369FD
+loc_1369F5:
+		LDA		#$15
+		STA		byte_7C
+		LDA		#$00
+		STA		byte_7D
+loc_1369FD:
+		LDA		byte_7A							; 7F - width, 7D - width wrap
+		AND		#$1F
+		CMP		#$1A
+		BCC		loc_136A10
+		SBC		#$19
+		STA		byte_7F
+		LDA		#$07
+		SBC		byte_7F
+		STA		byte_7E
+		RTS
+loc_136A10:
+		LDA		#$07
+		STA		byte_7E
+		LDA		#$00
+		STA		byte_7F
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _hud_static_redraw:
@@ -1098,9 +1332,9 @@ _hud_static_redraw:
 ;		BCS		locret_136774
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136774
-		JSR		_map_full_screen_pos_calc
-		JSR		_hud_static_controls_nt_draw
-		JSR		_hud_static_controls_extnt_draw
+		JSR		_game_hud_area_pos_calc
+		JSR		_hud_static_nt_draw
+		JSR		_hud_static_extnt_draw
 		LDA		#$00
 		STA		_hud_static_redraw_req
 		CLC
@@ -1110,19 +1344,79 @@ locret_136774:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136775:
-;		JSR		_buffers_test_flush
+_map_scroll_top_redraw:
+;		JSR		_buffers_test_flush				; REDUNDANT
 ;		BCS		locret_136780
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_136780
-		JSR		_map_full_screen_pos_calc
-		JMP		sub_136781
+		JSR		_game_hud_area_pos_calc
+		JSR		_map_scroll_top_draw
+		CLC
+		RTS
 locret_136780:
 		SEC										; FIX, flush wait optimize workaround
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136781:
+_game_hud_area_pos_calc:
+		LDA		_cur_screen_tile._ROW			; the only case when CIADDB can't
+		LSR										; be used, because here we subtract
+		SEC										; the current pos with constant.
+		SBC		#$07
+		BCS		loc_136862
+		ADC		#$1E
+loc_136862:
+		PHA										; store screen row pos for now
+		LDX		#$20
+		MULXA
+		STA		_ptr0
+		LDA		_cur_screen_tile._COL
+		LSR
+		CLC
+		ADC		_ptr0
+		STA		byte_7A							; 7A/7B now has a pointer to ppu
+		TXA
+		ADC		#$20
+		STA		byte_7B
+		CMP		#$23
+		BNE		loc_136892						; wrap vertical ppu position to 23C0
+		LDA		byte_7A
+		CMP		#$C0
+		BCC		loc_136892
+		SBC		#$C0
+		STA		byte_7A
+		LDA		#$20
+		STA		byte_7B
+loc_136892:
+		PLA
+		CMP		#$18							; calc screen line width
+		BCC		loc_1368A3						; and line wrap width
+		SBC		#$17
+		STA		byte_7D
+		LDA		#$07
+		SBC		byte_7D
+		STA		byte_7C
+		BCS		loc_1368AB
+loc_1368A3:
+		LDA		#$07							; or line without wrap by default
+		STA		byte_7C
+		LDA		#$00
+		STA		byte_7D
+loc_1368AB:
+		LDA		byte_7A
+		AND		#$1F
+		EOR		#$FF
+		SEC
+		ADC		#$20
+		CMP		#$20
+		BCC		loc_1368BA
+		LDA		#$00
+loc_1368BA:
+		STA		byte_7E
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_map_scroll_top_draw:
 		LDA		_ppu_queue_pos_head
 		STA		_tmp544
 		LDA		_extnt_queue_pos_head
@@ -1190,7 +1484,7 @@ sub_1367D3:
 		STA		_tmp547
 		SEC
 loc_136823:
-		JSR		sub_137E6E
+		JSR		_map_get_ppu_tile
 		LDX		_tmp544
 		PPUQMOVB	word_6C,OP_NOP,0
 		STX		_tmp544
@@ -1212,65 +1506,7 @@ locret_136857:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_full_screen_pos_calc:
-		LDA		_cur_screen_tile._ROW
-		LSR
-		SEC
-		SBC		#$07
-		BCS		loc_136862
-		ADC		#$1E
-loc_136862:
-		PHA
-		LDX		#$20
-		MULXA
-		STA		_ptr0
-		LDA		_cur_screen_tile._COL
-		LSR
-		CLC
-		ADC		_ptr0
-		STA		byte_7A
-		TXA
-		ADC		#$20
-		STA		byte_7B
-		CMP		#$23
-		BNE		loc_136892
-		LDA		byte_7A
-		CMP		#$C0
-		BCC		loc_136892
-		SBC		#$C0
-		STA		byte_7A
-		LDA		#$20
-		STA		byte_7B
-loc_136892:
-		PLA
-		CMP		#$18
-		BCC		loc_1368A3
-		SBC		#$17
-		STA		byte_7D
-		LDA		#$07
-		SBC		byte_7D
-		STA		byte_7C
-		BCS		loc_1368AB
-loc_1368A3:
-		LDA		#$07
-		STA		byte_7C
-		LDA		#$00
-		STA		byte_7D
-loc_1368AB:
-		LDA		byte_7A
-		AND		#$1F
-		EOR		#$FF
-		SEC
-		ADC		#$20
-		CMP		#$20
-		BCC		loc_1368BA
-		LDA		#$00
-loc_1368BA:
-		STA		byte_7E
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_static_controls_nt_draw:
+_hud_static_nt_draw:
 		MOVWO	_ptr0,_tlm_hud_static_nt
 		LDA		byte_7A
 		AND		#$E0
@@ -1314,7 +1550,7 @@ loc_136932:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_hud_static_controls_extnt_draw:
+_hud_static_extnt_draw:
 		MOVWO	_ptr0,_tlm_hud_static_extnt
 		LDA		byte_7A
 		AND		#$E0
@@ -1357,257 +1593,6 @@ loc_13699B:
 		BNE		loc_136956
 loc_1369AD:
 		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_1369B0:
-		LDA		_cur_screen_tile._ROW
-		LSR
-		LDX		#$20
-		MULXA
-		STA		_ptr0
-		LDA		_cur_screen_tile._COL
-		LSR
-		CLC
-		ADC		_ptr0
-		STA		byte_7A
-		TXA
-		ADC		#$20
-		STA		byte_7B
-		CMP		#$23
-		BNE		loc_1369E2
-		LDA		byte_7A
-		CMP		#$C0
-		BCC		loc_1369E2
-		SBC		#$C0
-		STA		byte_7A
-		LDA		#$20
-		STA		byte_7B
-loc_1369E2:
-		LDA		_cur_screen_tile._ROW
-		LSR
-		CMP		#$0A
-		BCC		loc_1369F5
-		SBC		#$09
-		STA		byte_7D
-		LDA		#$15
-		SBC		byte_7D
-		STA		byte_7C
-		BCS		loc_1369FD
-loc_1369F5:
-		LDA		#$15
-		STA		byte_7C
-		LDA		#$00
-		STA		byte_7D
-loc_1369FD:
-		LDA		byte_7A
-		AND		#$1F
-		CMP		#$1A
-		BCC		loc_136A10
-		SBC		#$19
-		STA		byte_7F
-		LDA		#$07
-		SBC		byte_7F
-		STA		byte_7E
-		RTS
-loc_136A10:
-		LDA		#$07
-		STA		byte_7E
-		LDA		#$00
-		STA		byte_7F
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_136A19:
-		LDY		#$00
-		LDX		_ppu_queue_pos_tail
-		LDA		byte_7A
-		STA		_ptr0
-		LDA		byte_7B
-		STA		_ptr0+1
-		LDA		byte_7E
-		STA		_tmp2
-		LDA		byte_7F
-		STA		_tmp3
-loc_136A2D:
-		PPUQMOVB	_ptr0,OP_NOP,0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		LDA		byte_7C
-		STA		_tmp4
-		ORA		#$80
-		PPUQMOVA
-		LDA		byte_7D
-		STA		_tmp5
-loc_136A47:
-		LDA		byte_15175E,Y
-		INY
-		PPUQMOVA
-		DEC		_tmp4
-		BNE		loc_136A47
-		LDA		_tmp5
-		BEQ		loc_136A75
-		PPUQMOVB	_ptr0,OP_AND,#$1F
-		PPUQMOVB	#$20,OP_NOP,0
-		LDA		_tmp5
-		STA		_tmp4
-		ORA		#$80
-		PPUQMOVA
-		LDA		#$00
-		STA		_tmp5
-		BEQ		loc_136A47
-loc_136A75:
-		INC		_ptr0
-		DEC		_tmp2
-		BNE		loc_136A2D
-		DO_WRAP	_tmp2,_tmp3,loc_136A90
-		DEC		_ptr0
-		LDA		_ptr0
-		AND		#$E0
-		STA		_ptr0
-		JMP		loc_136A2D
-loc_136A90:
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_136A93:
-		LDY		#$00
-		LDX		_extnt_queue_pos_tail
-		LDA		byte_7A
-		STA		_ptr0
-		LDA		byte_7B
-		CLC
-		ADC		#$3C
-		STA		_ptr0+1
-		LDA		byte_7E
-		STA		_tmp2
-		LDA		byte_7F
-		STA		_tmp3
-loc_136AAA:
-		EXTQMOVB	_ptr0,OP_NOP,0
-		EXTQMOVB	_ptr0+1,OP_NOP,0
-		LDA		byte_7C
-		STA		_tmp4
-		ORA		#$80
-		EXTQMOVA
-		LDA		byte_7D
-		STA		_tmp5
-loc_136AC4:
-		LDA		byte_1517F1,Y
-		INY
-		EXTQMOVA
-		DEC		_tmp4
-		BNE		loc_136AC4
-		LDA		_tmp5
-		BEQ		loc_136AF2
-		EXTQMOVB	_ptr0,OP_AND,#$1F
-		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
-		LDA		_tmp5
-		STA		_tmp4
-		ORA		#$80
-		EXTQMOVA
-		LDA		#$00
-		STA		_tmp5
-		BEQ		loc_136AC4
-loc_136AF2:
-		INC		_ptr0
-		DEC		_tmp2
-		BNE		loc_136AAA
-		DO_WRAP	_tmp2,_tmp3,loc_136B0D
-		DEC		_ptr0
-		LDA		_ptr0
-		AND		#$E0
-		STA		_ptr0
-		JMP		loc_136AAA
-loc_136B0D:
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_136B10:
-		LDA		_ppu_queue_pos_head
-		STA		byte_80
-		LDA		_extnt_queue_pos_head
-		STA		byte_81
-		LDA		_cur_map_wnd_pos._COL
-		STA		_update_rect_right
-		SEC
-		SBC		#$07
-		STA		_update_rect_left
-		LDA		_cur_map_wnd_pos._ROW
-		STA		_update_rect_top
-		CLC
-		ADC		#$15
-		STA		_update_rect_bottom
-loc_136B2A:
-		LDA		_update_rect_left
-		CMP		_update_rect_right
-		BEQ		loc_136B56
-		STA		_tmp_tile_pos._COL
-		LDA		_update_rect_top
-		STA		_tmp_tile_pos._ROW
-		JSR		sub_136B5F
-		INC		_update_rect_left
-		DEC		byte_7E
-		BEQ		loc_136B43
-		INC		byte_7A
-		BNE		loc_136B2A
-loc_136B43:
-		LDA		byte_7A
-		AND		#$E0
-		STA		byte_7A
-		DO_WRAP	byte_7E,byte_7F,loc_136B56
-		JMP		loc_136B2A
-loc_136B56:
-		LDA		byte_80
-		LDX		byte_81
-		STA		_ppu_queue_pos_head
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_136B5F:
-		LDX		byte_80
-		PPUQMOVB	byte_7A,OP_NOP,0
-		PPUQMOVB	byte_7B,OP_NOP,0
-		PPUQMOVB	byte_7C,OP_ORA,#$80
-		STX		byte_80
-		LDX		byte_81
-		EXTQMOVB	byte_7A,OP_NOP,0
-		EXTQMOVB	byte_7B,OP_ADD,#$3C
-		LDA		byte_7C
-		STA		byte_82
-		ORA		#$80
-		EXTQMOVA
-		STX		byte_81
-		LDA		byte_7D
-		STA		byte_83
-loc_136B98:
-		SEC
-		JSR		sub_137E6E
-		LDX		byte_80
-		PPUQMOVB	word_6C,OP_NOP,0
-		STX		byte_80
-		LDX		byte_81
-		EXTQMOVB	word_6C+1,OP_NOP,0
-		STX		byte_81
-		INC		_tmp_tile_pos._ROW
-		CLC
-		DEC		byte_82
-		BNE		loc_136B98
-		DO_WRAP	byte_82,byte_83,locret_136BF8
-		LDX		byte_80
-		PPUQMOVB	byte_7A,OP_AND,#$1F
-		PPUQMOVB	#$20,OP_NOP,0
-		PPUQMOVB	byte_82,OP_ORA,#$80
-		STX		byte_80
-		LDX		byte_81
-		EXTQMOVB	byte_7A,OP_AND,#$1F
-		EXTQMOVB	#>[_MMC5_EXRAM],OP_NOP,0
-		EXTQMOVB	byte_82,OP_ORA,#$80
-		STX		byte_81
-		JMP		loc_136B98
-locret_136BF8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3865,7 +3850,7 @@ loc_137CE8:
 		JSR		sub_137DE8
 		SEC
 loc_137CEF:
-		JSR		sub_137E6E
+		JSR		_map_get_ppu_tile
 		JSR		sub_137E15
 		JSR		sub_137E2A
 		BCC		loc_137CEF
@@ -4059,74 +4044,77 @@ loc_137E6C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137E6E:
-		LDA		_tmp6E+1
-		BEQ		loc_137E7C
+_map_get_ppu_tile:
+		LDA		_tmp6E+1						; test if we already calculated buffer ofs
+		BEQ		loc_137E7C						; if not, test out of the map cases
 		BCS		loc_137E7C
 		LDA		_tmp_tile_pos._COL
 		CMP		#$4C
-		BCS		loc_137E86
-		BCC		loc_137EAF
+		BCS		.map_def_tile_select
+		BCC		.map_skip_tile_pos_calc
 loc_137E7C:
 		LDA		_tmp_tile_pos._COL
 		CMP		#$4C
-		BCS		loc_137E86
+		BCS		.map_def_tile_select
 		ORA		_tmp_tile_pos._ROW
 		BPL		loc_137E93
-loc_137E86:
+.map_def_tile_select:
 		LDA		#$00
 		STA		_tmp6E+1
-		MOVWI	word_6C,$01DF
+		MOVWI	word_6C,$01DF					; return default black tile idx
 		RTS
 loc_137E93:
 		BUFPOS	_tmp6E,_tmp_tile_pos._COL,_tmp_tile_pos._ROW,#$4C,#>[_city_map]	; DST=(_tmp_tile_pos._ROW*#$4C+_tmp_tile_pos._COL)+#>[_city_map]00
-		BNE		loc_137EB5
-loc_137EAF:
+		BNE		loc_137EB5						; calc map tile offset, BNE unconditiona
+.map_skip_tile_pos_calc:
 		INCW	_tmp6E
 loc_137EB5:
 		LDX		#$00
 		LDY		#$00
 		LDA		(_tmp6E),Y
-		BPL		loc_137EC4
-		CMP		#$90
-		BCS		loc_137ED3
-		JSR		sub_137EDD
-loc_137EC4:
+		BPL		.map_get_building_tile			; for all tiles less than 80, draw as building
+		CMP		#_MAP_GROUND					; for internal building tiles 80-8F draw the rest of
+		BCS		.map_single_tiles				; previously selected building
+		JSR		_map_get_building_idx			; but first get the building idx
+.map_get_building_tile:
 		LDY		#$01
-		STY		_tmp533
+		STY		_tmp533							; default values for other anims
 		STX		_tmp534
-		JSR		sub_150BF7
-		BCC		loc_137ED6
+		JSR		_map_get_animated_areas_ppu_tile; read an actual building ppu display tile
+		BCC		.map_no_anim_tiles				; if any
 		BCS		loc_137ED9
-loc_137ED3:
-		JSR		sub_150FCF
-loc_137ED6:
-		JSR		sub_137EFB
+.map_single_tiles:
+		TAY										; OPTIMIZED, backup
+		JSR		_map_get_single_ppu_tile_lib	; select lib data position for selected tiles
+		TYA										; OPTIMIZED, restore
+.map_no_anim_tiles:
+		JSR		_map_get_still_single_tiles
 loc_137ED9:
-		JMP		sub_15104E
+		JMP		_map_get_anim_single_tiles
 
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137EDD:
-		AND		#$0F
-		TAX
-		LDA		byte_137EEC,X
-		TAY
-		DEC		_tmp6E+1
+_map_get_building_idx:
+		AND		#$0F							; one more of similar routines to calc
+		TAX										; the real building index by selected internal
+		LDA		_map_internal_tiles_ofs_list,X	; tile
+		TAY										; this is a little bit optimized version
+		DEC		_tmp6E+1						; with only high nibble of ptr changing
 		LDA		(_tmp6E),Y
 		INC		_tmp6E+1
-		INX
+		INX										; store the internal tile index+1
 		RTS
-byte_137EEC:
+
+_map_internal_tiles_ofs_list:
 		.BYTE	$B4,$B3,$FF,$68,$67,$66,$B2,$FE,$1C,$1B,$1A,$19,$65,$B1,$FD
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137EFB:
-		STX		_tmp2
-		TAX
-		LDA		off_151884,X
+_map_get_still_single_tiles:
+		STX		_tmp2							; X = building tile idx
+		TAX										; A = map tile idx
+		LDA		_tlm_still_tiles_lib_lo,X
 		STA		_ptr0
-		LDA		off_151983,X
+		LDA		_tlm_still_tiles_lib_hi,X
 		STA		_ptr0+1
 		LDA		_tmp2
 		ASL
