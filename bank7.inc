@@ -589,7 +589,7 @@ _test_build_available_tile:
 		BEQ		.train_station_test
 loc_B8401:
 		PLA
-.regular_bulldoze:
+.full_bulldoze_test:
 		LDY		_const_palette_selected_idx
 		CPY		#$04
 		BEQ		.common_bulldoze_test			; skip additional check for parks
@@ -632,20 +632,19 @@ loc_B842E:
 .water_claim_test:
 		PLA
 		CMP		#_MAP_WATER						; water claims only full watered area including shores
-		BCC		.regular_bulldoze
+		BCC		.full_bulldoze_test				; with no charge for bulldozing the shores
 		CMP		#_MAP_GROUND01
-		BCC		.false
-		CMP		#_MAP_WATER_ROUTE
-		BNE		.regular_bulldoze
-.false:
+		BCC		.allow
+		CMP		#_MAP_WATER_ROUTE				; also special water route
+		BNE		.full_bulldoze_test
 		CLC
 		RTS
 .train_station_test:
 		PLA
-		CMP		#_MAP_RAIL_LR
-		BCC		.regular_bulldoze
+		CMP		#_MAP_RAIL_LR					; can build above the rails with no charge
+		BCC		.full_bulldoze_test
 		CMP		#_MAP_ELECTRO_LR
-		BCS		.regular_bulldoze
+		BCS		.full_bulldoze_test
 ;		CLC										; REDUNDANT, C=0 already here
 		RTS
 
@@ -690,52 +689,13 @@ loc_B8485:
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_screen:
-		LDA		_title_sub_idx
-		CMP		#$02
-		BEQ		loc_B8514
-		INC		_tmp118
-		DEC		_mmc5_operation_in_progress_flag
-		LDA		#$FF
-		STA		_game_core_state
-		JSR		_render_off
-		JSR		_spr_clear
-		LDA		#$08
-		STA		_mmc5_nt_mode_shadow
-		STA		_MMC5_NT_MODE
-		JSRXY	_tlm_res_unpack,_tlm_res_title_main
-		JSR		_wait_for_nmi
-		JSR		_ppu_reset
-		LDX		#$00
-		STX		_game_wnd_spr_mode_flag
-		STX		_tmp118
-		STX		_title_sub_idx
-		STX		_cur_game_mode
-		INX
-		STX		_apu_mus_idx_req
-		LDX		#$03
-		STX		_scr_mode_idx
-		LDA		#$07
-		STA		_screen_pal_cur_bg_idx
-		LDA		#$03
-		STA		_ppu_pal_dequeue_req
-		JSR		_wait_for_nmi
-		LDA		#$83
-		JSR		_pal_load_lib
+;		LDA		_title_sub_idx					; REDUNDANT, never enter here with idx=2
+;		CMP		#$02							; literally impossible
+;		BEQ		.title_loop
+;		INC		_tmp118							; REDUNDANT, actually, not need here too
 		LDA		#$00
-		STA		_mmc5_nt_mode_shadow
-		STA		_MMC5_NT_MODE
-		LDA		#$03
-		STA		_mmc5_chr_banks_shadow+3
-		STA		_MMC5_CHR_BANKSA+3
-		LDA		#$90
-		STA		_ppu_ctrl_shadow
-		LDA		_ppu_mask_shadow
-		AND		#$FC
-		STA		_ppu_mask_shadow
-		INC		_mmc5_operation_in_progress_flag
-		JSR		_render_on
-		JSR		_pal_fade_in
-loc_B8514:
+		STA		_title_sub_idx					; may be $80 here on input sometimes
+.title_loop:
 		JSR		_wait_for_nmi
 		LDA		_pad1_prev_held
 		AND		#$CA
@@ -747,7 +707,7 @@ loc_B8526:
 		BIT		_title_sub_idx
 		BMI		loc_B8534
 		JSR		_spr_finish
-		JMP		loc_B8514
+		JMP		.title_loop
 loc_B8534:
 		JSR		_name_bufs_reset
 		JSR		_spr_clear
@@ -767,11 +727,49 @@ _title_sub_exec:
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub0_init:
 		INC		_title_sub_idx
-		RTS
+		DEC		_mmc5_operation_in_progress_flag
+		LDA		#$FF
+		STA		_game_core_state
+		JSR		_render_off
+		JSR		_spr_clear
+		LDA		#$08
+		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
+		JSRXY	_tlm_res_unpack,_tlm_res_title_main
+		JSR		_wait_for_nmi
+		JSR		_ppu_reset
+		LDX		#$00
+		STX		_game_wnd_spr_mode_flag
+;		STX		_tmp118							; also redundant
+		STX		_cur_game_mode
+		INX
+		STX		_apu_mus_idx_req
+		LDA		#$03
+		STA		_scr_mode_idx
+		STA		_ppu_pal_dequeue_req
+		LDA		#$07
+		STA		_screen_pal_cur_bg_idx
+		JSR		_wait_for_nmi
+		LDA		#$83
+		JSR		_pal_load_lib
+		LDA		#$00
+		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
+		LDA		#$03
+		STA		_mmc5_chr_banks_shadow+3
+		STA		_MMC5_CHR_BANKSA+3
+		LDA		#$90
+		STA		_ppu_ctrl_shadow
+		LDA		_ppu_mask_shadow
+		AND		#$FC
+		STA		_ppu_mask_shadow
+		INC		_mmc5_operation_in_progress_flag
+		JSR		_render_on
+		JMP		_pal_fade_in
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub1_title_input:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_autorep_press				; first title, wait for START
 		AND		#$90
 		BEQ		locret_B855E
 		INC		_title_sub_idx
@@ -781,7 +779,7 @@ locret_B855E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub2_menu_draw:
-		INC		_title_sub_idx
+		INC		_title_sub_idx					; redraw title with menu
 		DEC		_mmc5_operation_in_progress_flag
 		LDA		#$01
 		STA		_game_core_state
@@ -793,7 +791,7 @@ _title_sub2_menu_draw:
 		LDA		#$03
 		STA		_mmc5_chr_banks_shadow+3
 		STA		_MMC5_CHR_BANKSA+3
-		LDXY	_tlm_res_title_menu_default
+		LDXY	_tlm_res_title_menu_default		; draw one of two menu lists
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B858C
 		LDXY	_tlm_res_title_menu_continue
@@ -839,57 +837,57 @@ loc_B85CB:
 _title_sub3_menu_input:
 		LDA		_pad0_autorep_press
 		AND		#$90
-		BNE		loc_B8624
+		BNE		.title_menu_select_apply
 		LDA		_pad0_autorep_press
 		AND		#$0C
-		BEQ		loc_B8631
+		BEQ		.title_menu_default				; test UP/DOWN buttons
 		LDA		#$01
-		STA		_apu_se_flags
+		STA		_apu_se_flags					; menu change sound
 		LDX		_cur_game_mode
-		LDA		_title_menu_item_select_up,X
+		LDA		_title_menu_item_decode,X
 		TAX
-		LDA		_pad0_autorep_press
+		LDA		_pad0_autorep_press				; test one more time, old value lost
 		AND		#$0C
-		BEQ		loc_B8631
+		BEQ		.title_menu_default
 		CMP		#$08
-		BNE		loc_B860F
+		BNE		.title_menu_press_up			; adjust to menu items number
 		LDA		_has_saved_city_data_flag
-		BNE		loc_B8608
+		BNE		loc_B8608						; for case of 4 items
 		DEX
-		BNE		loc_B861C
+		BNE		.title_menu_idx_update
 		LDX		#$04
 loc_B8608:
-		DEX
-		BPL		loc_B861C
+		DEX										; for case of 3 items
+		BPL		.title_menu_idx_update
 		LDX		#$03
-		BNE		loc_B861C
-loc_B860F:
+		BNE		.title_menu_idx_update
+.title_menu_press_up:
 		INX
 		CPX		#$04
-		BCC		loc_B861C
+		BCC		.title_menu_idx_update			; the same for opposite side of menu
 		LDX		#$00
 		LDA		_has_saved_city_data_flag
-		BNE		loc_B861C
+		BNE		.title_menu_idx_update
 		INX
-loc_B861C:
-		LDA		_title_menu_item_select_down,X
+.title_menu_idx_update:
+		LDA		_title_menu_item_encode,X
 		STA		_cur_game_mode
-		BPL		loc_B8631
-loc_B8624:
+		BPL		.title_menu_default
+.title_menu_select_apply:
 		LDA		#$01
 		STA		_apu_se_flags
-		JSR		_title_cursor_draw
+;		JSR		_title_cursor_draw				; REDUNDANT
 		LDA		#$80
-		STA		_title_sub_idx
-		RTS
-loc_B8631:
+		STA		_title_sub_idx					; exit flag
+;		RTS
+.title_menu_default:
 		JMP		_title_cursor_draw
 
 ;_unused_2:
-;		.BYTE	$03,$04
-_title_menu_item_select_up:
+;		.BYTE	$03,$04							; REDUNDANT, unused list of the menu sizes
+_title_menu_item_decode:
 		.BYTE	$00,$02,$03,$01
-_title_menu_item_select_down:
+_title_menu_item_encode:
 		.BYTE	$00,$03,$01,$02
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -918,6 +916,7 @@ _spr_raw_title_cursor:
 
 _title_cursor_pos_list:
 		.BYTE	$68,$A8,$C8,$88
+
 _tlm_res_title_main:
 		.WORD	$2000
 		.BYTE	4
@@ -1018,13 +1017,13 @@ _scr_res_hndl6_A_bank_draw:
 		STA		_tmp118+7
 		LDA		#$00
 		BIT		_city._bank_flags
-		BVC		loc_B8A11
+		BVC		loc_B8A11							; test for loan flag
 		LDA		#$3F
 		JSR		_bank_scr_common_spr_draw
 		JSR		_bank_scr_sub7_already_loan_draw
 		LDA		#$07
 loc_B8A11:
-		STA		_tmp118+2
+		STA		_tmp118+2							; tmp bank sub idx
 		LDA		#$80
 		STA		_game_core_state
 		RTS
@@ -1032,7 +1031,7 @@ loc_B8A11:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl6_B_bank_input:
 		JSR		_bank_scr_sub_exec
-		BIT		_tmp118+2
+		BIT		_tmp118+2							; exit test
 		BPL		locret_B8A34
 		LDA		#$40
 		STA		_scr_res_control_flags
@@ -1060,7 +1059,7 @@ _bank_scr_sub_exec:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub0_init:
-		LDA		#$00
+		LDA		#$00							; REDUNDANT, two dummy cicles
 		STA		_tmp118+4
 		INC		_tmp118+2
 		RTS
@@ -1145,10 +1144,10 @@ locret_B8AA7:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub3_loan_done_init:
-		LDA		_city._bank_flags
+		LDA		_city._bank_flags				; set loan flag
 		ORA		#$C0
 		STA		_city._bank_flags
-		LDA		_city._money
+		LDA		_city._money					; +$10000
 		CLC
 		ADC		#$10
 		STA		_city._money
@@ -1163,18 +1162,53 @@ loc_B8AF7:
 		LDA		#$58
 		JSR		_bank_scr_common_spr_draw
 		INC		_tmp118+2
-		MOVWO	_ptr0,byte_B8DC8
-		MOVWO	_tmp2,byte_B8DFF
-		JMP		_ppu_res_queue
+;		MOVWO	_ptr0,_tlm_nt_bank_loan_def
+;		MOVWO	_tmp2,_tlm_extnt_bank_loan_def
+;		JMP		_bank_loan_anim_send
+		LDX		#$10
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_bank_loan_anim_send:
+		LDA		_tlm_loan_anim_lib,X
+		STA		_ptr0
+		LDA		_tlm_loan_anim_lib+1,X
+		STA		_ptr0+1
+		LDA		_tlm_loan_anim_lib+2,X
+		STA		_ptr2
+		LDA		_tlm_loan_anim_lib+3,X
+		STA		_ptr2+1
+		LDY		#$00
+		PPUQSTART
+loc_B8CE4:
+		LDA		(_ptr0),Y
+		BEQ		loc_B8CF7
+		PPUQMOVA
+		INY
+		BNE		loc_B8CE4
+loc_B8CF7:
+		PPUQEND
+		LDY		#$00
+		EXTQSTART
+loc_B8CFD:
+		LDA		(_ptr2),Y
+		BEQ		loc_B8D10
+		EXTQMOVA
+		INY
+		BNE		loc_B8CFD
+loc_B8D10:
+		EXTQEND
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub4_loan_done_animate:
-		JSR		sub_B8B92
+		JSR		_bank_loan_yes_no_push_spr_draw
 		INC		_tmp118
 		LDA		_tmp118
 		LSR
 		TAX
-		LDA		byte_B8D7E,X
+		LDA		_spr_loan_animate,X
 		BMI		loc_B8B89
 		JSR		_bank_scr_common_spr_draw
 		LDX		_tmp118
@@ -1186,21 +1220,25 @@ _bank_scr_sub4_loan_done_animate:
 		BEQ		loc_B8B50
 		CPX		#$42
 		BNE		locret_B8B91
-		MOVWO	_ptr0,byte_B8DD3
-		MOVWO	_tmp2,byte_B8E0A
-		JMP		_ppu_res_queue
+;		MOVWO	_ptr0,_tlm_nt_bank_loan3
+;		MOVWO	_tmp2,_tlm_extnt_bank_loan3
+		LDX		#$0C
+		BNE		_bank_loan_anim_send
 loc_B8B50:
-		MOVWO	_ptr0,byte_B8DBD
-		MOVWO	_tmp2,byte_B8DF4
-		JMP		_ppu_res_queue
+;		MOVWO	_ptr0,_tlm_nt_bank_loan2
+;		MOVWO	_tmp2,_tlm_extnt_bank_loan2
+		LDX		#$08
+		BNE		_bank_loan_anim_send
 loc_B8B63:
-		MOVWO	_ptr0,byte_B8DA7
-		MOVWO	_tmp2,byte_B8DDE
-		JMP		_ppu_res_queue
+;		MOVWO	_ptr0,_tlm_nt_bank_loan0
+;		MOVWO	_tmp2,_tlm_extnt_bank_loan0
+		LDX		#$00
+		BEQ		_bank_loan_anim_send
 loc_B8B76:
-		MOVWO	_ptr0,byte_B8DB2
-		MOVWO	_tmp2,byte_B8DE9
-		JMP		_ppu_res_queue
+;		MOVWO	_ptr0,_tlm_nt_bank_loan1
+;		MOVWO	_tmp2,_tlm_extnt_bank_loan1
+		LDX		#$04
+		BNE		_bank_loan_anim_send
 loc_B8B89:
 		LDA		#$3F
 		JSR		_bank_scr_common_spr_draw
@@ -1208,21 +1246,62 @@ loc_B8B89:
 locret_B8B91:
 		RTS
 
+_spr_loan_animate:
+		.BYTE	$58,$59,$5A,$5B
+		.BYTE	$5C,$5D,$5E,$5F
+		.BYTE	$5F,$5E,$5D,$5C
+		.BYTE	$5B,$5A,$59,$58
+		.BYTE	$57,$56,$55,$54
+		.BYTE	$53,$52,$51,$50
+		.BYTE	$4F,$4E,$4D,$4C
+		.BYTE	$4B,$4A,$49,$48
+		.BYTE	$47,$46,$45,$44
+		.BYTE	$43,$42,$41,$40
+		.BYTE	$FF
+
+_tlm_loan_anim_lib:
+		.WORD	_tlm_nt_bank_loan0,_tlm_extnt_bank_loan0
+		.WORD	_tlm_nt_bank_loan1,_tlm_extnt_bank_loan1
+		.WORD	_tlm_nt_bank_loan2,_tlm_extnt_bank_loan2
+		.WORD	_tlm_nt_bank_loan3,_tlm_extnt_bank_loan3
+		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def
+
+_tlm_nt_bank_loan0:
+		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$00	;	,$00
+_tlm_nt_bank_loan1:
+		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$00	;	,$00
+_tlm_nt_bank_loan2:
+		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$00	;	,$00
+_tlm_nt_bank_loan3:
+		.BYTE	$ED,$24,$06,$35,$DF,$DF,$DF,$DF,$3A,$00	;	,$00
+_tlm_nt_bank_loan_def:
+		.BYTE	$0D,$25,$06,$DC,$DC,$DC,$DC,$DC,$DC,$00	;	,$00
+_tlm_extnt_bank_loan0:
+		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$00	;	,$00
+_tlm_extnt_bank_loan1:
+		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
+_tlm_extnt_bank_loan2:
+		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
+_tlm_extnt_bank_loan3:
+		.BYTE	$ED,$5C,$06,$48,$01,$01,$01,$01,$48,$00	;	,$00
+_tlm_extnt_bank_loan_def:
+		.BYTE	$0D,$5D,$06,$C8,$C8,$C8,$C8,$C8,$C8,$00	;	,$00
+
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8B92:
+_bank_loan_yes_no_push_spr_draw:
 		LDA		#$00
 		STA		_tmp2
 		STA		_tmp4
 		STA		_tmp3
 		LDA		_tmp118+4
 		BNE		loc_B8BAA
-		MOVWO	_ptr0,byte_B8BB5
+		MOVWO	_ptr0,_spr_loan_yes
 		JMP		_spr_raw_insert
 loc_B8BAA:
-		MOVWO	_ptr0,byte_B8BD6
+		MOVWO	_ptr0,_spr_loan_no
 		JMP		_spr_raw_insert
 
-byte_B8BB5:
+_spr_loan_yes:
 		.BYTE	$CF,$D0,$02,$88
 		.BYTE	$CF,$D1,$02,$90
 		.BYTE	$CF,$D2,$02,$98
@@ -1232,7 +1311,7 @@ byte_B8BB5:
 		.BYTE	$D7,$D6,$02,$98
 		.BYTE	$D7,$D7,$02,$A0
 		.BYTE	$FF
-byte_B8BD6:
+_spr_loan_no:
 		.BYTE	$CF,$D8,$02,$B8
 		.BYTE	$CF,$D9,$02,$C0
 		.BYTE	$CF,$DA,$02,$C8
@@ -1251,7 +1330,7 @@ _bank_scr_sub5_exit_wait_init:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub6_exit_wait_input:
-		JSR		sub_B8B92
+		JSR		_bank_loan_yes_no_push_spr_draw
 		LDA		_tmp118+4
 		BNE		loc_B8C0C
 		LDA		#$3F
@@ -1334,41 +1413,43 @@ _bank_scr_return:
 		STA		_tmp118+2
 		RTS
 
+; REDUNDANT, optimized with library function
+;
 ; =============== S U B	R O U T	I N E =======================================
-_ppu_res_queue:
-		LDY		#$00
-		PPUQSTART
-loc_B8CE4:
-		LDA		(_ptr0),Y
-		BNE		loc_B8CF0
-		INY
-		LDA		(_ptr0),Y
-		BEQ		loc_B8CF7
-		DEY
-		LDA		(_ptr0),Y
-loc_B8CF0:
-		PPUQMOVA
-		INY
-		BNE		loc_B8CE4
-loc_B8CF7:
-		PPUQEND
-		LDY		#$00
-		EXTQSTART
-loc_B8CFD:
-		LDA		(_tmp2),Y
-		BNE		loc_B8D09
-		INY
-		LDA		(_tmp2),Y
-		BEQ		loc_B8D10
-		DEY
-		LDA		(_tmp2),Y
-loc_B8D09:
-		EXTQMOVA
-		INY
-		BNE		loc_B8CFD
-loc_B8D10:
-		EXTQEND
-		RTS
+;_bank_loan_anim_send:
+;		LDY		#$00
+;		PPUQSTART
+;loc_B8CE4:
+;		LDA		(_ptr0),Y
+;		BNE		loc_B8CF0
+;		INY
+;		LDA		(_ptr0),Y
+;		BEQ		loc_B8CF7
+;		DEY
+;		LDA		(_ptr0),Y
+;loc_B8CF0:
+;		PPUQMOVA
+;		INY
+;		BNE		loc_B8CE4
+;loc_B8CF7:
+;		PPUQEND
+;		LDY		#$00
+;		EXTQSTART
+;loc_B8CFD:
+;		LDA		(_tmp2),Y
+;		BNE		loc_B8D09
+;		INY
+;		LDA		(_tmp2),Y
+;		BEQ		loc_B8D10
+;		DEY
+;		LDA		(_tmp2),Y
+;loc_B8D09:
+;		EXTQMOVA
+;		INY
+;		BNE		loc_B8CFD
+;loc_B8D10:
+;		EXTQEND
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_common_spr_draw:
@@ -1380,11 +1461,11 @@ _bank_scr_common_spr_draw:
 		LDX		#$20
 loc_B8D1F:
 		STX		_tmp3
-		MOVWO	_ptr0,byte_B8D5C
+		MOVWO	_ptr0,_spr_bank_common1
 		JSR		_spr_raw_insert
 		LDA		#$00
 		STA		_tmp3
-		MOVWO	_ptr0,byte_B8D75
+		MOVWO	_ptr0,_spr_bank_common2
 		JSR		_spr_raw_insert
 		LDA		_tmp2
 		CMP		#$47
@@ -1392,7 +1473,7 @@ loc_B8D1F:
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_B8D45:
-		LDA		byte_B8D54,Y
+		LDA		_spr_bank_common0,Y
 		STA		_spr_buf,X
 		INX
 		INY
@@ -1401,10 +1482,11 @@ loc_B8D45:
 loc_B8D51:
 		STX		_spr_buf_pos
 		RTS
-byte_B8D54:
+
+_spr_bank_common0:
 		.BYTE	$37,$F4,$00,$80
 		.BYTE	$37,$F5,$00,$88
-byte_B8D5C:
+_spr_bank_common1:
 		.BYTE	$F0,$FD,$23,$68
 		.BYTE	$F0,$FD,$03,$70
 		.BYTE	$F0,$FD,$03,$78
@@ -1412,42 +1494,10 @@ byte_B8D5C:
 		.BYTE	$F0,$FD,$03,$88
 		.BYTE	$F0,$FD,$23,$90
 		.BYTE	$FF
-byte_B8D75:
+_spr_bank_common2:
 		.BYTE	$F8,$FB,$00,$78
 		.BYTE	$F8,$FC,$00,$80
 		.BYTE	$FF
-byte_B8D7E:
-		.BYTE	$58,$59,$5A,$5B
-		.BYTE	$5C,$5D,$5E,$5F
-		.BYTE	$5F,$5E,$5D,$5C
-		.BYTE	$5B,$5A,$59,$58
-		.BYTE	$57,$56,$55,$54
-		.BYTE	$53,$52,$51,$50
-		.BYTE	$4F,$4E,$4D,$4C
-		.BYTE	$4B,$4A,$49,$48
-		.BYTE	$47,$46,$45,$44
-		.BYTE	$43,$42,$41,$40
-		.BYTE	$FF
-byte_B8DA7:
-		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$00,$00
-byte_B8DB2:
-		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$00,$00
-byte_B8DBD:
-		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$00,$00
-byte_B8DC8:
-		.BYTE	$0D,$25,$06,$DC,$DC,$DC,$DC,$DC,$DC,$00,$00
-byte_B8DD3:
-		.BYTE	$ED,$24,$06,$35,$DF,$DF,$DF,$DF,$3A,$00,$00
-byte_B8DDE:
-		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$00,$00
-byte_B8DE9:
-		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00,$00
-byte_B8DF4:
-		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00,$00
-byte_B8DFF:
-		.BYTE	$0D,$5D,$06,$C8,$C8,$C8,$C8,$C8,$C8,$00,$00
-byte_B8E0A:
-		.BYTE	$ED,$5C,$06,$48,$01,$01,$01,$01,$48,$00,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl1_A_graphs_draw:

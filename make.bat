@@ -36,7 +36,10 @@ copy /b bank0.bin+bank1.bin+bank2.bin+bank3.bin+bank4.bin+bank5.bin+bank6.bin+ba
 copy /b bank8.bin+bank9.bin+bankA.bin+bankB.bin+bankC.bin+bankD.bin+bankE.bin+bankF.bin tmp1.bin > NUL
 copy /b tmp0.bin+tmp1.bin !simcity.prg > NUL
 
+echo new ROM:
 g:\dos\m3checksum !simcity.prg
+echo previous ROM:
+g:\dos\m3checksum !simcity_prev.prg
 
 nesimage j !simcity > NUL
 
