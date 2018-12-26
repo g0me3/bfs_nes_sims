@@ -8,7 +8,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 ; this routine called every year and calc last decimal digit of the year
 ; number
-; used ti determide wether the 100year range graphs need to be updated
+; used to determide wether the 100year range graphs need to be updated
 ;
 _test_for_new_decade:
 		MOVW	_tmpE6,_city._cur_year
@@ -41,47 +41,24 @@ loc_104028:
 ;		.BYTE	[[100 >> 8] & $FF]		; $00
 ;		.BYTE	[[1000 >> 8] & $FF]		; $03
 
-		SECTION_END B01
-
 ; =============== S U B	R O U T	I N E =======================================
-; city_level_R/8
-; city_level_C+city_level_I
 _RCI_meters_recalc:
-		RSMOVW	_tmp6AA,_city._level._R,3		; 6AA = L_R/8
-		MOVW	_prev_RCI_levels_sum,_cur_RCI_levels_sum
-		LDA		_city._level._I.FRAC			; TODO macrocify me, split
-		CLC										; at all costs
-		ADC		_city._level._C.FRAC
-		STA		_tmp6AC
-		STA		_tmpE7
-		LDA		_city._level._I.INT
-		ADC		_city._level._C.INT
-		STA		_tmp6AC+1						; 6AC = L_I+L_C
-		STA		_tmpE8							; dividend = L_I+L_C
-		LDA		_tmp6AA
-		STA		_tmpEA							; divider = L_R/8
-		CLC
-		ADC		_tmpE7
-		STA		_cur_RCI_levels_sum.FRAC
-		LDA		_tmp6AA+1
-		STA		_tmpEB
-		ADC		_tmpE8
-		STA		_cur_RCI_levels_sum.INT			; RCI_S = L_I+L_C+(L_R/8)
+		RSMOVW	_tmp6AA,_city._level._R,3					; 6AA = L_R/8
+		MOVW	_prev_RCI_levels_sum,_cur_RCI_levels_sum	; backup sum
+		MADDW	_tmp6AC,_city._level._I,_city._level._C		; 6AC = L_I+L_C
+		MADDW	_cur_RCI_levels_sum,_tmp6AA,_tmp6AC			; RCI_S = L_I+L_C+(L_R/8)
+		MOVW	_tmpE7,_tmp6AC					; dividend = L_I+L_C
+		MOVW	_tmpEA,_tmp6AA					; divider = L_R/8
 		LDA		#$00
 		STA		_tmpE9
 		STA		_tmpE6
-		JSR		_div_32to16						; E6 = (L_I+L_C) / (L_R/8)
+		JSR		_div_32to16						; E6 = (L_I+L_C) / (L_R/8) (two 8.8 fixed points)
 		BCC		loc_10409D
-		LDA		#$00
-		STA		_tmpE8							; TODO: optimize me
-		STA		_tmpE9
-		LDA		#$01
-		STA		_tmpE7
-		LDA		#$4D
-		STA		_tmpE6							; if divider = 0, then result 1.4Dfp
+		MOVWI	_tmpE6,$014D					; if divider = 0, then result 1.3, so with R=0
+		MOVWI	_tmpE8,0						; we will always grow!
 loc_10409D:
-		ADDWB	_tmpE6,#$05						; add 0.05fp
-		LDX		#$00
+		ADDWB	_tmpE6,#$05						; add 0.02 to result, FIXME! may be overflow!!
+		LDX		#R_AREA_BIDX
 		JSR		_RCI_meter_recalc				; R recalc
 		MOVW	_tmpE7,_tmp6AA					; dividend = L_R/8
 		MOVW	_tmpEA,_tmp6AC					; divider = L_I+L_C
@@ -90,131 +67,137 @@ loc_10409D:
 		STA		_tmpE6
 		JSR		_div_32to16						; E6 = (L_R/8) / (L_I+L_C)
 		BCC		loc_1040D8
-		LDA		#$01
-		STA		_tmpE7							; TODO OPTIMIZE ME
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE8
-		STA		_tmpE9							; if divider = 0, then result 1.00fp
+		MOVWI	_tmpE6,$0100					; if divider = 0, then result 1.0, so with L+C=0 no changes
+		MOVWI	_tmpE8,0
 loc_1040D8:
-		CMPWI	_tmpE6,$014C
+		CMPWI	_tmpE6,$014C					; clamp to 1.3 max as well
 		BCC		loc_1040EA
-		MOVWI	_tmpE6,$014C					; clamp to 1.4Cfp
+		MOVWI	_tmpE6,$014C
 loc_1040EA:
 		PUSHW	_tmpE6							; backup now
-		MOVWI	_tmpE8,$0133					; E6 * 1.33fp
-		PUSHW	_tmpE8
-		PUSHW	_tmpE6
-		JSR		_mmc5_mul16to16					; TODO: optimize me
+		PUSHWI	$0133							; arg 1.2
+		PUSHW	_tmpE6							; arg E6
+		JSR		_mmc5_mul16to16					; weightnig I growth with E6 * 1.2
+		PLA										; skip unnecessary results of 16.16fp value
+		POPW	_tmpE6							; got proportion for I aread meters, recalc
 		PLA
-		POPW	_tmpE6							; get _fix8_8 from _fix16x16 result
-		PLA
-		LDX		#$02
+		LDX		#I_AREA_BIDX
 		JSR		_RCI_meter_recalc				; I recalc
-		POPW	_tmpE6							; restore backup
-		MOVW	_tmpE8,_cur_RCI_levels_sum		; TODO: optimize me
-		PUSHW	_tmpE8
-		PUSHW	_tmpE6
-		JSR		_mmc5_mul16to16
+; REDUNDANT, no need to retrive it from stack if we need to push it
+; to stack again.
+;		POPW	_tmpE6							; restore C/I base proportion already calculated
+		PUSHW	_cur_RCI_levels_sum				; arg RCI levels sum * 256 (as integer)
+;		PUSHW	_tmpE6							; arg R6 (already in stack)
+		JSR		_mmc5_mul16to16					; int16*fp8.8
 		PUSHB	#$45
-		JSR		_mmc5_mul32to8					; here 16x16fp arg already in stack
+		JSR		_mmc5_mul32to8					; fp8.8*fp0.8 (* 0.27)
 		PLA
-		POPW	_tmpE6
+		POPW	_tmpE6							; result fp8.8
 		POPW	_tmpE8
-		MOVW	_tmpEA,_city._level._C
+		MOVW	_tmpEA,_city._level._C			; fp8.8/int16
 loc_104150:
-		JSR		_div_32to16
-		BCC		loc_10415F
-		LDA		#$00							; TODO, optimize me
-		STA		_tmpEB
-		LDA		#$01
-		STA		_tmpEA							; default 1.00
-		BEQ		loc_104150
+		JSR		_div_32to16						; here if L_C=0 we won't set a default result value
+;		BCC		loc_10415F						; instead we set the default minimum L_C to 1
+;		LDA		#$00							; REDUNDANT, LDA $01 set Z=0, so branch does not occur
+;		STA		_tmpEB							; however, the default value to div here is 1
+;		LDA		#$01							; so we will get the same result as divident loaded
+;		STA		_tmpEA							; we may assume that division already done here then!
+;		BEQ		loc_104150						; and does not repeat redundant division at all.
 loc_10415F:
-		LDX		#$01							; C recalc
+		LDX		#C_AREA_BIDX					; C recalc
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
+; _tmpE6-_tmpE7 here is a proportion for R and C/I levels (not values!!).
+;
+; L_C+L_I = L_CI
+; L_R/8 = L_r
+; for R proportion = L_CI/L_r, default 1.3, max 2.00
+; for C proportion = ((L_r/L_CI)*(L_CI+L_r)*256*0.27)/(L_C*256)
+; for I proportion = (L_r/L_CI)*1.2), default 1.2, max 1.56
+;
 _RCI_meter_recalc:
-		LDA		_city._delta,X
-		BMI		.RCI_meter_negative_delta
+		LDA		_city._delta,X					; read area development level delta value
+		BMI		.ignore_requirements
+; NOTE, RCI levels are depending on people requirements, if no requirements, then calc as usual
+; if any requirement is set, then delta will be always 0 forced, .ignore_requirements delta already
+; bad enough, so no need to force it to zero.
+; for R meter it depending on stadium requirement, for C meter - on seaport requirement
+; and for I meter - on airport requirement
+;
 		LDA		#$00
-		LDY		_required_flags,X
-		BNE		loc_1041BD
-.RCI_meter_negative_delta:
-		LDA		_tmpE6
-		LDY		_tmpE7
-		BNE		loc_10417B
-		EOR		#$FF
-		CLC
-		ADC		#$01
-		JMP		loc_104181
+		LDY		_required,X
+		BNE		.delta_update
+.ignore_requirements:
+		LDA		_tmpE6							; here we must multiply fixed point number
+		LDY		_tmpE7							; to small weighted parameter ~0.08-0.1
+		BNE		loc_10417B						; that determine accel of growth
+		NEGA									; for _tmpE6 less than 1.00, accel will be negative
+												; so we need to invert FRAC portion here
+		JMP		loc_104181						; this won't be a negative value, just complement of 1
 loc_10417B:
-		CPY		#$02
-		BCC		loc_104181
+		CPY		#$02							; for _tmpE6 greater than 1.00, accel will be
+		BCC		loc_104181						; positive, with maximum FRAC = 0.999
 		LDA		#$FF
 loc_104181:
 		PHA
-		LDA		#$19
+		LDA		#$19							; accel coeff for R area 0.098 ~ 0.10
 		CPX		#$00
 		BEQ		loc_10418A
-		LDA		#$14
+		LDA		#$14							; accel coeff for C/I areas 0.078 ~ 0.08
 loc_10418A:
 		PHA
-		JSR		_mmc5_mul8to8
-		PLA
-		PLA
-		LDY		_tmpE7
-		BNE		loc_104199
-		EOR		#$FF
-		CLC
-		ADC		#$01
+		JSR		_mmc5_mul8to8					; multiply, level.FRAC * coeff
+		PLA										;
+		PLA										; for R we will have accels 0 to 24
+		LDY		_tmpE7							; for C/I accordingly 0 to 20
+		BNE		loc_104199						; for levels < 1.0 we must invert result so
+		NEGA									; we will get a negative number here
 loc_104199:
-		STA		_tmpE8
-		LDA		_city._tax_rate
+		STA		_tmpE8							; store RCI delta accel value
+		LDA		_city._tax_rate					; calculation includes higher tax rate for higher difficult
 		CLC
-		ADC		_city._difficult
-		CMP		#$14
+		ADC		_city._difficult				; but not higher than 20 anyway, so if you already set to 20
+		CMP		#$14							; on hard mode, there won't be any difference here
 		BCC		loc_1041A8
 		LDA		#$14
 loc_1041A8:
 		TAY
-		LDA		byte_1041E8,Y
-		CLC
-		ADC		_tmpE8
-		CLC
-		ADC		_city._delta,X
-		BVC		loc_1041BD
-		BMI		loc_1041BB
-		LDA		#$80
-		BNE		loc_1041BD
-loc_1041BB:
+		LDA		_rci_meters_accel_tax_list,Y	; additional accel modifier according to current tax value
+		CLC										; positive < 7, zero = 8, negative > 7
+		ADC		_tmpE8							; NOTE, here we drop carry bits and does not check overflow!
+		CLC										; but here it is not important, values are small enough here
+		ADC		_city._delta,X					; now adjust growth speed
+		BVC		.delta_update					; negative results or results lower than $7F are passes as is
+		BMI		.delta_clamp					; + with + turns - = positive overflow, clamp to max positive $7F
+		LDA		#$80							; - with - turns + = negative overflow, clamp to min negative $80
+		BNE		.delta_update
+.delta_clamp:
 		LDA		#$7F
-loc_1041BD:
-		STA		_city._delta,X
-		LDA		_city._delta,X					; TODO optimize me
-		BPL		loc_1041DB
-		EOR		#$FF
-		CLC
-		ADC		#$01
+.delta_update:
+		STA		_city._delta,X					; store adjusted speed value
+;		LDA		_city._delta,X					; OPTIMIZED, already in A
+		BPL		.positive_speed					; now calc the RCI meter value for display
+		NEGA									; for negative rci_meter = -abs(speed)*0.1
 		PHA
 		PUSHB	#$1B
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
-		EOR		#$FF
-		CLC
-		ADC		#$01
+		NEGA
 		JMP		loc_1041E4
-loc_1041DB:
-		PHA
+.positive_speed:
+		PHA										; for positive accordingly rci_meter = speed*0.1
 		PUSHB	#$1B
 		JSR		_mmc5_mul8to8
 		PLA
 		PLA
 loc_1041E4:
-		STA		_RCI_meters_values,X
+		STA		_RCI_meters_values,X			; done
 		RTS
-byte_1041E8:
+
+_rci_meters_accel_tax_list:
 		.BYTE	$0D,$0A,$08,$06,$05,$03,$02,$00,$FF,$FD,$FA,$F6,$F3,$F0,$ED,$EA
 		.BYTE	$E6,$E3,$E0,$DD,$DA
 
@@ -419,215 +402,9 @@ _power_grid_map_bit_set:
 		STA		(_tmpE6),Y
 		JMP		_sram_off
 
-; =============== S U B	R O U T	I N E =======================================
-_game_vars_init:
-; FIX, backup difficult if set at the difficult menu. this is temporary
-; workaround though, it is easier to do that just moving the difficult
-; setting out of the cleared values above ._level
-; -
-		LDA		_city._difficult
-		PHA
-; -
-		JSR		_sram_on
-		LDX		#$00								; X=A=0
-		TXA
-loc_1043C4:
-		STA		_wram_graphs,X						; graphs data clear
-		INX
-		CPX		#$78
-		BNE		loc_1043C4
-		JSR		_sram_off
-		LDX		#$00								; A=0 still here
-loc_1043D1:
-		STA		_city._level,X						; part of the city vars clear
-		INX
-		CPX		#$DF
-		BNE		loc_1043D1
-		STA		_obj_active_flags					; A=0 still!
-; FIX, continues
-; -
-		PLA											; restore difficult
-		STA		_city._difficult
-; -
-		LDA		#$FF
-		STA		_city._year_to_build_bank			; special years clear
-		STA		_city._year_to_build_bank+1
-		STA		_city._year_to_expo
-		STA		_city._year_to_expo+1
-		STA		_city._year_to_liberty
-		STA		_city._year_to_liberty+1
-		LDX		_cur_game_mode						; dependent from the game mode
-		BNE		loc_1043FF
-		FJSRA	_sram_data_load,SRAM,PRG3			; game mode 0, load saved city data
-		JMP		.complete_game_setup				; skip to the final inits
-loc_1043FF:
-		DEX
-		BNE		loc_104428
-		LDY		_city._difficult					; game mode 1, new city
-		LDA		_difficult_money_list_lo,Y
-		STA		_city._money
-		LDA		_difficult_money_list_hi,Y
-		STA		_city._money+1
-		MOVWI	_city._cur_year,1900				; start 1900 year only
-;		LDA		#$09								; REDUNDANT, merged
-;		STA		_city._game_flags					; setup default game settings
-;		LDA		#$00								; REDUNDANT, already 0 here
-;		STA		_city._city_type					; city initial type (town)
-;		JMP		.complete_game_setup
-		JMP		.default_game_settings
-loc_104428:
-		DEX
-		BNE		.practice_init						; game mode 2, scenario
-; FIX, continues
-; -
-		LDA		#$00								; manually set default difficult
-		STA		_city._difficult
-; -
-		LDA		#$02
-		STA		_city._game_speed					; default speed "slow" for all scenarios
-		MOVWI	_city._money,20000					; fixed money
-; BUG: there is no data for 8th scenario "FREEDOM" at all.
-;
-		LDY		_scenario_idx
-; FIX, let's set defaults of this scenario to Practice mode defaults
-; -
-		CPY		#$07
-		BEQ		.practice_init						; special "FREEDOM" case
-; -
-		LDA		_scenario_start_year_hi,Y			; different starting years
-		STA		_city._cur_year+1
-		LDA		_scenario_start_year_lo,Y			; init special disasters parameters
-		STA		_city._cur_year						; starting year for first disaster,
-		CLC											; and disasters treshold after that
-		ADC		_scenario_disaster_end_years_list,Y
-		STA		_scenario_disaster_end_year			; low nibble of the last year of scenario
-		LDA		_scenario_disasters_count_list,Y
-		STA		_scenario_disaster_delay
-		LDA		_bg_music_for_scenario_start_list,Y
-		STA		_city._city_type
-		TYA
-		ASL
-		ASL
-		TAY
-		LDX		#$00
-loc_10445D:
-		LDA		_scenario_presents_flags_lib,Y		; disable already accepted present
-		STA		_city._events_used_flags,X			; buildings to stop it's appearance
-		INY
-		INX
-		CPX		#$04
-		BNE		loc_10445D
-;		LDA		#$09								; REDUNDANT, merged
-;		STA		_city._game_flags					; default game settings
-;		JMP		.complete_game_setup
-		JMP		.default_game_settings
-.practice_init:
-; FIX, continues
-; -
-		LDA		#$00								; manually set default difficult
-		STA		_city._difficult
-; -
-		MOVWI	_city._money,20000					; game mode 3, practice
-		MOVWI	_city._cur_year,1900				; starting year fixed
-; REDUNDANT, already 0 here
-;		LDA		#$00
-;		STA		_city._city_type
-.default_game_settings:
-		LDA		#$09
-		STA		_city._game_flags
-.complete_game_setup:
-		LDY		_city._city_type					; there is no city type setting for
-		LDA		_city._game_flags					; scenario mode here, it will be set
-		AND		#$08								; automatically after first recalc ingame
-		BEQ		loc_1044A3							; so this music select just redundant,
-		LDA		_bg_music_list,Y					; it will always select the default music
-		STA		_apu_mus_idx_req					; anyway, this list actually empty by itself
-loc_1044A3:
-		LDA		#$07
-		STA		_city._tax_rate						; default tax rate always 7
-		STA		_budget_fund_alloc._tax
-		LDA		#$0F
-		STA		_fund_rate_police					; def funding rate, will be recalculated anyways
-		STA		_fund_rate_fire						; mostly redundant here too
-		LDA		#$20
-		STA		_fund_rate_trans
-		LDA		#$26
-		STA		_cur_population_dencity
-		STA		_cur_population_dencity+1
-		JSR		_sram_on
-		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
-		LDX		#$05								; for some reason, the size of clear here is
-		LDY		#$00								; 1392, when both bufs should be 1444
-		TYA
-loc_1044D0:
-		STA		(_tmpE6),Y
-		INY
-		BNE		loc_1044D0
-		INC		_tmpE7
-		DEX
-		BNE		loc_1044D0
-loc_1044DA:
-		STA		(_tmpE6),Y
-		INY
-		CPY		#$70
-		BNE		loc_1044DA
-		MOVWO	_tmpE6,_land_value_map_buf			; clear the rest of the statistic maps
-		LDX		#$03								; size is correct this time
-		LDY		#$00
-		TYA
-loc_1044EE:
-		STA		(_tmpE6),Y
-		INY
-		BNE		loc_1044EE
-		INC		_tmpE7
-		DEX
-		BNE		loc_1044EE
-loc_1044F8:
-		STA		(_tmpE6),Y
-		INY
-		CPY		#$ED
-		BNE		loc_1044F8
-		JSR		_sram_off
-		JMP		_city_stats_reset
+		SECTION_ENDS B01, "PRGB RCI METERS POWER GRID RECALC"
 
-_difficult_money_list_lo:
-		.BYTE	<[20000]
-		.BYTE	<[10000]
-		.BYTE	<[5000]
-_difficult_money_list_hi:
-		.BYTE	>[20000]
-		.BYTE	>[10000]
-		.BYTE	>[5000]
-_scenario_start_year_lo:
-		.BYTE	<[1906]	; $72
-		.BYTE	<[1965]	; $AD
-		.BYTE	<[1972]	; $B4
-		.BYTE	<[1961]	; $A9
-		.BYTE	<[2010] ; $DA
-		.BYTE	<[2047] ; $FF
-		.BYTE	<[2100] ; $34
-_scenario_start_year_hi:
-		.BYTE	>[1906]	; $07
-		.BYTE	>[1965]	; $07
-		.BYTE	>[1972]	; $07
-		.BYTE	>[1961]	; $07
-		.BYTE	>[2010]	; $07
-		.BYTE	>[2047]	; $07
-		.BYTE	>[2100]	; $08
-_scenario_disasters_count_list:
-		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
-_scenario_disaster_end_years_list:
-		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
-_scenario_presents_flags_lib:
-		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$1E,$1F,$FF,$FF
-		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$0E,$1F,$FF,$FF
-		.BYTE	$0E,$1F,$FF,$FF
-_bg_music_for_scenario_start_list:
-		.BYTE	$03,$03,$03,$04,$03,$03,$03
+		SECTION_START B02
 
 ; =============== S U B	R O U T	I N E =======================================
 _graphs_10_year_data_update:
@@ -1060,29 +837,9 @@ _city_stats_recalc:
 		JSR		_city_votes_recalc
 		JMP		loc_10497E
 loc_10497B:
-		JSR		_city_stats_reset
+		JSR		_city_stats_reset				; moved to PRGF system bank
 loc_10497E:
 		LDA		#$01
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_city_stats_reset:
-		LDA		#$00
-		STA		_doing_a_good_job_votes
-		STA		_doing_a_bad_job_votes
-		STA		_popul_cur
-		STA		_popul_cur+1
-		STA		_popul_cur+2
-		STA		_popul_net_migration
-		STA		_popul_net_migration+1
-		STA		_popul_net_migration+2
-		STA		_popul_last_year
-		STA		_popul_last_year+1
-		STA		_popul_last_year+2
-		STA		_assessed_value
-		STA		_annual_score_change
-		STA		_annual_score_change+1
-		MOVWI	_city._score,500
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1432,9 +1189,7 @@ loc_104CB1:
 		LDA		#$00
 		STA		_tmpE7
 		LDA		_tmpE6
-		EOR		#$FF
-		CLC
-		ADC		#$01
+		NEGA
 		ASL
 		ROL		_tmpE7
 		ASL
@@ -1449,15 +1204,15 @@ loc_104CB1:
 		LDA		#$03
 		STA		_tmpE7
 loc_104CD4:
-		LDA		_required_flags._stadium
+		LDA		_required._stadium
 		BEQ		loc_104CDC
 		JSR		_tmpE6_multiply_217
 loc_104CDC:
-		LDA		_required_flags._seaport
+		LDA		_required._seaport
 		BEQ		loc_104CE4
 		JSR		_tmpE6_multiply_217
 loc_104CE4:
-		LDA		_required_flags._airport
+		LDA		_required._airport
 		BEQ		loc_104CEC
 		JSR		_tmpE6_multiply_217
 loc_104CEC:
@@ -1661,6 +1416,8 @@ loc_104E9D:
 		DEY
 		BNE		loc_104E75
 		RTS
+
+		SECTION_ENDS B02, "PRGB GRAPHS FISCAL YEAR CITY EVAL RECALCS"
 
 ; =============== S U B	R O U T	I N E =======================================
 _events_manager:
@@ -2350,36 +2107,36 @@ loc_1052EA:
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg06_test:
 		LDA		#$00
-		STA		_required_flags._stadium
-		CMPWI	_city._level._R,$01F4		; here is the fixed point value, 1.F4fp
+		STA		_required._stadium
+		CMPWI	_city._level._R,$01F4		; here is the fixed point value 1.95
 		BCC		nullsub_10
 		LDA		_stadiums_count
 		BNE		nullsub_10
-		INC		_required_flags._stadium
+		INC		_required._stadium
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg07_test:
 		LDA		#$00
-		STA		_required_flags._airport
-		CMPWI	_city._level._I,$0064		; 0.64fp
+		STA		_required._airport
+		CMPWI	_city._level._I,$0064		; fp value 0.39
 		BCC		nullsub_10
 		LDA		_sea_ports_count
 		BNE		nullsub_10
-		INC		_required_flags._airport
+		INC		_required._airport
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg08_test:
 		LDA		#$00
-		STA		_required_flags._seaport
-		CMPWI	_city._level._C,$0096		; 0.96fp
+		STA		_required._seaport
+		CMPWI	_city._level._C,$0096		; fp value 0.59
 		BCC		nullsub_10
 		LDA		_airports_count
 		BNE		nullsub_5
-		INC		_required_flags._seaport
+		INC		_required._seaport
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 

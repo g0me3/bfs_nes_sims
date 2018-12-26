@@ -1705,6 +1705,220 @@ _game_setup10_all_complete_input:
 locret_24C44:
 		RTS
 
+		SECTION_START F0F
+
+; =============== S U B	R O U T	I N E =======================================
+_game_vars_init:
+; FIX, backup difficult if set at the difficult menu. this is temporary
+; workaround though, it is easier to do that just moving the difficult
+; setting out of the cleared values above ._level
+; -
+		LDA		_city._difficult
+		PHA
+; -
+		JSR		_sram_on
+		LDX		#$00								; X=A=0
+		TXA
+loc_1043C4:
+		STA		_wram_graphs,X						; graphs data clear
+		INX
+		CPX		#$78
+		BNE		loc_1043C4
+		JSR		_sram_off
+		LDX		#$00								; A=0 still here
+loc_1043D1:
+		STA		_city._level,X						; part of the city vars clear
+		INX
+		CPX		#$DF
+		BNE		loc_1043D1
+		STA		_obj_active_flags					; A=0 still!
+; FIX, continues
+; -
+		PLA											; restore difficult
+		STA		_city._difficult
+; -
+		LDA		#$FF
+		STA		_city._year_to_build_bank			; special years clear
+		STA		_city._year_to_build_bank+1
+		STA		_city._year_to_expo
+		STA		_city._year_to_expo+1
+		STA		_city._year_to_liberty
+		STA		_city._year_to_liberty+1
+		LDX		_cur_game_mode						; dependent from the game mode
+		BNE		loc_1043FF
+		FJSRA	_sram_data_load,SRAM,PRG3			; game mode 0, load saved city data
+		JMP		.complete_game_setup				; skip to the final inits
+loc_1043FF:
+		DEX
+		BNE		loc_104428
+		LDY		_city._difficult					; game mode 1, new city
+		LDA		_difficult_money_list_lo,Y
+		STA		_city._money
+		LDA		_difficult_money_list_hi,Y
+		STA		_city._money+1
+		MOVWI	_city._cur_year,1900				; start 1900 year only
+;		LDA		#$09								; REDUNDANT, merged
+;		STA		_city._game_flags					; setup default game settings
+;		LDA		#$00								; REDUNDANT, already 0 here
+;		STA		_city._city_type					; city initial type (town)
+;		JMP		.complete_game_setup
+		JMP		.default_game_settings
+loc_104428:
+		DEX
+		BNE		.practice_init						; game mode 2, scenario
+; FIX, continues
+; -
+		LDA		#$00								; manually set default difficult
+		STA		_city._difficult
+; -
+		LDA		#$02
+		STA		_city._game_speed					; default speed "slow" for all scenarios
+		MOVWI	_city._money,20000					; fixed money
+; BUG: there is no data for 8th scenario "FREEDOM" at all.
+;
+		LDY		_scenario_idx
+; FIX, let's set defaults of this scenario to Practice mode defaults
+; -
+		CPY		#$07
+		BEQ		.practice_init						; special "FREEDOM" case
+; -
+		LDA		_scenario_start_year_hi,Y			; different starting years
+		STA		_city._cur_year+1
+		LDA		_scenario_start_year_lo,Y			; init special disasters parameters
+		STA		_city._cur_year						; starting year for first disaster,
+		CLC											; and disasters treshold after that
+		ADC		_scenario_disaster_end_years_list,Y
+		STA		_scenario_disaster_end_year			; low nibble of the last year of scenario
+		LDA		_scenario_disasters_count_list,Y
+		STA		_scenario_disaster_delay
+		LDA		_bg_music_for_scenario_start_list,Y
+		STA		_city._city_type
+		TYA
+		ASL
+		ASL
+		TAY
+		LDX		#$00
+loc_10445D:
+		LDA		_scenario_presents_flags_lib,Y		; disable already accepted present
+		STA		_city._events_used_flags,X			; buildings to stop it's appearance
+		INY
+		INX
+		CPX		#$04
+		BNE		loc_10445D
+;		LDA		#$09								; REDUNDANT, merged
+;		STA		_city._game_flags					; default game settings
+;		JMP		.complete_game_setup
+		JMP		.default_game_settings
+.practice_init:
+; FIX, continues
+; -
+		LDA		#$00								; manually set default difficult
+		STA		_city._difficult
+; -
+		MOVWI	_city._money,20000					; game mode 3, practice
+		MOVWI	_city._cur_year,1900				; starting year fixed
+; REDUNDANT, already 0 here
+;		LDA		#$00
+;		STA		_city._city_type
+.default_game_settings:
+		LDA		#$09
+		STA		_city._game_flags
+.complete_game_setup:
+		LDY		_city._city_type					; there is no city type setting for
+		LDA		_city._game_flags					; scenario mode here, it will be set
+		AND		#$08								; automatically after first recalc ingame
+		BEQ		loc_1044A3							; so this music select just redundant,
+		LDA		_bg_music_list,Y					; it will always select the default music
+		STA		_apu_mus_idx_req					; anyway, this list actually empty by itself
+loc_1044A3:
+		LDA		#$07
+		STA		_city._tax_rate						; default tax rate always 7
+		STA		_budget_fund_alloc._tax
+		LDA		#$0F
+		STA		_fund_rate_police					; def funding rate, will be recalculated anyways
+		STA		_fund_rate_fire						; mostly redundant here too
+		LDA		#$20
+		STA		_fund_rate_trans
+		LDA		#$26
+		STA		_cur_population_dencity
+		STA		_cur_population_dencity+1
+		JSR		_sram_on
+		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
+		LDX		#$05								; for some reason, the size of clear here is
+		LDY		#$00								; 1392, when both bufs should be 1444
+		TYA
+loc_1044D0:
+		STA		(_tmpE6),Y
+		INY
+		BNE		loc_1044D0
+		INC		_tmpE7
+		DEX
+		BNE		loc_1044D0
+loc_1044DA:
+		STA		(_tmpE6),Y
+		INY
+		CPY		#$70
+		BNE		loc_1044DA
+		MOVWO	_tmpE6,_land_value_map_buf			; clear the rest of the statistic maps
+		LDX		#$03								; size is correct this time
+		LDY		#$00
+		TYA
+loc_1044EE:
+		STA		(_tmpE6),Y
+		INY
+		BNE		loc_1044EE
+		INC		_tmpE7
+		DEX
+		BNE		loc_1044EE
+loc_1044F8:
+		STA		(_tmpE6),Y
+		INY
+		CPY		#$ED
+		BNE		loc_1044F8
+		JSR		_sram_off
+		JMP		_city_stats_reset					; ALERT! _city_stats_reset used here from PRGB as well!
+
+_difficult_money_list_lo:
+		.BYTE	<[20000]
+		.BYTE	<[10000]
+		.BYTE	<[5000]
+_difficult_money_list_hi:
+		.BYTE	>[20000]
+		.BYTE	>[10000]
+		.BYTE	>[5000]
+_scenario_start_year_lo:
+		.BYTE	<[1906]	; $72
+		.BYTE	<[1965]	; $AD
+		.BYTE	<[1972]	; $B4
+		.BYTE	<[1961]	; $A9
+		.BYTE	<[2010] ; $DA
+		.BYTE	<[2047] ; $FF
+		.BYTE	<[2100] ; $34
+_scenario_start_year_hi:
+		.BYTE	>[1906]	; $07
+		.BYTE	>[1965]	; $07
+		.BYTE	>[1972]	; $07
+		.BYTE	>[1961]	; $07
+		.BYTE	>[2010]	; $07
+		.BYTE	>[2047]	; $07
+		.BYTE	>[2100]	; $08
+_scenario_disasters_count_list:
+		.BYTE	$0A,$14,$05,$03,$05,$F0,$03
+_scenario_disaster_end_years_list:
+		.BYTE	$05,$0A,$0A,$05,$05,$0A,$0A
+_scenario_presents_flags_lib:
+		.BYTE	$0E,$1F,$FF,$FF
+		.BYTE	$0E,$1F,$FF,$FF
+		.BYTE	$0E,$1F,$FF,$FF
+		.BYTE	$1E,$1F,$FF,$FF
+		.BYTE	$0E,$1F,$FF,$FF
+		.BYTE	$0E,$1F,$FF,$FF
+		.BYTE	$0E,$1F,$FF,$FF
+_bg_music_for_scenario_start_list:
+		.BYTE	$03,$03,$03,$04,$03,$03,$03
+
+		SECTION_ENDS F0F, "PRGF GAME VARS INIT"
+
 ; REDUNDANT, two functions to send another type of tilemaps: RLE-packed queue
 ; lists, both called in conjunction always so why we don't merge them and
 ; make same librarification as for other similar routines?

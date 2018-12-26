@@ -1181,10 +1181,10 @@ _bank_scr_sub3_loan_done_init:
 		STA		_city._bank_flags
 		LDA		_city._money					; +$10000
 		CLC
-		ADC		#$10
+		ADC		#<[10000]
 		STA		_city._money
 		LDA		_city._money+1
-		ADC		#$27
+		ADC		#>[10000]
 		STA		_city._money+1
 		BCC		loc_B8AF7
 		INC		_city._money+2

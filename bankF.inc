@@ -197,9 +197,31 @@ _game_setup_mode:								; title menu is 1
 		RTS
 _ingame_mode:
 		JSR		_ppu_queues_reset				; ingame is 2
-		FJSRA	_game_vars_init,SRAM,PRGA
+		FJSRA	_game_vars_init,SRAM,PRG1		; moved to PRG1 instead of PRGA
 		JSR		_thread1_init
 		FJSRA	_game_start,PRGC,PRGD
+		RTS
+
+; moved to system bank from PRGA
+;
+; =============== S U B	R O U T	I N E =======================================
+_city_stats_reset:
+		LDA		#$00
+		STA		_doing_a_good_job_votes
+		STA		_doing_a_bad_job_votes
+		STA		_popul_cur
+		STA		_popul_cur+1
+		STA		_popul_cur+2
+		STA		_popul_net_migration
+		STA		_popul_net_migration+1
+		STA		_popul_net_migration+2
+		STA		_popul_last_year
+		STA		_popul_last_year+1
+		STA		_popul_last_year+2
+		STA		_assessed_value
+		STA		_annual_score_change
+		STA		_annual_score_change+1
+		MOVWI	_city._score,500
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3699,8 +3721,8 @@ locret_18BBEC:
 ; fixed point 8.8 (integer E7, fraction E6)
 ;
 _div_32to16:
-		LDA		_tmpEB
-		ORA		_tmpEA
+		LDA		_tmpEB							; div-by-zero test
+		ORA		_tmpEA							; return C=1 if divider = 0
 		BNE		loc_18BE0B
 		SEC
 		RTS

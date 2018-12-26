@@ -97,6 +97,10 @@ _MUS_IDX_STOP		EQU		$80
 {1}._ROW:		.BYTE	0
 	ENDM
 
+R_AREA_BIDX	EQU	0
+C_AREA_BIDX	EQU	1
+I_AREA_BIDX	EQU	2
+
 	MAC	_trci
 {1}		SET	.
 {1}._R:		.BYTE	0
@@ -639,6 +643,12 @@ _total_free	SET _total_free+_bank{1}_free
 	ENDM
 
 ;---------------A-R-I-T-H-M---------------------
+
+	MAC	NEGA
+		EOR		#$FF
+		CLC
+		ADC		#$01
+	ENDM
 
 	; \t\tLDA\t\t([^\,^\n]*)\n\t\tPHA\n
 	; \t\tPUSHB\t\1\n

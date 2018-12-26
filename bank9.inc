@@ -3,7 +3,7 @@
 
 		BANK_START $F9
 
-; FIX, moved from bank 7 to the local place
+; FIX, moved from PRG7 to the local place
 ; -
 ; =============== S U B	R O U T	I N E =======================================
 _scr_chr_vars_init:
@@ -518,7 +518,7 @@ loc_EA203:
 		JSR		_hex_to_dec9999
 		LDY		_new_city_screen_cur_col_idx	; do map number change decimally
 		BIT		_new_city_button_to_change_flags; by decimal digit, Y=digit idx
-		BPL		loc_EA242						; _ptr0-1-2 contains a decimal number
+		BPL		loc_EA242						; _tmp0-_tmp2 contains a decimal number
 		LDA		_ptr0,Y
 		BNE		loc_EA23D
 		LDA		#$0A
@@ -986,7 +986,7 @@ _scr_res_hndl0_B_info_maps_input:
 .no_buttons_pending:
 		LDA		_budget_scr_draw_req			; city engine still active, so fiscal year over
 		BEQ		loc_EA588						; may occurs at info screen, do special jump to it
-		JMP		_budget_screen_force
+		JMP		_info_maps_budget_screen_warp
 loc_EA588:
 		LDA		_mini_map_need_redraw_flag		; flag from THREAD1 when values are recalculated
 		BNE		loc_EA5BA
@@ -1057,7 +1057,7 @@ _info_maps_exit:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_budget_screen_force:
+_info_maps_budget_screen_warp:
 		LDA		#$80							; called from info maps mode at the end of year
 		STA		_budget_screen_return_to_info_maps_flag
 		LDA		#$02
@@ -1477,6 +1477,11 @@ loc_EA8D4:
 		STA		_tmp5
 		RTS
 
+byte_EB55A:
+		.BYTE	$5F,$5F,$28,$28,$00,$00,$50,$50,$28,$28,$50,$50,$00,$00,$50,$50
+byte_EB56A:
+		.BYTE	$10,$10,$10,$10,$10,$10,$D0,$D0,$D0,$D0,$50,$50,$D0,$D0,$90,$90
+
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA8DF:
 		LDA		#$00
@@ -1871,7 +1876,7 @@ _mini_map_set_new_line:
 		BCS		loc_EA6C3
 		STA		_game_core_state				; reset core state for all except new city map gen
 loc_EA6C3:
-;		LDA		_thread_priority_req			; REDUNDANT, this code does nothing, all calues are
+;		LDA		_thread_priority_req			; REDUNDANT, this code does nothing, all values are
 ;		AND		#$FF							; the same, no flags test here as well
 ;		STA		_thread_priority_req
 		LDA		_mini_map_need_redraw_flag
@@ -1930,7 +1935,7 @@ _info_maps_menu_handler:
 		TAY
 		LDA		_info_maps_menu_extra_value_backup
 		STA		_info_maps_menu_extra_idx,Y		; restore previously saved extra map idx value
-		JSR		_info_maps_menu_erase				; close window
+		JSR		_info_maps_menu_erase			; close window
 		LDY		_prev_info_maps_button_idx		; restore previously pressed button numbers
 		LDA		_cur_info_maps_button_idx		; draw back to previous state all buttons and headers
 		STA		_prev_info_maps_button_idx
@@ -2366,7 +2371,7 @@ loc_EAEEC:
 		STA		_tmp118+2
 		LDA		#$A0
 		STA		_scr_res_control_flags			; draw static values for budget screen calculated
-		MOVD	_ptr0,_city_taxes_collected			; in _fiscal_year_results_calc before calling this
+		MOVD	_ptr0,_city_taxes_collected		; in _fiscal_year_results_calc before calling this
 		JSR		_hex_to_dec99999				; draw function
 		LDA		#$01
 		JSR		_printf_num_lib
@@ -2524,7 +2529,7 @@ _budget_cur_fund_draw:
 		LDA		_budget_tax_cur_pos				; get currently selected budget screen row
 		AND		#$FE
 		TAY
-		LDA		_budget_fund_alloc,Y					; get the current allocated funding amount
+		LDA		_budget_fund_alloc,Y			; get the current allocated funding amount
 		STA		_ptr0
 		LDA		_budget_fund_alloc+1,Y
 		STA		_ptr0+1
@@ -2562,6 +2567,11 @@ loc_EB328:
 ; -
 		RTS
 
+_budget_fund_print_idx_list:
+		.BYTE	$00,$00,$07,$07,$08,$08,$09,$09,$0A,$0A,$0B,$0B
+_budget_tax_print_idx_list:
+		.BYTE	$00,$00,$0C,$0C,$0D,$0D,$0E,$0E,$0F,$0F,$10,$10
+
 ; FIX, now local
 ; -
 ; =============== S U B	R O U T	I N E =======================================
@@ -2594,7 +2604,7 @@ loc_A0118:
 		LSR										; value need adjustment, if button is held
 		LSR										; higher nibbles reaches $3x, so we may change
 		LSR										; higher digits of the desired value up to 1000
-		ASL
+;		ASL										; REDUNDANT
 		TAX										; extract digit idx for adjust, mul2, because of words
 		LDA		_budget_tax_cur_pos				; now, lower bit is exactly what arrow is pressed
 		LSR										; up or down, so we need to increase or decrease
@@ -2603,10 +2613,10 @@ loc_A0118:
 		TAY
 		LDA		_budget_fund_alloc,Y			; Y = tax idx * 2
 		CLC
-		ADC		_inc_table,X					;
+		ADC		_dec_digit_tbl0,X
 		STA		_ptr0
 		LDA		_budget_fund_alloc+1,Y
-		ADC		_inc_table+1,X
+		ADC		_dec_digit_tbl1,X
 		STA		_ptr0+1							; store result in tmp var
 		CMP		_tmp3							; compare with max value needed
 		BCC		.apply_adjust
@@ -2633,10 +2643,10 @@ loc_A0118:
 		TAY
 		LDA		_budget_fund_alloc,Y			; the same for decrease
 		SEC
-		SBC		_inc_table,X
+		SBC		_dec_digit_tbl0,X
 		STA		_ptr0
 		LDA		_budget_fund_alloc+1,Y
-		SBC		_inc_table+1,X					; test against 0 instead
+		SBC		_dec_digit_tbl1,X				; test against 0 instead
 		BCS		.apply_adjust_ex				; OPTIMIZE a little
 ;		BCS		loc_A017A
 		LDA		#$00
@@ -2649,11 +2659,11 @@ loc_A0118:
 ;		STA		_budget_fund_alloc,Y
 ;		RTS
 
-_inc_table:
-		.WORD	1
-		.WORD	10
-		.WORD	100
-		.WORD	1000
+;_inc_table:									; REDUNDANT, merged with common decimal array
+;		.WORD	1
+;		.WORD	10
+;		.WORD	100
+;		.WORD	1000
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_get_fund_reqest_by_idx:
@@ -2699,8 +2709,8 @@ _budget_funds_alloc_adjust:
 		LDY		#$00
 		SEC
 loc_EB348:
-		LDA		_budget_funds_alloc_sum,Y				; get the delta of money left after funding
-		SBC		_budget_money,Y			; will be negative if money are enough, and positive
+		LDA		_budget_funds_alloc_sum,Y		; get the delta of money left after funding
+		SBC		_budget_money,Y					; will be negative if money are enough, and positive
 		STA		_ptr0,Y							; if not.
 		INY
 		DEX
@@ -2708,10 +2718,10 @@ loc_EB348:
 		PLA
 		TAY
 loc_EB357:
-		LDA		_budget_fund_alloc,Y					; so subtract delta from cur funding value if positive
+		LDA		_budget_fund_alloc,Y			; so subtract delta from cur funding value if positive
 		SEC										; thus we decrease it for amount we missing
 		SBC		_ptr0
-		LDA		_budget_fund_alloc+1,Y					; if value is negative, we just add it and never exceed the 0 here
+		LDA		_budget_fund_alloc+1,Y			; if value is negative, we just add it and never exceed the 0 here
 		SBC		_ptr0+1
 		LDA		#$00
 		SBC		_tmp2
@@ -2872,7 +2882,7 @@ loc_EB450:
 		LDA		#$00
 		STA		_tmp1
 		STA		_tmp2
-		JSR		_div24
+		JSR		_div24_to_24
 		LDA		_budget_tax_cur_pos				; store fund alloc values
 		AND		#$FE
 		TAY
@@ -2936,7 +2946,7 @@ loc_EB4EF:
 		STX		_ptr0
 		LDA		#$00
 		STA		_tmp2
-		JSR		_div24							; X=alloc*100/request = allocation percent
+		JSR		_div24_to_24							; X=alloc*100/request = allocation percent
 loc_EB4F8:
 		LDA		_budget_tax_cur_pos				; adjust cur tax pos to _budget_fund_rate structure
 		LSR										; Y = (_budget_tax_cur_pos>>1) - 1
@@ -2944,6 +2954,42 @@ loc_EB4F8:
 		DEY
 		TXA
 		STA		_budget_fund_rate,Y				; store result
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_budget_cash_flow_calc:
+		LDA		#$DC							; sign "+" by default
+		STA		_tmp6
+		LDY		#$00
+		LDX		#$03
+		SEC
+loc_EBAB4:
+		LDA		_city_taxes_collected,Y				; subtract funds
+		SBC		_budget_funds_alloc_sum,Y
+		STA		_ptr0,Y
+		INY
+		DEX
+		BNE		loc_EBAB4
+		BCS		loc_EBAD9						; test if not exceeded
+		LDA		#$7F
+		STA		_tmp6							; negative money, set sign "-"
+		LDY		#$00
+		LDX		#$03
+		SEC
+loc_EBACC:
+		LDA		_budget_funds_alloc_sum,Y					; calc negative value
+		SBC		_city_taxes_collected,Y
+		STA		_ptr0,Y
+		INY
+		DEX
+		BNE		loc_EBACC
+loc_EBAD9:
+		PPUQSTART								; send sign char into ppu queue
+		PPUQMOVB	#$AF,OP_NOP,0
+		PPUQMOVB	#$26,OP_NOP,0
+		PPUQMOVB	#$01,OP_NOP,0
+		PPUQMOVB	_tmp6,OP_NOP,0
+		PPUQEND
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2957,7 +3003,7 @@ loc_EB05B:
 		STA		_MMC5_CHR_MODE
 		FJSRA	_wnd_header_year_draw,PRG7,PRG9	; draw year in header first here
 		LDA		#$00
-		STA		_tmp13D
+		STA		_city_eval_string_counter
 		LDA		#$80
 		STA		_scr_res_control_flags
 		INC		_scr_res_idx
@@ -2971,14 +3017,14 @@ loc_EB084:
 		LDA		#$00							; draw other numeric values
 		STA		_ptr0+1
 		STA		_tmp2
-		LDA		_tmp13D
+		LDA		_city_eval_string_counter
 		ASL
 		TAX
 		LDA		_city_eval_vars_list,X
 		STA		_tmp4
 		LDA		_city_eval_vars_list+1,X
 		STA		_tmp5
-		LDY		_tmp13D
+		LDY		_city_eval_string_counter
 		LDX		_city_eval_len_list,Y
 		LDY		#$00
 		CPX		#$01
@@ -2994,7 +3040,7 @@ loc_EB0A9:
 		DEY
 		LDA		(_tmp4),Y						; continue if large value is positive
 		BPL		loc_EB0D4						; test if values threated as negative
-		LDY		_tmp13D
+		LDY		_city_eval_string_counter
 		CPY		#$03
 		BEQ		loc_EB0C2						; values 3 and 6 are signed
 		CPY		#$06
@@ -3012,19 +3058,19 @@ loc_EB0C8:
 		BNE		loc_EB0C8
 loc_EB0D4:
 		JSR		_hex_to_dec999999				; convert to a string
-		LDA		_tmp13D
+		LDA		_city_eval_string_counter
 		CLC
 		ADC		#$17
 		JSR		_printf_num_lib					; draw it
-		INC		_tmp13D
-		LDA		_tmp13D
+		INC		_city_eval_string_counter
+		LDA		_city_eval_string_counter
 		CMP		#$0B
 		BCC		loc_EB084						; continue for all 10 values
 .city_problem_txt_draw:
 		LDA		#$0B							; draw city problem list
-		STA		_tmp13D
+		STA		_city_eval_string_counter
 loc_EB0EF:
-		LDA		_tmp13D
+		LDA		_city_eval_string_counter
 		SEC
 		SBC		#$0B
 		STA		_tmp7
@@ -3034,8 +3080,8 @@ loc_EB0EF:
 		TAX
 		LDA		_tmp7
 		JSR		_printf_txt_lib
-		INC		_tmp13D
-		LDA		_tmp13D
+		INC		_city_eval_string_counter
+		LDA		_city_eval_string_counter
 		CMP		#$0F
 		BCC		loc_EB0EF
 loc_EB10D:
@@ -3043,6 +3089,21 @@ loc_EB10D:
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		RTS
+
+_city_eval_len_list:
+		.BYTE	$01,$01,$03,$03,$03,$02,$02,$01,$01,$01,$01,$01
+_city_eval_vars_list:
+		.WORD	_doing_a_good_job_votes
+		.WORD	_doing_a_bad_job_votes
+		.WORD	_popul_cur
+		.WORD	_popul_net_migration
+		.WORD	_assessed_value
+		.WORD	_city._score
+		.WORD	_annual_score_change
+		.WORD	_worst_problem_percents
+		.WORD	_worst_problem_percents+1
+		.WORD	_worst_problem_percents+2
+		.WORD	_worst_problem_percents+3
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl3_B_city_eval_input:
@@ -3212,7 +3273,7 @@ loc_EB1EC:
 loc_EB247:
 		LDA		#$00
 		STA		_tmp2
-		JSR		_div24
+		JSR		_div24_to_24
 loc_EB24E:
 		STX		_ptr0
 		JMP		.overwiev_dec99_printf
@@ -3339,10 +3400,6 @@ _thread_lock_flag_set:
 ;locret_EB52A:
 ;		RTS
 
-byte_EB55A:
-		.BYTE	$5F,$5F,$28,$28,$00,$00,$50,$50,$28,$28,$50,$50,$00,$00,$50,$50
-byte_EB56A:
-		.BYTE	$10,$10,$10,$10,$10,$10,$D0,$D0,$D0,$D0,$50,$50,$D0,$D0,$90,$90
 word_EB57A:
 		.WORD	$000
 		.WORD	$026
@@ -3435,7 +3492,7 @@ byte_EB682:
 _info_maps_menu_var_ofs_list:
 		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
 
-; UNUSED, this is an early copies of nt/extnt of Dr.Willy in bank window with
+; UNUSED, this is an early copy of nt/extnt of Dr.Willy in bank window with
 ; cash in its hand. the position values are lower and shifted to the left,
 ; so it would be displayed under the left window. this may indicate that
 ; there were another BANK screen layout
@@ -3459,31 +3516,26 @@ _mini_map_block_size_list:
 _mini_map_stop_col_list:
 		.BYTE	$04,$04,$04,$04,$04,$08,$08,$08,$08,$0C,$0C,$0C,$0C,$10,$10,$10
 		.BYTE	$10,$13,$13,$13
-_budget_fund_print_idx_list:
-		.BYTE	$00,$00,$07,$07,$08,$08,$09,$09,$0A,$0A,$0B,$0B
-_budget_tax_print_idx_list:
-		.BYTE	$00,$00,$0C,$0C,$0D,$0D,$0E,$0E,$0F,$0F,$10,$10
 
 ; =============== S U B	R O U T	I N E =======================================
 _printf_txt_lib:
-		STA		_tmp7							; lib idx
-		STX		_tmp6							; lib ofs
+		STA		_tmp7							; lib selector
+		STX		_tmp6							; string selector
 		PPUQSTART
 ;		ASL										; REDUNDANT, optimized
 		TAY
-		LDA		_txt_ppu_ofs_lib_lo,Y
-		PPUQMOVA
-		LDA		_txt_ppu_ofs_lib_hi,Y
+		LDA		_txt_ppu_ofs_lib_lo,Y			; get the corresponding offset
+		PPUQMOVA								; (same pos for all strings in one
+		LDA		_txt_ppu_ofs_lib_hi,Y			; library block)
 		PPUQMOVA
 ;		LDY		_tmp7							; REDUNDANT, optimized
-		LDA		byte_EBB49,Y
-		STA		_ppu_queue_buf,X
+		LDA		_txt_ppu_len_list,Y				; put string length (same length for all strings
+		PPUQMOVA								; in one library block)
 		STA		_tmp5
-		INX
 ;		LDA		_tmp7							; REDUNDANT, optimized
 ;		ASL										; REDUNDANT, optimized
 ;		TAY										; REDUNDANT, optimized
-		LDA		_txt_libs_lo,Y
+		LDA		_txt_libs_lo,Y					; finally, read the library offset
 		STA		_ptr0
 		LDA		_txt_libs_hi,Y
 		STA		_ptr0+1
@@ -3494,53 +3546,52 @@ _printf_txt_lib:
 		LDA		#$00
 		CLC
 loc_EB88F:
-		ADC		byte_EBB56,Y
-		DEC		_tmp4
+		ADC		_txt_ppu_len_list,Y				; now calculate offset of the actual string
+		DEC		_tmp4							; ofs = string_selector * sting_length
 		BNE		loc_EB88F
 loc_EB896:
-		TAY
+		TAY										; Y = ofs
 loc_EB897:
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y						; queue actual string
 		PPUQMOVA
 		INY
 		DEC		_tmp5
 		BNE		loc_EB897
 		PPUQEND
 		EXTQSTART
-		LDY		_tmp7
-		CPY		#$06
+		LDY		_tmp7							; now we has to adjust extnt as well
+		CPY		#$06							; but only not for history strings, they are fine already
 		BCS		locret_EB8F3
-;		ASL									; REDUNDANT, optimized
-;		TAY									; REDUNDANT, optimized
-		LDA		_txt_ppu_ofs_lib_lo,Y
+;		ASL										; REDUNDANT, optimized
+;		TAY										; REDUNDANT, optimized
+		LDA		_txt_ppu_ofs_lib_lo,Y			; get the same ppu offsets, but adjust it to extnt buffer
 		EXTQMOVA
 		LDA		_txt_ppu_ofs_lib_hi,Y
 		CLC
 		ADC		#$38
 		EXTQMOVA
-;		LDY		_tmp7						; REDUNDANT, optimized
-		LDA		byte_EBB49,Y
-		STA		_extnt_queue_buf,X
+;		LDY		_tmp7							; REDUNDANT, optimized
+		LDA		_txt_ppu_len_list,Y				; also length
+		EXTQMOVA
 		STA		_tmp5
-		INX
 ;		LDA		_tmp7
 ;		ASL
 ;		TAY
-		LDA		_txt_len_lib_lo,Y
+		LDA		_txt_extnt_lib_lo,Y				; load corresponding extnt library ofs
 		STA		_ptr0
-		LDA		_txt_len_lib_hi,Y
+		LDA		_txt_extnt_lib_hi,Y
 		STA		_ptr0+1
 		LDY		_tmp6
-		LDA		_tmp13D
+		LDA		_city_eval_string_counter		; check if we has to draw city problems list here
 		CMP		#$0B
-		BNE		loc_EB8E7
-		LDA		(_ptr0),Y
+		BNE		loc_EB8E7						; if not, read extnt as is
+		LDA		(_ptr0),Y						; for city probles extnt need to be adjusted
 		ORA		#$80
 		BNE		loc_EB8E9
 loc_EB8E7:
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y						; if not, then exactly the same
 loc_EB8E9:
-		EXTQMOVA
+		EXTQMOVA								; fill same extnt for length of sting
 		DEC		_tmp5
 		BNE		loc_EB8E9
 		EXTQEND
@@ -3549,7 +3600,7 @@ locret_EB8F3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _printf_num_lib:
-		STA		_tmp118
+		STA		_tmp118					; tmp index of library string
 ;		CMP		#$06					; REDUNDANT: never used, should disable
 ;		BEQ		locret_EB903			; some screen positions in the table
 ;		CMP		#$0B					; but why you need to call them if
@@ -3559,14 +3610,14 @@ _printf_num_lib:
 ;locret_EB903:
 ;		RTS
 ;loc_EB904:
-		TAY
-		LDX		_printf_num_lib_spaces_list,Y
-		JSR		_printf_num_lib_number_trim
+		TAY								; convert decimal buffer into string
+		LDX		_printf_num_lib_spaces_list,Y	; fill leading zeroes with spaces
+		JSR		_printf_num_nt_convert
 		LDX		_tmp118
 loc_EB90E:
-		LDA		_ptr0,Y
-		CLC
-		ADC		_printf_num_tile_ofs_list,X
+		LDA		_ptr0,Y					; now shift tile indexes to corresponding
+		CLC								; tileset in CHR ROM
+		ADC		_printf_num_tile_ofs_list,X	; individual for all numbers
 		STA		_ptr0,Y
 		DEY
 		BPL		loc_EB90E
@@ -3574,33 +3625,33 @@ loc_EB90E:
 		LDY		_tmp118					; FIX: optimized
 ;		ASL								; REDUNDANT, optimized
 ;		TAY								; REDUNDANT, optimized
-		LDA		_printf_num_screen_pos_list_lo,Y
+		LDA		_printf_num_screen_pos_list_lo,Y	; push ppu offset to queue
 		PPUQMOVA
 		LDA		_printf_num_screen_pos_list_hi,Y
 		PPUQMOVA
 ;		LDY		_tmp118					; REDUNDANT, optimized
-		LDA		_printf_num_len_list,Y
+		LDA		_printf_num_len_list,Y	; queue length of number
 		PPUQMOVA
 		TAY
 		DEY
 loc_EB93C:
-		LDA		_ptr0,Y
+		LDA		_ptr0,Y					; queue actual string
 		PPUQMOVA
 		DEY
 		BPL		loc_EB93C
 		PPUQEND
-		JSR		sub_EB980
+		JSR		_printf_num_extnt_convert; now fill extnt data for number
 		EXTQSTART
 		LDY		_tmp118
 		CPY		#$22
-		BCS		locret_EB97F
+		BCS		locret_EB97F			; also we not need extnt for some numbers
 ;		ASL								; REDUNDANT, optimized
 ;		TAY								; REDUNDANT, optimized
-		LDA		_printf_num_screen_pos_list_lo,Y
+		LDA		_printf_num_screen_pos_list_lo,Y	; queue the rest of data
 		EXTQMOVA
 		LDA		_printf_num_screen_pos_list_hi,Y
 		CLC
-		ADC		#$38
+		ADC		#$38					; adjust ppu pos to extnt buffer
 		EXTQMOVA
 ;		LDY		_tmp118					; REDUNDANT, optimized
 		LDA		_printf_num_len_list,Y
@@ -3608,7 +3659,7 @@ loc_EB93C:
 		TAY
 		DEY
 loc_EB973:
-		LDA		_ptr0,Y
+		LDA		_ptr0,Y					; store.
 		EXTQMOVA
 		DEY
 		BPL		loc_EB973
@@ -3617,16 +3668,16 @@ locret_EB97F:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EB980:
-		LDA		#$00
+_printf_num_extnt_convert:
+		LDA		#$00							; the same way as for nt data
 		STA		_tmp118+3
 		LDX		_tmp118
 		LDA		_printf_num_len_list,X
 		TAY
 		DEY
 loc_EB98D:
-		LDA		_ptr0,Y
-		BMI		loc_EB9B2
+		LDA		_ptr0,Y							; find a special symbols that
+		BMI		loc_EB9B2						; need special extnt values
 		LDX		_tmp118+3
 		BNE		loc_EB9A9
 		CPY		#$00
@@ -3640,45 +3691,45 @@ loc_EB98D:
 		BEQ		loc_EB9B8
 loc_EB9A9:
 		LDX		_tmp118
-		LDA		byte_EBE77,X
+		LDA		_number_extnt_table0,X
 		JMP		loc_EB9B8
 loc_EB9B2:
 		LDX		_tmp118
-		LDA		byte_EBE9F,X
+		LDA		_number_extnt_table1,X
 loc_EB9B8:
-		STA		_ptr0,Y
+		STA		_ptr0,Y							; replace and continue for the whole buffer
 		DEY
 		BPL		loc_EB98D
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_printf_num_lib_number_trim:
+_printf_num_nt_convert:
 		LDA		#$00
 		STA		_tmp7
 		LDY		_tmp118
-		LDA		_printf_num_len_list,Y
+		LDA		_printf_num_len_list,Y		; read length of desires number
 		TAY
 		DEY
 loc_EB9CB:
-		LDA		_ptr0,Y
+		LDA		_ptr0,Y						; look for first non-zero digit
 		BNE		loc_EB9DA
-		STX		_ptr0,Y
+		STX		_ptr0,Y						; fill zero with corresponding space char (in X)
 		DEY
 		BPL		loc_EB9CB
-		INY
+		INY									; finish digit with zero-terminate code
 		LDX		#$00
 		STX		_ptr0,Y
 loc_EB9DA:
-		LDX		_tmp118
-		LDA		#$24
+		LDX		_tmp118						; finish with a special symbol ("-" or "$"
+		LDA		#$24						; "$"
 		CPX		#$1B
 		BEQ		loc_EB9F9
-		LDA		#$2D
+		LDA		#$2D						; "-"
 		CPX		#$1A
 		BEQ		loc_EB9F4
 		CPX		#$1D
-		BNE		locret_EB9FE
-		LDX		_annual_score_change+1
+		BNE		locret_EB9FE				;
+		LDX		_annual_score_change+1		; signed values also
 		BPL		locret_EB9FE
 		BMI		loc_EB9F9
 loc_EB9F4:
@@ -3686,20 +3737,20 @@ loc_EB9F4:
 		BPL		locret_EB9FE
 loc_EB9F9:
 		INY
-		STA		_ptr0,Y
+		STA		_ptr0,Y						; put special character here
 		DEY
-locret_EB9FE:
+locret_EB9FE:								; the rest not need any other symbols
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; input args: 16bit _tmp0 * reg X, store 24bit _tmp0-tmp2, _tmp3_tmp5
 ;
 _mmc5_mul16to8_fast:
-		LDA		_tmp1
-		STA		_MMC5_MUL0
-		STX		_MMC5_MUL1
-		LDA		_MMC5_MUL0
-		STA		_tmp2
+		LDA		_tmp1					; local copy of MUL routine, not safe!
+		STA		_MMC5_MUL0				; THREAD1 won't restore mul registers
+		STX		_MMC5_MUL1				; however, most of calc using this routine
+		LDA		_MMC5_MUL0				; work when THREAD1 suspended, so does not
+		STA		_tmp2					; be interrupted...
 		LDA		_MMC5_MUL1
 		STA		_tmp5
 		LDA		_tmp0
@@ -3726,44 +3777,8 @@ _mmc5_mul16to8_fast:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_budget_cash_flow_calc:
-		LDA		#$DC							; sign "+" by default
-		STA		_tmp6
-		LDY		#$00
-		LDX		#$03
-		SEC
-loc_EBAB4:
-		LDA		_city_taxes_collected,Y				; subtract funds
-		SBC		_budget_funds_alloc_sum,Y
-		STA		_ptr0,Y
-		INY
-		DEX
-		BNE		loc_EBAB4
-		BCS		loc_EBAD9						; test if not exceeded
-		LDA		#$7F
-		STA		_tmp6							; negative money, set sign "-"
-		LDY		#$00
-		LDX		#$03
-		SEC
-loc_EBACC:
-		LDA		_budget_funds_alloc_sum,Y					; calc negative value
-		SBC		_city_taxes_collected,Y
-		STA		_ptr0,Y
-		INY
-		DEX
-		BNE		loc_EBACC
-loc_EBAD9:
-		PPUQSTART								; send sign char into ppu queue
-		PPUQMOVB	#$AF,OP_NOP,0
-		PPUQMOVB	#$26,OP_NOP,0
-		PPUQMOVB	#$01,OP_NOP,0
-		PPUQMOVB	_tmp6,OP_NOP,0
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_div24:
-		JSR		loc_EBB02
+_div24_to_24:
+		JSR		loc_EBB02				; another local only division routine
 		ASL		_tmp3
 		ROL		_tmp4
 		ROL		_tmp5
@@ -3825,10 +3840,13 @@ _txt_ppu_ofs_lib_hi:
 		.BYTE	>[$264A]
 		.BYTE	>[$26AA]
 		.BYTE	>[$270A]
-byte_EBB49:
+_txt_ppu_len_list:
 		.BYTE	$09,$09,$09,$09,$08,$04,$12,$12,$12,$12,$12,$12,$12
-byte_EBB56:
-		.BYTE	$09,$09,$09,$09,$08,$04,$12,$12,$12,$12,$12,$12,$12
+
+; REDUNDANT, the same array as previous one
+;byte_EBB56:
+;		.BYTE	$09,$09,$09,$09,$08,$04,$12,$12,$12,$12,$12,$12,$12
+
 _txt_libs_lo:
 		.BYTE	<[_txt_problems_lib]
 		.BYTE	<[_txt_problems_lib]
@@ -3857,45 +3875,49 @@ _txt_libs_hi:
 		.BYTE	>[_txt_history_lib]
 		.BYTE	>[_txt_history_lib]
 		.BYTE	>[_txt_history_lib]
-_txt_len_lib_lo:
-		.BYTE	<[_txt_problems_len_list]
-		.BYTE	<[_txt_problems_len_list]
-		.BYTE	<[_txt_problems_len_list]
-		.BYTE	<[_txt_problems_len_list]
-		.BYTE	<[_txt_town_names_len_list]
-		.BYTE	<[_txt_difficult_len_list]
-_txt_len_lib_hi:
-		.BYTE	>[_txt_problems_len_list]
-		.BYTE	>[_txt_problems_len_list]
-		.BYTE	>[_txt_problems_len_list]
-		.BYTE	>[_txt_problems_len_list]
-		.BYTE	>[_txt_town_names_len_list]
-		.BYTE	>[_txt_difficult_len_list]
-_txt_town_names_lib:
-		.BYTE	$1F,$12,$15,$15,$0A,$10,$0E,$DC
-		.BYTE	$1D,$18,$20,$17,$DC,$DC,$DC,$DC
-		.BYTE	$0C,$12,$1D,$22,$DC,$DC,$DC,$DC
-		.BYTE	$0C,$0A,$19,$12,$1D,$0A,$15,$DC
-		.BYTE	$09,$0A,$0B,$0C,$0D,$0E,$10,$11
-		.BYTE	$09,$12,$13,$14,$15,$16,$17,$18
-_txt_town_names_len_list:
-		.BYTE	 $05,$05,$05,$05,$06,$06
-_txt_difficult_lib:
-		.BYTE	$AD,$AE,$AF,$DC
-		.BYTE	$27,$28,$29,$2A
-		.BYTE	$24,$25,$26,$DC
-_txt_difficult_len_list:
-		.BYTE	$04,$05,$05
-_txt_problems_lib:
-		.BYTE	$0C,$1B,$12,$16,$0E,$DC,$DC,$DC,$DC
-		.BYTE	$19,$18,$15,$15,$1E,$1D,$12,$18,$17
-		.BYTE	$D0,$D1,$D2,$D3,$D4,$D5,$D6,$D7,$D8
-		.BYTE	$1D,$0A,$21,$0E,$1C,$DC,$DC,$DC,$DC
-		.BYTE	$1D,$1B,$0A,$0F,$0F,$12,$0C,$DC,$DC
-		.BYTE	$00,$01,$02,$03,$04,$05,$06,$07,$08
-		.BYTE	$0F,$12,$1B,$0E,$1C,$DC,$DC,$DC,$DC
-_txt_problems_len_list:
+
+; NOTE, history strings aren't needed the extnt so they are not in this
+; lib at all.
+;
+_txt_extnt_lib_lo:
+		.BYTE	<[_txt_problems_extnt_list]
+		.BYTE	<[_txt_problems_extnt_list]
+		.BYTE	<[_txt_problems_extnt_list]
+		.BYTE	<[_txt_problems_extnt_list]
+		.BYTE	<[_txt_town_names_extnt_list]
+		.BYTE	<[_txt_difficult_extnt_list]
+_txt_extnt_lib_hi:
+		.BYTE	>[_txt_problems_extnt_list]
+		.BYTE	>[_txt_problems_extnt_list]
+		.BYTE	>[_txt_problems_extnt_list]
+		.BYTE	>[_txt_problems_extnt_list]
+		.BYTE	>[_txt_town_names_extnt_list]
+		.BYTE	>[_txt_difficult_extnt_list]
+_txt_problems_extnt_list:
 		.BYTE	$05,$05,$04,$05,$05,$06,$05
+_txt_town_names_extnt_list:
+		.BYTE	$05,$05,$05,$05,$06,$06
+_txt_difficult_extnt_list:
+		.BYTE	$04,$05,$05
+_txt_town_names_lib:
+		.BYTE	$1F,$12,$15,$15,$0A,$10,$0E,$DC		; "Village"
+		.BYTE	$1D,$18,$20,$17,$DC,$DC,$DC,$DC		; "Town"
+		.BYTE	$0C,$12,$1D,$22,$DC,$DC,$DC,$DC		; "City"
+		.BYTE	$0C,$0A,$19,$12,$1D,$0A,$15,$DC		; "Capital"
+		.BYTE	$09,$0A,$0B,$0C,$0D,$0E,$10,$11		; "Metropolis"
+		.BYTE	$09,$12,$13,$14,$15,$16,$17,$18		; "Megapolis"
+_txt_difficult_lib:
+		.BYTE	$AD,$AE,$AF,$DC						; "Easy"
+		.BYTE	$27,$28,$29,$2A						; "Normal"
+		.BYTE	$24,$25,$26,$DC						; "Hard"
+_txt_problems_lib:
+		.BYTE	$0C,$1B,$12,$16,$0E,$DC,$DC,$DC,$DC	; "Crime"
+		.BYTE	$19,$18,$15,$15,$1E,$1D,$12,$18,$17	; "Pollution"
+		.BYTE	$D0,$D1,$D2,$D3,$D4,$D5,$D6,$D7,$D8	; "Housing cost"
+		.BYTE	$1D,$0A,$21,$0E,$1C,$DC,$DC,$DC,$DC ; "Taxes"
+		.BYTE	$1D,$1B,$0A,$0F,$0F,$12,$0C,$DC,$DC ; "Traffic"
+		.BYTE	$00,$01,$02,$03,$04,$05,$06,$07,$08 ; "Unemployment"
+		.BYTE	$0F,$12,$1B,$0E,$1C,$DC,$DC,$DC,$DC ; "Fires"
 _txt_history_lib:
 		.BYTE	"Become Town       "
 		.BYTE	"Become City       "
@@ -3908,7 +3930,7 @@ _txt_history_lib:
 		.BYTE	"Tornado           "
 		.BYTE	"Earthquake        "
 		.BYTE	"Monster Attack    "
-		.BYTE	"melt Down         "
+		.BYTE	"Melt Down         "
 _printf_num_lib_spaces_list:
 		.BYTE	$DF,$DC,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DC,$DC,$DC,$20,$DF,$DF,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC
@@ -4090,32 +4112,18 @@ _printf_num_len_list:
 		.BYTE	$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03
 		.BYTE	$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03
 		.BYTE	$03,$03,$03,$01,$01,$01,$01,$01,$04,$04,$04,$04,$04,$04,$04
-byte_EBE77:
+_number_extnt_table0:
 		.BYTE	$59,$05,$19,$19,$19,$19,$00,$59
 		.BYTE	$59,$59,$59,$00,$19,$19,$19,$19
 		.BYTE	$00,$05,$05,$05,$8B,$42,$42,$85
 		.BYTE	$05,$8B,$05,$05,$05,$05,$85,$05
 		.BYTE	$05,$05,$15,$15,$15,$15,$15,$15
-byte_EBE9F:
+_number_extnt_table1:
 		.BYTE	$05,$05,$05,$05,$05,$05,$05,$05
 		.BYTE	$05,$05,$05,$05,$05,$05,$05,$05
 		.BYTE	$05,$05,$05,$05,$8B,$01,$01,$05
 		.BYTE	$05,$05,$05,$05,$05,$05,$02,$02
 		.BYTE	$02,$02,$14,$14,$14,$14,$14,$14
-_city_eval_len_list:
-		.BYTE	$01,$01,$03,$03,$03,$02,$02,$01,$01,$01,$01,$01
-_city_eval_vars_list:
-		.WORD	_doing_a_good_job_votes
-		.WORD	_doing_a_bad_job_votes
-		.WORD	_popul_cur
-		.WORD	_popul_net_migration
-		.WORD	_assessed_value
-		.WORD	_city._score
-		.WORD	_annual_score_change
-		.WORD	_worst_problem_percents
-		.WORD	_worst_problem_percents+1
-		.WORD	_worst_problem_percents+2
-		.WORD	_worst_problem_percents+3
 
 ; REDUNDANT, merged with _fund_reqest_vars_list
 ;_fund_reqest_ofs_list:
@@ -4136,7 +4144,6 @@ _city_eval_vars_list:
 ;		STA		_ptr0+1							; -
 ;
 ; !FALLTHROUGH!
-
 
 ; ---------------------------------------------------------------------------
 ; -------------H-E-X--T-O--D-E-C-I-M-A-L--C-O-N-V-E-R-T-E-R-S----------------

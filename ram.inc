@@ -505,7 +505,7 @@ _budget_screen_return_to_info_maps_flag:
 		.BYTE	0
 _info_maps_button_pending:
 		.BYTE	0
-_tmp13D:
+_city_eval_string_counter:
 		.BYTE	0
 _obj_active_flags:
 		.BYTE	0
@@ -1021,7 +1021,7 @@ _tmp6AA:
 _tmp6AC:
 		.BYTE	0,0
 
-		_treq _required_flags
+		_treq _required
 
 _cur_R_area_develop_state:
 		.BYTE	0
