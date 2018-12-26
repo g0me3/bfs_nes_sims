@@ -460,12 +460,12 @@ _bank_build_year_init:
 		LDA		_city._cur_year
 		CLC
 		ADC		#$05
-		STA		_city._year_to_build_bank
+		STA		_city._year_to_bank
 		LDX		_city._cur_year+1
 		BCC		loc_150471
 		INX
 loc_150471:
-		STX		_city._year_to_build_bank+1
+		STX		_city._year_to_bank+1
 locret_150474:
 		RTS
 

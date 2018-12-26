@@ -946,7 +946,7 @@ _cur_map_tile_is_inside_a_building_flag:
 		.BYTE	0
 _tmp_last_read_map_tile_power_state:
 		.BYTE	0
-_power_total_consumption:
+_powered_areas:
 		.BYTE	0,0
 _hospitals_delta:
 		.BYTE	0
@@ -964,8 +964,8 @@ _cur_R_area_develop_state:
 
 		_tfix8_8	_prev_RCI_levels_sum
 
-		.BYTE	0
-		.BYTE	0
+		.BYTE	0		; *unused*
+		.BYTE	0		; *unused*
 _popul_last_year:
 		.BYTE	0,0,0
 _tmp_map_pos_backup_buf_Y:
@@ -993,6 +993,9 @@ _monster_in_water_flag:
 		.BYTE	0
 byte_6CB:
 		.BYTE	0
+
+; END OF REINIT AREA
+
 _tmp6CC:
 		.BYTE	0,0
 

@@ -589,7 +589,7 @@ _collect_general_buildings_stats:
 		JSR		_test_power_grid_map_bit
 		STA		_tmp_last_read_map_tile_power_state
 		BEQ		loc_11E4F1
-		INCW	_power_total_consumption
+		INCW	_powered_areas
 loc_11E4F1:
 		LDA		_last_map_tile_read
 		CMP		#$50
@@ -960,7 +960,7 @@ locret_11E7B7:
 
 ; =============== S U B	R O U T	I N E =======================================
 _collect_other_buildings_stats:
-		CMP		#$60
+		CMP		#_MAP_COAL_POWER
 		BNE		loc_11E7CC
 		LDA		_coal_power_station_count		; coal power station building
 		BMI		loc_11E7C4						; no greater than 128
@@ -969,7 +969,7 @@ loc_11E7C4:
 		FJSR	_power_node_insert,SRAM,PRGA
 		RTS
 loc_11E7CC:
-		CMP		#$61
+		CMP		#_MAP_NUCLEAR_POWER
 		BNE		loc_11E7E0
 		LDA		_nuke_power_station_count		; nuclear power stations
 		BMI		loc_11E7D8						; no greater than 128

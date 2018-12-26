@@ -367,6 +367,9 @@ loc_104296:
 		BNE		.power_search_loop0				; search until we have no more tiles to power up
 		JMP		.power_grid_recalc_loop			; then we jump to retch another power node from list
 locret_1042F9:
+; -
+; TODO: put brownouts scroller message start here.
+; -
 		RTS
 
 ; REDUNDANT, merged with _jump_to_near_to_tmp_map_pos_tile, moved to system bank
@@ -1866,12 +1869,12 @@ loc_104E9D:
 ;
 _events_selector:
 		JSR		_scenario_result_test			; here we test for scenarios completion
-		JSR		_practive_events_test			; practice has additional hint events
+		JSR		_practice_events_test			; practice has additional hint events
 		JSR		_scroll_msg_selector			; select scroll warning messages
 		LDA		_game_msg_awaits_flag
 		BNE		locret_104ED8					; skip not if we already selected any messages
-		LDA		_game_msg_idx
-		STA		_prev_game_msg_idx				; save currently selected message to prevent
+;		LDA		_game_msg_idx					; REDUNDANT, we not using it anymore
+;		STA		_prev_game_msg_idx				; REDUNDANT, save currently selected message to prevent
 		LDX		#$00							; double triggering by accident
 		LDY		#$00
 .next_byte_loop:
@@ -2006,12 +2009,12 @@ _event07_traffic:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event08_crime:
-		LDA		_city._crime_lvl_avr.INT		; crime above $700 average
-		BMI		nullsub_4
+		LDA		_city._crime_lvl_avr.INT		; crime above $700 average (old values)
+		BMI		nullsub_4						; new values are up to 1.6
 		CMP		#$07							; TODO, recalibrate me!
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_city._crime_lvl_avr.INT
+		STA		_city._crime_lvl_avr.INT		; this flag reset when value recalculated
 		JMP		_force_new_event
 
 ; REDUNDANT
@@ -2021,14 +2024,11 @@ _event08_crime:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0B_bank:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
-		LDA		_city._cur_year
-		CMP		_city._year_to_build_bank
-		LDA		_city._cur_year+1
-		SBC		_city._year_to_build_bank+1
-		BCC		nullsub_4
-		JMP		_register_new_event
+		JSR		_check_for_free_present_slot	; lets start to give a presents
+		BNE		nullsub_4						; check if we have free slot.
+		CMPW	_city._cur_year,_city._year_to_bank	; if not, don't worry, the event will wait
+		BCC		nullsub_4						; test for selected year
+		JMP		_register_new_event				; register new event
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_4:
@@ -2036,15 +2036,15 @@ nullsub_4:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0C_relationships:
-		LDX		#$05
-		JSR		_popul_compare
-		BCC		nullsub_4
+		LDX		#$05							; relationship event triggers
+		JSR		_popul_compare					; above 150000 population
+		BCC		nullsub_4						; no present here yet
 		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0D_amusement:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
+		JSR		_check_for_free_present_slot	; for amuseemnt park present
+		BNE		nullsub_4						; you need at least 150000 population
 		LDX		#$06
 		JSR		_popul_compare
 		BCC		nullsub_4
@@ -2052,7 +2052,7 @@ _event0D_amusement:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0E_zoo:
-		JSR		_check_for_free_present_slot
+		JSR		_check_for_free_present_slot	; 250000 for zoo
 		BNE		nullsub_4
 		LDX		#$07
 		JSR		_popul_compare
@@ -2061,35 +2061,35 @@ _event0E_zoo:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0F_casino:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
-		LDX		#$08
+		JSR		_check_for_free_present_slot	; 200000 for casino
+		BNE		nullsub_4						; nice, eh? you need less people to
+		LDX		#$08							; build casino than a zoo
 		JSR		_popul_compare
 		BCC		nullsub_4
 		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event10_extra_land:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
-		LDA		_sea_ports_count
+		JSR		_check_for_free_present_slot	; extra land given only once sadly
+		BNE		nullsub_4						; as against SNES version...
+		LDA		_sea_ports_count				; just build more than one port
 		CMP		#$02
 		BCC		nullsub_4
 		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event11_new_police:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
-		LDA		_police_stations_count
+		JSR		_check_for_free_present_slot	; 10 police stations gives new
+		BNE		nullsub_4						; hyper mega police station.
+		LDA		_police_stations_count			; maxes out the police range
 		CMP		#$0A
 		BCC		nullsub_4
 		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event12_new_fire:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
+		JSR		_check_for_free_present_slot	; the same for fire stations
+		BNE		nullsub_4						; a lot of money for funding!
 		LDA		_fire_stations_count
 		CMP		#$0A
 		BCC		nullsub_4
@@ -2097,61 +2097,45 @@ _event12_new_fire:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event13_10th_monument:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_4
-		LDA		_city._cur_year
-		CMP		#$76
-		LDA		_city._cur_year+1
-		SBC		#$07
+		JSR		_check_for_free_present_slot	; 10th year anniversary for town
+		BNE		nullsub_4						; build a monument
+		CMPWI	_city._cur_year,1910
 		BCC		nullsub_4
 		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event14_100th_monument:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_2
-		LDA		_city._cur_year
-		CMP		#$D0
-		LDA		_city._cur_year+1
-		SBC		#$07
+		JSR		_check_for_free_present_slot	; also 100 anniversary, blocked in
+		BNE		nullsub_2						; all scenarios though
+		CMPWI	_city._cur_year,2000
 		BCC		nullsub_2
 		JMP		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event15_expo:
-		LDA		_city._cur_year
-		CMP		#$9E
-		BNE		nullsub_2
-		LDA		_city._cur_year+1
-		CMP		#$07
-		BNE		nullsub_2
+		CMPWI	_city._cur_year,1950			; start an expo fixed year. available
+		BNE		nullsub_2						; only in practice and free modes
 		BEQ		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event16_expo_monument:
-		JSR		_check_for_free_present_slot
-		BNE		nullsub_2
-		LDA		_city._cur_year
-		CMP		_city._year_to_expo
-		LDA		_city._cur_year+1
-		SBC		_city._year_to_expo+1
+		JSR		_check_for_free_present_slot	; the year later after expo
+		BNE		nullsub_2						; we build a monument
+		CMPW	_city._cur_year,_city._year_to_expo
 		BCC		nullsub_2
 		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event17_liberty:
-		JSR		_check_for_free_present_slot
+		JSR		_check_for_free_present_slot	; 10 years after establishing relationship
 		BNE		nullsub_2
-		LDA		_city._cur_year
-		CMP		_city._year_to_liberty
-		LDA		_city._cur_year+1
-		SBC		_city._year_to_liberty+1
+		CMPW	_city._cur_year,_city._year_to_liberty
 		BCC		nullsub_2
 		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
 _event18_library:
-		JSR		_check_for_free_present_slot
+		JSR		_check_for_free_present_slot	; 70000 needed to build a library
 		BNE		nullsub_2
 		LDX		#$09
 		JSR		_popul_compare
@@ -2159,22 +2143,20 @@ _event18_library:
 		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
-; 200 parks needed
 _event19_park:
-		JSR		_check_for_free_present_slot
+		JSR		_check_for_free_present_slot	; 200 park tiles to build an larger park
 		BNE		nullsub_2
 		LDA		_parks_counter
-		CMP		#$C8
+		CMP		#200
 		BCC		nullsub_2
 		BCS		_register_new_event
 
 ; =============== S U B	R O U T	I N E =======================================
-; 150 railroars	needed
 _event1A_railroad:
-		JSR		_check_for_free_present_slot
+		JSR		_check_for_free_present_slot	; 150 railroad tiles also
 		BNE		nullsub_2
 		LDA		_rails_count
-		CMP		#$96
+		CMP		#150
 		BCC		nullsub_2
 		BCS		_register_new_event
 
@@ -2184,23 +2166,25 @@ nullsub_2:
 
 ; =============== S U B	R O U T	I N E =======================================
 _register_new_event:
-		STY		_game_msg_idx
-		TYA
-		LSR
+		STY		_game_msg_idx					; here we jump to register new event
+		TYA										; calculate byte idx8 = msg_idx / 8
+		LSR										; and a bit index idx1 = msg_idx & 7
 		LSR
 		LSR
 		TAX
 		TYA
 		AND		#$07
 		TAY
-		LDA		_city._events_used_flags,X
+		LDA		_city._events_used_flags,X		; read flags, set corresponding one
 		ORA		_bitmasks,Y
 		STA		_city._events_used_flags,X		; _game_msg_idx already set, Y missnig
 		BNE		_new_event_break				; unconditional jump
 
 ; =============== S U B	R O U T	I N E =======================================
 _force_new_event:
-		STY		_game_msg_idx
+		STY		_game_msg_idx					; events that need to be displayed constantly goes here
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_event_break:
@@ -2241,27 +2225,29 @@ loc_105069:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; most of the time this routine called from PRGB, here it used only once
+;
 _city_history_write:
-		TYA
+		TYA										; backup history event index
 		PHA
 		LDY		#$00
 loc_105076:
-		LDA		_city._history_list,Y
+		LDA		_city._history_list,Y			; look for free slot
 		BEQ		loc_10508F
 		INY
 		INY
 		INY
 		CPY		#$15
 		BNE		loc_105076
-		LDY		#$00
+		LDY		#$00							; when history is full,
 loc_105084:
-		LDA		_city._history_list+3,Y
+		LDA		_city._history_list+3,Y			; shift up and free last slot
 		STA		_city._history_list,Y
 		INY
 		CPY		#$12
 		BNE		loc_105084
 loc_10508F:
-		PLA
+		PLA										; put an history index, then year
 		STA		_city._history_list,Y
 		LDA		_city._cur_year
 		STA		_city._history_list+1,Y
@@ -2271,47 +2257,47 @@ loc_10508F:
 
 ; =============== S U B	R O U T	I N E =======================================
 _popul_compare:
-		LDA		_popul_cur
-		CMP		_popul_vals_lib0,X
-		LDA		_popul_cur+1
+		LDA		_popul_cur						; library compare function,
+		CMP		_popul_vals_lib0,X				; all population values stored here
+		LDA		_popul_cur+1					; no need to have a separate comparinsons
 		SBC		_popul_vals_lib1,X
 		LDA		_popul_cur+2
 		SBC		_popul_vals_lib2,X
 		RTS
 
 _popul_vals_lib0:
-		.BYTE	$D0	; 2000		; TOWN
-		.BYTE	$10	; 10000		; CITY
-		.BYTE	$50	; 50000		; CAPITAL
-		.BYTE	$A0	; 100000	; METROPOLIS
-		.BYTE	$20 ; 500000	; MEGAPOLIS
-		.BYTE	$F0 ; 150000	; relationship requirement
-		.BYTE	$C0 ; 120000	; amusement park requirement
-		.BYTE	$90 ; 250000	; zoo requirement
-		.BYTE	$40 ; 200000	; casino requirement
-		.BYTE	$70 ; 70000		; library requirement
+		.BYTE	[[2000 >> 0] & $FF]				; TOWN
+		.BYTE	[[10000 >> 0] & $FF]			; CITY
+		.BYTE	[[50000 >> 0] & $FF]			; CAPITAL
+		.BYTE	[[100000 >> 0] & $FF]			; METROPOLIS
+		.BYTE	[[500000 >> 0] & $FF]			; MEGAPOLIS
+		.BYTE	[[150000 >> 0] & $FF]			; RELATIONSHIP
+		.BYTE	[[120000 >> 0] & $FF]			; AMUSEMENT PARK
+		.BYTE	[[250000 >> 0] & $FF]			; ZOO
+		.BYTE	[[200000 >> 0] & $FF]			; CASINO
+		.BYTE	[[70000 >> 0] & $FF]			; LIBERTY STATUE
 _popul_vals_lib1:
-		.BYTE	$07 ; 2000
-		.BYTE	$27 ; 10000
-		.BYTE	$C3 ; 50000
-		.BYTE	$86 ; 100000
-		.BYTE	$A1 ; 500000
-		.BYTE	$49 ; 150000
-		.BYTE	$D4 ; 120000
-		.BYTE	$D0 ; 250000
-		.BYTE	$0D ; 200000
-		.BYTE	$11 ; 70000
+		.BYTE	[[2000 >> 8] & $FF]
+		.BYTE	[[10000 >> 8] & $FF]
+		.BYTE	[[50000 >> 8] & $FF]
+		.BYTE	[[100000 >> 8] & $FF]
+		.BYTE	[[500000 >> 8] & $FF]
+		.BYTE	[[150000 >> 8] & $FF]
+		.BYTE	[[120000 >> 8] & $FF]
+		.BYTE	[[250000 >> 8] & $FF]
+		.BYTE	[[200000 >> 8] & $FF]
+		.BYTE	[[70000 >> 8] & $FF]
 _popul_vals_lib2:
-		.BYTE	$00 ; 2000
-		.BYTE	$00 ; 10000
-		.BYTE	$00	; 50000
-		.BYTE	$01 ; 100000
-		.BYTE	$07 ; 500000
-		.BYTE	$02 ; 150000
-		.BYTE	$01 ; 120000
-		.BYTE	$03 ; 250000
-		.BYTE	$03 ; 200000
-		.BYTE	$01 ; 70000
+		.BYTE	[[2000 >> 16] & $FF]
+		.BYTE	[[10000 >> 16] & $FF]
+		.BYTE	[[50000 >> 16] & $FF]
+		.BYTE	[[100000 >> 16] & $FF]
+		.BYTE	[[500000 >> 16] & $FF]
+		.BYTE	[[150000 >> 16] & $FF]
+		.BYTE	[[120000 >> 16] & $FF]
+		.BYTE	[[250000 >> 16] & $FF]
+		.BYTE	[[200000 >> 16] & $FF]
+		.BYTE	[[70000 >> 16] & $FF]
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_result_test:
@@ -2378,7 +2364,7 @@ loc_10519E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_practive_events_test:
+_practice_events_test:
 		LDA		_cur_game_mode					; practice game mode
 		CMP		#$03
 		BNE		_exit
@@ -2438,9 +2424,9 @@ _scroll_msg_selector:
 		LDA		#$10							; get RND in range 00-0F
 		JSR		_rand_clamp_A
 		STA		_tmpEB
-		TAY										; execute handlers from RND
+		TAY										; execute handler with idx starting from RNG value
 loc_105204:
-		STY		_tmpEA							; need for handlers as well
+		STY		_tmpEA							; Y are passed to handlers as index of current item
 		JSR		_scroll_msg_test
 		LDY		_tmpEA							; keep cur loop counter
 		INY
@@ -2448,14 +2434,14 @@ loc_105204:
 		BNE		loc_105212
 		LDY		#$00							; wrap to 0
 loc_105212:
-		CPY		_tmpEB							; test to RND-1
+		CPY		_tmpEB							; test to RNG-1
 		BNE		loc_105204
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg_test:
-		LDA		_scroll_msg_test_lib_lo,Y
-		STA		_tmpE8
+		LDA		_scroll_msg_test_lib_lo,Y		; one more last fast table jump here, also because
+		STA		_tmpE8							; we may damage _tmp0 with _switch
 		LDA		_scroll_msg_test_lib_hi,Y
 		STA		_tmpE9
 		JMP		(_tmpE8)
@@ -2471,7 +2457,7 @@ _scroll_msg_test_lib_lo:
 		.BYTE	<[_scroll_msg08_test]
 		.BYTE	<[_scroll_msg09_test]
 		.BYTE	<[_scroll_msg0A_test]
-		.BYTE	<[nullsub_10]
+		.BYTE	<[nullsub_10]					; msgB blackouts unused here, in Micropolis
 		.BYTE	<[_scroll_msg0C_test]
 		.BYTE	<[_scroll_msg0D_test]
 		.BYTE	<[_scroll_msg0E_test]
@@ -2495,8 +2481,8 @@ _scroll_msg_test_lib_hi:
 		.BYTE	>[_scroll_msg0F_test]
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_RCI_counts_div4:
-		MOVW	_tmpE6,_total_RCI_counts
+_get_RCI_counts_div4:							; OPTIMIZED, size reduced for c ommon calcs
+		MOVW	_tmpE6,_total_RCI_counts		; scale counters /4
 		LDA		_tmpE7
 		LSR
 		ROR		_tmpE6
@@ -2506,58 +2492,61 @@ _get_RCI_counts_div4:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg00_test:
-		JSR		_get_RCI_counts_div4
+		JSR		_get_RCI_counts_div4			; R areas less then 1/4 of all zones
 		STA		_tmpE7
-		CMPW	_tmpE6,_RCI_counts._R			; C_R < C_RCI / 4
+		CMPW	_tmpE6,_RCI_counts._R
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg01_test:
-		JSR		_get_RCI_counts_div4
+		JSR		_get_RCI_counts_div4			; C areas less than 1/8 of all zones
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		CMPW	_tmpE6,_RCI_counts._C			; C_C < C_RCI / 8
+		CMPW	_tmpE6,_RCI_counts._C
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg02_test:
-		JSR		_get_RCI_counts_div4
+		JSR		_get_RCI_counts_div4			; the same for I area
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		CMPW	_tmpE6,_RCI_counts._I			; C_I < C_RCI / 8
+		CMPW	_tmpE6,_RCI_counts._I
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg03_test:
-		CMPWI	_total_RCI_counts,10
-		BCC		nullsub_10
-		CMPW	_roads_count,_total_RCI_counts
+		CMPWI	_total_RCI_counts,10			; if sum of areas > 10, but
+		BCC		nullsub_10						; road tiles are < 10, then
+		CMPW	_roads_count,_total_RCI_counts	; trigger message
 		BCS		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg04_test:
-		CMPWI	_total_RCI_counts,50
+		CMPWI	_total_RCI_counts,50			; rails needed when more than 50 areas
 		BCC		nullsub_10
-		CMPW	_rails_count,_total_RCI_counts
+		CMPW	_rails_count,_total_RCI_counts	; and also <50 are built
 		BCS		nullsub_10
 		JMP		_scroll_msg_start
 
+; TODO: if triggers when _powered_areas/_stats._total < 0.7
+; and call "BLACKOUTS" message.
+;
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_10:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg05_test:
-		LDA		_total_RCI_counts+1
+		LDA		_total_RCI_counts+1				; optimized value compare if counter is more than 256
 		BNE		loc_1052EA
-		LDA		_total_RCI_counts
-		CMP		#$0A
+		LDA		_total_RCI_counts				; test if >=10 buildings already and no power stations
+		CMP		#$0A							; then message about need of power stations
 		BCC		nullsub_10
 loc_1052EA:
 ; BUG! here is the total power stations value
@@ -2569,37 +2558,40 @@ loc_1052EA:
 ; FIX, since we don't know exactly var used here, it's safe to just recalc
 ; the value here directly, as in the overall info screen
 ;
-; NOTE, here may be 128+128 max, so if 256 will be zero as well with carry
-; but highly impossible it will happen someday.
-;
 		LDA		_coal_power_station_count
 		CLC
 		ADC		_nuke_power_station_count
 ; -
 		BNE		nullsub_10
+; NOTE in theoretically possible case when we have 128+128 power stations, the result will be
+; zero, but C=1 then, so let's be paranoid and test this case also
+		BCS		nullsub_10
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
+; NOTE, this may cause funny situation, when in scenario mode and existing stadiums
+; are destroyed, sity on fire, but citizens still demant a stadium!
+;
 _scroll_msg06_test:
 		LDA		#$00
-		STA		_required._stadium
-		CMPWI	_city._level._R,$01F4			; here is the fixed point value 1.95
+		STA		_required._stadium				; clear required flag
+		CMPWI	_city._level._R,$01F4			; R_L>1.95
 		BCC		nullsub_10
-		LDA		_stadiums_count
+		LDA		_stadiums_count					; also test if no stadiums.
 		BNE		nullsub_10
-		INC		_required._stadium
+		INC		_required._stadium				; set stadium request, also stops R growth
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg07_test:
 		LDA		#$00
-		STA		_required._seaport
-		CMPWI	_city._level._I,$0064			; fp value 0.39
+		STA		_required._seaport				; the same as for R
+		CMPWI	_city._level._I,$0064			; I_L>0.39
 		BCC		nullsub_10
 		LDA		_sea_ports_count
 		BNE		nullsub_10
-		INC		_required._seaport
+		INC		_required._seaport				; stops I growth
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 
@@ -2607,61 +2599,61 @@ _scroll_msg07_test:
 _scroll_msg08_test:
 		LDA		#$00
 		STA		_required._airport
-		CMPWI	_city._level._C,$0096			; fp value 0.59
+		CMPWI	_city._level._C,$0096			; C_L>0.59
 		BCC		nullsub_10
 		LDA		_airports_count
 		BNE		nullsub_5
-		INC		_required._airport
+		INC		_required._airport				; stops C growth
 		LDA		_tmpEA
 		JMP		_scroll_msg_force_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg09_test:
-		CMPWI	_cur_RCI_levels_sum,$003C		; 0.3Cfp
+		CMPWI	_cur_RCI_levels_sum,$003C		; R_C+I_C+C_L>0.24
 		BCC		nullsub_5
-		LDA		_fire_stations_count
+		LDA		_fire_stations_count			; and no firesstations
 		BNE		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0A_test:
-		CMPWI	_cur_RCI_levels_sum,$003C		; 0.3Cfp
+		CMPWI	_cur_RCI_levels_sum,$003C		; R_C+I_C+C_L>0.24
 		BCC		nullsub_5
-		LDA		_police_stations_count
+		LDA		_police_stations_count			; and no police stations
 		BNE		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0C_test:
-		LDA		_city._tax_rate
+		LDA		_city._tax_rate					; tax rate >=12%
 		CMP		#$0C
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0D_test:
-		LDA		_fund_rate_trans
+		LDA		_fund_rate_trans				; funding ~ < 69%
 		CMP		#$16
 		BCS		nullsub_5
-		CMPWI	_roads_count,30
+		CMPWI	_roads_count,30					; roads count >=30
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0E_test:
-		LDA		_fund_rate_fire
+		LDA		_fund_rate_fire					; funding ~ < 73%
 		CMP		#$0B
 		BCS		nullsub_5
-		CMPWI	_cur_RCI_levels_sum,$0014		; 0.14fp
+		CMPWI	_cur_RCI_levels_sum,$0014		; R_C+I_C+C_L>=0.08
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0F_test:
-		LDA		_fund_rate_police
+		LDA		_fund_rate_police				; funding ~ < 73%
 		CMP		#$0B
 		BCS		nullsub_5
-		CMPWI	_cur_RCI_levels_sum,$0014		; 0.14fp
+		CMPWI	_cur_RCI_levels_sum,$0014		; R_C+I_C+C_L>=0.08
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
@@ -2683,7 +2675,7 @@ _scroll_msg_start:
 ;
 _scroll_msg_force_start:
 		STA		_scroll_msg_idx					; however, there are some events that can
-		LDY		#$00							; break current scroll message display a new one
+		LDY		#$00							; break current scroll message display
 		STY		_scroll_msg_start_pos
 		DEY										; theoretically this may lead to garbage data
 		STY		_scroll_msg_active_flag			; of the previous scroller on the screen

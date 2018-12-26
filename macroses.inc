@@ -160,7 +160,7 @@ I_AREA_WIDX	EQU 4
 	; bit4 - debug mode (free construction)
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
-{1}._year_to_build_bank:				.WORD	0
+{1}._year_to_bank:						.WORD	0
 {1}._year_to_expo:						.WORD	0
 {1}._year_to_liberty:					.WORD	0
 {1}._presents_list:						.BYTE	0,0,0,0
@@ -172,6 +172,7 @@ I_AREA_WIDX	EQU 4
 {1}._tax_year_sum:						.WORD	0
 {1}._loan_period:						.BYTE	0
 {1}._unused:							.BYTE	0	; *unused*
+{1}_size	SET	[.-{1}]
 	ENDM
 
 	MAC	_treq
@@ -264,6 +265,7 @@ OTHER_WIDX			EQU 4
 {1}		SET	.
 		_tyear {1}._10y
 		_tyear {1}._100y
+{1}_size	SET [.-{1}]
 	ENDM
 
 	MAC	_tarray

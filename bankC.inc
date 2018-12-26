@@ -4238,11 +4238,11 @@ locret_137F7B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_scr_init:
-		LDA		_cur_game_mode
-		CMP		#$03
-		BNE		loc_137F8D
-		LDA		#$19
-		STA		_cur_map_wnd_pos._COL
+		LDA		_cur_game_mode					; reinit the window starting pos
+		CMP		#$03							; all except practise start from the
+		BNE		loc_137F8D						; upper-left corner. even the practice
+		LDA		#$19							; loaded map!
+		STA		_cur_map_wnd_pos._COL			; this is not so much right
 		LDA		#$1B
 		STA		_cur_map_wnd_pos._ROW
 		BNE		loc_137F93

@@ -771,7 +771,7 @@ _title_sub0_init:
 		LDX		#$00
 		STX		_game_wnd_spr_mode_flag
 ;		STX		_tmp118							; also redundant
-		STX		_cur_game_mode
+		STX		_cur_game_mode					; init cur game mode and menu idx at the same time
 		LDX		#_MUS_IDX_TITLE0
 		STX		_apu_mus_idx_req
 		LDA		#$03
@@ -827,8 +827,8 @@ _title_sub2_menu_draw:
 		LDXY	_tlm_res_lz_title_menu_continue
 loc_B858C:
 		JSR		_res_ppu_lz_unpack
-		LDA		_has_saved_city_data_flag
-		BNE		loc_B859E
+		LDA		_has_saved_city_data_flag		; if no saved games, then change default
+		BNE		loc_B859E						; menu pos, or leave it at the same pos
 		LDA		_cur_game_mode
 		BNE		loc_B859E
 		LDX		#$03

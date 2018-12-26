@@ -1796,14 +1796,14 @@ loc_59178:
 		LDA		_sram_graphs,X
 		STA		_graphs,X
 		INX
-		CPX		#$78
+		CPX		#_graphs_size
 		BNE		loc_59178
 		LDX		#$00
 loc_59185:
 		LDA		_sram_vars,X
 		STA		_city,X
 		INX
-		CPX		#$80
+		CPX		#_city_size
 		BNE		loc_59185
 		JSR		_sram_write_disable
 		INC		_mmc5_operation_in_progress_flag
@@ -1832,14 +1832,14 @@ loc_58FF1:
 		LDA		_graphs,X
 		STA		_sram_graphs,X
 		INX
-		CPX		#$78
+		CPX		#_graphs_size
 		BNE		loc_58FF1
 		LDX		#$00
 loc_58FFE:
 		LDA		_city,X
 		STA		_sram_vars,X
 		INX
-		CPX		#$80
+		CPX		#_city_size
 		BNE		loc_58FFE
 		LDA		#$01
 		STA		_has_saved_city_data_flag
@@ -2274,23 +2274,23 @@ _game_load_menu:
 		APUA_SE	_SE_IDX_ERROR
 		BNE		loc_5912E
 loc_59103:
-		LDA		#$00
+		LDA		#$00							; set continue game mode
 		STA		_cur_game_mode
 		APUA_SE	_SE_IDX_CLICK
 ;		JSR		_load_menu_exec					; REDUNDANT
 		LDA		#$10							; OPTIMIZED: load menu
 		JSR		_common_yes_no_question_menu
 		BCS		loc_5912E
-		JSR		_sram_data_load
-		JSR		_spr_clear
+;		JSR		_sram_data_load					; REDUNDANT, we will load it in a usual
+		JSR		_spr_clear						; way in _game_vars_init after restarting
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_erase,PRGC,PRGD
 		JSR		_game_chr_common_reload
 		JSR		_pal_fade_out
-		TSX
-		TXA
-		CLC
-		ADC		#$10
+		TSX										; trick to jump 5 levels up
+		TXA										; to exit back from _start_game routine
+		CLC										; and do the game loop again starting
+		ADC		#$10							; from vars reinitialization
 		TAX
 		TXS
 loc_5912E:

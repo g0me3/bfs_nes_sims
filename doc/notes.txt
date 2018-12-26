@@ -7,6 +7,16 @@
 - Finish mini-map re and rename.
 - Finish events animation code re and rename.
 - Recalibrate triggers for new crime recalibrated values
+- SAVE/LOAD functions must reinit _cur_game_mode value with the actual mode value after loading the main data in _sram_data_load, so need to be put inside _city structure.
+	- Also there should be stored scenatio specific values _scenario_idx, _scenario_disaster_delay, _scenario_disaster_end_year.
+	- The sram area has additional 16 bytes free, the RAM area has more.
+	- Note, these values are above _city structure, so all values and constants will shift up.
+	- Also there some other vars need to be put inside _city (_traf_lvl_avr), they are under _city sctructure. So overall size of RAM doesn't change.
+	- WARNING! MAKE SURE NO RAM ACCESS CORRUPTED THEN! backup before. Also the save states from original version will be incompatible.
+	- _cur_game_mode is zero only when continue, all it need for is to avoid game reinitialization and just load stoerd data. the last place it need to be zero is _game_vars_init, when data is loaded, it may be the same as previous stored value.
+	- Also i'd like to save _cur_map_wnd_pos as well, but currently it reinitializes in _game_scr_init. So we need to move initialization to _game_vars_init in case we put these values to the _city
+	- It seems, there is no much space for _gui_ctrl_menu_pos_list, sadly... but probably we could get some bytes from _tmp_map buffer.
+- Blackouts/Brownouts messages restore
 
 	NEW BUGS
 
@@ -89,7 +99,7 @@ UNFINISHED#3. One of the SE effects unreferenced and there is not known where it
 	UNFINISHED#3.2 To another unused sound, set $F2 to value $80. Another kind of click or cancel sound line unreferenced one.
 UNFINISHED#4. There are total 25 messages for scroller line at the game's HUD. Only 16 are handled by the game engine.
 	UNFINISHED#4.1 The used ones are: from $0 to $F (except $B "Blackouts") and $18 (starting from a custom handler). The rest aren't used and were just derived from the original Micropolis sources. Most of original messages not presented in this messages are converted to ingame Alert Window Messages, except one (see below).
-		UNFINISHED#4.1.1 0B "BLACKOUTS REPORTED  CHECK POWER MAP", when POWERED_ZONES/ALL_ZONES < 0.7
+		UNFINISHED#4.1.1 0B "BLACKOUTS REPORTED  CHECK POWER MAP", when _powered_areas/_stats._total < 0.7. In current NES code there is an unused variable which counts exactly a number of powered areas, but the scroll message handler for it is missing.
 		UNFINISHED#4.1.2 10 "A PLANE HAS CRASHED", converted to Alert Window Message.
 		UNFINISHED#4.1.3 11 "SHIPWRECK REPORTED", 12 "A TRAIN CRASHED", 13 "A HELICOPTER CRASHED", the rest of crashes from original source not implemented here. There were a lot of various cases to damage vehicles, like by tornado, monster, collisions, random crashed when disasters are enabled, etc...
 		UNFINISHED#4.1.4 14 "UNEMPLOYMENT RATE IS HIGH", not used even in the Micropolis sources.
@@ -147,8 +157,7 @@ BUGS#4. Some events haven't appear automatically when you get it (see table belo
 BUGS#5. The extra scenarios selecting screen code trying to draw "CLEAR" icons on unlocked scenarios, but there aren't proper icon position data for that, so if you manage to beat at least one of them, the scenarios select screen will glitch, if you beat both, game will hang. This is not really important at all, because you just can't beat any of extra scenarios. NO PATCH NEEDED
 BUGS#6. First briefing messages has a couple spelling errors and incorrect placeholders. CANNOT BE PATCHED
 BUGS#7. There is non-critical bug in present items free slot search routine. In case you have no free slots, it will run for 256 loops of dummy cycle instead of just exit. No side effects in this except missed CPU cycles.
-BUGS#8. At BANKB:$A8D9 there is a calculations which fetch power grid buffer data, then test if the particular tile is powered up or not. The opcode at BANKB:$A90E (AND $A3B6,X) refers to the bitmasks table from BANKA, but in BANKB it refers to the portion of the game's code so masking will get the wrong result most of the time, reporting are powered while they are not or vice versa. Seems they overlooked this when moving the code around. To fix in in current ROM. FIX GG: KIEXNPVU+OLOZEPUX.
-	BUGS#8.1 Also, there is a counter of all map tiles that were tested and has power, some kind of "power consumption" level. But it never used. Instead, there is only one flag used in overal calculations if tile is powered or not. Seems we have bug in some calcs out there, which may use wrong values instead of proper ones.
+BUGS#8. At BANKB:$A8D9 there is a calculations which fetch power grid buffer data, then test if the particular tile is powered up or not. The opcode at BANKB:$A90E (AND $A3B6,X) refers to the bitmasks table from BANKA, but in BANKB it refers to the portion of the game's code so masking will get the wrong result most of the time, reporting are powered while they are not or vice versa. Seems they overlooked this when moving the code around. To fix it in current ROM. FIX GG: KIEXNPVU+OLOZEPUX.
 BUGS#9. Sound is cracking sometimes in two channels. FIX GG: EPXXYZNP (for square channel only, a courtesy of Chris Covell).
 BUGS#10. When airplane crashes, it's damaging one particular tile on the map with enabling "GOTO" alert button. However, due to copy-paste bug, the coordinates of "GOTO" are wrong and not points to the crash site. FIX GG: KEEAGEVE.
 BUGS#11. Pollution area zone calculated as a sum of weights of the tiles for every 4x4 map area. Weights are follow: developer I area +2 for a tile (+8 for 2x2 building), coal power station +3 for a tile (+36 for 3x3 building), flooded ground +15 for a tile, the rest gives 0. Looks odd, right? Why flooded ground counts as max pollution instead of radiation waste ground? Looks like a bug to me.

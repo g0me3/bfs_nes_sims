@@ -19,12 +19,12 @@ _game_setup:
 		STA		_tmp6D2
 		STA		_tmp6D3
 		LDA		_scenario_result_idx			; when return from scenario mode
-		BNE		loc_2402A						; do no load_cur_game_mode, jump directly
+		BNE		loc_2402A						; do not load_cur_game_mode, jump directly
 		LDY		_cur_game_mode					; to new scenario select
-		BNE		loc_24024
-		LDA		#_MUS_IDX_STOP
-		STA		_apu_mus_idx_req
-loc_24024:
+;		BNE		loc_24024						; REDUNDANT, weird, we already stop music inside
+;		LDA		#_MUS_IDX_STOP					; continue handlers
+;		STA		_apu_mus_idx_req
+;loc_24024:
 		LDA		_game_setup_subs_list,Y			; load actual game mode setup sub
 		STA		_game_setup_sub_idx
 loc_2402A:
@@ -45,8 +45,8 @@ _game_setup_sub_exec:
 		.WORD	_game_setup00_new_city_gen				; city gen start
 		.WORD	_game_setup01_name_input_init			; city gen
 		.WORD	_game_setup02_name_input_input			; city gen jump 0D
-		.WORD	_game_setup03_game_start_init			; continue start
-		.WORD	_game_setup04_game_start				; continue stop
+		.WORD	_game_setup03_continue_init				; continue start
+		.WORD	_game_setup04_continue_input			; continue stop
 		.WORD	_game_setup05_scenario_init				; scenario start
 		.WORD	_game_setup06_scenario_select_input		; scenario
 		.WORD	_game_setup07_scenario_intro_init		; scenario
@@ -71,8 +71,8 @@ _game_setup_sub_exec:
 ;		.BYTE	<[_game_setup00_new_city_gen]
 ;		.BYTE	<[_game_setup01_name_input_init]
 ;		.BYTE	<[_game_setup02_name_input_input]
-;		.BYTE	<[_game_setup03_game_start_init]
-;		.BYTE	<[_game_setup04_game_start]
+;		.BYTE	<[_game_setup03_continue_init]
+;		.BYTE	<[_game_setup04_continue_input]
 ;		.BYTE	<[_game_setup05_scenario_init]
 ;		.BYTE	<[_game_setup06_scenario_select_input]
 ;		.BYTE	<[_game_setup07_scenario_intro_init]
@@ -89,8 +89,8 @@ _game_setup_sub_exec:
 ;		.BYTE	>[_game_setup00_new_city_gen]
 ;		.BYTE	>[_game_setup01_name_input_init]
 ;		.BYTE	>[_game_setup02_name_input_input]
-;		.BYTE	>[_game_setup03_game_start_init]
-;		.BYTE	>[_game_setup04_game_start]
+;		.BYTE	>[_game_setup03_continue_init]
+;		.BYTE	>[_game_setup04_continue_input]
 ;		.BYTE	>[_game_setup05_scenario_init]
 ;		.BYTE	>[_game_setup06_scenario_select_input]
 ;		.BYTE	>[_game_setup07_scenario_intro_init]
@@ -1171,7 +1171,7 @@ _name_input_char_store:
 		LDX		_tmp6DC+2						; get the name buffer idx
 		LDA		_name_store_buf_lo,X
 		STA		_ptr0
-		LDA		#>[_city]
+		LDA		#>[_city._name]
 		STA		_ptr0+1							; get the ptr
 		LDY		#$00
 		LDA		(_ptr0),Y
@@ -1220,7 +1220,7 @@ _name_input_name_buf_queue:
 		LDX		_tmp6DC+2						; get the name idx we entering
 		LDA		_name_store_buf_lo,X			; get the corresponding ram ofs
 		STA		_ptr0
-		LDA		#>[_city]
+		LDA		#>[_city._name]
 		STA		_ptr0+1
 		PPUQSTART
 ;		LDY		_tmp6DC+2
@@ -1246,7 +1246,7 @@ loc_2486A:
 ;		LDX		_tmp6DC+2						; already in _ptr0 here
 ;		LDA		_name_store_buf_lo,X
 ;		STA		_ptr0
-;		LDA		#>[_city]
+;		LDA		#>[_city._name]
 ;		STA		_ptr0+1
 		EXTQSTART
 ;		LDY		_tmp6DC+2						; REDUNDANT
@@ -1287,12 +1287,12 @@ _name_store_buf_lo:
 ;		.BYTE	$21,$21
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup03_game_start_init:
+_game_setup03_continue_init:
 		INC		_game_setup_sub_idx				; dummy leftover
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_setup04_game_start:
+_game_setup04_continue_input:
 		INC		_main_sub_idx					; this routine stops the music
 		LDA		#_MUS_IDX_STOP					; fade out the screen and go to
 		STA		_apu_mus_idx_req				; the main game routine.
@@ -1540,7 +1540,7 @@ loc_24933:
 ;		LDA		#_MUS_IDX_STOP
 ;		STA		_apu_mus_idx_req
 ;		JMP		_pal_fade_out
-		JMP		_game_setup04_game_start		; OPTIMIZED
+		JMP		_game_setup04_continue_input	; OPTIMIZED
 loc_2493D:
 		BVC		locret_24944					; press the B button
 		LDA		#$01
@@ -1727,9 +1727,9 @@ loc_1043C4:
 		JSR		_sram_write_disable
 		LDX		#$00							; A=0 still here
 loc_1043D1:
-		STA		_city._level,X					; part of the city vars clear
-		INX
-		CPX		#$DF
+		STA		_city._level,X					; clear the RAM range including
+		INX										; most of calculated values
+		CPX		#[_tmp6CC-_city._level]			; for city, the rest is tmp values
 		BNE		loc_1043D1
 		STA		_obj_active_flags				; A=0 still!
 ; FIX, continues
@@ -1738,15 +1738,15 @@ loc_1043D1:
 		STA		_city._difficult
 ; -
 		LDA		#$FF
-		STA		_city._year_to_build_bank		; special years clear
-		STA		_city._year_to_build_bank+1
+		STA		_city._year_to_bank				; special years clear
+		STA		_city._year_to_bank+1
 		STA		_city._year_to_expo
 		STA		_city._year_to_expo+1
 		STA		_city._year_to_liberty
 		STA		_city._year_to_liberty+1
 		LDX		_cur_game_mode					; dependent from the game mode
-		BNE		loc_1043FF
-		FJSRA	_sram_data_load,SRAM,PRG3		; game mode 0, load saved city data
+		BNE		loc_1043FF						; the last place we need it ZERO
+		FJSRA	_sram_data_load,SRAM,PRG3		; load saved city data, reload _game_vars_init
 		JMP		.complete_game_setup			; skip to the final inits
 loc_1043FF:
 		DEX
