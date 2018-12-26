@@ -421,8 +421,15 @@ _power_grid_map_bit_set:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_vars_init:
+; FIX, backup difficult if set at the difficult menu. this is temporary
+; workaround though, it is easier to do that just moving the difficult
+; setting out of the cleared values above ._level
+; -
+		LDA		_city._difficult
+		PHA
+; -
 		JSR		_sram_on
-		LDX		#$00
+		LDX		#$00								; X=A=0
 		TXA
 loc_1043C4:
 		STA		_wram_graphs,X						; graphs data clear
@@ -430,23 +437,28 @@ loc_1043C4:
 		CPX		#$78
 		BNE		loc_1043C4
 		JSR		_sram_off
-		LDX		#$00
+		LDX		#$00								; A=0 still here
 loc_1043D1:
 		STA		_city._level,X						; part of the city vars clear
 		INX
 		CPX		#$DF
 		BNE		loc_1043D1
-		STA		_obj_active_flags
+		STA		_obj_active_flags					; A=0 still!
+; FIX, continues
+; -
+		PLA											; restore difficult
+		STA		_city._difficult
+; -
 		LDA		#$FF
-		STA		_city._Year_to_build_bank			; special years clear
-		STA		_city._Year_to_build_bank+1
-		STA		_city._Year_to_expo
-		STA		_city._Year_to_expo+1
-		STA		_city._Year_to_liberty
-		STA		_city._Year_to_liberty+1
+		STA		_city._year_to_build_bank			; special years clear
+		STA		_city._year_to_build_bank+1
+		STA		_city._year_to_expo
+		STA		_city._year_to_expo+1
+		STA		_city._year_to_liberty
+		STA		_city._year_to_liberty+1
 		LDX		_cur_game_mode						; dependent from the game mode
 		BNE		loc_1043FF
-		FJSRA	_sram_data_load,SRAM,PRG3				; game mode 0, load saved city data
+		FJSRA	_sram_data_load,SRAM,PRG3			; game mode 0, load saved city data
 		JMP		.complete_game_setup				; skip to the final inits
 loc_1043FF:
 		DEX
@@ -457,21 +469,33 @@ loc_1043FF:
 		LDA		_difficult_money_list_hi,Y
 		STA		_city._money+1
 		MOVWI	_city._cur_year,1900				; start 1900 year only
-		LDA		#$09
-		STA		_city._game_flags					; setup default game settings
-		LDA		#$00
-		STA		_city._city_type					; city initial type (town)
-		JMP		.complete_game_setup
+;		LDA		#$09								; REDUNDANT, merged
+;		STA		_city._game_flags					; setup default game settings
+;		LDA		#$00								; REDUNDANT, already 0 here
+;		STA		_city._city_type					; city initial type (town)
+;		JMP		.complete_game_setup
+		JMP		.default_game_settings
 loc_104428:
 		DEX
-		BNE		loc_104476							; game mode 2, scenario
+		BNE		.practice_init						; game mode 2, scenario
+; FIX, continues
+; -
+		LDA		#$00								; manually set default difficult
+		STA		_city._difficult
+; -
+		LDA		#$02
+		STA		_city._game_speed					; default speed "slow" for all scenarios
 		MOVWI	_city._money,20000					; fixed money
 ; BUG: there is no data for 8th scenario "FREEDOM" at all.
 ;
 		LDY		_scenario_idx
+; FIX, let's set defaults of this scenario to Practice mode defaults
+; -
+		CPY		#$07
+		BEQ		.practice_init						; special "FREEDOM" case
+; -
 		LDA		_scenario_start_year_hi,Y			; different starting years
 		STA		_city._cur_year+1
-loc_10443E:
 		LDA		_scenario_start_year_lo,Y			; init special disasters parameters
 		STA		_city._cur_year						; starting year for first disaster,
 		CLC											; and disasters treshold after that
@@ -493,16 +517,22 @@ loc_10445D:
 		INX
 		CPX		#$04
 		BNE		loc_10445D
-		LDA		#$02
-		STA		_city._game_speed					; default speed "slow"
-		LDA		#$09
-		STA		_city._game_flags					; default game settings
-		JMP		.complete_game_setup
-loc_104476:
+;		LDA		#$09								; REDUNDANT, merged
+;		STA		_city._game_flags					; default game settings
+;		JMP		.complete_game_setup
+		JMP		.default_game_settings
+.practice_init:
+; FIX, continues
+; -
+		LDA		#$00								; manually set default difficult
+		STA		_city._difficult
+; -
 		MOVWI	_city._money,20000					; game mode 3, practice
 		MOVWI	_city._cur_year,1900				; starting year fixed
-		LDA		#$00
-		STA		_city._city_type
+; REDUNDANT, already 0 here
+;		LDA		#$00
+;		STA		_city._city_type
+.default_game_settings:
 		LDA		#$09
 		STA		_city._game_flags
 .complete_game_setup:
@@ -811,14 +841,14 @@ loc_1046EB:
 		LDA		_tmpE7
 		ADC		_roads_count+1
 		STA		_tmpE7
-		PUSHW	_tmpE6							; E6 = (rails_count*2)
+		PUSHW	_tmpE6							; E6 = (rails_count*2)+_roads_count
 		LDY		_city._difficult
-		LDA		byte_104958,Y
+		LDA		_trans_fund_coefs_hi,Y
 		PHA
-		LDY		_city._difficult
-		LDA		byte_104955,Y
+;		LDY		_city._difficult				; REDUNDANT, Y already loaded with difficult here
+		LDA		_trans_fund_coefs_lo,Y
 		PHA
-		JSR		_mmc5_mul16to16					; E6 * [1.33fp/0.E6fp/0.B3fp]difficult
+		JSR		_mmc5_mul16to16					; E6 * [1,2/0.9/0.7]*difficult
 		PLA
 		POPW	_fund_request_trans
 		PLA
@@ -826,7 +856,7 @@ loc_1046EB:
 		MMULB8	_fund_request_fire,_fire_stations_count,#$64
 		MMULB8	_fund_request_education,_R_schools_count,#$32
 		PUSHW	_cur_RCI_levels_sum
-		PUSHW	_city._var_5F8
+		PUSHW	_city._overall_land_value
 		JSR		_mmc5_mul16to16
 		PLA
 		PLA
@@ -839,9 +869,9 @@ loc_1046EB:
 		TXA
 		PHA
 		LDY		_city._difficult
-		LDA		byte_10495E,Y
+		LDA		_tax_coefs_hi,Y					; * diff[1.4/1.2/0.8]
 		PHA
-		LDA		byte_10495B,Y
+		LDA		_tax_coefs_lo,Y
 		PHA
 		JSR		_mmc5_mul16to16
 		PLA
@@ -854,10 +884,10 @@ loc_1046EB:
 		PHA
 		TXA
 		PHA
-		PUSHB	#$B6
+		PUSHB	#$B6							; 0.71
 		JSR		_mmc5_mul16to8
 		PLA
-		PUSHW	_tmp6CC
+		PUSHW	_tmp6CC							; *tax value
 		JSR		_mmc5_mul16to16
 		PLA
 		POPD	_taxes_collected
@@ -1009,13 +1039,13 @@ loc_104948:
 loc_104951:
 		STA		_fire_fund_rate
 		RTS
-byte_104955:
+_trans_fund_coefs_lo:
 		.BYTE	$B3,$E6,$33
-byte_104958:
+_trans_fund_coefs_hi:
 		.BYTE	$00,$00,$01
-byte_10495B:
+_tax_coefs_lo:
 		.BYTE	$66,$33,$CC
-byte_10495E:
+_tax_coefs_hi:
 		.BYTE	$01,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1218,7 +1248,7 @@ _city_problems_list_recalc:
 		LDA		_city._var_5FD
 		AND		#$7F
 		STA		_tmp6D0+1
-		PUSHW	_city._var_5F8
+		PUSHW	_city._overall_land_value
 		PUSHB	#$A0
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1792,9 +1822,9 @@ _event0B_bank:
 		JSR		_check_for_free_present_slot
 		BNE		nullsub_4
 		LDA		_city._cur_year
-		CMP		_city._Year_to_build_bank
+		CMP		_city._year_to_build_bank
 		LDA		_city._cur_year+1
-		SBC		_city._Year_to_build_bank+1
+		SBC		_city._year_to_build_bank+1
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
 
@@ -1900,9 +1930,9 @@ _event16_expo_monument:
 		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
-		CMP		_city._Year_to_expo
+		CMP		_city._year_to_expo
 		LDA		_city._cur_year+1
-		SBC		_city._Year_to_expo+1
+		SBC		_city._year_to_expo+1
 		BCC		nullsub_2
 		BCS		_new_event_register_flag
 
@@ -1911,9 +1941,9 @@ _event17_liberty:
 		JSR		_check_for_free_present_slot
 		BNE		nullsub_2
 		LDA		_city._cur_year
-		CMP		_city._Year_to_liberty
+		CMP		_city._year_to_liberty
 		LDA		_city._cur_year+1
-		SBC		_city._Year_to_liberty+1
+		SBC		_city._year_to_liberty+1
 		BCC		nullsub_2
 		BCS		_new_event_register_flag
 

@@ -89,7 +89,7 @@ I_AREA_WIDX	EQU 4
 		_trci							{1}._delta
 {1}._var_5F6:							.BYTE	0
 {1}._var_5F7:							.BYTE	0
-{1}._var_5F8:							.WORD	0
+		_trcifix8_8						{1}._overall_land_value
 {1}._crime_level:						.WORD	0
 {1}._var_5FC:							.BYTE	0
 {1}._var_5FD:							.BYTE	0
@@ -109,9 +109,9 @@ I_AREA_WIDX	EQU 4
 	; bit4 - debug mode (free construction)
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
-{1}._Year_to_build_bank:				.WORD	0
-{1}._Year_to_expo:						.WORD	0
-{1}._Year_to_liberty:					.WORD	0
+{1}._year_to_build_bank:				.WORD	0
+{1}._year_to_expo:						.WORD	0
+{1}._year_to_liberty:					.WORD	0
 {1}._presents_list:			.BYTE	0,0,0,0
 {1}._history_list:						.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 {1}._bank_flags:						.BYTE	0
@@ -119,7 +119,7 @@ I_AREA_WIDX	EQU 4
 	; bit6 - money loaned, wait for end of period
 	; bit7 - loan message enabled, may loan now
 {1}._tax_year_rate:						.WORD	0
-{1}._loan_period:					.BYTE	0
+{1}._loan_period:						.BYTE	0
 {1}._unused:							.BYTE	0
 	ENDM
 

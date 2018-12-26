@@ -1516,14 +1516,14 @@ _init_special_year_date:
 loc_58A79:
 		LDA		#$0A
 		JSR		_adc_cur_year
-		STA		_city._Year_to_liberty
-		STX		_city._Year_to_liberty+1
+		STA		_city._year_to_liberty
+		STX		_city._year_to_liberty+1
 		RTS
 loc_58A85:
 		LDA		#$01
 		JSR		_adc_cur_year
-		STA		_city._Year_to_expo
-		STX		_city._Year_to_expo+1
+		STA		_city._year_to_expo
+		STX		_city._year_to_expo+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

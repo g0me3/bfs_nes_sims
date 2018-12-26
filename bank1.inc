@@ -1148,20 +1148,20 @@ _game_setup0D_difficult_init:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0E_difficult_input:
-		JSR		_difficult_scr_cursor_move
-		JSR		_common_select_cursor_draw
+		JSR		_difficult_scr_cursor_move		; cursor movement input test
+		JSR		_common_select_cursor_draw		; cursor draw
 		BIT		_pad0_autorep_press
 		BPL		loc_2493D
-		LDA		#$01
+		LDA		#$01							; press A button
 		STA		_apu_se_flags
 		LDA		_city._name
 		CMP		#$01
-		BNE		loc_24916
-		LDY		#$08
+		BNE		loc_24916						; test city name if empty
+		LDY		#$08							; get default name "SIMCITY"
 		LDX		_scenario_titles_ofs_lib,Y
 		LDY		#$01
 loc_24907:
-		LDA		_scenario_town_names_list,X
+		LDA		_scenario_town_names_list,X		; write default name to buffer
 		BMI		loc_24913
 		STA		_city._name,Y
 		INX
@@ -1170,11 +1170,11 @@ loc_24907:
 loc_24913:
 		STY		_city._name
 loc_24916:
-		LDA		_city._sister_name
+		LDA		_city._sister_name				; the same for sister city name
 		CMP		#$01
 		BNE		loc_24933
 		LDY		#$08
-		LDX		_scenario_titles_ofs_lib,Y
+		LDX		_scenario_titles_ofs_lib,Y		; in this mode only it has a value
 		LDY		#$01
 loc_24924:
 		LDA		_scenario_town_names_list,X
@@ -1191,35 +1191,33 @@ loc_24933:
 		STA		_apu_mus_idx_req
 		JMP		_pal_fade_out
 loc_2493D:
-		BVC		locret_24944
+		BVC		locret_24944					; press the B button
 		LDA		#$01
-		STA		_game_setup_sub_idx
+		STA		_game_setup_sub_idx				; return to name entry
 locret_24944:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _difficult_scr_cursor_move:
-		LDA		_pad0_autorep_press
+		LDA		_pad0_autorep_press				; up-down test
 		AND		#$0C
 		BEQ		locret_2496C
-		LDY		_city._difficult
+		LDY		_city._difficult				; change difficult up down
 		CMP		#$04
-		BNE		loc_2495D
-		CPY		#$02
+		BNE		.diff_up						; test for button
+		CPY		#$02							; down pressed, test if max value already
 		BEQ		locret_2496C
-		LDA		#$01
-		STA		_apu_se_flags
-		INY
-		BNE		loc_24966
-loc_2495D:
+		INY										; increment menu option
+		BNE		.diff_store
+.diff_up:
 		CPY		#$00
-		BEQ		locret_2496C
-		LDA		#$01
+		BEQ		locret_2496C					; for up test min value 0
+		DEY										; if not, decrease
+.diff_store:
+		LDA		#$01							; play se
 		STA		_apu_se_flags
-		DEY
-loc_24966:
-		STY		_city._difficult
-		JMP		_difficult_scr_cursor_draw
+		STY		_city._difficult				; common store
+		JMP		_difficult_scr_cursor_draw		; highlit difficult option
 locret_2496C:
 		RTS
 

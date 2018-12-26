@@ -3221,8 +3221,8 @@ _tlm_extnt_bank_loan:
 
 ; =============== S U B	R O U T	I N E =======================================
 _printf_txt_lib:
-		STA		_tmp7
-		STX		_tmp6
+		STA		_tmp7							; lib idx
+		STX		_tmp6							; lib ofs
 		PPUQSTART
 ;		ASL										; REDUNDANT, optimized
 		TAY
@@ -3653,7 +3653,7 @@ _txt_history_lib:
 		.BYTE	"Tornado           "
 		.BYTE	"Earthquake        "
 		.BYTE	"Monster Attack    "
-		.BYTE	"Melt Down         "
+		.BYTE	"melt Down         "
 _printf_num_lib_spaces_list:
 		.BYTE	$DF,$DC,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DC,$DC,$DC,$20,$DF,$DF,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC

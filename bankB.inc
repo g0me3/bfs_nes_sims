@@ -1525,7 +1525,7 @@ loc_11EB9A:
 		MOVW	_tmpEA,_tmp6CE
 		JSR		_div_32to16
 loc_11EBB7:
-		MOVW	_city._var_5F8,_tmpE6
+		MOVW	_city._overall_land_value,_tmpE6
 		LDA		#$00
 		STA		_tmp6C4
 		STA		_tmp6D0
@@ -3589,7 +3589,7 @@ locret_11FB47:
 
 ; =============== S U B	R O U T	I N E =======================================
 ; The Fire disaster is the only disaster that occurs only by manual selecting
-; from the DISASTERS menu.
+; from the disasterS menu.
 ; There are two types of Fire disaster were planned, but the weaker one isn't used
 ;
 _fire_disaster_start:
@@ -4027,7 +4027,7 @@ loc_11FE8F:
 		STA		_tmp_map_pos._COL
 		JSR		_get_building_map_tile
 		LDA		_last_map_tile_read
-		CMP		#$61
+		CMP		#_MAP_NUCLEAR_POWER
 		BNE		loc_11FE9F
 		JMP		loc_11FEB4
 loc_11FE9F:

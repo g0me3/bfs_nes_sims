@@ -29,6 +29,8 @@
 - TODO BUGS#17
 - TODO BUGS#18
 - Fixed	BUGS#19
+- Fixed BUGS#20, workaround somehow, there are a lot of paches needed to fix it in the original version, but can be patched much more easy in recompile if throw the difficult settings out of resetable area of the game variables. Currently it may cause some errors if I made any mistake in disasm, so let it just a workaround now. But it's work.
+- Added UNFINISHED#1.4, now "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting of the Scenarios (SLOW).
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
 - TODO Make ship able to sail under the bridges and road/wires with hiding animations.
@@ -46,7 +48,7 @@
 - During the game in any mode, at any message window (disasters, hints, information), press at the same time A + B on controller 2 and all D-Pad buttons Up + Down + Left + Right using both controllers in any combination (Up + Left on controller 1 and Down + Right on controller 2, etc.). Release all buttons. Now, hold one of the D-Pad buttons on both controllers at the same time (for example hold Right on controller 1 and Right on controller 2, etc.), while holding these buttons, press once any other D-Pad button on controller 1. Exit the message window either with A or B on controller 1. A message "I AM GOD   I WISH YOU HAPPY" will scroll at the game' HUD instead of regular alert messages and a debug mode is toggles ON. Do the same operations one more time to toggle this mode OFF with another message "I AM GOD   DEBUG OFF". The debug mode makes some changes to the gameplay:
 	- All constructions cost no money. However, the budget income/outcome still work.
 	- Be able to place any number of buildings at any position without collision check (causes a lot of glitches if heavily obused).
-- You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, DISASTERS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
+- You might not know this but any of 5 small menu windows with the game settings or info (SPEED, OPTIONS, disasterS, WINDOWS, GAME) can be moved across the screen. To do this, put cursor to the upper-left corner of the window, hold A, then move it with D-Pad buttons. Each window will memorize its last position for the rest of the current game. However, the windows positions can't be saved and lost when exit from the game.
 
 	UNFINISHED
 
@@ -94,6 +96,12 @@
 	12.4 Scenes 10-11. The "Mayor" character constantly running from the left side to the right side of the window. The green cloud is floating after him. Most probalby this animation is for pollution warning message. Also exceeded the 8 sprites limit at some point. In any case, there aren't messages of pollution warning in the game. FIX GG: ZAEAPGPA+ZANAPGLE+LANAZGGE+LUEZYALU
 13. While build transport and power lines on the Water, there are no code for testing a valid bends with water type of tiles. You can do only straight lines continuing other straight lines. Can't bend the road on the water. Just can connect with another straight line starting from the grounds.
 14. The New city generation screen has 6 small triangle buttons at the borrom-right corner for selecting the map number. There are two tiles for drawing the regular and pressed buttons. There even has some portions of code that loads pressed button tile indexes. But then code goes to number rorate animation code and the pressed button tiles are never showed. The problem was that the button anim code reside in external bank and the FAR call routine uses the tmp values at $000,$001,$002 addresses in RAM, the same addresses used by the number display routine to store an actual decimal value. So they just removed one extra call for the sprite, fixed the glitch but disabled the button pressing animation.
+15. Although Difficult setting non functional in original game (see BUGS#20) there are some portions of the code that depends on Difficult setting, all of them however has no effect on the original game.
+	15.1 Starting amount of money on Easy is 20000, on Normal - 10000, and 5000 on Hard.
+	15.2 Tax Rate value higher to 1 on Normal and to 2 on Hard modes while calculating the RCI growth values of the City. So you may have Tax Rate at 7, but the RCI levels will be calculated as if it 8 on Normal or 9 on Hard correspondingly.
+	15.2 Fund requested for transport calculated as (roads+(rails*2))*coeff. Where coeff = 0.7 for easy, 0.9 for Normal and 1.2 for Hard.
+	15.3 Overall Tax Collected value calculated as (R_L+C_L+I_L)*overall_city_value*coeff*0.71*tax_rate. coeff = 1.4 for Easy, 1.2 for Norman and 0.8 for Hard.
+	15.4 However, unless the SNES version, the NES does not explode Nuclear Power stations randomly for Normal/Hard modes. The Nuclear Meltdown only available for BOSTON scenario and even has no Alert message corresponding to it. Nuclear meltdown occurs with only a sound and "GOTO" button activated.
 
 	BUGS
 
@@ -114,11 +122,12 @@
 12. Tere is a var $67D, which never written by any code, but read sometimes and used in calcs. It used at $A:$AB69, where the calc results stored in vars $6D6-6DB. May it be a mistakenly swapped numbers 67D-6D7 for a proper var? Then it should be a high nibble of traffic level value. However, it is used also at $A:$A9F7 in an overall city assessed value, added to police stations count and weighted then summed in overal value. Both places should seemingly use a different variables, both seems incorrect by now.
 13. The clear routine clears only the lower nibble of _city_assessed_value not touching the high ones and then immediately clears the _annual_score_change var which is temporary recalculated var actually sitting near the _city_assessed_value ram address. There is unknown if they wether missed two more bytes to be cleared or clear a wrong vars instead.
 14. _city_assessed_value_recalc routine have a major calc mistake: 6 out of 9 parameters has wrong weight multipliers, basicly they swapped hi and low nibbles of the 16-bit constants. So instead of weight of hospitals $0190 (decimal 400) we have $9001 (decimal 36865) and so on.
-15. Monster Disaster appearance logic choses randomly the appearnce point inside the map, then calculates the destination point based on what side of the map is farther (by one of directions) and one random position on that side. The random selection routine stores both X and Y destination coordinates in the same _obj_dest_pos._monster._COL variable. The most noticeable result of this bug is at that the first appearance with higher probability the monster will go UP on the map.
+15. Monster disaster appearance logic choses randomly the appearnce point inside the map, then calculates the destination point based on what side of the map is farther (by one of directions) and one random position on that side. The random selection routine stores both X and Y destination coordinates in the same _obj_dest_pos._monster._COL variable. The most noticeable result of this bug is at that the first appearance with higher probability the monster will go UP on the map.
 16. Graphs screen data ranges (10/100 years) button-selector of the by default always 10 but not pushed upon entry to the screen. Press it after that does nothing. Only when you press 100, then again 10 it will be drawn correctly.
 17. Power consumption calculated as: TOTAL_POWER = COAL*700+NUCLEAR*2000 pts. Every single powerable building tile and every electric wire consume 1 pt. Due to recursive method of collecting the network data, there will be extra power points consumed according to placement and location of adjascent buildings. So the same amount of building may consume more or less power just because of placement and grouping of the buildings.
 18. Sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner.
 19. Game cursor not disables when the game message window appears. to reproduce, start practice, enter info screen maps, exit and enter a message hint or wait for the first practice message.
+20. Difficult settings does not work for New City mode. Although it can be selected, it will clear at the beginning of any game mode, so in any case you'll play on EASY by default.
 
 	MISC
 
@@ -141,9 +150,9 @@
 06	Traffic is bumper to bumper traffic level 7			-							every recalculation	yes
 07	Commuters are grid-locket	traffic level 2			- 							every recalculation	yes
 08	Crime rate is much too high	crime level 7			-							every recalculation	yes
-09  Monster Disaster			scenario specific		monster appears,			scenario specific	yes
+09  Monster disaster			scenario specific		monster appears,			scenario specific	yes
 														destroy all on its path
-0A	Eartquake Disaster			scenario specific		ground shake,				scenario specific	yes
+0A	Eartquake disaster			scenario specific		ground shake,				scenario specific	yes
 														destroy random areas
 0B	Bank wants to build office	5 years after White		present "Bank" 				once per game		yes
 								House has built
@@ -171,11 +180,11 @@
 								>=30000 population
 1F	Bank Hint					Bank has build			"BANK" button enabled		once per game		yes
 														at Budget screen
-20	Fire Disaster				manual request			burn random areas			scenatio specific	yes
-21	Flood Disaster				scenario specific		flood shore areas			scenario specific	yes
+20	Fire disaster				manual request			burn random areas			scenatio specific	yes
+21	Flood disaster				scenario specific		flood shore areas			scenario specific	yes
 22	Airplane Crash				random or when PLANE	destroy single area			scenario specific	yes
 								collide with HELI
-23	Tornado Disaster			scenario specific		destroy all on its path		scenario specific	yes
+23	Tornado disaster			scenario specific		destroy all on its path		scenario specific	yes
 
 	APPEND B. SCROLL MESSAGES
 
