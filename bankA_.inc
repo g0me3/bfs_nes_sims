@@ -3,8 +3,6 @@
 ; ---------E-X-T-R-A--M-U-S-I-C--A-N-D--S-E--C-O-D-E--A-N-D--D-A-T-A---------
 ; ---------------------------------------------------------------------------
 
-		SECTION_START	01
-
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se20_start:
 		JSR		_apu_tri_chnl_with_dpcm
@@ -522,5 +520,3 @@ _apu_status_reset:
 		ORA		#$0F
 		STA		_APU_STATUS
 		RTS
-
-		SECTION_END		01

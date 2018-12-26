@@ -207,14 +207,23 @@ loc_5829C:
 		JSR		_game_msg_line_pos_calc
 		JSR		_game_msg_line_display
 		INC		_ptr0+1
-		LDX		_game_msg_idx
-		LDA		_game_msg_lines_cnt_lib_lo,X
-		STA		_tmp2
-		LDA		_game_msg_lines_cnt_lib_hi,X
-		STA		_tmp3
-		LDY		_ptr0
+		LDY		_game_msg_idx
+; REDUNDANT
+;		LDA		_game_msg_lines_cnt_lib_lo,X
+;		STA		_tmp2
+;		LDA		_game_msg_lines_cnt_lib_hi,X
+;		STA		_tmp3
+;		LDY		_ptr0
+;		LDA		_ptr0+1
+;		CMP		(_tmp2),Y
+; OPTIMIZED
+		LDA		_game_msg_lines_cnt_lib,Y
+		CLC
+		ADC		_ptr0
+		TAY
 		LDA		_ptr0+1
-		CMP		(_tmp2),Y
+		CMP		_game_msg_lines_cnt_lib,Y
+; -
 		BCC		loc_5829C
 		JSR		_game_msg_hints_extra_icons_draw
 		JSR		_game_msg_presents_icon_draw
@@ -1421,6 +1430,7 @@ loc_589FA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+;       0
 ; event	1 x
 ; event	2 item F
 ; event	3 x
@@ -1484,7 +1494,7 @@ loc_58A60:
 loc_58A69:
 ;		PLA
 		LDY		_game_msg_idx				; OPTIMIZED
-		LDA		_presents_list,Y
+		LDA		_presents_list-1,Y
 		BMI		locret_58A6D
 		STA		_city._presents_list,X
 locret_58A6D:

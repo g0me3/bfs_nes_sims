@@ -3,6 +3,10 @@
 
 		BANK_START $F5
 
+; ---------------------------------------------------------------------------
+; --------------E-X-T-E-R-N-A-L--S-Y-S-T-E-M--R-O-U-T-I-N-E-S----------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _obj_handlers:
 		LDA		_game_msg_wnd_active_flag
@@ -14,74 +18,77 @@ loc_88006:
 		LDA		#$50
 		STA		_spr_buf_pos
 loc_8800F:
-		LDA		_airplane_crash_req
-		BEQ		loc_8801C
-		JSR		_airplane_crash_start
-		LDA		#$00
-		STA		_airplane_crash_req
-loc_8801C:
 		JSR		_obj_spr_bank_select
-		LDA		_obj_active_flags
-		AND		#$02
-		BEQ		loc_88029
-		JSR		_obj_hndl02_plane
-loc_88029:
 		LDA		_obj_active_flags
 		LSR
 		BCC		loc_88032
 		JSR		_obj_hndl01_heli
 loc_88032:
-		LDA		_obj_active_flags
-		AND		#$20
-		BEQ		loc_8803C
-		JSR		_obj_hndl20_tornado
-loc_8803C:
-		LDA		_obj_active_flags
-		AND		#$10
-		BEQ		loc_88046
-		JSR		_obj_hndl10_monster
-loc_88046:
-		LDA		_obj_active_flags
-		AND		#$08
-		BEQ		loc_88050
-		JSR		_obj_hndl08_train
-loc_88050:
-		LDA		_obj_active_flags
-		AND		#$04
-		BEQ		loc_8805A
+;		LDA		_obj_active_flags				; REDUNDANT
+;		AND		#$02
+		LSR										; OPTIMIZED
+		BCC		loc_88029
+		JSR		_obj_hndl02_plane
+loc_88029:
+;		LDA		_obj_active_flags
+;		AND		#$04
+		LSR
+		BCC		loc_8805A
 		JSR		_obj_hndl04_ship
 loc_8805A:
+;		LDA		_obj_active_flags
+;		AND		#$08
+		LSR
+		BCC		loc_88050
+		JSR		_obj_hndl08_train
+loc_88050:
+;		LDA		_obj_active_flags
+;		AND		#$10
+		LSR
+		BCC		loc_88046
+		JSR		_obj_hndl10_monster
+loc_88046:
+;		LDA		_obj_active_flags
+;		AND		#$20
+		LSR
+		BCC		loc_8803C
+		JSR		_obj_hndl20_tornado
+loc_8803C:
+		LDA		_airplane_crash_req				; special check for airplane crash
+		BEQ		loc_8801C
+;		JSR		_airplane_crash_start
+		LDA		#$00
+		STA		_airplane_crash_req
+		BEQ		_airplane_crash_start			; OPTIMIZED
+loc_8801C:
 		LDA		_obj_active_flags
 		AND		#$03
 		CMP		#$03
-		BNE		locret_88076
-		LDA		_obj_pos._heli._X
-		CMP		_obj_pos._plane._X
-		BNE		locret_88076
+		BNE		locret_88076					; special test if heli and plane are in the same
+		LDA		_obj_pos._heli._X				; position currently, they CRAAASHHHHH!!
+		CMP		_obj_pos._plane._X				; so we can crash airplane without request
+		BNE		locret_88076					; NOTE, with this crash we destroy only plane, not heli!
 		LDA		_obj_pos._heli._Y
 		CMP		_obj_pos._plane._Y
 		BNE		locret_88076
-		JSR		_airplane_crash_start
-locret_88076:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
+;		JMP		_airplane_crash_start			; OPTIMIZED
 _airplane_crash_start:
 		LDA		#$22
 		STA		_game_msg_idx
-		LDX		_obj_pos._plane._X
-		STX		_goto_dst_tile._X
+		LDX		_obj_pos._plane._X				; cur plane obj pos set to goto pos
+		STX		_goto_dst_tile._X				; the same time X,Y loaded with the same pos
 		LDY		_obj_pos._plane._Y
-		STX		_goto_dst_tile._Y
+;		STX		_goto_dst_tile._Y				; BUG! Y loaded, X stored instead!
+		STY		_goto_dst_tile._Y				; FIX: correct opcode
 		LDA		#$01
 		STA		_goto_alert_req
 		STA		_game_msg_awaits_flag
-		JSR		_far_fire_or_destroy_map_tile_ex
-		LDA		_obj_active_flags
+		JSR		_far_fire_or_destroy_map_tile_ex; X,Y aregs goes here
+		LDA		_obj_active_flags				; destroy plane
 		AND		#$FD
 		STA		_obj_active_flags
 		LDA		#$04
-		STA		_apu_se_flags+1
+		STA		_apu_se_flags+1					; crash sound
 		PUSHB	_ptr0
 		PUSHB	_ptr0+1
 		PUSHB	_tmp2
@@ -89,23 +96,85 @@ _airplane_crash_start:
 		PUSHB	_tmp4
 		PUSHB	_tmp5
 		LDY		#$08
-		FJSRA	_city_history_write,SRAM,PRGA
+		FJSRA	_city_history_write,SRAM,PRGA	; to memories!
 		POPB	_tmp5
 		POPB	_tmp4
 		POPB	_tmp3
 		POPB	_tmp2
 		POPB	_ptr0+1
 		POPB	_ptr0
+locret_88076:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; every	50 years the CHR bank for object are changes
+; 1900 - bank 38, 39
+; 1950 - bank 3A, 3B
+; 2000 - bank 3C, 3D
+; 2050 - bank 3E, 3F
+_obj_spr_bank_select:
+		LDX		#$00							; subtract 1950 by default
+		LDA		_city._cur_year
+		SEC
+		SBC		#$9E
+		STA		_tmp15
+		LDA		_city._cur_year+1
+		SBC		#$07
+		STA		_tmp15+1
+		BCC		loc_88D25						; all lower gets default sprites
+loc_88D11:
+		INX
+		CPX		#$03							; then subtract 50 from the rest
+		BCS		loc_88D25						; up to 3 times
+		LDA		_tmp15
+		SEC
+		SBC		#$32
+		STA		_tmp15
+		LDA		_tmp15+1
+		SBC		#$00
+		STA		_tmp15+1
+		BCS		loc_88D11
+loc_88D25:
+		LDA		byte_88D31,X					; we have 4 periods with different
+		STA		_MMC5_CHR_BANKSA+2				; vehicle graphics
+		TAX
+		INX
+		STX		_MMC5_CHR_BANKSA+3
+		RTS
+byte_88D31:
+		.BYTE	$38,$3A,$3C,$3E
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_hndl01_heli:
+		LDA		#$00
+		STA		_cur_obj_idx
+		JSR		_obj_fetch
+		LDX		_frames_div8_counter
+		CPX		_cur_obj_idx
+		BNE		loc_8822A
+		LDA		_obj_spr_delta._heli
+		BEQ		loc_8821A
+		JMP		_obj_rotate
+loc_8821A:
+		JSR		_obj_flying_dst_test_adjust
+		CMP		#$FF
+		BNE		loc_88224
+		JSR		_obj_flying_retarget
+		JMP		_obj_draw
+loc_88224:
+		STA		_obj_cur_spr_idx._heli
+		JSR		_cur_obj_move
+loc_8822A:
+		JMP		_obj_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl02_plane:
 		LDA		#$01
 		STA		_cur_obj_idx
-		JSR		_obj_pos_fetch
+		JSR		_obj_fetch
 		BIT		_obj_plane_anim_idx				; cur plane anim mode, 80 means
 		BPL		loc_880DC						; take-off/landing
-		JMP		_obj_plane_land_take_off_draw
+		JMP		_obj_plane_landing_draw
 loc_880DC:
 		LDX		_frames_div8_counter
 		CPX		_cur_obj_idx
@@ -122,59 +191,12 @@ loc_880EB:
 loc_880F8:
 		STA		_obj_cur_spr_idx._plane
 		JSR		_cur_obj_move
-		JSR		_obj_hndl02_plane_landing_test
+		JSR		_obj_plane_landing_test
 loc_88101:
-;		JMP		_obj_draw						; REDUNDANT
-
-; !FALLTHROUGH!
+		JMP		_obj_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_draw:
-		LDX		_game_wnd_spr_mode_flag
-		BEQ		loc_88110
-		JSR		_map_scr_obj_spr_insert
-		JMP		_obj_pos_flush
-loc_88110:
-		LDY		_cur_obj_idx
-		BEQ		.obj_heli_draw
-		CPY		#$02
-		BEQ		.obj_ship_draw
-		CPY		#$04
-		BEQ		.obj_monster_draw
-		CPY		#$05
-		BEQ		.obj_tornado_draw
-.obj_common_draw:
-		LDA		_obj_cur_spr_idx,Y
-.obj_common_draw_ex:
-		STA		_spr_insert_args._idx
-		JSR		_obj_spr_draw
-		JMP		_obj_pos_flush
-.obj_heli_draw:
-		LDA		_obj_cur_spr_idx._heli
-		LDX		_frames_div4_counter
-		JSR		_obj_spr_heli_draw
-		JMP		_obj_pos_flush
-.obj_monster_draw:
-		LDA		_obj_monster_spr_idx
-		STA		_spr_insert_args._idx
-		JSR		_obj_spr_draw
-		LDX		_cur_obj_pos._X
-		LDY		_cur_obj_pos._Y
-		JMP		_far_fire_or_destroy_map_tile_ex
-.obj_ship_draw:
-		CMPWI	_city._cur_year,1950			; for years 1900-1949 used _spr_shipB set
-		BCS		.obj_common_draw				; the rest sprites uses _spr_shipA set
-		LDA		_obj_cur_spr_idx,Y
-		CLC
-		ADC		#$08
-		BNE		.obj_common_draw_ex
-.obj_tornado_draw:
-		LDX		_obj_tornado_counter
-		LDA		byte_89D36,X
-		JMP		.obj_common_draw_ex
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_plane_land_take_off_draw:
+_obj_plane_landing_draw:
 		LDX		_frames_div8_counter
 		CPX		_cur_obj_idx
 		BNE		loc_88171
@@ -211,69 +233,15 @@ loc_881A6:
 		LDX		_game_wnd_spr_mode_flag
 		BEQ		loc_881B3
 		JSR		_map_scr_obj_spr_insert
-		JMP		_obj_pos_flush
+		JMP		_obj_flush
 loc_881B3:
 		JSR		_obj_spr_draw
-		JMP		_obj_pos_flush
+		JMP		_obj_flush
 _obj_plane_takoff_anim_list:
 		.BYTE	$00,$08,$09,$0A,$0B,$0F,$0E,$0D,$0C
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_obj_move:
-		LDY		_cur_obj_idx
-		LDA		_obj_cur_spr_idx,Y				; all arrays inside are with 2-byte items
-		ASL										; every item is for X and Y correspondingly
-		TAX										; calculations performed with the same routine
-		LDA		_cur_obj_idx					; separately for X and Y
-		ASL
-		TAY
-		PHA
-		JSR		_cur_obj_move_adjust			; X - cur spr param, Y - cur obj parame (+0=X, +1=Y)
-		INX
-		PLA
-		TAY
-		INY
-;		JMP		_cur_obj_move_adjust
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_cur_obj_move_adjust:
-		LDA		_obj_dir_delta_list,X			; no move needed for this sprite state
-		BEQ		locret_888A9
-		BPL		.increase						; increase or decrease
-		CLC
-		ADC		_obj_shift,Y
-		AND		#$07
-		STA		_obj_shift,Y
-		CMP		#$07
-		BNE		locret_888A9					; adjust timers
-		TXA
-		AND		#$01
-		TAY
-		LDA		_cur_obj_pos,Y					; recalc X/Y pos for local var
-		SEC
-		SBC		#$01
-		STA		_cur_obj_pos,Y
-		RTS
-.increase:
-		CLC
-		ADC		_obj_shift,Y
-		AND		#$07
-		STA		_obj_shift,Y
-		BNE		locret_888A9
-		TXA
-		AND		#$01
-		TAY
-		LDA		_cur_obj_pos,Y
-		CLC
-		ADC		#$01
-		STA		_cur_obj_pos,Y
-locret_888A9:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_hndl02_plane_landing_test:
+_obj_plane_landing_test:
 		LDA		_obj_cur_spr_idx._plane
 		BEQ		locret_88202
 		CMP		#$04
@@ -294,48 +262,123 @@ locret_88202:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl01_heli:
-		LDA		#$00
-		STA		_cur_obj_idx
-		JSR		_obj_pos_fetch
-		LDX		_frames_div8_counter
-		CPX		_cur_obj_idx
-		BNE		loc_8822A
-		LDA		_obj_spr_delta._heli
-		BEQ		loc_8821A
-		JMP		_obj_rotate
-loc_8821A:
-		JSR		_obj_flying_dst_test_adjust
-		CMP		#$FF
-		BNE		loc_88224
-		JSR		_obj_flying_retarget
-		JMP		_obj_draw
-loc_88224:
-		STA		_obj_cur_spr_idx._heli
-		JSR		_cur_obj_move
-loc_8822A:
-		JMP		_obj_draw
+_obj_flying_retarget:
+		LDA		_cur_obj_idx
+		ASL
+		TAY
+		JSR		_obj_flying_get_rand_pos		; choose two random map coords
+		STA		_obj_dst_pos._X,Y
+		JSR		_obj_flying_get_rand_pos
+		STA		_obj_dst_pos._Y,Y
+		JSR		_obj_fetch
+		JSR		_obj_flying_dst_test_adjust		; check if we already there
+		CMP		#$FF							; repeat if yeas
+		BEQ		_obj_flying_retarget
+		LDY		_cur_obj_idx					; store destination spr idx
+		STA		_obj_dst_spr_idx,Y				; corresponds to plane sprite
+		ASL										; orientation 7\ |0/1
+		ASL										;			  6<-*->2
+		ASL										;			  5/4| \3
+		ADC		_obj_cur_spr_idx,Y				; calc direction of sprite rorate
+		TAX										; from cur spr idx to dst spr
+		LDA		_obj_spr_rotate_delta_table,X	; table 64x64 consists of 0, 1 and -1
+		STA		_obj_spr_delta,Y				; we will inc/dec our spr by this value
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_rotate:
-		LDY		_cur_obj_idx
-		LDA		_obj_spr_delta,Y				; change cur spr idx
-		CLC
-		ADC		_obj_cur_spr_idx,Y
-		AND		#$07
-		STA		_obj_cur_spr_idx,Y				; wrap around 7, there are
-		CMP		_obj_dst_spr_idx,Y				; always 8 sprite states here
-		BNE		loc_88246
+_obj_flying_get_rand_pos:
+		LDA		_frames_counter
+		AND		#$0F
+		TAX
+		LDA		_rand_seed
+		LSR
+		LSR
+		BNE		loc_88BE9
+		LDA		#$24
+loc_88BE9:
+		STA		_tmp15
+loc_88BEB:
+		ADC		_frames_counter
+		ADC		_frames_div8_counter
+		STA		_rand_seed
+		DEX
+		BNE		loc_88BEB
+loc_88BF4:
+		CMP		#$48
+		BCC		locret_88BFE
+		SEC
+		SBC		_tmp15
+		JMP		loc_88BF4
+locret_88BFE:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_flying_dst_test_adjust:
+		LDA		_cur_obj_pos._X
+		CMP		_cur_dst_pos._X
+		BEQ		loc_88B97
+		BCS		loc_88BA7
+		LDA		_cur_obj_pos._Y
+		CMP		_cur_dst_pos._Y
+		BEQ		loc_88B91
+		BCC		loc_88B94
+		LDA		#$01
+		RTS
+loc_88B91:
+		LDA		#$02
+		RTS
+loc_88B94:
+		LDA		#$03
+		RTS
+loc_88B97:
+		LDA		_cur_obj_pos._Y
+		CMP		_cur_dst_pos._Y
+		BEQ		loc_88BBA
+		BCC		loc_88BA4
 		LDA		#$00
-		STA		_obj_spr_delta,Y				; desired sprite selected
-loc_88246:
-		JMP		_obj_draw
+		RTS
+loc_88BA4:
+		LDA		#$04
+		RTS
+loc_88BA7:
+		LDA		_cur_obj_pos._Y
+		CMP		_cur_dst_pos._Y
+		BEQ		loc_88BB4
+		BCS		loc_88BB7
+		LDA		#$05
+		RTS
+loc_88BB4:
+		LDA		#$06
+		RTS
+loc_88BB7:
+		LDA		#$07
+		RTS
+loc_88BBA:
+		CPY		#$03
+		BNE		loc_88BD9
+		LDA		_obj_cur_spr_idx._train
+		AND		#$02
+		BEQ		loc_88BCE
+		LDA		_obj_shift._train._X
+		CMP		#$04
+		BEQ		loc_88BD9
+		BEQ		loc_88BD5
+loc_88BCE:
+		LDA		_obj_shift._train._Y
+		CMP		#$04
+		BEQ		loc_88BD9
+loc_88BD5:
+		LDA		_obj_cur_spr_idx._train
+		RTS
+loc_88BD9:
+		LDA		#$FF
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl04_ship:
 		LDA		#$02
 		STA		_cur_obj_idx
-		JSR		_obj_pos_fetch
+		JSR		_obj_fetch
 		LDX		_frames_div8_counter			; every object moves only
 		CPX		_cur_obj_idx					; at its own frame, separately
 		BNE		loc_8826A						; otherwize it's only drawn
@@ -343,10 +386,10 @@ _obj_hndl04_ship:
 		BEQ		loc_88260
 		JMP		_obj_rotate
 loc_88260:
-		JSR		_obj_hndl04_ship_dst_test		; test if we in a dst point
+		JSR		_obj_ship_dst_test				; test if we in a dst point
 		CMP		#$FF
 		BNE		loc_88269						; FIX: the same as other handlers
-		JSR		_obj_hndl04_ship_retarget
+		JSR		_obj_ship_retarget
 		JMP		_obj_draw
 loc_88269:
 		JSR		_cur_obj_move
@@ -354,7 +397,7 @@ loc_8826A:
 		JMP		_obj_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_dst_test:
+_obj_ship_dst_test:
 ; -
 ; BAD CODE: similar function to train object
 ; as against the train, ship can move diagonally
@@ -399,7 +442,7 @@ loc_8828E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_retarget:
+_obj_ship_retarget:
 		JSR		_get_cur_obj_map_ptr			; _tmp15/_tmp15+1 = map_buf_pos ofs
 		LDA		#$00
 		STA		_tmp17
@@ -409,7 +452,7 @@ _obj_hndl04_ship_retarget:
 		ADC		#$04
 		AND		#$07
 		STA		_tmp18							; _tmp18 = opposite direction spr idx
-		JSR		_obj_hndl04_ship_look_for_new_dir
+		JSR		_obj_ship_look_for_new_dir
 		TXA
 		CMP		_obj_cur_spr_idx._ship
 		BEQ		loc_882D1
@@ -448,7 +491,7 @@ loc_882D1:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_look_for_new_dir:
+_obj_ship_look_for_new_dir:
 		LDA		_obj_map_tile_dir_buf_ofs_list,X; map tile ofs for spr directions
 		TAY
 		BPL		loc_882FB
@@ -462,7 +505,7 @@ loc_882FD:
 ;		CMP		#$FE							; UNUSED: test if it is a special sea tile
 		CMP		#$BD							; FIX: let's use regular sea tile
 		BNE		loc_8830B
-		JSR		_obj_hndl04_ship_near_tile_test
+		JSR		_obj_ship_near_tile_test
 		BCC		loc_8830B
 		CPX		_tmp18							; forbid opposite pos change
 		BEQ		loc_8830B
@@ -473,17 +516,70 @@ loc_8830B:
 		AND		#$07
 		TAX
 		CMP		_obj_cur_spr_idx._ship			; make full circle clockwise
-		BNE		_obj_hndl04_ship_look_for_new_dir
+		BNE		_obj_ship_look_for_new_dir
 		LDX		_tmp18							; default value - opposite one
 		RTS
 _obj_map_tile_dir_buf_ofs_list:
 		.BYTE	$B4,$B5,$01,$4D,$4C,$4B,$FF,$B3
 
 ; =============== S U B	R O U T	I N E =======================================
+_obj_ship_near_tile_test:
+		LDA		_cur_obj_pos._X					; here we should decide if we can
+		BEQ		.ship_leftmost_pos				; go in the selected direction
+		CMP		#$4B
+		BEQ		.ship_rightmost_pos
+		LDA		_cur_obj_pos._Y
+		BEQ		.ship_top_pos
+		CMP		#$4B
+		BEQ		.ship_bottom_pos
+.ship_can_go:
+		SEC
+		RTS
+.ship_cant_go:
+;		INX										; here we skip to the next direction one more time
+;		TXA										; don't know why, actually. looks loke dupe code here
+;		AND		#$07
+;		TAX
+		CLC
+		RTS
+.ship_leftmost_pos:
+		CPX		#$05							; leftmost position, but opposite direction
+		BCC		.ship_can_go					; can go
+		BCS		.ship_cant_go					; otherwise cant
+.ship_rightmost_pos:
+		CPX		#$01							; etc. all corner cases
+		BCC		.ship_can_go
+		CPX		#$04
+		BCC		.ship_cant_go
+		BCS		.ship_can_go
+.ship_top_pos:
+		CPX		#$02
+		BCC		.ship_cant_go
+		CPX		#$07
+		BEQ		.ship_cant_go
+		BNE		.ship_can_go
+.ship_bottom_pos:
+		CPX		#$03
+		BCC		.ship_can_go
+		CPX		#$06
+		BCC		.ship_cant_go
+		BCS		.ship_can_go
+
+byte_889CC:
+		.BYTE	$00,$FF
+		.BYTE	$01,$FF
+		.BYTE	$01,$00
+		.BYTE	$01,$01
+		.BYTE	$00,$01
+		.BYTE	$FF,$01
+		.BYTE	$FF,$00
+		.BYTE	$FF,$FF
+
+; =============== S U B	R O U T	I N E =======================================
 _obj_hndl08_train:
 		LDA		#$03
 		STA		_cur_obj_idx
-		JSR		_obj_pos_fetch
+		JSR		_obj_fetch
 		LDX		_frames_div8_counter
 		CPX		_cur_obj_idx
 		BNE		loc_88347
@@ -491,10 +587,10 @@ _obj_hndl08_train:
 		BEQ		loc_88337
 		JMP		_obj_rotate
 loc_88337:
-		JSR		_obj_hndl08_train_dst_test
+		JSR		_obj_train_dst_test
 		CMP		#$FF
 		BNE		loc_88344
-		JSR		_obj_hndl08_train_retarget
+		JSR		_obj_train_retarget
 		JMP		_obj_draw
 loc_88344:
 		JSR		_cur_obj_move
@@ -502,7 +598,7 @@ loc_88347:
 		JMP		_obj_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl08_train_dst_test:
+_obj_train_dst_test:
 		LDX		_obj_shift._train._X
 		LDA		_obj_cur_spr_idx._train			; select movement direction
 		AND		#$02							; may be only vert or hor
@@ -522,7 +618,7 @@ locret_8836D:
 		RTS										; otherwise return nothing
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl08_train_retarget:
+_obj_train_retarget:
 		JSR		_get_cur_obj_map_ptr
 		LDA		#$00
 		STA		_tmp17
@@ -606,15 +702,15 @@ loc_8840D:
 		STX		_obj_cur_spr_idx._train
 		STX		_obj_dst_spr_idx._train
 loc_8841E:
-		JSR		_obj_hndl08_train_retarget_0
+		JSR		_obj_train_near_tile_test
 		BCC		loc_88434
 		BCS		loc_8844A
 loc_88425:
 		LDX		_obj_cur_spr_idx._train
-		JSR		_obj_hndl08_train_retarget_0
+		JSR		_obj_train_near_tile_test
 		BCS		loc_8844A
 		LDX		_tmp18
-		JSR		_obj_hndl08_train_retarget_0
+		JSR		_obj_train_near_tile_test
 		BCS		loc_88442
 loc_88434:
 		LDA		_obj_active_flags
@@ -702,7 +798,7 @@ byte_884C6:
 		.BYTE	$08,$09,$00,$09,$00,$00,$00,$08,$00,$00,$00,$0B,$0A,$0B,$00,$0A
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl08_train_retarget_0:
+_obj_train_near_tile_test:
 		LDY		_obj_map_tile_dir_buf_ofs_list,X
 		BPL		loc_884F3
 		DEC		_tmp15+1
@@ -821,10 +917,10 @@ loc_88596:
 		STA		_cur_obj_idx
 		BIT		_obj_monster_anim_phase1
 		BMI		loc_885A9
-		JSR		_obj_hndl10_monster_anim_start
+		JSR		_obj_monster_anim0
 		JMP		locret_885D8
 loc_885A9:
-		JSR		_obj_pos_fetch
+		JSR		_obj_fetch
 		LDA		_frames_div8_counter
 		CMP		_cur_obj_idx
 		BNE		loc_885D5
@@ -836,21 +932,21 @@ loc_885A9:
 		STA		_obj_monster_delay
 		BNE		loc_885C6
 loc_885C3:
-		JSR		_obj_hndl10_monster_chr_anim
+		JSR		_obj_monster_anim1
 loc_885C6:
 		LDA		_obj_monster_anim_phase0
 		CMP		#$20
 		BEQ		loc_885D5
-		JSR		_obj_hndl10_monster_move
+		JSR		_obj_monster_move
 		BCS		locret_885D8
-		JSR		_obj_pos_fetch
+		JSR		_obj_fetch
 loc_885D5:
 		JMP		_obj_draw
 locret_885D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl10_monster_chr01_anim:
+_obj_monster_chr01_select:
 		LDA		_obj_monster_anim_phase1
 		AND		#$7F
 		BEQ		loc_885E9
@@ -880,7 +976,7 @@ loc_88602:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl10_monster_chr2_anim:
+_obj_monster_chr2_select:
 		LDX		#$00
 		LDA		_obj_monster_chr_idx
 		AND		#$01
@@ -907,84 +1003,7 @@ loc_88628:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl10_monster_chr_anim:
-		INC		_obj_monster_anim_phase0
-loc_88633:
-		JSR		_obj_hndl10_monster_chr01_anim
-		LDA		_obj_monster_anim_phase1
-		AND		#$7F
-		BEQ		loc_88645
-		LDA		_obj_monster_chr_idx
-		LSR
-		LSR
-		LSR
-		BNE		loc_8864B
-loc_88645:
-		LDA		_obj_monster_chr_idx
-		AND		#$0F
-		ASL
-loc_8864B:
-		STA		_tmp17
-		LDY		byte_6CA
-		BEQ		loc_88657
-		CLC
-		ADC		#$08
-		STA		_tmp17
-loc_88657:
-		TAX
-		LDA		_obj_monster_anim_lib0_lo,X
-		STA		_tmp15+1
-		LDA		_obj_monster_anim_lib0_hi,X
-		STA		_tmp15
-		LDY		_obj_monster_anim_phase0
-loc_88665:
-		LDA		(_tmp15),Y
-		BNE		loc_886A2
-		LDY		#$00
-		STY		_obj_monster_anim_phase0
-		LDA		_obj_monster_anim_phase1
-		AND		#$7F
-		EOR		#$01
-		TAY
-		LDA		_obj_pos._monster,Y
-		CMP		_obj_dst_pos._monster,Y
-		BEQ		loc_88665
-		LDA		_obj_monster_anim_phase1
-		AND		#$7F
-		STA		_tmp17
-		LDA		_obj_monster_anim_phase1
-		EOR		#$01
-		STA		_obj_monster_anim_phase1
-		LDA		byte_6CA
-		BNE		loc_88633
-		JSR		_obj_hndl10_monster_chr2_anim
-		CLC
-		ADC		#$14
-		STA		_obj_monster_spr_idx
-		LDA		#$02
-		STA		_obj_monster_delay
-		BNE		locret_886C5
-loc_886A2:
-		STA		_obj_monster_delay
-		LDX		_tmp17
-		LDA		_obj_monster_anim_lib1_lo,X
-		STA		_tmp15+1
-		LDA		_obj_monster_anim_lib1_hi,X
-		STA		_tmp15
-		LDY		_obj_monster_anim_phase0
-		LDA		(_tmp15),Y
-		STA		_obj_monster_spr_idx
-		CMP		#$10
-		BCC		locret_886C5
-		CMP		#$14
-		BCS		locret_886C5
-		LDA		#$01
-		STA		_apu_se_flags+1
-locret_886C5:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_hndl10_monster_move:
+_obj_monster_move:
 		LDA		_obj_monster_anim_phase1
 		AND		#$01
 		TAY
@@ -1031,7 +1050,7 @@ loc_88705:
 		LDA		_obj_monster_anim_phase1
 		EOR		#$01
 		STA		_obj_monster_anim_phase1
-		JSR		_obj_hndl10_monster_chr_anim
+		JSR		_obj_monster_anim1
 loc_8872E:
 		CLC
 		RTS
@@ -1047,7 +1066,7 @@ byte_8873F:
 		.BYTE	$01,$10
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_hndl10_monster_anim_start:
+_obj_monster_anim0:
 		LDA		#$20
 		STA		_obj_monster_chr_idx
 		LDA		#$01
@@ -1076,8 +1095,86 @@ loc_8876A:
 		STA		_obj_monster_chr_idx
 locret_8877A:
 		RTS
-_unused_0:
-		.BYTE	$02,$04,$02,$00,$06,$04,$06,$00
+
+;_unused_0:
+;		.BYTE	$02,$04,$02,$00,$06,$04,$06,$00
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_monster_anim1:
+		INC		_obj_monster_anim_phase0
+loc_88633:
+		JSR		_obj_monster_chr01_select
+		LDA		_obj_monster_anim_phase1
+		AND		#$7F
+		BEQ		loc_88645
+		LDA		_obj_monster_chr_idx
+		LSR
+		LSR
+		LSR
+		BNE		loc_8864B
+loc_88645:
+		LDA		_obj_monster_chr_idx
+		AND		#$0F
+		ASL
+loc_8864B:
+		STA		_tmp17
+		LDY		byte_6CA
+		BEQ		loc_88657
+		CLC
+		ADC		#$08
+		STA		_tmp17
+loc_88657:
+		TAX
+		LDA		_obj_monster_anim_lib0_lo,X
+		STA		_tmp15+1
+		LDA		_obj_monster_anim_lib0_hi,X
+		STA		_tmp15
+		LDY		_obj_monster_anim_phase0
+loc_88665:
+		LDA		(_tmp15),Y
+		BNE		loc_886A2
+		LDY		#$00
+		STY		_obj_monster_anim_phase0
+		LDA		_obj_monster_anim_phase1
+		AND		#$7F
+		EOR		#$01
+		TAY
+		LDA		_obj_pos._monster,Y
+		CMP		_obj_dst_pos._monster,Y
+		BEQ		loc_88665
+		LDA		_obj_monster_anim_phase1
+		AND		#$7F
+		STA		_tmp17
+		LDA		_obj_monster_anim_phase1
+		EOR		#$01
+		STA		_obj_monster_anim_phase1
+		LDA		byte_6CA
+		BNE		loc_88633
+		JSR		_obj_monster_chr2_select
+		CLC
+		ADC		#$14
+		STA		_obj_monster_spr_idx
+		LDA		#$02
+		STA		_obj_monster_delay
+		BNE		locret_886C5
+loc_886A2:
+		STA		_obj_monster_delay
+		LDX		_tmp17
+		LDA		_obj_monster_anim_lib1_lo,X
+		STA		_tmp15+1
+		LDA		_obj_monster_anim_lib1_hi,X
+		STA		_tmp15
+		LDY		_obj_monster_anim_phase0
+		LDA		(_tmp15),Y
+		STA		_obj_monster_spr_idx
+		CMP		#$10
+		BCC		locret_886C5
+		CMP		#$14
+		BCS		locret_886C5
+		LDA		#$01
+		STA		_apu_se_flags+1
+locret_886C5:
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl20_tornado:
@@ -1085,7 +1182,7 @@ _obj_hndl20_tornado:
 		STA		_MMC5_CHR_BANKSA+1
 		LDA		#$05
 		STA		_cur_obj_idx
-		JSR		_obj_pos_fetch
+		JSR		_obj_fetch
 		LDX		_frames_div8_counter
 		CPX		_cur_obj_idx
 		BNE		loc_887B6
@@ -1097,7 +1194,7 @@ _obj_hndl20_tornado:
 		LDA		#$00
 loc_887A3:
 		STA		_obj_tornado_counter
-		JSR		_obj_tornado_pos_adjust
+		JSR		_obj_tornado_move
 		CMP		#$FF
 		BEQ		locret_887B9
 		LDX		_cur_obj_pos._X
@@ -1109,7 +1206,7 @@ locret_887B9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_tornado_pos_adjust:
+_obj_tornado_move:
 		LDX		#$00
 		STX		_tmp15
 		LDA		_cur_obj_pos._X
@@ -1183,7 +1280,466 @@ loc_88834:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_pos_fetch:
+_obj_draw:
+		LDX		_game_wnd_spr_mode_flag
+		BEQ		loc_88110
+		JSR		_map_scr_obj_spr_insert
+		JMP		_obj_flush
+loc_88110:
+		LDY		_cur_obj_idx
+		BEQ		.obj_heli_draw
+		CPY		#$02
+		BEQ		.obj_ship_draw
+		CPY		#$04
+		BEQ		.obj_monster_draw
+		CPY		#$05
+		BEQ		.obj_tornado_draw
+.obj_common_draw:
+		LDA		_obj_cur_spr_idx,Y
+.obj_common_draw_ex:
+		STA		_spr_insert_args._idx
+		JSR		_obj_spr_draw
+		JMP		_obj_flush
+.obj_heli_draw:
+		LDA		_obj_cur_spr_idx._heli
+		LDX		_frames_div4_counter
+		JSR		_obj_spr_heli_draw
+		JMP		_obj_flush
+.obj_monster_draw:
+		LDA		_obj_monster_spr_idx
+		STA		_spr_insert_args._idx
+		JSR		_obj_spr_draw
+		LDX		_cur_obj_pos._X
+		LDY		_cur_obj_pos._Y
+		JMP		_far_fire_or_destroy_map_tile_ex
+.obj_ship_draw:
+		CMPWI	_city._cur_year,1950			; for years 1900-1949 used _spr_shipB set
+		BCS		.obj_common_draw				; the rest sprites uses _spr_shipA set
+		LDA		_obj_cur_spr_idx,Y
+		CLC
+		ADC		#$08
+		BNE		.obj_common_draw_ex
+.obj_tornado_draw:
+		LDX		_obj_tornado_counter
+		LDA		byte_89D36,X
+		JMP		.obj_common_draw_ex
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_heli_draw:
+		ASL										; fetch every 4th sprite idx
+		ASL
+		STA		_spr_insert_args._idx			; set +1 idx every 1/8 frames
+		TXA
+		LSR
+;		AND		#$01							; BUG? two frames are unused with that
+		AND		#$03							; FIX: use all 4
+		CLC
+		ADC		_spr_insert_args._idx
+		STA		_spr_insert_args._idx
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_draw:
+		LDA		_cur_obj_pos._X
+		SEC
+		SBC		_cur_map_wnd_pos._X
+		BCS		loc_889F7
+		CMP		#$FD
+		BCS		loc_889FB
+		BCC		locret_88A45
+loc_889F7:
+		CMP		#$1B
+		BCS		locret_88A45
+loc_889FB:
+		LDA		_cur_obj_pos._Y
+		SEC
+		SBC		_cur_map_wnd_pos._Y
+		BCS		loc_88A09
+		CMP		#$FD
+		BCS		loc_88A0D
+		BCC		locret_88A45
+loc_88A09:
+		CMP		#$18
+		BCS		locret_88A45
+loc_88A0D:
+		LDA		_cur_obj_idx
+		ASL
+		TAX
+		LDA		_cur_obj_pos._X
+		SEC
+		SBC		_cur_map_wnd_pos._X
+		CLC
+		ADC		#$07
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_obj_shift,X
+		STA		_spr_insert_args._pos._X
+		LDA		_cur_obj_pos._Y
+		SEC
+		SBC		_cur_map_wnd_pos._Y
+		CLC
+		ADC		#$07
+		ASL
+		ASL
+		ASL
+		CLC
+		ADC		_obj_shift._Y,X
+		STA		_spr_insert_args._pos._Y
+		LDA		_cur_obj_idx
+		CMP		#$03
+		BNE		loc_88A42
+		LDA		byte_571
+		BNE		locret_88A45
+loc_88A42:
+		JSR		_obj_spr_clip_draw
+locret_88A45:
+		RTS
+
+; NOTE: clip value never used in sprite drawing routines,
+; several sprite drawing routines has its own hardwritten
+; clipping code and no one uses the common one.
+; the _spr_insert_args._clip only zeroed at some point
+; never change it's value
+;
+; =============== S U B	R O U T	I N E =======================================
+;_obj_clip_select_unused:
+;		TAX
+;		LDA		#$00
+;		STA		_spr_insert_args._clip
+;		LDA		_spr_insert_args._pos._X
+;		CLC
+;		ADC		byte_89D36,X
+;		CMP		#$38
+;		BCS		loc_88A5B
+;		LDA		_spr_insert_args._clip
+;		ORA		#$01
+;		STA		_spr_insert_args._clip
+;loc_88A5B:
+;		LDA		_spr_insert_args._pos._Y
+;		CLC
+;		ADC		byte_89D36,X
+;		CMP		#$38
+;		BCS		loc_88A6D
+;		LDA		_spr_insert_args._clip
+;		ORA		#$02
+;		STA		_spr_insert_args._clip
+;		BNE		locret_88A7D
+;loc_88A6D:
+;		LDA		_spr_insert_args._pos._Y
+;		CLC
+;		ADC		byte_89D36,X
+;		CMP		#$D9
+;		BCC		locret_88A7D
+;		LDA		_spr_insert_args._clip
+;		ORA		#$04
+;		STA		_spr_insert_args._clip
+;locret_88A7D:
+;		RTS
+
+; NOTE: clipping embedded in this routine, no need in additional
+; clipping function or variable.
+;
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_clip_draw:
+;		LDA		#$00
+;		STA		_spr_insert_args._clip
+		LDA		_cur_obj_idx
+		CMP		#$08
+		BCC		loc_88A8C
+loc_88A89:
+		JMP		loc_88A89						; debug assert
+loc_88A8C:
+		ASL
+		TAX
+		LDA		_obj_spr_tbl_lib,X
+		STA		_tmp15
+		LDA		_obj_spr_tbl_lib+1,X
+		STA		_tmp15+1
+		LDA		_spr_insert_args._idx
+		ASL
+		TAY
+		LDA		(_tmp15),Y
+		TAX
+		INY
+		LDA		(_tmp15),Y
+		STA		_tmp15+1
+		STX		_tmp15
+		DEC		_spr_insert_args._pos._Y
+		LDX		_spr_buf_pos
+		LDY		#$00
+loc_88AAC:
+		STX		_tmp17
+		LDA		(_tmp15),Y
+		CMP		#$80
+		BEQ		loc_88B09
+		INY
+		CLC
+		ADC		_spr_insert_args._pos._Y
+		CMP		#$30
+		BCS		loc_88AC4
+loc_88ABC:
+		INY
+		INY
+		INY
+loc_88ABF:
+		LDX		_tmp17
+		JMP		loc_88AAC
+loc_88AC4:
+		CMP		#$38
+		BCS		loc_88ACF
+		PHA
+		JSR		_obj_spr_clipB_insert
+		PLA
+		BNE		loc_88ADC
+loc_88ACF:
+		CMP		#$DE
+		BCS		loc_88ABC
+		CMP		#$D6
+		BCC		loc_88ADC
+		PHA
+		JSR		_obj_spr_clipA_insert
+		PLA
+loc_88ADC:
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		CLC
+		ADC		_spr_insert_args._pos._X
+		CMP		#$31
+		BCC		loc_88ABF
+		CMP		#$39
+		BCS		loc_88B02
+		JSR		_obj_spr_clipC_insert
+		JMP		loc_88AAC
+loc_88B02:
+		STA		_spr_buf,X
+		INX
+		JMP		loc_88AAC
+loc_88B09:
+		STX		_spr_buf_pos
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_clipA_insert:
+		LDA		#$DF
+		BNE		_obj_spr_insert_ex
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_clipB_insert:
+		LDA		#$2F
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_insert_ex:
+		PHA
+		TYA
+		AND		#$FC
+		ORA		#$03
+		TAY
+		PLA
+		STA		_spr_buf,X
+		INX
+		LDA		#$AE
+		STA		_spr_buf,X
+		INX
+		LDA		#$20
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		CLC
+		ADC		_spr_insert_args._pos._X
+		STA		_spr_buf,X
+		INX
+		TYA
+		AND		#$FC
+		TAY
+		INY
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_spr_clipC_insert:
+		DEY
+		PUSHB	#$2F
+		TYA
+		AND		#$FC
+		TAY
+		TXA
+		AND		#$FC
+		TAX
+		INX
+		LDA		#$AE
+		STA		_spr_buf,X
+		INX
+		LDA		#$20
+		STA		_spr_buf,X
+		INX
+		PLA
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		CLC
+		ADC		_spr_insert_args._pos._Y
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_tmp15),Y
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_tmp15),Y
+		STA		_spr_buf,X
+		INX
+		INY
+		LDA		(_tmp15),Y
+		CLC
+		ADC		_spr_insert_args._pos._X
+		STA		_spr_buf,X
+		INX
+		INY
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_map_scr_obj_spr_insert:
+		LDA		#$36
+		STA		_MMC5_CHR_BANKSA+2
+		LDA		_cur_obj_idx
+		ASL
+		TAX
+		LDY		_spr_buf_pos
+		LDA		_obj_pos._Y,X
+		LDX		_cur_obj_idx
+		ASL
+		CLC
+		ADC		#$3C
+		ADC		_map_scr_obj_spr_deltaY,X
+		STA		_spr_buf,Y
+		INY
+		LDX		_cur_obj_idx
+		LDA		_map_scr_obj_spr_list,X
+		STA		_spr_buf,Y
+		INY
+		LDA		_map_scr_obj_spr_attrs,X
+		STA		_spr_buf,Y
+		INY
+		LDA		_cur_obj_idx
+		ASL
+		TAX
+		LDA		_obj_pos,X
+		LDX		_cur_obj_idx
+		ASL
+		CLC
+		ADC		#$45
+		ADC		_map_scr_obj_spr_deltaX,X
+		STA		_spr_buf,Y
+		INY
+		STY		_spr_buf_pos
+		RTS
+_map_scr_obj_spr_list:
+		.BYTE	$A9,$AA,$AB,$AC,$BD,$AD
+_map_scr_obj_spr_attrs:
+		.BYTE	$01,$02,$03,$00,$03,$02
+_map_scr_obj_spr_deltaY:
+		.BYTE	$04,$04,$04,$04,$04,$FC
+_map_scr_obj_spr_deltaX:
+		.BYTE	$04,$04,$04,$04,$04,$FC
+
+; =============== S U B	R O U T	I N E =======================================
+_far_fire_or_destroy_map_tile_ex:
+		PUSHB	_ptr0
+		PUSHB	_ptr0+1
+		PUSHB	_tmp2
+		PUSHB	_tmp3
+		PUSHB	_tmp4
+		PUSHB	_tmp5
+		FJSRA	_fire_or_destroy_map_tile_ex,SRAM,PRGB
+		POPB	_tmp5
+		POPB	_tmp4
+		POPB	_tmp3
+		POPB	_tmp2
+		POPB	_ptr0+1
+		POPB	_ptr0
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_obj_move:
+		LDY		_cur_obj_idx
+		LDA		_obj_cur_spr_idx,Y				; all arrays inside are with 2-byte items
+		ASL										; every item is for X and Y correspondingly
+		TAX										; calculations performed with the same routine
+		LDA		_cur_obj_idx					; separately for X and Y
+		ASL
+		TAY
+		PHA
+		JSR		_cur_obj_move_set				; X - cur spr param, Y - cur obj parame (+0=X, +1=Y)
+		INX
+		PLA
+		TAY
+		INY
+;		JMP		_cur_obj_move_set
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_obj_move_set:
+		LDA		_obj_dir_delta_list,X			; no move needed for this sprite state
+		BEQ		locret_888A9
+		BPL		.increase						; increase or decrease
+		CLC
+		ADC		_obj_shift,Y
+		AND		#$07
+		STA		_obj_shift,Y
+		CMP		#$07
+		BNE		locret_888A9					; adjust timers
+		TXA
+		AND		#$01
+		TAY
+		LDA		_cur_obj_pos,Y					; recalc X/Y pos for local var
+		SEC
+		SBC		#$01
+		STA		_cur_obj_pos,Y
+		RTS
+.increase:
+		CLC
+		ADC		_obj_shift,Y
+		AND		#$07
+		STA		_obj_shift,Y
+		BNE		locret_888A9
+		TXA
+		AND		#$01
+		TAY
+		LDA		_cur_obj_pos,Y
+		CLC
+		ADC		#$01
+		STA		_cur_obj_pos,Y
+locret_888A9:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_rotate:
+		LDY		_cur_obj_idx
+		LDA		_obj_spr_delta,Y				; change cur spr idx
+		CLC
+		ADC		_obj_cur_spr_idx,Y
+		AND		#$07
+		STA		_obj_cur_spr_idx,Y				; wrap around 7, there are
+		CMP		_obj_dst_spr_idx,Y				; always 8 sprite states here
+		BNE		loc_88246
+		LDA		#$00
+		STA		_obj_spr_delta,Y				; desired sprite selected
+loc_88246:
+		JMP		_obj_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_obj_fetch:
 		LDA		_cur_obj_idx
 		ASL
 		TAX
@@ -1198,7 +1754,7 @@ _obj_pos_fetch:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_obj_pos_flush:
+_obj_flush:
 		LDA		_cur_obj_idx
 		ASL
 		TAX
@@ -1206,30 +1762,6 @@ _obj_pos_flush:
 		STA		_obj_pos._X,X
 		LDA		_cur_obj_pos._Y
 		STA		_obj_pos._Y,X
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_flying_retarget:
-		LDA		_cur_obj_idx
-		ASL
-		TAY
-		JSR		_obj_dst_pos_gen				; choose two random map coords
-		STA		_obj_dst_pos._X,Y
-		JSR		_obj_dst_pos_gen
-		STA		_obj_dst_pos._Y,Y
-		JSR		_obj_pos_fetch
-		JSR		_obj_flying_dst_test_adjust			; check if we already there
-		CMP		#$FF							; repeat if yeas
-		BEQ		_obj_flying_retarget
-		LDY		_cur_obj_idx					; store destination spr idx
-		STA		_obj_dst_spr_idx,Y				; corresponds to plane sprite
-		ASL										; orientation 7\ |0/1
-		ASL										;			  6<-*->2
-		ASL										;			  5/4| \3
-		ADC		_obj_cur_spr_idx,Y				; calc direction of sprite rorate
-		TAX										; from cur spr idx to dst spr
-		LDA		_obj_spr_rotate_delta_table,X	; table 64x64 consists of 0, 1 and -1
-		STA		_obj_spr_delta,Y				; we will inc/dec our spr by this value
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1404,594 +1936,6 @@ _get_cur_obj_map_ptr:
 ;		.BYTE	>[_wram_map_buf+$15F8]
 ;		.BYTE	>[_wram_map_buf+$1644]
 
-; =============== S U B	R O U T	I N E =======================================
-_obj_hndl04_ship_near_tile_test:
-		LDA		_cur_obj_pos._X					; here we should decide if we can
-		BEQ		.ship_leftmost_pos				; go in the selected direction
-		CMP		#$4B
-		BEQ		.ship_rightmost_pos
-		LDA		_cur_obj_pos._Y
-		BEQ		.ship_top_pos
-		CMP		#$4B
-		BEQ		.ship_bottom_pos
-.ship_can_go:
-		SEC
-		RTS
-.ship_cant_go:
-;		INX										; here we skip to the next direction one more time
-;		TXA										; don't know why, actually. looks loke dupe code here
-;		AND		#$07
-;		TAX
-		CLC
-		RTS
-.ship_leftmost_pos:
-		CPX		#$05							; leftmost position, but opposite direction
-		BCC		.ship_can_go					; can go
-		BCS		.ship_cant_go					; otherwise cant
-.ship_rightmost_pos:
-		CPX		#$01							; etc. all corner cases
-		BCC		.ship_can_go
-		CPX		#$04
-		BCC		.ship_cant_go
-		BCS		.ship_can_go
-.ship_top_pos:
-		CPX		#$02
-		BCC		.ship_cant_go
-		CPX		#$07
-		BEQ		.ship_cant_go
-		BNE		.ship_can_go
-.ship_bottom_pos:
-		CPX		#$03
-		BCC		.ship_can_go
-		CPX		#$06
-		BCC		.ship_cant_go
-		BCS		.ship_can_go
-
-byte_889CC:
-		.BYTE	$00,$FF
-		.BYTE	$01,$FF
-		.BYTE	$01,$00
-		.BYTE	$01,$01
-		.BYTE	$00,$01
-		.BYTE	$FF,$01
-		.BYTE	$FF,$00
-		.BYTE	$FF,$FF
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_heli_draw:
-		ASL										; fetch every 4th sprite idx
-		ASL
-		STA		_spr_insert_args._idx			; set +1 idx every 1/8 frames
-		TXA
-		LSR
-;		AND		#$01							; BUG? two frames are unused with that
-		AND		#$03							; FIX: use all 4
-		CLC
-		ADC		_spr_insert_args._idx
-		STA		_spr_insert_args._idx
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_draw:
-		LDA		_cur_obj_pos._X
-		SEC
-		SBC		_cur_map_wnd_pos._X
-		BCS		loc_889F7
-		CMP		#$FD
-		BCS		loc_889FB
-		BCC		locret_88A45
-loc_889F7:
-		CMP		#$1B
-		BCS		locret_88A45
-loc_889FB:
-		LDA		_cur_obj_pos._Y
-		SEC
-		SBC		_cur_map_wnd_pos._Y
-		BCS		loc_88A09
-		CMP		#$FD
-		BCS		loc_88A0D
-		BCC		locret_88A45
-loc_88A09:
-		CMP		#$18
-		BCS		locret_88A45
-loc_88A0D:
-		LDA		_cur_obj_idx
-		ASL
-		TAX
-		LDA		_cur_obj_pos._X
-		SEC
-		SBC		_cur_map_wnd_pos._X
-		CLC
-		ADC		#$07
-		ASL
-		ASL
-		ASL
-		CLC
-		ADC		_obj_shift,X
-		STA		_spr_insert_args._pos._X
-		LDA		_cur_obj_pos._Y
-		SEC
-		SBC		_cur_map_wnd_pos._Y
-		CLC
-		ADC		#$07
-		ASL
-		ASL
-		ASL
-		CLC
-		ADC		_obj_shift._Y,X
-		STA		_spr_insert_args._pos._Y
-		LDA		_cur_obj_idx
-		CMP		#$03
-		BNE		loc_88A42
-		LDA		byte_571
-		BNE		locret_88A45
-loc_88A42:
-		JSR		_obj_spr_clip_draw
-locret_88A45:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_flip_select_unused:
-		TAX
-		LDA		#$00
-		STA		_spr_insert_args._flip
-		LDA		_spr_insert_args._pos._X
-		CLC
-		ADC		byte_89D36,X
-		CMP		#$38
-		BCS		loc_88A5B
-		LDA		_spr_insert_args._flip
-		ORA		#$01
-		STA		_spr_insert_args._flip
-loc_88A5B:
-		LDA		_spr_insert_args._pos._Y
-		CLC
-		ADC		byte_89D36,X
-		CMP		#$38
-		BCS		loc_88A6D
-		LDA		_spr_insert_args._flip
-		ORA		#$02
-		STA		_spr_insert_args._flip
-		BNE		locret_88A7D
-loc_88A6D:
-		LDA		_spr_insert_args._pos._Y
-		CLC
-		ADC		byte_89D36,X
-		CMP		#$D9
-		BCC		locret_88A7D
-		LDA		_spr_insert_args._flip
-		ORA		#$04
-		STA		_spr_insert_args._flip
-locret_88A7D:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_clip_draw:
-		LDA		#$00
-		STA		_spr_insert_args._flip
-		LDA		_cur_obj_idx
-		CMP		#$08
-		BCC		loc_88A8C
-loc_88A89:
-		JMP		loc_88A89						; debug assert
-loc_88A8C:
-		ASL
-		TAX
-		LDA		_obj_spr_tbl_lib,X
-		STA		_tmp15
-		LDA		_obj_spr_tbl_lib+1,X
-		STA		_tmp15+1
-		LDA		_spr_insert_args._idx
-		ASL
-		TAY
-		LDA		(_tmp15),Y
-		TAX
-		INY
-		LDA		(_tmp15),Y
-		STA		_tmp15+1
-		STX		_tmp15
-		DEC		_spr_insert_args._pos._Y
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_88AAC:
-		STX		_tmp17
-		LDA		(_tmp15),Y
-		CMP		#$80
-		BEQ		loc_88B09
-		INY
-		CLC
-		ADC		_spr_insert_args._pos._Y
-		CMP		#$30
-		BCS		loc_88AC4
-loc_88ABC:
-		INY
-		INY
-		INY
-loc_88ABF:
-		LDX		_tmp17
-		JMP		loc_88AAC
-loc_88AC4:
-		CMP		#$38
-		BCS		loc_88ACF
-		PHA
-		JSR		_obj_spr_clipB_insert
-		PLA
-		BNE		loc_88ADC
-loc_88ACF:
-		CMP		#$DE
-		BCS		loc_88ABC
-		CMP		#$D6
-		BCC		loc_88ADC
-		PHA
-		JSR		_obj_spr_clipA_insert
-		PLA
-loc_88ADC:
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		CLC
-		ADC		_spr_insert_args._pos._X
-		CMP		#$31
-		BCC		loc_88ABF
-		CMP		#$39
-		BCS		loc_88B02
-		JSR		_obj_spr_clipC_insert
-		JMP		loc_88AAC
-loc_88B02:
-		STA		_spr_buf,X
-		INX
-		JMP		loc_88AAC
-loc_88B09:
-		STX		_spr_buf_pos
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_clipA_insert:
-		LDA		#$DF
-		BNE		_obj_spr_insert_ex
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_clipB_insert:
-		LDA		#$2F
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_insert_ex:
-		PHA
-		TYA
-		AND		#$FC
-		ORA		#$03
-		TAY
-		PLA
-		STA		_spr_buf,X
-		INX
-		LDA		#$AE
-		STA		_spr_buf,X
-		INX
-		LDA		#$20
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		CLC
-		ADC		_spr_insert_args._pos._X
-		STA		_spr_buf,X
-		INX
-		TYA
-		AND		#$FC
-		TAY
-		INY
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_spr_clipC_insert:
-		DEY
-		PUSHB	#$2F
-		TYA
-		AND		#$FC
-		TAY
-		TXA
-		AND		#$FC
-		TAX
-		INX
-		LDA		#$AE
-		STA		_spr_buf,X
-		INX
-		LDA		#$20
-		STA		_spr_buf,X
-		INX
-		PLA
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		CLC
-		ADC		_spr_insert_args._pos._Y
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_tmp15),Y
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_tmp15),Y
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_tmp15),Y
-		CLC
-		ADC		_spr_insert_args._pos._X
-		STA		_spr_buf,X
-		INX
-		INY
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_flying_dst_test_adjust:
-		LDA		_cur_obj_pos._X
-		CMP		_cur_dst_pos._X
-		BEQ		loc_88B97
-		BCS		loc_88BA7
-		LDA		_cur_obj_pos._Y
-		CMP		_cur_dst_pos._Y
-		BEQ		loc_88B91
-		BCC		loc_88B94
-		LDA		#$01
-		RTS
-loc_88B91:
-		LDA		#$02
-		RTS
-loc_88B94:
-		LDA		#$03
-		RTS
-loc_88B97:
-		LDA		_cur_obj_pos._Y
-		CMP		_cur_dst_pos._Y
-		BEQ		loc_88BBA
-		BCC		loc_88BA4
-		LDA		#$00
-		RTS
-loc_88BA4:
-		LDA		#$04
-		RTS
-loc_88BA7:
-		LDA		_cur_obj_pos._Y
-		CMP		_cur_dst_pos._Y
-		BEQ		loc_88BB4
-		BCS		loc_88BB7
-		LDA		#$05
-		RTS
-loc_88BB4:
-		LDA		#$06
-		RTS
-loc_88BB7:
-		LDA		#$07
-		RTS
-loc_88BBA:
-		CPY		#$03
-		BNE		loc_88BD9
-		LDA		_obj_cur_spr_idx._train
-		AND		#$02
-		BEQ		loc_88BCE
-		LDA		_obj_shift._train._X
-		CMP		#$04
-		BEQ		loc_88BD9
-		BEQ		loc_88BD5
-loc_88BCE:
-		LDA		_obj_shift._train._Y
-		CMP		#$04
-		BEQ		loc_88BD9
-loc_88BD5:
-		LDA		_obj_cur_spr_idx._train
-		RTS
-loc_88BD9:
-		LDA		#$FF
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_obj_dst_pos_gen:
-		LDA		_frames_counter
-		AND		#$0F
-		TAX
-		LDA		_rand_seed
-		LSR
-		LSR
-		BNE		loc_88BE9
-		LDA		#$24
-loc_88BE9:
-		STA		_tmp15
-loc_88BEB:
-		ADC		_frames_counter
-		ADC		_frames_div8_counter
-		STA		_rand_seed
-		DEX
-		BNE		loc_88BEB
-loc_88BF4:
-		CMP		#$48
-		BCC		locret_88BFE
-		SEC
-		SBC		_tmp15
-		JMP		loc_88BF4
-locret_88BFE:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_map_scr_obj_spr_insert:
-		LDA		#$36
-		STA		_MMC5_CHR_BANKSA+2
-		LDA		_cur_obj_idx
-		ASL
-		TAX
-		LDY		_spr_buf_pos
-		LDA		_obj_pos._Y,X
-		LDX		_cur_obj_idx
-		ASL
-		CLC
-		ADC		#$3C
-		ADC		_map_scr_obj_spr_deltaY,X
-		STA		_spr_buf,Y
-		INY
-		LDX		_cur_obj_idx
-		LDA		_map_scr_obj_spr_list,X
-		STA		_spr_buf,Y
-		INY
-		LDA		_map_scr_obj_spr_attrs,X
-		STA		_spr_buf,Y
-		INY
-		LDA		_cur_obj_idx
-		ASL
-		TAX
-		LDA		_obj_pos,X
-		LDX		_cur_obj_idx
-		ASL
-		CLC
-		ADC		#$45
-		ADC		_map_scr_obj_spr_deltaX,X
-		STA		_spr_buf,Y
-		INY
-		STY		_spr_buf_pos
-		RTS
-_map_scr_obj_spr_list:
-		.BYTE	$A9,$AA,$AB,$AC,$BD,$AD
-_map_scr_obj_spr_attrs:
-		.BYTE	$01,$02,$03,$00,$03,$02
-_map_scr_obj_spr_deltaY:
-		.BYTE	$04,$04,$04,$04,$04,$FC
-_map_scr_obj_spr_deltaX:
-		.BYTE	$04,$04,$04,$04,$04,$FC
-
-; =============== S U B	R O U T	I N E =======================================
-_far_fire_or_destroy_map_tile_ex:
-		PUSHB	_ptr0
-		PUSHB	_ptr0+1
-		PUSHB	_tmp2
-		PUSHB	_tmp3
-		PUSHB	_tmp4
-		PUSHB	_tmp5
-		FJSRA	_fire_or_destroy_map_tile_ex,SRAM,PRGB
-		POPB	_tmp5
-		POPB	_tmp4
-		POPB	_tmp3
-		POPB	_tmp2
-		POPB	_ptr0+1
-		POPB	_ptr0
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; Simpliest routine to add raw sprites without attr control and clipping
-; uses different type of tmp on purpose, because it's called from NMI, and
-; _tmp0 may be used in other code as well as args are in different vars
-;
-_spr_lib_raw_insert:
-		LDX		_spr_insert_raw_args._idx
-		LDA		_spr_lib_lo,X
-		STA		_tmp15
-		LDA		_spr_lib_hi,X
-		STA		_tmp15+1
-		DEC		_spr_insert_raw_args._pos._Y
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_88C9C:
-		LDA		(_tmp15),Y
-		CMP		#$80
-		BEQ		loc_88CC5
-		INY
-		CLC
-		ADC		_spr_insert_raw_args._pos._Y
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		STA		_spr_buf,X
-		INX
-		LDA		(_tmp15),Y
-		INY
-		CLC
-		ADC		_spr_insert_raw_args._pos._X
-		STA		_spr_buf,X
-		INX
-		JMP		loc_88C9C
-loc_88CC5:
-		STX		_spr_buf_pos
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_spr_game_interface_cursor_draw:
-		LDA		_game_msg_wnd_active_flag
-		BNE		loc_88CD1
-		LDA		_cur_game_cursor_area
-		BNE		loc_88CE0
-loc_88CD1:
-		LDA		#$00
-		STA		_spr_insert_raw_args._idx
-		LDA		_cur_game_cursor_scr_pos._X
-		STA		_spr_insert_raw_args._pos._X
-		LDA		_cur_game_cursor_scr_pos._Y
-		STA		_spr_insert_raw_args._pos._Y
-		JMP		_spr_lib_raw_insert
-loc_88CE0:
-		LDX		_prev_constr_palette_press_idx
-		LDA		_constr_building_sizes_list,X
-		CPX		#$0C
-		BNE		loc_88CEC
-		CLC
-		ADC		_cur_port_type_select_idx
-loc_88CEC:
-		STA		_spr_insert_raw_args._idx
-		LDA		_cur_game_cursor_scr_pos._X
-		AND		#$F8
-		STA		_spr_insert_raw_args._pos._X
-		LDA		_cur_game_cursor_scr_pos._Y
-		AND		#$F8
-		STA		_spr_insert_raw_args._pos._Y
-		JMP		_spr_lib_raw_insert
-
-; =============== S U B	R O U T	I N E =======================================
-; every	50 years the CHR bank for object are changes
-; 1900 - bank 38, 39
-; 1950 - bank 3A, 3B
-; 2000 - bank 3C, 3D
-; 2050 - bank 3E, 3F
-_obj_spr_bank_select:
-		LDX		#$00							; subtract 1950 by default
-		LDA		_city._cur_year
-		SEC
-		SBC		#$9E
-		STA		_tmp15
-		LDA		_city._cur_year+1
-		SBC		#$07
-		STA		_tmp15+1
-		BCC		loc_88D25						; all lower gets default sprites
-loc_88D11:
-		INX
-		CPX		#$03							; then subtract 50 from the rest
-		BCS		loc_88D25						; up to 3 times
-		LDA		_tmp15
-		SEC
-		SBC		#$32
-		STA		_tmp15
-		LDA		_tmp15+1
-		SBC		#$00
-		STA		_tmp15+1
-		BCS		loc_88D11
-loc_88D25:
-		LDA		byte_88D31,X					; we have 4 periods with different
-		STA		_MMC5_CHR_BANKSA+2				; vehicle graphics
-		TAX
-		INX
-		STX		_MMC5_CHR_BANKSA+3
-		RTS
-byte_88D31:
-		.BYTE	$38,$3A,$3C,$3E
 _obj_spr_tbl_lib:
 		.WORD	_obj0_spr_lib
 		.WORD	_obj1_spr_lib
@@ -3390,5 +3334,84 @@ _obj_spr_rotate_delta_table:
 		.BYTE	$FF,$FF,$01,$01,$01,$00,$FF,$FF
 		.BYTE	$FF,$FF,$FF,$01,$01,$01,$00,$FF
 		.BYTE	$FF,$FF,$FF,$FF,$01,$01,$01,$00
+
+		SECTION_START F04
+
+; =============== S U B	R O U T	I N E =======================================
+_spr_game_interface_cursor_draw:
+		LDA		_game_msg_wnd_active_flag
+		BNE		loc_88CD1
+		LDA		_cur_game_cursor_area
+		BNE		loc_88CE0
+loc_88CD1:
+		LDA		#$00
+		STA		_spr_insert_raw_args._idx
+		LDA		_cur_game_cursor_scr_pos._X
+		STA		_spr_insert_raw_args._pos._X
+		LDA		_cur_game_cursor_scr_pos._Y
+		STA		_spr_insert_raw_args._pos._Y
+		JMP		_spr_lib_raw_insert
+loc_88CE0:
+		LDX		_prev_constr_palette_press_idx
+		LDA		_constr_building_sizes_list,X
+		CPX		#$0C
+		BNE		loc_88CEC
+		CLC
+		ADC		_cur_port_type_select_idx
+loc_88CEC:
+		STA		_spr_insert_raw_args._idx
+		LDA		_cur_game_cursor_scr_pos._X
+		AND		#$F8
+		STA		_spr_insert_raw_args._pos._X
+		LDA		_cur_game_cursor_scr_pos._Y
+		AND		#$F8
+		STA		_spr_insert_raw_args._pos._Y
+;		JMP		_spr_lib_raw_insert				; REDUNDANT
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+; Simpliest routine to add raw sprites without attr control and clipping
+; uses different type of tmp on purpose, because it's called from NMI, and
+; _tmp0 may be used in other code as well as args are in different vars
+;
+_spr_lib_raw_insert:
+		LDX		_spr_insert_raw_args._idx
+		LDA		_spr_lib_lo,X
+		STA		_tmp15
+		LDA		_spr_lib_hi,X
+		STA		_tmp15+1
+		DEC		_spr_insert_raw_args._pos._Y
+		LDX		_spr_buf_pos
+		LDY		#$00
+loc_88C9C:
+		LDA		(_tmp15),Y
+		CMP		#$80
+		BEQ		loc_88CC5
+		INY
+		CLC
+		ADC		_spr_insert_raw_args._pos._Y
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		STA		_spr_buf,X
+		INX
+		LDA		(_tmp15),Y
+		INY
+		CLC
+		ADC		_spr_insert_raw_args._pos._X
+		STA		_spr_buf,X
+		INX
+		JMP		loc_88C9C
+loc_88CC5:
+		STX		_spr_buf_pos
+		RTS
+
+		SECTION_END F04
 
 		BANK_END F5,$A000

@@ -4030,8 +4030,9 @@ loc_11FEEA:
 		LDY		#$0C
 		FJSR	_city_history_write,SRAM,PRGA
 
-; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
 _goto_alert_start:
 		LDA		_tmp_map_pos._X
 		STA		_goto_dst_tile._X

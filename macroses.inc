@@ -186,7 +186,7 @@ OTHER_WIDX			EQU 4
 {1}._attr:		.BYTE	0
 {1}._idx:		.BYTE	0
 		_tpos	{1}._pos
-{1}._flip:		.BYTE	0
+{1}._clip:		.BYTE	0
 	ENDM
 
 	MAC	_tsprargraw

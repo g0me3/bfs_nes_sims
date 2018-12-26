@@ -890,84 +890,126 @@ byte_70DEF:
 		.BYTE	$0E,$0F,$00,$00,$00,$00
 byte_70DF5:
 		.BYTE	$46,$10,$E0,$E0,$E0,$48,$FE,$06,$00
+
 _game_msg_screens_count_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$03,$02,$01,$01,$01
 		.BYTE	$01,$01,$01,$01
-_game_msg_lines_cnt_lib_lo:
-		.BYTE	<[_game_msg_lines6]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines3]
-		.BYTE	<[_game_msg_lines4]
-		.BYTE	<[_game_msg_lines6]
-		.BYTE	<[_game_msg_lines3]
-		.BYTE	<[_game_msg_lines6]
-		.BYTE	<[_game_msg_lines6]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines4]
-		.BYTE	<[_game_msg_lines8]
-		.BYTE	<[_game_msg_lines3]
-		.BYTE	<[_game_msg_lines7]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines4]
-		.BYTE	<[_game_msg_lines4]
-		.BYTE	<[_game_msg_lines4]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines7]
-		.BYTE	<[_game_msg_lines3]
-		.BYTE	<[_game_msg_lines3]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines989]
-		.BYTE	<[_game_msg_lines99]
-		.BYTE	<[_game_msg_lines9]
-		.BYTE	<[_game_msg_lines9]
-		.BYTE	<[_game_msg_lines2]
-		.BYTE	<[_game_msg_lines6]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines5]
-		.BYTE	<[_game_msg_lines7]
-_game_msg_lines_cnt_lib_hi:
-		.BYTE	>[_game_msg_lines6]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines3]
-		.BYTE	>[_game_msg_lines4]
-		.BYTE	>[_game_msg_lines6]
-		.BYTE	>[_game_msg_lines3]
-		.BYTE	>[_game_msg_lines6]
-		.BYTE	>[_game_msg_lines6]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines4]
-		.BYTE	>[_game_msg_lines8]
-		.BYTE	>[_game_msg_lines3]
-		.BYTE	>[_game_msg_lines7]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines4]
-		.BYTE	>[_game_msg_lines4]
-		.BYTE	>[_game_msg_lines4]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines7]
-		.BYTE	>[_game_msg_lines3]
-		.BYTE	>[_game_msg_lines3]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines989]
-		.BYTE	>[_game_msg_lines99]
-		.BYTE	>[_game_msg_lines9]
-		.BYTE	>[_game_msg_lines9]
-		.BYTE	>[_game_msg_lines2]
-		.BYTE	>[_game_msg_lines6]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines5]
-		.BYTE	>[_game_msg_lines7]
+
+; OPTIMIZED
+_game_msg_lines_cnt_lib:
+		.BYTE	[_game_msg_lines6-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines3-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines4-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines6-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines3-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines6-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines6-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines4-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines8-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines3-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines7-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines4-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines4-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines4-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines7-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines3-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines3-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines989-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines99-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines9-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines9-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines2-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines6-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines5-_game_msg_lines_cnt_lib]
+		.BYTE	[_game_msg_lines7-_game_msg_lines_cnt_lib]
+
+; REDUNDANT
+;_game_msg_lines_cnt_lib_lo:
+;		.BYTE	<[_game_msg_lines6]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines3]
+;		.BYTE	<[_game_msg_lines4]
+;		.BYTE	<[_game_msg_lines6]
+;		.BYTE	<[_game_msg_lines3]
+;		.BYTE	<[_game_msg_lines6]
+;		.BYTE	<[_game_msg_lines6]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines4]
+;		.BYTE	<[_game_msg_lines8]
+;		.BYTE	<[_game_msg_lines3]
+;		.BYTE	<[_game_msg_lines7]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines4]
+;		.BYTE	<[_game_msg_lines4]
+;		.BYTE	<[_game_msg_lines4]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines7]
+;		.BYTE	<[_game_msg_lines3]
+;		.BYTE	<[_game_msg_lines3]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines989]
+;		.BYTE	<[_game_msg_lines99]
+;		.BYTE	<[_game_msg_lines9]
+;		.BYTE	<[_game_msg_lines9]
+;		.BYTE	<[_game_msg_lines2]
+;		.BYTE	<[_game_msg_lines6]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines5]
+;		.BYTE	<[_game_msg_lines7]
+;_game_msg_lines_cnt_lib_hi:
+;		.BYTE	>[_game_msg_lines6]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines3]
+;		.BYTE	>[_game_msg_lines4]
+;		.BYTE	>[_game_msg_lines6]
+;		.BYTE	>[_game_msg_lines3]
+;		.BYTE	>[_game_msg_lines6]
+;		.BYTE	>[_game_msg_lines6]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines4]
+;		.BYTE	>[_game_msg_lines8]
+;		.BYTE	>[_game_msg_lines3]
+;		.BYTE	>[_game_msg_lines7]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines4]
+;		.BYTE	>[_game_msg_lines4]
+;		.BYTE	>[_game_msg_lines4]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines7]
+;		.BYTE	>[_game_msg_lines3]
+;		.BYTE	>[_game_msg_lines3]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines989]
+;		.BYTE	>[_game_msg_lines99]
+;		.BYTE	>[_game_msg_lines9]
+;		.BYTE	>[_game_msg_lines9]
+;		.BYTE	>[_game_msg_lines2]
+;		.BYTE	>[_game_msg_lines6]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines5]
+;		.BYTE	>[_game_msg_lines7]
 
 _game_msg_lines2:
 		.BYTE	$02
@@ -1065,7 +1107,11 @@ _game_msg_lisb_hi:
 		.BYTE	>[_msg22_airplane_crash]
 		.BYTE	>[_msg23_tornado]
 
-; TODO: may be macrocified for convinience and representation
+_cur	EQU		$B0
+_cmd	EQU		$40
+_popl	EQU		$23
+_name	EQU		$24
+_
 
 _msg00:
 		.WORD	off_70EC1
@@ -1076,18 +1122,13 @@ off_70EC1:
 		.WORD	aIDonTSeeAnyProblem
 		.WORD	aAreasSoKeepUpThe
 		.WORD	aGoodWork
-aGoodJobMr_mayor:
-		.BYTE	" Good job Mr.Mayor!",$F
-aYourFineCityIsGrow:
-		.BYTE	"Your fine city is grow-"
-aIngVeryNicely_:
-		.BYTE	"ing very nicely.",$F
-aIDonTSeeAnyProblem:
-		.BYTE	"I don*t see any problem"
-aAreasSoKeepUpThe:
-		.BYTE	"areas, so keep up the",$F
-aGoodWork:
-		.BYTE	"good work!",$F
+aGoodJobMr_mayor:		.BYTE	" Good job Mr.Mayor!",$F
+aYourFineCityIsGrow:	.BYTE	"Your fine city is grow-"
+aIngVeryNicely_:		.BYTE	"ing very nicely.",$F
+aIDonTSeeAnyProblem:	.BYTE	"I don*t see any problem"
+aAreasSoKeepUpThe:		.BYTE	"areas, so keep up the",$F
+aGoodWork:				.BYTE	"good work!",$F
+
 _msg01_town:
 		.WORD	off_70F43
 off_70F43:
@@ -1096,21 +1137,12 @@ off_70F43:
 		.WORD	aATown_
 		.WORD	aYourPopulationIs
 		.WORD	byte_70F88
-aCongratulations:
-		.BYTE	" Congratulations!",$F
-asc_70F5F:
-		.BYTE	" "
-		.BYTE	$40,$24,$30
-aBecomes:
-		.BYTE	" becomes",$F
-aATown_:
-		.BYTE	"a town.",$F
-aYourPopulationIs:
-		.BYTE	" Your population is",$F
-byte_70F88:
-		.BYTE	$40,$23,$30
-a_:
-		.BYTE	".",$F
+aCongratulations:		.BYTE	" Congratulations!",$F
+asc_70F5F:				.BYTE	" ",$40,$24,$30," becomes",$F
+aATown_:				.BYTE	"a town.",$F
+aYourPopulationIs:		.BYTE	" Your population is",$F
+byte_70F88:				.BYTE	$40,$23,$30,".",$F
+
 _msg02_city:
 		.WORD	off_70F8F
 off_70F8F:
@@ -1119,17 +1151,12 @@ off_70F8F:
 		.WORD	aACity_
 		.WORD	aSettleInAndBuild
 		.WORD	aYourOwnHouse
-asc_70F99:
-		.BYTE	" "
-		.BYTE	$40,$24,$30
-aHasBecome:
-		.BYTE	" has become",$F
-aACity_:
-		.BYTE	"a city.",$F
-aSettleInAndBuild:
-		.BYTE	" Settle in and build",$F
-aYourOwnHouse:
-		.BYTE	"your own house?",$F
+							;	" Congratulations!",$F
+asc_70F99:				.BYTE	" ",$40,$24,$30," has become",$F
+aACity_:				.BYTE	"a city.",$F
+aSettleInAndBuild:		.BYTE	" Settle in and build",$F
+aYourOwnHouse:			.BYTE	"your own house?",$F
+
 _msg03_capital:
 		.WORD	off_70FD8
 off_70FD8:
@@ -1138,8 +1165,12 @@ off_70FD8:
 		.WORD	aACapital_
 		.WORD	aYourPopulationIs
 		.WORD	byte_70F88
-aACapital_:
-		.BYTE	"a capital.",$F
+							;	" Congratulations!",$F
+							;	" ",$40,$24,$30," becomes",$F
+aACapital_:				.BYTE	"a capital.",$F
+							;	" Your population is",$F
+							;	$40,$23,$30,".",$F
+
 _msg04_metropolis:
 		.WORD	off_70FEF
 off_70FEF:
@@ -1148,8 +1179,12 @@ off_70FEF:
 		.WORD	aAMetropolis_
 		.WORD	aYourPopulationIs
 		.WORD	byte_70F88
-aAMetropolis_:
-		.BYTE	"a metropolis.",$F
+							;	" Congratulations!",$F
+							;	" ",$40,$24,$30," becomes",$F
+aAMetropolis_:			.BYTE	"a metropolis.",$F
+							;	" Your population is",$F
+							;	$40,$23,$30,".",$F
+
 _msg05_megapolis:
 		.WORD	off_71009
 off_71009:
@@ -1158,20 +1193,22 @@ off_71009:
 		.WORD	aAMegalopolis_
 		.WORD	aYourPopulationIs
 		.WORD	byte_70F88
-aAMegalopolis_:
-		.BYTE	"a megalopolis.",$F
+							;	" Congratulations!",$F
+							;	" ",$40,$24,$30," becomes",$F
+aAMegalopolis_:			.BYTE	"a megalopolis.",$F
+							;	" Your population is",$F
+							;	$40,$23,$30,".",$F
+
 _msg06_total_jam:
 		.WORD	off_71024
 off_71024:
 		.WORD	aTrafficIsBumperTo
 		.WORD	aBumper_ResidentsAre
 		.WORD	aBecomingHostile_
-aTrafficIsBumperTo:
-		.BYTE	" Traffic is bumper to",$F
-aBumper_ResidentsAre:
-		.BYTE	"bumper. Residents are",$F
-aBecomingHostile_:
-		.BYTE	"becoming hostile.",$F
+aTrafficIsBumperTo:		.BYTE	" Traffic is bumper to",$F
+aBumper_ResidentsAre:	.BYTE	"bumper. Residents are",$F
+aBecomingHostile_:		.BYTE	"becoming hostile.",$F
+
 _msg07_traffic:
 		.WORD	off_7106A
 off_7106A:
@@ -1179,14 +1216,11 @@ off_7106A:
 		.WORD	aLocked_MassTransitIn
 		.WORD	aCongestedAreasWould
 		.WORD	aEaseTheTension_
-aCommutersAreGrid:
-		.BYTE	" Commuters are grid-",$F
-aLocked_MassTransitIn:
-		.BYTE	"locked. Mass transit in"
-aCongestedAreasWould:
-		.BYTE	"congested areas would",$F
-aEaseTheTension_:
-		.BYTE	"ease the tension.",$F
+aCommutersAreGrid:		.BYTE	" Commuters are grid-",$F
+aLocked_MassTransitIn:	.BYTE	"locked. Mass transit in"
+aCongestedAreasWould:	.BYTE	"congested areas would",$F
+aEaseTheTension_:		.BYTE	"ease the tension.",$F
+
 _msg08_crime:
 		.WORD	off_710C8
 off_710C8:
@@ -1196,34 +1230,23 @@ off_710C8:
 		.WORD	aHighCrimeAreas_
 		.WORD	byte_7112A
 		.WORD	aFunded
-aTheCrimeRateIsMuch:
-		.BYTE	" The crime rate is much"
-aTooHigh_MorePolice:
-		.BYTE	"too high. More police",$F
-aStationsAreNeededIn:
-		.BYTE	"stations are needed in "
-aHighCrimeAreas_:
-		.BYTE	"high crime areas.",$F
-byte_7112A:
-		.BYTE	$20,$41,$72,$65,$20,$74,$68,$65,$20,$70,$6F,$6C,$69,$63,$65,$20
-		.BYTE	$31,$30,$30,$25,$0F
-aFunded:
-		.BYTE	"funded?",$F
+aTheCrimeRateIsMuch:	.BYTE	" The crime rate is much"
+aTooHigh_MorePolice:	.BYTE	"too high. More police",$F
+aStationsAreNeededIn:	.BYTE	"stations are needed in "
+aHighCrimeAreas_:		.BYTE	"high crime areas.",$F
+byte_7112A:				.BYTE	" Are the police 100%",$F
+aFunded:				.BYTE	"funded?",$F
+
 _msg09_monster:
 		.WORD	off_71149
 off_71149:
 		.WORD	aAGiantMonsterHas
 		.WORD	aBeenSightedLeveling
 		.WORD	aPartsOf
-aAGiantMonsterHas:
-		.BYTE	" A giant monster has",$F
-aBeenSightedLeveling:
-		.BYTE	"been sighted leveling",$F
-aPartsOf:
-		.BYTE	"parts of "
-		.BYTE	$40,$24,$30
-a__0:
-		.BYTE	".",$F
+aAGiantMonsterHas:		.BYTE	" A giant monster has",$F
+aBeenSightedLeveling:	.BYTE	"been sighted leveling",$F
+aPartsOf:				.BYTE	"parts of ",$40,$24,$30,".",$F
+
 _msg0A_quake:
 		.WORD	off_7118A
 off_7118A:
@@ -1233,18 +1256,13 @@ off_7118A:
 		.WORD	aBeSureAnyFiresAre
 		.WORD	aPutOutAndEveryone
 		.WORD	aHasPower_
-aYourCityIsBeing:
-		.BYTE	" Your city is being",$F
-aShakenToRubbleByAn:
-		.BYTE	"shaken to rubble by an "
-aEarthquakeWeNeedTo:
-		.BYTE	"earthquake! We need to "
-aBeSureAnyFiresAre:
-		.BYTE	"be sure any fires are",$F
-aPutOutAndEveryone:
-		.BYTE	"put out and everyone",$F
-aHasPower_:
-		.BYTE	"has power.",$F
+aYourCityIsBeing:		.BYTE	" Your city is being",$F
+aShakenToRubbleByAn:	.BYTE	"shaken to rubble by an "
+aEarthquakeWeNeedTo:	.BYTE	"earthquake! We need to "
+aBeSureAnyFiresAre:		.BYTE	"be sure any fires are",$F
+aPutOutAndEveryone:		.BYTE	"put out and everyone",$F
+aHasPower_:				.BYTE	"has power.",$F
+
 _msg0B_bank:
 		.WORD	off_71210
 off_71210:
@@ -1254,20 +1272,13 @@ off_71210:
 		.WORD	aIfThereIsAnother
 		.WORD	aBankBuiltYouCan
 		.WORD	aBorrowMoreMoney_
-aMr_mayor:
-		.BYTE	" Mr.Mayor,"
-		.BYTE	$40,$24,$32
-		.BYTE	$F
-aBankWantsToBuildA:
-		.BYTE	"bank wants to build a",$F
-aBranchOffice_:
-		.BYTE	"branch office.",$F
-aIfThereIsAnother:
-		.BYTE	" If there is another",$F
-aBankBuiltYouCan:
-		.BYTE	"Bank built, you can",$F
-aBorrowMoreMoney_:
-		.BYTE	"borrow more money.",$F
+aMr_mayor:				.BYTE	" Mr.Mayor,",$40,$24,$32,$F
+aBankWantsToBuildA:		.BYTE	"bank wants to build a",$F
+aBranchOffice_:			.BYTE	"branch office.",$F
+aIfThereIsAnother:		.BYTE	" If there is another",$F
+aBankBuiltYouCan:		.BYTE	"Bank built, you can",$F
+aBorrowMoreMoney_:		.BYTE	"borrow more money.",$F
+
 _msg0C_establish_relationship:
 		.WORD	off_7128D
 off_7128D:
@@ -1276,92 +1287,68 @@ off_7128D:
 		.WORD	aASisterCityRelation
 		.WORD	aShip_WouldYouLikeTo
 		.WORD	aParticipate
-aMr_mayor_0:
-		.BYTE	" Mr.Mayor,"
-		.BYTE	$40,$24,$31
-		.BYTE	$0F
-aCityWantsToEstablish:
-		.BYTE	"city wants to establish"
-aASisterCityRelation:
-		.BYTE	"a sister-city relation-"
-aShip_WouldYouLikeTo:
-		.BYTE	"ship. Would you like to"
-aParticipate:
-		.BYTE	"participate?",$F
-byte_712F7:
-		.BYTE	$0F
+aMr_mayor_0:			.BYTE	" Mr.Mayor,",$40,$24,$31,$0F
+aCityWantsToEstablish:	.BYTE	"city wants to establish"
+aASisterCityRelation:	.BYTE	"a sister-city relation-"
+aShip_WouldYouLikeTo:	.BYTE	"ship. Would you like to"
+aParticipate:			.BYTE	"participate?",$F
+
 _msg0D_amusement_park:
 		.WORD	off_712FA
 off_712FA:
 		.WORD	aMr_mayorTheCitizens
 		.WORD	aOfTheCityDemandEn
-		.WORD	aTertainment_PerhapsWe
+		.WORD	aTertainment_Perhaps
 		.WORD	aShouldOpenAnAmuse
 		.WORD	aMentPark_
-aMr_mayorTheCitizens:
-		.BYTE	" Mr.Mayor,the citizens "
-aOfTheCityDemandEn:
-		.BYTE	"of the city demand en- "
-aTertainment_PerhapsWe:
-		.BYTE	"tertainment. Perhaps we"
-aShouldOpenAnAmuse:
-		.BYTE	"should open an Amuse-",$F
-aMentPark_:
-		.BYTE	"ment Park.",$F
+aMr_mayorTheCitizens:	.BYTE	" Mr.Mayor,the citizens "
+aOfTheCityDemandEn:		.BYTE	"of the city demand en- "
+aTertainment_Perhaps:	.BYTE	"tertainment. Perhaps we"
+aShouldOpenAnAmuse:		.BYTE	"should open an Amuse-",$F
+aMentPark_:				.BYTE	"ment Park.",$F
+
 _msg0E_zoo:
 		.WORD	off_7136C
 off_7136C:
-		.WORD	aMr_mayorTheCitizens_0
-		.WORD	aOfTheCityDemandEn_0
-		.WORD	aTertainment_PerhapsWe_0
+		.WORD	aMr_mayorTheCitizens
+		.WORD	aOfTheCityDemandEn
+		.WORD	aTertainment_Perhaps
 		.WORD	aShouldOpenAZoo_
-aMr_mayorTheCitizens_0:
-		.BYTE	" Mr.Mayor,the citizens "
-aOfTheCityDemandEn_0:
-		.BYTE	"of the city demand en- "
-aTertainment_PerhapsWe_0:
-		.BYTE	"tertainment. Perhaps we"
-aShouldOpenAZoo_:
-		.BYTE	"should open a Zoo.",$F
+							;	" Mr.Mayor,the citizens "
+							;	"of the city demand en- "
+							;	"tertainment. Perhaps we"
+aShouldOpenAZoo_:		.BYTE	"should open a Zoo.",$F
+
 _msg0F_casino:
 		.WORD	off_713CE
 off_713CE:
-		.WORD	aMr_mayorTheCitizens_1
-		.WORD	aOfTheCityDemandEn_1
-		.WORD	aTertainment_PerhapsWe_1
+		.WORD	aMr_mayorTheCitizens
+		.WORD	aOfTheCityDemandEn
+		.WORD	aTertainment_Perhaps
 		.WORD	aShouldBuildACasino_
 		.WORD	aCasinoSGenerateRev
 		.WORD	aEnueButSometimesThe
 		.WORD	aNeighborsComplainA
 		.WORD	aBoutTheNoise_
-aMr_mayorTheCitizens_1:
-		.BYTE	" Mr.Mayor,the citizens "
-aOfTheCityDemandEn_1:
-		.BYTE	"of the city demand en- "
-aTertainment_PerhapsWe_1:
-		.BYTE	"tertainment. Perhaps we"
-aShouldBuildACasino_:
-		.BYTE	"should build a Casino. "
-aCasinoSGenerateRev:
-		.BYTE	" Casino*s generate rev-"
-aEnueButSometimesThe:
-		.BYTE	"enue,but sometimes the "
-aNeighborsComplainA:
-		.BYTE	"neighbors complain a-",$F
-aBoutTheNoise_:
-		.BYTE	"bout the noise.",$F
+							;	" Mr.Mayor,the citizens "
+							;	"of the city demand en- "
+							;	"tertainment. Perhaps we"
+aShouldBuildACasino_:	.BYTE	"should build a Casino. "
+aCasinoSGenerateRev:	.BYTE	" Casino*s generate rev-"
+aEnueButSometimesThe:	.BYTE	"enue,but sometimes the "
+aNeighborsComplainA:	.BYTE	"neighbors complain a-",$F
+aBoutTheNoise_:			.BYTE	"bout the noise.",$F
+
 _msg10_extra_land:
 		.WORD	off_71490
 off_71490:
 		.WORD	aNowThatYouCanCre
 		.WORD	aAteMoreLandBeSure
 		.WORD	aToUseItWisely_
-aNowThatYouCanCre:
-		.BYTE	" Now that you can cre- "
-aAteMoreLandBeSure:
-		.BYTE	"ate more land, be sure "
-aToUseItWisely_:
-		.BYTE	"to use it wisely.",$F
+aNowThatYouCanCre:		.BYTE	" Now that you can cre- "
+aAteMoreLandBeSure:		.BYTE	"ate more land, be sure "
+aToUseItWisely_:		.BYTE	"to use it wisely.",$F
+
 _msg11_new_police:
 		.WORD	off_714D8
 off_714D8:
@@ -1372,22 +1359,14 @@ off_714D8:
 		.WORD	byte_71537
 		.WORD	aWillSurelyIncrease
 		.WORD	aTheMoralOfTheForce_
-aMr_mayorPerhapsWe:
-		.BYTE	" Mr.Mayor,perhaps we",$F
-aCanBuildANewPolice:
-		.BYTE	"can build a new Police "
-aStationForThePolice:
-		.BYTE	"Station for the Police "
-aDepartmentOf:
-		.BYTE	"Department of",$F
-byte_71537:
-		.BYTE	$40,$24,$30
-aCity_It:
-		.BYTE	" city. It",$F
-aWillSurelyIncrease:
-		.BYTE	"will surely increase",$F
-aTheMoralOfTheForce_:
-		.BYTE	"the moral of the force."
+aMr_mayorPerhapsWe:		.BYTE	" Mr.Mayor,perhaps we",$F
+aCanBuildANewPolice:	.BYTE	"can build a new Police "
+aStationForThePolice:	.BYTE	"Station for the Police "
+aDepartmentOf:			.BYTE	"Department of",$F
+byte_71537:				.BYTE	$40,$24,$30," city. It",$F
+aWillSurelyIncrease:	.BYTE	"will surely increase",$F
+aTheMoralOfTheForce_:	.BYTE	"the moral of the force."
+
 _msg12_new_fire:
 		.WORD	off_71572
 off_71572:
@@ -1396,16 +1375,12 @@ off_71572:
 		.WORD	aWithBetterWorking
 		.WORD	aConditionsTheyWill
 		.WORD	aWorkMuchHarder_
-aMr_mayorOurFiremen:
-		.BYTE	" Mr.Mayor,our firemen",$F
-aNeedANewFirestation_:
-		.BYTE	"need a new FireStation."
-aWithBetterWorking:
-		.BYTE	" With better working",$F
-aConditionsTheyWill:
-		.BYTE	"conditions,they will",$F
-aWorkMuchHarder_:
-		.BYTE	"work much harder.",$F
+aMr_mayorOurFiremen:	.BYTE	" Mr.Mayor,our firemen",$F
+aNeedANewFirestation_:	.BYTE	"need a new FireStation."
+aWithBetterWorking:		.BYTE	" With better working",$F
+aConditionsTheyWill:	.BYTE	"conditions,they will",$F
+aWorkMuchHarder_:		.BYTE	"work much harder.",$F
+
 _msg13_monument_10th_years:
 		.WORD	off_715E7
 off_715E7:
@@ -1413,29 +1388,23 @@ off_715E7:
 		.WORD	aToCommemorateThe10th
 		.WORD	aAnniversaryOfOurFine
 		.WORD	aTown_
-aLetSErectAMonument:
-		.BYTE	" Let*s erect a Monument"
-aToCommemorateThe10th:
-		.BYTE	"to commemorate the 10th"
-aAnniversaryOfOurFine:
-		.BYTE	"anniversary of our fine"
-aTown_:
-		.BYTE	"town.",$F
+aLetSErectAMonument:	.BYTE	" Let*s erect a Monument"
+aToCommemorateThe10th:	.BYTE	"to commemorate the 10th"
+aAnniversaryOfOurFine:	.BYTE	"anniversary of our fine"
+aTown_:					.BYTE	"town.",$F
+
 _msg14_monument_100th_years:
 		.WORD	off_7163C
 off_7163C:
-		.WORD	aLetSErectAMonument_0
+		.WORD	aLetSErectAMonument
 		.WORD	aToCommemorateThe
 		.WORD	a100thAnniversaryOf
 		.WORD	aOurFairCity_
-aLetSErectAMonument_0:
-		.BYTE	" Let*s erect a Monument"
-aToCommemorateThe:
-		.BYTE	"to commemorate the",$F
-a100thAnniversaryOf:
-		.BYTE	"100th anniversary of",$F
-aOurFairCity_:
-		.BYTE	"our fair city.",$F
+							;	" Let*s erect a Monument"
+aToCommemorateThe:		.BYTE	"to commemorate the",$F
+a100thAnniversaryOf:	.BYTE	"100th anniversary of",$F
+aOurFairCity_:			.BYTE	"our fair city.",$F
+
 _msg15_expo:
 		.WORD	off_71694
 off_71694:
@@ -1443,16 +1412,11 @@ off_71694:
 		.WORD	aHoldingAWorldExposi
 		.WORD	aTionIn
 		.WORD	aCity_AnExpo
-aMr_mayorHowAbout:
-		.BYTE	" Mr.Mayor,how about",$F
-aHoldingAWorldExposi:
-		.BYTE	"holding a World Exposi-"
-aTionIn:
-		.BYTE	"tion in "
-		.BYTE	$40,$24,$30
-		.BYTE	$0F
-aCity_AnExpo:
-		.BYTE	"city. An Expo!",$F
+aMr_mayorHowAbout:		.BYTE	" Mr.Mayor,how about",$F
+aHoldingAWorldExposi:	.BYTE	"holding a World Exposi-"
+aTionIn:				.BYTE	"tion in ",$40,$24,$30,$0F
+aCity_AnExpo:			.BYTE	"city. An Expo!",$F
+
 _msg16_expo_monument:
 		.WORD	off_716E4
 off_716E4:
@@ -1461,19 +1425,12 @@ off_716E4:
 		.WORD	aErectAMonumentTo
 		.WORD	aCelebrateTheWorld
 		.WORD	aExposition_
-aNetEarningsFromThe:
-		.BYTE	" Net Earnings from the "
-aExpoIs:
-		.BYTE	"Expo is "
-		.BYTE	$40,$23,$31
-a_LetS:
-		.BYTE	". Let*s",$F
-aErectAMonumentTo:
-		.BYTE	"erect a Monument to",$F
-aCelebrateTheWorld:
-		.BYTE	"celebrate the World",$F
-aExposition_:
-		.BYTE	"Exposition.",$F
+aNetEarningsFromThe:	.BYTE	" Net Earnings from the "
+aExpoIs:				.BYTE	"Expo is ",$40,$23,$31,". Let*s",$F
+aErectAMonumentTo:		.BYTE	"erect a Monument to",$F
+aCelebrateTheWorld:		.BYTE	"celebrate the World",$F
+aExposition_:			.BYTE	"Exposition.",$F
+
 _msg17_liberty:
 		.WORD	off_7174E
 off_7174E:
@@ -1484,46 +1441,34 @@ off_7174E:
 		.WORD	aMemorating50YearsOf
 		.WORD	aCooperationBetweenOur
 		.WORD	aTwoCities_
-aYourSisterCity:
-		.BYTE	" Your sister city,",$F
-byte_7176F:
-		.BYTE	$40,$24,$31
-aCitySentA:
-		.BYTE	" city sent a",$F
-aStatueOfLibertyAsA:
-		.BYTE	"Statue of Liberty as a "
-aGoodwillGestureCom:
-		.BYTE	"goodwill gesture,com-",$F
-aMemorating50YearsOf:
-		.BYTE	"memorating 50 years of "
-aCooperationBetweenOur:
-		.BYTE	"cooperation between our"
-aTwoCities_:
-		.BYTE	"two cities.",$F
+aYourSisterCity:		.BYTE	" Your sister city,",$F
+byte_7176F:				.BYTE	$40,$24,$31," city sent a",$F
+aStatueOfLibertyAsA:	.BYTE	"Statue of Liberty as a "
+aGoodwillGestureCom:	.BYTE	"goodwill gesture,com-",$F
+aMemorating50YearsOf:	.BYTE	"memorating 50 years of "
+aCooperationBetweenOur:	.BYTE	"cooperation between our"
+aTwoCities_:			.BYTE	"two cities.",$F
+
 _msg18_library:
 		.WORD	off_717E8
 off_717E8:
 		.WORD	aMr_mayorLetSBuildA
 		.WORD	aLibraryForTheCiti
 		.WORD	aZens_
-aMr_mayorLetSBuildA:
-		.BYTE	" Mr.Mayor,let*s build a"
-aLibraryForTheCiti:
-		.BYTE	"Library for the citi-",$F
-aZens_:
-		.BYTE	"zens.",$F
+aMr_mayorLetSBuildA:	.BYTE	" Mr.Mayor,let*s build a"
+aLibraryForTheCiti:		.BYTE	"Library for the citi-",$F
+aZens_:					.BYTE	"zens.",$F
+
 _msg19_parks_expand:
 		.WORD	off_71823
 off_71823:
-		.WORD	aMr_mayorPerhapsWe_1
+		.WORD	aMr_mayorPerhapsWe
 		.WORD	aShouldExpandTheParks
 		.WORD	aInOurFairCity_
-aMr_mayorPerhapsWe_1:
-		.BYTE	" Mr.Mayor,perhaps we",$F
-aShouldExpandTheParks:
-		.BYTE	"should expand the Parks"
-aInOurFairCity_:
-		.BYTE	"in our fair city.",$F
+							;	" Mr.Mayor,perhaps we",$F
+aShouldExpandTheParks:	.BYTE	"should expand the Parks"
+aInOurFairCity_:		.BYTE	"in our fair city.",$F
+
 _msg1A_railroad_station:
 		.WORD	off_71869
 off_71869:
@@ -1532,16 +1477,12 @@ off_71869:
 		.WORD	aTheAreaAroundThe
 		.WORD	aStationWillSurelyBe
 		.WORD	aWellDeveloped_
-aLetSBuildARailroad:
-		.BYTE	" Let*s build a Railroad"
-aStation_:
-		.BYTE	"Station.",$F
-aTheAreaAroundThe:
-		.BYTE	" The area around the",$F
-aStationWillSurelyBe:
-		.BYTE	"Station will surely be "
-aWellDeveloped_:
-		.BYTE	"well-developed.",$F
+aLetSBuildARailroad:	.BYTE	" Let*s build a Railroad"
+aStation_:				.BYTE	"Station.",$F
+aTheAreaAroundThe:		.BYTE	" The area around the",$F
+aStationWillSurelyBe:	.BYTE	"Station will surely be "
+aWellDeveloped_:		.BYTE	"well-developed.",$F
+
 _msg1B_practice_intro:
 		.WORD	off_718D5
 		.WORD	off_718E7
@@ -1564,7 +1505,7 @@ off_718E7:
 		.WORD	aCommercialAndIndusri
 		.WORD	aAlAreas_NextConnect
 		.WORD	aPowerLinesToAll
-		.WORD	byte_712F7
+		.WORD	_eol
 off_718F7:
 		.WORD	aZonesToMakeYourTown
 		.WORD	aFunctional_Continue
@@ -1573,54 +1514,37 @@ off_718F7:
 		.WORD	aAncedSocietyAndWork
 		.WORD	aIngTowardsAThriving
 		.WORD	aMetropolis_
-		.WORD	byte_712F7
-		.WORD	byte_712F7
-aCongratulationsMr_:
-		.BYTE	" Congratulations Mr.",$F
-aMayorANewTownHas:
-		.BYTE	"Mayor! A new town has",$F
-aBeenCreated_:
-		.BYTE	"been created.",$F
-aIMDr_wrightAnd:
-		.BYTE	" I*m Dr.Wright, and",$F
-aIVeBeenSentToHelp:
-		.BYTE	"I*ve been sent to help "
-aYou_WhyDonTYouGet:
-		.BYTE	"you. Why don*t you get "
-aInvolvedAndDevelop:
-		.BYTE	"involved and develop",$F
-aTheTownOnYourOwn:
-		.BYTE	"the town on your own?",$F
-aStartWithAPower:
-		.BYTE	" Start with a power",$F
-aPlantThenBuildSome:
-		.BYTE	"plant, then build some "
-aRoads_AlongTheRoads:
-		.BYTE	"roads. Along the roads,"
-aZoneForResidential:
-		.BYTE	"zone for residential,",$F
-aCommercialAndIndusri:
-		.BYTE	"commercial,and indusri-"
-aAlAreas_NextConnect:
-		.BYTE	"al areas. Next connect "
-aPowerLinesToAll:
-		.BYTE	"power lines to all",$F
-aZonesToMakeYourTown:
-		.BYTE	"zones to make your town"
-aFunctional_Continue:
-		.BYTE	"functional. continue",$F
-aDevelopmentInThis:
-		.BYTE	"development in this",$F
-aWayMaintainingABal:
-		.BYTE	"way, maintaining a bal-"
-aAncedSocietyAndWork:
-		.BYTE	"anced society and work-"
-aIngTowardsAThriving:
-		.BYTE	"ing towards a thriving "
-aMetropolis_:
-		.BYTE	"metropolis.",$F
-asc_71AD9:
-		.BYTE	"                   ",$B0,$F
+		.WORD	_eol
+		.WORD	_eol
+aCongratulationsMr_:	.BYTE	" Congratulations Mr.",$F
+aMayorANewTownHas:		.BYTE	"Mayor! A new town has",$F
+aBeenCreated_:			.BYTE	"been created.",$F
+aIMDr_wrightAnd:		.BYTE	" I*m Dr.Wright, and",$F
+aIVeBeenSentToHelp:		.BYTE	"I*ve been sent to help "
+aYou_WhyDonTYouGet:		.BYTE	"you. Why don*t you get "
+aInvolvedAndDevelop:	.BYTE	"involved and develop",$F
+aTheTownOnYourOwn:		.BYTE	"the town on your own?",$F
+asc_71AD9:				.BYTE	"                   ",_cur,$F
+
+aStartWithAPower:		.BYTE	" Start with a power",$F
+aPlantThenBuildSome:	.BYTE	"plant, then build some "
+aRoads_AlongTheRoads:	.BYTE	"roads. Along the roads,"
+aZoneForResidential:	.BYTE	"zone for residential,",$F
+aCommercialAndIndusri:	.BYTE	"commercial,and indusri-"
+aAlAreas_NextConnect:	.BYTE	"al areas. Next connect "
+aPowerLinesToAll:		.BYTE	"power lines to all",$F
+_eol:					.BYTE	$F
+
+aZonesToMakeYourTown:	.BYTE	"zones to make your town"
+aFunctional_Continue:	.BYTE	"functional. continue",$F
+aDevelopmentInThis:		.BYTE	"development in this",$F
+aWayMaintainingABal:	.BYTE	"way, maintaining a bal-"
+aAncedSocietyAndWork:	.BYTE	"anced society and work-"
+aIngTowardsAThriving:	.BYTE	"ing towards a thriving "
+aMetropolis_:			.BYTE	"metropolis.",$F
+							;	$F
+							;	$F
+
 _msg1C_practice_hints:
 		.WORD	off_71AF2
 		.WORD	off_71B04
@@ -1640,32 +1564,30 @@ off_71B04:
 		.WORD	aSeeMePress
 		.WORD	asc_71B58
 		.WORD	aWheneverYouGetStuck
-		.WORD	byte_712F7
-		.WORD	byte_712F7
-		.WORD	byte_712F7
-		.WORD	byte_712F7
-aMr_MayorIsEvery:
-		.BYTE	" Mr. Mayor! Is every-",$F
-aThingGoingAlright:
-		.BYTE	"thing going alright?",$F
-aTheIconGivesYou:
-		.BYTE	" The ICON    gives you "
-asc_71B58:
-		.BYTE	"            ",$F
-aInformationAboutYour:
-		.BYTE	"information about your "
-aCity_UseTheIcon:
-		.BYTE	"city. Use the ICON     "
-aToSaveTheCityAtIts:
-		.BYTE	"to save the city at its"
-aCurrentStageOfDevel:
-		.BYTE	"current stage of devel-"
-aOpment_IfYouWantTo:
-		.BYTE	"opment. If you want to "
-aSeeMePress:
-		.BYTE	"see me, Press     ",$F
-aWheneverYouGetStuck:
-		.BYTE	"whenever you get stuck!"
+		.WORD	_eol
+		.WORD	_eol
+		.WORD	_eol
+		.WORD	_eol
+aMr_MayorIsEvery:		.BYTE	" Mr. Mayor! Is every-",$F
+aThingGoingAlright:		.BYTE	"thing going alright?",$F
+aTheIconGivesYou:		.BYTE	" The ICON    gives you "
+asc_71B58:				.BYTE	"            ",$F
+aInformationAboutYour:	.BYTE	"information about your "
+aCity_UseTheIcon:		.BYTE	"city. Use the ICON     "
+							;	"            ",$F
+aToSaveTheCityAtIts:	.BYTE	"to save the city at its"
+							;	"                   ",$B0,$F
+
+aCurrentStageOfDevel:	.BYTE	"current stage of devel-"
+aOpment_IfYouWantTo:	.BYTE	"opment. If you want to "
+aSeeMePress:			.BYTE	"see me, Press     ",$F
+							;	"            ",$F
+aWheneverYouGetStuck:	.BYTE	"whenever you get stuck!"
+							;	$F
+							;	$F
+							;	$F
+							;	$F
+
 _msg1D_practice_success:
 		.WORD	off_71C04
 off_71C04:
@@ -1678,24 +1600,16 @@ off_71C04:
 		.WORD	aSpectableMayor_Build
 		.WORD	aANewTownByChoosing
 		.WORD	aTheStartNewCity_
-aCongratulations_1:
-		.BYTE	" Congratulations,",$F
-aMr_MayorYourCity:
-		.BYTE	"Mr. Mayor! Your city",$F
-aNowHasAPopulationOf:
-		.BYTE	"now has a population of"
-a30000_YourExpert:
-		.BYTE	"30,000. Your expert",$F
-aPlanningAndKindness:
-		.BYTE	"planning and kindness",$F
-aHaveMadeYouARe:
-		.BYTE	"have made you a re-",$F
-aSpectableMayor_Build:
-		.BYTE	"spectable mayor. Build "
-aANewTownByChoosing:
-		.BYTE	"a new town by choosing "
-aTheStartNewCity_:
-		.BYTE	"the START NEW CITY.",$F
+aCongratulations_1:		.BYTE	" Congratulations,",$F
+aMr_MayorYourCity:		.BYTE	"Mr. Mayor! Your city",$F
+aNowHasAPopulationOf:	.BYTE	"now has a population of"
+a30000_YourExpert:		.BYTE	"30,000. Your expert",$F
+aPlanningAndKindness:	.BYTE	"planning and kindness",$F
+aHaveMadeYouARe:		.BYTE	"have made you a re-",$F
+aSpectableMayor_Build:	.BYTE	"spectable mayor. Build "
+aANewTownByChoosing:	.BYTE	"a new town by choosing "
+aTheStartNewCity_:		.BYTE	"the START NEW CITY.",$F
+
 _msg1E_practice_fail:
 		.WORD	off_71CD6
 off_71CD6:
@@ -1708,33 +1622,24 @@ off_71CD6:
 		.WORD	aCareOfTheTraffic
 		.WORD	aSnarlsPleaseTryA
 		.WORD	aGain_GoodLuck_
-aSorryMr_MayorYour:
-		.BYTE	" Sorry Mr. Mayor, your "
-aCityWasnTSuccessful_:
-		.BYTE	"city wasn*t successful."
-aDidYouHaveEvenZon:
-		.BYTE	"Did you have even zon- "
-aIngWasTheBudgetOk:
-		.BYTE	"ing? Was the budget OK?"
-aDidYouLowerTheCrime:
-		.BYTE	"Did you lower the crime"
-aLevelsDidYouTake:
-		.BYTE	"levels? Did you take",$F
-aCareOfTheTraffic:
-		.BYTE	"care of the traffic",$F
-aSnarlsPleaseTryA:
-		.BYTE	"snarls? Please try a-",$F
-aGain_GoodLuck_:
-		.BYTE	"gain. Good luck.",$F
+aSorryMr_MayorYour:		.BYTE	" Sorry Mr. Mayor, your "
+aCityWasnTSuccessful_:	.BYTE	"city wasn*t successful."
+aDidYouHaveEvenZon:		.BYTE	"Did you have even zon- "
+aIngWasTheBudgetOk:		.BYTE	"ing? Was the budget OK?"
+aDidYouLowerTheCrime:	.BYTE	"Did you lower the crime"
+aLevelsDidYouTake:		.BYTE	"levels? Did you take",$F
+aCareOfTheTraffic:		.BYTE	"care of the traffic",$F
+aSnarlsPleaseTryA:		.BYTE	"snarls? Please try a-",$F
+aGain_GoodLuck_:		.BYTE	"gain. Good luck.",$F
+
 _msg1F_bank_hint:
 		.WORD	off_71DAD
 off_71DAD:
 		.WORD	aYouCanGoToTheBank
 		.WORD	aFromTheBudgetScreen_
-aYouCanGoToTheBank:
-		.BYTE	" You can go to the bank"
-aFromTheBudgetScreen_:
-		.BYTE	"from the budget screen."
+aYouCanGoToTheBank:		.BYTE	" You can go to the bank"
+aFromTheBudgetScreen_:	.BYTE	"from the budget screen."
+
 _msg20_fire_dept_hint:
 		.WORD	off_71DE1
 off_71DE1:
@@ -1744,18 +1649,13 @@ off_71DE1:
 		.WORD	aSoBeforeTheRestOf
 		.WORD	aTheCityIsAnAshen
 		.WORD	aEmber_
-aHaveYouBuiltAFire:
-		.BYTE	" Have you built a fire "
-aDepartmentYetIWould:
-		.BYTE	"department yet? I would"
-aStronglySuggestDoing:
-		.BYTE	"strongly suggest doing "
-aSoBeforeTheRestOf:
-		.BYTE	"so before the rest of",$F
-aTheCityIsAnAshen:
-		.BYTE	"the city is an ashen",$F
-aEmber_:
-		.BYTE	"ember.",$F
+aHaveYouBuiltAFire:		.BYTE	" Have you built a fire "
+aDepartmentYetIWould:	.BYTE	"department yet? I would"
+aStronglySuggestDoing:	.BYTE	"strongly suggest doing "
+aSoBeforeTheRestOf:		.BYTE	"so before the rest of",$F
+aTheCityIsAnAshen:		.BYTE	"the city is an ashen",$F
+aEmber_:				.BYTE	"ember.",$F
+
 _msg21_flood:
 		.WORD	off_71E66
 off_71E66:
@@ -1764,16 +1664,12 @@ off_71E66:
 		.WORD	aIngTheShorelineWill
 		.WORD	aHelpPreventThisProb
 		.WORD	aLem_
-aMr_MayorTheLandIs:
-		.BYTE	" Mr. Mayor! The land is"
-aBeingFlooded_Develop:
-		.BYTE	"being flooded. Develop-"
-aIngTheShorelineWill:
-		.BYTE	"ing the shoreline will "
-aHelpPreventThisProb:
-		.BYTE	"help prevent this prob-"
-aLem_:
-		.BYTE	"lem.",$F
+aMr_MayorTheLandIs:		.BYTE	" Mr. Mayor! The land is"
+aBeingFlooded_Develop:	.BYTE	"being flooded. Develop-"
+aIngTheShorelineWill:	.BYTE	"ing the shoreline will "
+aHelpPreventThisProb:	.BYTE	"help prevent this prob-"
+aLem_:					.BYTE	"lem.",$F
+
 _msg22_airplane_crash:
 		.WORD	off_71ED3
 off_71ED3:
@@ -1782,16 +1678,12 @@ off_71ED3:
 		.WORD	aLetTheFireGetOutOf
 		.WORD	aControlOrTheWhole
 		.WORD	aCityMayBeLost_
-aAnAirplaneCrashHas:
-		.BYTE	" An airplane crash has "
-aStartedAFire_DonT:
-		.BYTE	"started a fire. Don*t",$F
-aLetTheFireGetOutOf:
-		.BYTE	"let the fire get out of"
-aControlOrTheWhole:
-		.BYTE	"control or the whole",$F
-aCityMayBeLost_:
-		.BYTE	"city may be lost.",$F
+aAnAirplaneCrashHas:	.BYTE	" An airplane crash has "
+aStartedAFire_DonT:		.BYTE	"started a fire. Don*t",$F
+aLetTheFireGetOutOf:	.BYTE	"let the fire get out of"
+aControlOrTheWhole:		.BYTE	"control or the whole",$F
+aCityMayBeLost_:		.BYTE	"city may be lost.",$F
+
 _msg23_tornado:
 		.WORD	off_71F4A
 off_71F4A:
@@ -1802,20 +1694,13 @@ off_71F4A:
 		.WORD	aYouCanDoIsWait
 		.WORD	aWhileItDestroysEvery
 		.WORD	aThingInItSPath_
-aATornadoHasBeen:
-		.BYTE	" A tornado has been",$F
-aSpottedAndIsCausing:
-		.BYTE	"spotted and is causing "
-aTremendousDamege_IM:
-		.BYTE	"tremendous damege. I*m "
-aAfraidTheOnlyThing:
-		.BYTE	"afraid the only thing",$F
-aYouCanDoIsWait:
-		.BYTE	"you can do is wait",$F
-aWhileItDestroysEvery:
-		.BYTE	"while it destroys every"
-aThingInItSPath_:
-		.BYTE	"thing in it*s path.",$F
+aATornadoHasBeen:		.BYTE	" A tornado has been",$F
+aSpottedAndIsCausing:	.BYTE	"spotted and is causing "
+aTremendousDamege_IM:	.BYTE	"tremendous damege. I*m "
+aAfraidTheOnlyThing:	.BYTE	"afraid the only thing",$F
+aYouCanDoIsWait:		.BYTE	"you can do is wait",$F
+aWhileItDestroysEvery:	.BYTE	"while it destroys every"
+aThingInItSPath_:		.BYTE	"thing in it*s path.",$F
 
 		SECTION_END 302
 
