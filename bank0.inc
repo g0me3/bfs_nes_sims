@@ -795,7 +795,7 @@ _apu_play_se1:
 		.WORD	_apu_se4000_start
 		.WORD	_apu_se8000_start
 .apu_loop_se1:
-		LDY		_apu_se_loop_idx+1			; if zero, idle
+		LDY		_apu_se_loop_idx+1				; if zero, idle
 		BEQ		_apu_se1_done
 		DEY
 		TYA
@@ -845,7 +845,7 @@ _apu_se1_done:
 ;		BCS		_j_apu_se40_start
 ;		LSR
 ;		BCS		_j_apu_se40_loop
-;		LSR		_apu_se_idx_req				; re-enable unused sound effect
+;		LSR		_apu_se_idx_req					; re-enable unused sound effect
 ;		BCS		_j_apu_se80_start
 ;		LSR
 ;		BCS		_j_apu_se80_loop

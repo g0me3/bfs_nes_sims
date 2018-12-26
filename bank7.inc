@@ -29,7 +29,7 @@ _constr_palette_state_update:
 		CLC
 		BCC		.push_activity_flag
 .pal_enabled:
-		CPX		_cur_constr_palette_selected_idx	; if current icon isn't pressed
+		CPX		_cur_constr_palette_selected_idx; if current icon isn't pressed
 		BNE		.push_no_active					; then push second bit 0
 		SEC
 		BCS		.push_activity_flag				; push 1 otherwise
@@ -141,46 +141,46 @@ loc_B815F:
 _get_valid_1X1_building_tile:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#_MAP_GROUND0
-		BEQ		.do_money_sub				; regular buldozered ground at this point
+		BEQ		.do_money_sub					; regular buldozered ground at this point
 		CMP		#_MAP_WATER
-		BEQ		.j_water_tile_build_select	; special case water, no need to bulldozer
+		BEQ		.j_water_tile_build_select		; special case water, no need to bulldozer
 		CMP		#_MAP_WATER_ROUTE
-		BNE		loc_B8194					; special water tile HERE!
-;		SEC									; water roads! should be something special
-;		BCS		.j_water_tile_build_select	; but C=1 means nothing currently there
+		BNE		loc_B8194						; special water tile HERE!
+;		SEC										; water roads! should be something special
+;		BCS		.j_water_tile_build_select		; but C=1 means nothing currently there
 ; -
 .j_water_tile_build_select:
 		JMP		_water_tile_build_select
 loc_B8194:
-		LDA		_city._game_flags			; test autobuldozer flag
+		LDA		_city._game_flags				; test autobuldozer flag
 		LSR
 		BCC		.no_auto_bulldoze
-		LDA		_cur_build_sample_tile_idx	; check for what we can bulldoze
+		LDA		_cur_build_sample_tile_idx		; check for what we can bulldoze
 		CMP		#_MAP_GRASS
-		BCC		.no_auto_bulldoze			; can't autobulldoze any normal buildings
+		BCC		.no_auto_bulldoze				; can't autobulldoze any normal buildings
 		CMP		#_MAP_FLOOD
-		BCC		.do_auto_bulldoze			; can autobulldoze parks or corrupted grounds
+		BCC		.do_auto_bulldoze				; can autobulldoze parks or corrupted grounds
 		CMP		#_MAP_SHORE0
-		BCC		.no_auto_bulldoze			; can't autobulldoze flood/pollution, other transport systems
+		BCC		.no_auto_bulldoze				; can't autobulldoze flood/pollution, other transport systems
 		CMP		#_MAP_WATER_ROAD_LR
-		BCC		.do_auto_bulldoze			; can autobulldoze sea shores
+		BCC		.do_auto_bulldoze				; can autobulldoze sea shores
 		CMP		#_MAP_CORRUPT0
-		BCC		.no_auto_bulldoze			; more transport tiles
+		BCC		.no_auto_bulldoze				; more transport tiles
 		CMP		#_MAP_BRIDGE_WATER_LR
-		BCS		.no_auto_bulldoze			; the rest of transport tiles
+		BCS		.no_auto_bulldoze				; the rest of transport tiles
 .do_auto_bulldoze:
-		INCW	_cur_building_price			; yes, autobulldoze it
+		INCW	_cur_building_price				; yes, autobulldoze it
 .do_money_sub:
-		JSR		_money_subtract				; charge money
-		BCS		locret_B81C4				; can't build something is low money
-		LDA		#$FF						; common flag to signal to destroy something
-		STA		_cur_build_store_tile_idx	; then build a tile of the default type (horizontal)
-		CLC									; the actual bending/joints will be done later
+		JSR		_money_subtract					; charge money
+		BCS		locret_B81C4					; can't build something is low money
+		LDA		#$FF							; common flag to signal to destroy something
+		STA		_cur_build_store_tile_idx		; then build a tile of the default type (horizontal)
+		CLC										; the actual bending/joints will be done later
 locret_B81C4:
 		RTS
 .no_auto_bulldoze:
 		LDA		_constr_palette_selected_idx	; when no autobulldoze, we couldn't build anything
-		CMP		#$01						; except special cases of intersections, let's find any
+		CMP		#$01							; except special cases of intersections, let's find any
 		BNE		loc_B81D1
 		JMP		_select_road_intersection_tile
 loc_B81D1:
@@ -192,100 +192,100 @@ loc_B81D8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _select_road_intersection_tile:
-		LDA		_cur_build_sample_tile_idx	; special intersection tiles select
+		LDA		_cur_build_sample_tile_idx		; special intersection tiles select
 		CMP		#_MAP_RAIL_LR
 		BEQ		.build_storeB8
-;		BNE		loc_B81E5					; REDUNDANT
-;		LDA		#_MAP_ROAD_RAIL_UD			; road+rail horizontal
+;		BNE		loc_B81E5						; REDUNDANT
+;		LDA		#_MAP_ROAD_RAIL_UD				; road+rail horizontal
 ;		BNE		.build_store1
 loc_B81E5:
 		CMP		#_MAP_RAIL_UD
-		BEQ		.build_storeB7				; OPTIMIZED
-;		BNE		loc_B81ED					; REDUNDANT
-;		LDA		#_MAP_ROAD_RAIL_LR			; road+rail vertical
+		BEQ		.build_storeB7					; OPTIMIZED
+;		BNE		loc_B81ED						; REDUNDANT
+;		LDA		#_MAP_ROAD_RAIL_LR				; road+rail vertical
 ;		BNE		.build_store1
 loc_B81ED:
 		CMP		#_MAP_ELECTRO_LR
-		BEQ		.build_storeB9				; OPTIMIZED
-;		BNE		loc_B81F5					; REDUNDANT
-;		LDA		#_MAP_ELECTRO_ROAD_LR		; road+electric horizontal
+		BEQ		.build_storeB9					; OPTIMIZED
+;		BNE		loc_B81F5						; REDUNDANT
+;		LDA		#_MAP_ELECTRO_ROAD_LR			; road+electric horizontal
 ;		BNE		.build_store1
 loc_B81F5:
 		CMP		#_MAP_ELECTRO_UD
-		BEQ		.build_storeBA				; OPTIMIZED
-;		BEQ		loc_B81FC					; REDUNDANT
-		BNE		.build_forbidden0			; nothing to build
+		BEQ		.build_storeBA					; OPTIMIZED
+;		BEQ		loc_B81FC						; REDUNDANT
+		BNE		.build_forbidden0				; nothing to build
 ;loc_B81FC:
-;		LDA		#_MAP_ELECTRO_ROAD_UD		; road+electric vertical
+;		LDA		#_MAP_ELECTRO_ROAD_UD			; road+electric vertical
 ;		BNE		.build_store1
 
 ; =============== S U B	R O U T	I N E =======================================
 _select_rails_intersection_tile:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#_MAP_ROAD_LR
-		BEQ		.build_storeB7				; OPTIMIZED
-;		BNE		loc_B820A					; REDUNDANT
-;		LDA		#_MAP_ROAD_RAIL_LR			; rail+road horizontal
+		BEQ		.build_storeB7					; OPTIMIZED
+;		BNE		loc_B820A						; REDUNDANT
+;		LDA		#_MAP_ROAD_RAIL_LR				; rail+road horizontal
 ;		BNE		.build_store1
 loc_B820A:
 		CMP		#_MAP_ROAD_UD
-		BEQ		.build_storeB8				; OPTIMIZED
-;		BNE		loc_B8212					; REDUNDANT
-;		LDA		#_MAP_ROAD_RAIL_UD			; rail+road vertical
+		BEQ		.build_storeB8					; OPTIMIZED
+;		BNE		loc_B8212						; REDUNDANT
+;		LDA		#_MAP_ROAD_RAIL_UD				; rail+road vertical
 ;		BNE		.build_store1
 loc_B8212:
 		CMP		#_MAP_ELECTRO_LR
-		BEQ		.build_storeBB				; OPTIMIZED
-;		BNE		loc_B821A					; REDUNDANT
-;		LDA		#_MAP_ELECTRO_RAIL_LR		; rail+electro horizontal
+		BEQ		.build_storeBB					; OPTIMIZED
+;		BNE		loc_B821A						; REDUNDANT
+;		LDA		#_MAP_ELECTRO_RAIL_LR			; rail+electro horizontal
 ;		BNE		.build_store1
 loc_B821A:
 		CMP		#_MAP_ELECTRO_UD
 		BEQ		.build_storeBC
 		BNE		.build_forbidden0
-;		LDA		#_MAP_ELECTRO_RAIL_UD		; rail+electro vertical
+;		LDA		#_MAP_ELECTRO_RAIL_UD			; rail+electro vertical
 ;		BNE		.build_store1
 
 ; =============== S U B	R O U T	I N E =======================================
 _select_electro_intersection_tile:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#_MAP_ROAD_LR
-		BEQ		.build_storeBA				; OPTIMIZED
-;		BNE		loc_B822F					; REDUNDANT
-;		LDA		#_MAP_ELECTRO_ROAD_UD		; electro+road horizontal
+		BEQ		.build_storeBA					; OPTIMIZED
+;		BNE		loc_B822F						; REDUNDANT
+;		LDA		#_MAP_ELECTRO_ROAD_UD			; electro+road horizontal
 ;		BNE		.build_store1
 loc_B822F:
 		CMP		#_MAP_ROAD_UD
-		BEQ		.build_storeB9				; OPTIMIZED
-;		BNE		loc_B8237					; REDUNDANT
-;		LDA		#_MAP_ELECTRO_ROAD_LR		; electro+road vertical
+		BEQ		.build_storeB9					; OPTIMIZED
+;		BNE		loc_B8237						; REDUNDANT
+;		LDA		#_MAP_ELECTRO_ROAD_LR			; electro+road vertical
 ;		BNE		.build_store1
 loc_B8237:
 		CMP		#_MAP_RAIL_LR
-		BEQ		.build_storeBC				; OPTIMIZED
-;		BNE		loc_B823F					; REDUNDANT
-;		LDA		#_MAP_ELECTRO_RAIL_UD		; electro+rail horizontal
+		BEQ		.build_storeBC					; OPTIMIZED
+;		BNE		loc_B823F						; REDUNDANT
+;		LDA		#_MAP_ELECTRO_RAIL_UD			; electro+rail horizontal
 ;		BNE		.build_store1
 loc_B823F:
 		CMP		#_MAP_RAIL_UD
 		BNE		.build_forbidden0
 .build_storeBB:
-		LDA		#_MAP_ELECTRO_RAIL_LR		; electro+rail vertical
+		LDA		#_MAP_ELECTRO_RAIL_LR			; electro+rail vertical
 		.BYTE	$2C
 .build_storeB7:
-		LDA		#_MAP_ROAD_RAIL_LR			; rail+road horizontal
+		LDA		#_MAP_ROAD_RAIL_LR				; rail+road horizontal
 		.BYTE	$2C
 .build_storeB8:
-		LDA		#_MAP_ROAD_RAIL_UD			; rail+road vertical
+		LDA		#_MAP_ROAD_RAIL_UD				; rail+road vertical
 		.BYTE	$2C
 .build_storeB9:
-		LDA		#_MAP_ELECTRO_ROAD_LR		; road+electric horizontal
+		LDA		#_MAP_ELECTRO_ROAD_LR			; road+electric horizontal
 		.BYTE	$2C
 .build_storeBA:
-		LDA		#_MAP_ELECTRO_ROAD_UD		; road+electric vertical
+		LDA		#_MAP_ELECTRO_ROAD_UD			; road+electric vertical
 		.BYTE	$2C
 .build_storeBC:
-		LDA		#_MAP_ELECTRO_RAIL_UD		; electro+rail horizontal
+		LDA		#_MAP_ELECTRO_RAIL_UD			; electro+rail horizontal
 		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
 
@@ -566,7 +566,7 @@ loc_B83CA:
 ; =============== S U B	R O U T	I N E =======================================
 _test_build_available_tile:
 		PHA
-		LDA		_constr_palette_selected_idx		; present buildings?
+		LDA		_constr_palette_selected_idx	; present buildings?
 		CMP		#$0D
 		BNE		.regular_test
 		LDY		_cur_present_select_idx			; yes, try specual case of
@@ -583,7 +583,7 @@ _test_build_available_tile:
 		LDA		_city._game_flags				; test for autobuldoze flag
 		LSR
 		BCC		.no_auto_bulldoze_here
-		LDA		_constr_palette_selected_idx		; special case for train station present
+		LDA		_constr_palette_selected_idx	; special case for train station present
 		CMP		#$0D
 		BNE		loc_B8401
 		LDY		_cur_present_select_idx
@@ -618,12 +618,12 @@ loc_B8401:
 		CLC
 		RTS
 loc_B842E:
-		LDA		_constr_palette_selected_idx		; can bulldoze parks as well, but can't rebulldoze it
+		LDA		_constr_palette_selected_idx	; can bulldoze parks as well, but can't rebulldoze it
 		CMP		#$04
 		BNE		.allow_with_bulldoze
 		BEQ		.forbid
 .electo_wires_bulldoze:
-		LDA		_constr_palette_selected_idx		; the same here for electrics
+		LDA		_constr_palette_selected_idx	; the same here for electrics
 		CMP		#$02
 		BNE		.allow_with_bulldoze
 		BEQ		.forbid
@@ -656,10 +656,10 @@ loc_B842E:
 ; return subtracted back, return C=1 if money isn't enough
 ;
 _money_subtract:
-		LDA		_city._game_flags			; debug cheat, free construction
+		LDA		_city._game_flags				; debug cheat, free construction
 		AND		#$10
 		BNE		loc_B8483
-		LDA		_city._money				; subtract money with delta
+		LDA		_city._money					; subtract money with delta
 		SEC
 		SBC		_cur_building_price
 		STA		_city._money
@@ -674,7 +674,7 @@ loc_B8483:
 		CLC
 		RTS
 loc_B8485:
-		LDA		_city._money				; if exceeded, add back
+		LDA		_city._money					; if exceeded, add back
 		ADC		_cur_building_price
 		STA		_city._money
 		LDA		_city._money+1
@@ -702,7 +702,7 @@ _title_screen:
 ;		BEQ		.title_loop						; return to menu instead of title screen
 ;		INC		_tmp118							; REDUNDANT, actually, not need here too
 ;		LDA		#$00
-;		STA		_title_sub_idx					;
+;		STA		_title_sub_idx
 .title_loop:
 		JSR		_wait_for_nmi
 		LDA		_pad1_prev_held					; test for sram reset A+B+UP+LEFT on PAD2
@@ -821,7 +821,7 @@ _title_sub2_menu_draw:
 		LDA		#$03
 		STA		_mmc5_chr_banks_shadow+3
 		STA		_MMC5_CHR_BANKSA+3
-		LDXY	_tlm_res_lz_title_menu_default		; draw one of two menu
+		LDXY	_tlm_res_lz_title_menu_default	; draw one of two menu
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B858C
 		LDXY	_tlm_res_lz_title_menu_continue
@@ -871,7 +871,7 @@ _title_sub3_menu_input:
 		LDA		_pad0_autorep_press
 		AND		#$0C
 		BEQ		.title_menu_default				; test UP/DOWN buttons
-		APUA_SE	_SE_IDX_CLICK								; menu change sound
+		APUA_SE	_SE_IDX_CLICK					; menu change sound
 		LDX		_cur_game_mode
 		LDA		_title_menu_item_decode,X
 		TAX
@@ -1048,14 +1048,14 @@ locret_EB2D0:
 		INC		_scr_res_idx
 		LDA		#$00
 		BIT		_city._bank_flags
-		BVC		loc_B8A11							; test for loan flag
-;		LDA		#$3F								; REDUNDANT
+		BVC		loc_B8A11						; test for loan flag
+;		LDA		#$3F							; REDUNDANT
 ;		JSR		_bank_spr_curtain_draw
-		JSR		_bank_spr_curtain_draw_pos3F		; OPTIMIZED
+		JSR		_bank_spr_curtain_draw_pos3F	; OPTIMIZED
 		JSR		_bank_scr_sub7_already_loan_draw
 		LDA		#$07
 loc_B8A11:
-		STA		_tmp118+2							; tmp bank sub idx
+		STA		_tmp118+2						; tmp bank sub idx
 		LDA		#$80
 		STA		_game_core_state
 		RTS
@@ -1063,14 +1063,14 @@ loc_B8A11:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl6_B_bank_input:
 		JSR		_bank_scr_sub_exec
-		BIT		_tmp118+2							; exit test
+		BIT		_tmp118+2						; exit test
 		BPL		locret_B8A34
-;		LDA		#$40								; REDUNDANT, see below
+;		LDA		#$40							; REDUNDANT, see below
 ;		STA		_scr_res_control_flags
 		LDA		#$02
 		STA		_scr_res_idx
-		LDA		#$10								; special exit flag for
-		STA		_scr_res_control_flags				; bank screen draw after budget immediately
+		LDA		#$10							; special exit flag for
+		STA		_scr_res_control_flags			; bank screen draw after budget immediately
 		JMP		_pal_fade_out
 locret_B8A34:
 		RTS
@@ -1127,10 +1127,10 @@ loc_B8A8A:
 		LDA		_tmp118+4
 		BNE		loc_B8AA2
 		LDA		#$15
-		STA		_city._loan_period					; just only for 21 year
+		STA		_city._loan_period				; just only for 21 year
 ; REDUNDANT, never used here, the loan amount fixed to 500
 ; and calculated manually at _fiscal_year_results_calc
-;		MOVWI	_loan_fee,500						; 500 a year
+;		MOVWI	_loan_fee,500					; 500 a year
 		INC		_tmp118+2
 		RTS
 loc_B8AA2:
@@ -1192,7 +1192,7 @@ loc_B8AF7:
 		LDA		#$00
 		STA		_tmp118							; init anim counter
 		LDA		#$58
-		JSR		_bank_spr_curtain_draw		; draw sprite curtain at lower position
+		JSR		_bank_spr_curtain_draw			; draw sprite curtain at lower position
 		INC		_tmp118+2
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan_def
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan_def
@@ -1649,7 +1649,7 @@ loc_B8F3E:
 		STA		_ptr0
 		LDX		#$0A
 loc_B8F5A:
-		LDA		[[_graphs&$1FFF]|$6000],Y	; retarget _graphs to $6000 bank
+		LDA		[[_graphs&$1FFF]|$6000],Y		; retarget _graphs to $6000 bank
 		CMP		_ptr0							; calc max value for current graph
 		BCC		loc_B8F63
 		STA		_ptr0							; calc scale ratio
@@ -1670,7 +1670,7 @@ loc_B8F75:
 		CLC
 		ADC		_tmp2
 		TAY
-		LDA		[[_graphs&$1FFF]|$6000],Y	; retarget _graphs to $6000 bank
+		LDA		[[_graphs&$1FFF]|$6000],Y		; retarget _graphs to $6000 bank
 loc_B8F7D:
 		LSR
 		DEX
@@ -1992,7 +1992,7 @@ _scr_res_hndl2_B_budget_input:
 		LDA		#$00							; REDUNDANT, not needed here, vars are clear
 		STA		_budget_display_timer			; always upon entering this screen and always
 		STA		_budget_display_timer+1
-		JSR		_budget_funds_alloc_sum_test		; calc amount of total funds, if less than budget, can't skip
+		JSR		_budget_funds_alloc_sum_test	; calc amount of total funds, if less than budget, can't skip
 		BCC		.budget_screen_animate
 		LDA		_budget_screen_return_to_info_maps_flag
 		BEQ		.budget_normal_exit

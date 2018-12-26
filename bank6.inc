@@ -317,11 +317,11 @@ loc_A02FD:
 _info_screen_legends_idx_list:
 		.BYTE	$00,$01,$02,$03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$04
 _info_screen_legends_nt_lib:
-		.WORD	_info_screen_legend_nt00	; trees/rivers/buildings/clear 4-color
-		.WORD	_info_screen_legend_nt01	; 2-buttons on/off
-		.WORD	_info_screen_legend_nt02	; + pos -
-		.WORD	_info_screen_legend_nt03	; min/max
-		.WORD	_info_screen_legend_nt04	; clear
+		.WORD	_info_screen_legend_nt00		; trees/rivers/buildings/clear 4-color
+		.WORD	_info_screen_legend_nt01		; 2-buttons on/off
+		.WORD	_info_screen_legend_nt02		; + pos -
+		.WORD	_info_screen_legend_nt03		; min/max
+		.WORD	_info_screen_legend_nt04		; clear
 _info_screen_legends_extnt_lib:
 		.WORD	_info_screen_legend_extnt00
 		.WORD	_info_screen_legend_extnt01

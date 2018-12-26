@@ -70,7 +70,7 @@ loc_8801C:
 _airplane_crash_start:
 		LDA		#$22
 		STA		_game_msg_idx
-		LDX		_obj_pos._plane._COL				; cur plane obj pos set to goto pos
+		LDX		_obj_pos._plane._COL			; cur plane obj pos set to goto pos
 		STX		_goto_dst_tile._COL				; the same time X,Y loaded with the same pos
 		LDY		_obj_pos._plane._ROW
 ;		STX		_goto_dst_tile._ROW				; BUG! Y loaded, X stored instead!
@@ -82,7 +82,7 @@ _airplane_crash_start:
 		LDA		_obj_active_flags				; destroy plane
 		AND		#$FD
 		STA		_obj_active_flags
-		APUA_SE	_SE_IDX_DESTROY							; crash sound
+		APUA_SE	_SE_IDX_DESTROY					; crash sound
 		PUSHB	_ptr0
 		PUSHB	_ptr0+1
 		PUSHB	_tmp2
@@ -1895,11 +1895,11 @@ _obj_flush:
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_obj_map_ptr:
 ;		LDY		_cur_obj_pos._ROW
-;		LDA		_wram_col_ofs_list_lo,Y
+;		LDA		_city_map_row_pos_list_lo,Y
 ;		CLC
 ;		ADC		_cur_obj_pos._COL
 ;		STA		_ptr15
-;		LDA		_wram_col_ofs_list_hi,Y
+;		LDA		_city_map_row_pos_list_hi,Y
 ;		ADC		#$00
 ;		STA		_ptr15+1
 ; FIX: WRANING, make sure wram_city_map is at the beginning of the page, instead
@@ -1924,7 +1924,7 @@ _obj_dir_delta_list:
 ; NOTE, the rest of map buffers pos calculations are calculated with
 ; hardware MUL usage, however, to speed up we may use similar tables
 ; to mul instead, need to check if it will be faster
-;_wram_col_ofs_list_lo:
+;_city_map_row_pos_list_lo:
 ;		.BYTE	<[_city_map]
 ;		.BYTE	<[_city_map+$4C]
 ;		.BYTE	<[_city_map+$98]
@@ -2001,7 +2001,7 @@ _obj_dir_delta_list:
 ;		.BYTE	<[_city_map+$15AC]
 ;		.BYTE	<[_city_map+$15F8]
 ;		.BYTE	<[_city_map+$1644]
-;_wram_col_ofs_list_hi:
+;_city_map_row_pos_list_hi:
 ;		.BYTE	>[_city_map]
 ;		.BYTE	>[_city_map+$4C]
 ;		.BYTE	>[_city_map+$98]
@@ -2146,7 +2146,7 @@ _obj2_spr_lib:
 		.WORD	_spr_shipB6
 		.WORD	_spr_shipB7
 _obj1_spr_lib:
-		.WORD	_spr_planeA0	; flight scprites
+		.WORD	_spr_planeA0					; flight scprites
 		.WORD	_spr_planeA1
 		.WORD	_spr_planeA2
 		.WORD	_spr_planeA3
@@ -2154,11 +2154,11 @@ _obj1_spr_lib:
 		.WORD	_spr_planeA5
 		.WORD	_spr_planeA6
 		.WORD	_spr_planeA7
-		.WORD	_spr_planeA6	; right-to-left landing/take off
+		.WORD	_spr_planeA6					; right-to-left landing/take off
 		.WORD	_spr_planeB2
 		.WORD	_spr_planeB3
 		.WORD	_spr_planeB4
-		.WORD	_spr_planeA2	; right-t-left- landing/take off
+		.WORD	_spr_planeA2					; right-t-left- landing/take off
 		.WORD	_spr_planeC2
 		.WORD	_spr_planeC3
 		.WORD	_spr_planeC4

@@ -254,13 +254,13 @@ _rci_meters_accel_tax_list:
 ; original behaviour/problems of calculating power consumption...
 ;
 _power_grid_recalc:
-		JSR		_sram_write_enable						; set game buffers to read
+		JSR		_sram_write_enable				; set game buffers to read
 ; REDUNDANT
 ;		LDA		#$00
 ;		TAY
 ;loc_104203:
-;		STA		_power_map,Y			; clear power grid map
-;		STA		_power_map+$100,Y		; TODO: merge clear code in one proc
+;		STA		_power_map,Y					; clear power grid map
+;		STA		_power_map+$100,Y				; TODO: merge clear code in one proc
 ;		INY
 ;		BNE		loc_104203
 ;		LDA		#$00
@@ -272,9 +272,9 @@ _power_grid_recalc:
 ;		BNE		loc_10420F
 ; -
 ; OPTIMIZED
-		MOVWO	_tmpE6,_power_map		; clear power grid map
-		LDX		#$02							; 76*76/8 = 722
-		LDY		#$D2
+		MOVWO	_tmpE6,_power_map				; clear power grid map
+		LDX		#>[_power_map_size]				; 76*76/8 = 722
+		LDY		#<[_power_map_size]
 		JSR		_clear_buf
 ; -
 		JSR		_sram_write_disable
@@ -310,12 +310,12 @@ loc_10426E:
 		LDY		_power_nodes_cnt				; load counter
 		LDA		_power_nodes_cnt+1				; to start with list0 or list1 test higher counter byte
 		BEQ		loc_10427F
-		LDX		_tmp_buf,Y				; list 1 read
-		LDA		_tmp_buf+$300,Y
+		LDX		_tmp_map,Y						; list 1 read
+		LDA		_tmp_map+$300,Y
 		JMP		loc_104285
 loc_10427F:
-		LDX		_tmp_buf+$100,Y			; list 0 read
-		LDA		_tmp_buf+$200,Y
+		LDX		_tmp_map+$100,Y					; list 0 read
+		LDA		_tmp_map+$200,Y
 loc_104285:
 		STX		_tmp_map_pos._COL				; fetch last power station position on map
 		STA		_tmp_map_pos._ROW
@@ -434,15 +434,15 @@ _power_node_insert:
 		BEQ		loc_104368						; maximum entries in list 512
 ; -
 		LDA		_tmp_map_pos._COL				; other entries stored in list 1
-		STA		_tmp_buf,Y
+		STA		_tmp_map,Y
 		LDA		_tmp_map_pos._ROW
-		STA		_tmp_buf+$300,Y
+		STA		_tmp_map+$300,Y
 		JMP		loc_104368						; optimize me
 .power_grid_list0_store:
 		LDA		_tmp_map_pos._COL
-		STA		_tmp_buf+$100,Y
+		STA		_tmp_map+$100,Y
 		LDA		_tmp_map_pos._ROW
-		STA		_tmp_buf+$200,Y
+		STA		_tmp_map+$200,Y
 loc_104368:
 		JMP		_sram_write_disable
 
@@ -558,7 +558,7 @@ _power_grid_set:
 ;		STA		_tmpE7							; store shifted high nibble
 ;		LDA		_tmpE6							; lower already shifted, load
 ;		CLC
-;		ADC		#<[_power_map]			; add buffer offset to get full ptr
+;		ADC		#<[_power_map]					; add buffer offset to get full ptr
 ;		STA		_tmpE6
 ;		LDA		_tmpE7
 ;		ADC		#>[_power_map]
@@ -599,7 +599,7 @@ _power_grid_read:
 		STA		_tmpE7							; store shifted high nibble
 		LDA		_tmpE6							; lower already shifted, load
 		CLC
-		ADC		#<[_power_map]			; add buffer offset to get full ptr
+		ADC		#<[_power_map]					; add buffer offset to get full ptr
 		STA		_tmpE6
 		LDA		_tmpE7
 		ADC		#>[_power_map]
@@ -630,8 +630,8 @@ _graphs_10_year_data_update:
 		JSR		_sram_write_enable				; prepape sram
 		LDX		#$00
 loc_104559:
-		LDA		_graphs._10y._R+1,X		; shift graphs data to the left
-		STA		_graphs._10y._R,X			; collect R/C/I max value
+		LDA		_graphs._10y._R+1,X				; shift graphs data to the left
+		STA		_graphs._10y._R,X				; collect R/C/I max value
 		CMP		_tmpE6
 		BCC		loc_104565
 		STA		_tmpE6
@@ -648,7 +648,7 @@ loc_104571:
 		BCC		loc_10457D
 		STA		_tmpE6
 loc_10457D:
-		LDA		_graphs._10y._pollution+1,X	; the rest does not need to save min max
+		LDA		_graphs._10y._pollution+1,X		; the rest does not need to save min max
 		STA		_graphs._10y._pollution,X
 		LDA		_graphs._10y._money+1,X
 		STA		_graphs._10y._money,X
@@ -669,7 +669,7 @@ loc_10457D:
 ;		STA		_tmpE6
 		ASL		_tmpE6
 		ROL
-		STA		_graphs._10y._R+9			; graph data = [L_R * 2]
+		STA		_graphs._10y._R+9				; graph data = [L_R * 2]
 		LDA		_city._level._C.INT				; little bit ticky here, we divide frac by 16
 		STA		_tmpE6							; but then get the result as an integer. this
 		LDA		_city._level._C.FRAC			; equivalent of * 256 of the fixed point result
@@ -681,7 +681,7 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_graphs._10y._C+9			; graph data = [L_C * 16]
+		STA		_graphs._10y._C+9				; graph data = [L_C * 16]
 		LDA		_city._level._I.INT				; same as previous
 		STA		_tmpE6
 		LDA		_city._level._I.FRAC
@@ -693,7 +693,7 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_graphs._10y._I+9			; graph data = [L_I * 16]
+		STA		_graphs._10y._I+9				; graph data = [L_I * 16]
 ; BUG! "crime" button is the last one, this is a pollution button.
 ; use pollution value instead!
 ;		LDA		_city._crime_level.INT
@@ -704,7 +704,7 @@ loc_10457D:
 ;
 		AND		#$7F
 		SEC
-		SBC		_graphs._10y._pollution+8	; interpolate with previous value
+		SBC		_graphs._10y._pollution+8		; interpolate with previous value
 		LSR
 		LSR
 		ADC		_graphs._10y._pollution+8
@@ -719,17 +719,17 @@ loc_1045E9:
 		LDA		_city._crime_level.INT			; FIX, correct values here
 		AND		#$7F							; lol
 		SEC
-;		SBC		_graphs._10y._money+8		; BUG
-		SBC		_graphs._10y._crime+8		; FIX
+;		SBC		_graphs._10y._money+8			; BUG
+		SBC		_graphs._10y._crime+8			; FIX
 		LSR
 		LSR
-;		ADC		_graphs._10y._money+8		; BUG
-		ADC		_graphs._10y._crime+8		; FIX
+;		ADC		_graphs._10y._money+8			; BUG
+		ADC		_graphs._10y._crime+8			; FIX
 		BCC		loc_1045FE
 		LDA		#$FF							; clamp to 255 max
 loc_1045FE:
-;		STA		_graphs._10y._money+9		; BUG
-		STA		_graphs._10y._crime+9		; FIX
+;		STA		_graphs._10y._money+9			; BUG
+		STA		_graphs._10y._crime+9			; FIX
 ; BUG, Also odd calculation, _taxes_income never gets higher nibble calculated before now in the original code
 ; also _taxes_income may be negative, so further calculations may be incorrect and clamp negative values to
 ; max on the graph instead...
@@ -817,8 +817,8 @@ loc_1045FE:
 		LDA		#$00
 ; -
 .money_store:
-;		STA		_graphs._10y._crime+9		; BUG
-		STA		_graphs._10y._money+9		; FIX
+;		STA		_graphs._10y._crime+9			; BUG
+		STA		_graphs._10y._money+9			; FIX
 		JSR		_sram_write_disable
 		LDX		#$00							; the final calculation for schools and hospitals
 		LDA		_city._level._R.INT				; based on integer part of R level value
@@ -1049,7 +1049,7 @@ loc_10486C:
 ;		BNE		loc_1048A9
 ;		LDA		#$20							; max default value here is $20 (0.125) but
 ;		BNE		loc_1048D7						; next code does not clamp 1.0 to 0.99
-;loc_1048A9:										; and thus this value may be $21 instead
+;loc_1048A9:									; and thus this value may be $21 instead
 ;		MOVW	_tmpE7,_fund_alloc_trans
 ;		MOVW	_tmpEA,_fund_request_trans
 ;		LDA		#$00
@@ -1213,55 +1213,55 @@ loc_10497E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_assessed_value_recalc:
-		PUSHW	_roads_count				; E6 = roads*5
+		PUSHW	_roads_count					; E6 = roads*5
 		PUSHB	#$05
 		JSR		_mmc5_mul16to8
 		POPD	_tmpE6
 		PUSHW	_rails_count
 		PUSHB	#$0A
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += rails*10
-		PUSHWI	$03E8						;
+		POPADDD	_tmpE6,_tmpE6					; E6 += rails*10
+		PUSHWI	$03E8
 		LDA		_police_stations_count
 		CLC
-;		ADC		_fires_level				; BUG! wrong var used
-		ADC		_fire_stations_count		; FIX, proper value, based on Micropolis source
+;		ADC		_fires_level					; BUG! wrong var used
+		ADC		_fire_stations_count			; FIX, proper value, based on Micropolis source
 		PHA
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += (police + fire) * 1000
-;		PUSHWI	$9001						; BUG! SWAP NIBBLES
-		PUSHWI	$0190						; FIX, correct value!
+		POPADDD	_tmpE6,_tmpE6					; E6 += (police + fire) * 1000
+;		PUSHWI	$9001							; BUG! SWAP NIBBLES
+		PUSHWI	$0190							; FIX, correct value!
 		PUSHB	_hospitals_count
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += hospitals * 400
-;		PUSHWI	$B80B						; BUG! SWAP NIBBLES
-		PUSHWI	$0BB8						; FIX, correct value!
+		POPADDD	_tmpE6,_tmpE6					; E6 += hospitals * 400
+;		PUSHWI	$B80B							; BUG! SWAP NIBBLES
+		PUSHWI	$0BB8							; FIX, correct value!
 		PUSHB	_stadiums_count
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += stadiums * 3000
-;		PUSHWI	$8813						; BUG! SWAP NIBBLES
-		PUSHWI	$1388						; FIX, correct value!
+		POPADDD	_tmpE6,_tmpE6					; E6 += stadiums * 3000
+;		PUSHWI	$8813							; BUG! SWAP NIBBLES
+		PUSHWI	$1388							; FIX, correct value!
 		PUSHB	_sea_ports_count
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += sea ports * 5000
-;		PUSHWI	$1027						; BUG! SWAP NIBBLES
-		PUSHWI	$2710						; FIX, correct value!
+		POPADDD	_tmpE6,_tmpE6					; E6 += sea ports * 5000
+;		PUSHWI	$1027							; BUG! SWAP NIBBLES
+		PUSHWI	$2710							; FIX, correct value!
 		PUSHB	_airports_count
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += air ports * 10000
-;		PUSHWI	$B80B						; BUG! SWAP NIBBLES
-		PUSHWI	$0BB8						; FIX, correct value!
+		POPADDD	_tmpE6,_tmpE6					; E6 += air ports * 10000
+;		PUSHWI	$B80B							; BUG! SWAP NIBBLES
+		PUSHWI	$0BB8							; FIX, correct value!
 		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8
-		POPADDD	_tmpE6,_tmpE6				; E6 += coal power * 3000
-;		PUSHWI	$7017						; BUG! SWAP NIBBLES
-		PUSHWI	$1770						; FIX, correct value!
-		PUSHB	_nuke_power_station_count	;
+		POPADDD	_tmpE6,_tmpE6					; E6 += coal power * 3000
+;		PUSHWI	$7017							; BUG! SWAP NIBBLES
+		PUSHWI	$1770							; FIX, correct value!
+		PUSHB	_nuke_power_station_count
 		JSR		_mmc5_mul16to8
 ; NOTE, the result is assessed value of micropolis source code has this value
 ; additionally multiplied to 1000, the nes version dont
 ;
-		POPADDD	_assessed_value,_tmpE6		; _assessed_value = E6 + (nuclear power * 6000)
+		POPADDD	_assessed_value,_tmpE6			; _assessed_value = E6 + (nuclear power * 6000)
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2170,15 +2170,15 @@ loc_105059:
 ; =============== S U B	R O U T	I N E =======================================
 _check_for_free_present_slot:
 		LDX		#$02
-		LDA		_city._events_used_flags			; WEIRD, test if city status acquired, but why?
+		LDA		_city._events_used_flags		; WEIRD, test if city status acquired, but why?
 		AND		#$04
-		BEQ		loc_105069							; if no, only 3 slots are available
+		BEQ		loc_105069						; if no, only 3 slots are available
 		LDX		#$03
 loc_105069:
-		LDA		_city._presents_list,X				; technically calc here is correct
+		LDA		_city._presents_list,X			; technically calc here is correct
 ; BUG! loop not needed.
-		BEQ		locret_105071						; it'll always get last slot
-		DEY											; but then DEY loop not needed here then
+		BEQ		locret_105071					; it'll always get last slot
+		DEY										; but then DEY loop not needed here then
 		BPL		loc_105069
 locret_105071:
 		RTS
@@ -2452,7 +2452,7 @@ _get_RCI_counts_div4:
 _scroll_msg00_test:
 		JSR		_get_RCI_counts_div4
 		STA		_tmpE7
-		CMPW	_tmpE6,_RCI_counts._R		; C_R < C_RCI / 4
+		CMPW	_tmpE6,_RCI_counts._R			; C_R < C_RCI / 4
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
@@ -2462,7 +2462,7 @@ _scroll_msg01_test:
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		CMPW	_tmpE6,_RCI_counts._C		; C_C < C_RCI / 8
+		CMPW	_tmpE6,_RCI_counts._C			; C_C < C_RCI / 8
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
@@ -2472,7 +2472,7 @@ _scroll_msg02_test:
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
-		CMPW	_tmpE6,_RCI_counts._I		; C_I < C_RCI / 8
+		CMPW	_tmpE6,_RCI_counts._I			; C_I < C_RCI / 8
 		BCC		nullsub_10
 		JMP		_scroll_msg_start
 
@@ -2527,7 +2527,7 @@ loc_1052EA:
 _scroll_msg06_test:
 		LDA		#$00
 		STA		_required._stadium
-		CMPWI	_city._level._R,$01F4		; here is the fixed point value 1.95
+		CMPWI	_city._level._R,$01F4			; here is the fixed point value 1.95
 		BCC		nullsub_10
 		LDA		_stadiums_count
 		BNE		nullsub_10
@@ -2539,7 +2539,7 @@ _scroll_msg06_test:
 _scroll_msg07_test:
 		LDA		#$00
 		STA		_required._seaport
-		CMPWI	_city._level._I,$0064		; fp value 0.39
+		CMPWI	_city._level._I,$0064			; fp value 0.39
 		BCC		nullsub_10
 		LDA		_sea_ports_count
 		BNE		nullsub_10
@@ -2551,7 +2551,7 @@ _scroll_msg07_test:
 _scroll_msg08_test:
 		LDA		#$00
 		STA		_required._airport
-		CMPWI	_city._level._C,$0096		; fp value 0.59
+		CMPWI	_city._level._C,$0096			; fp value 0.59
 		BCC		nullsub_10
 		LDA		_airports_count
 		BNE		nullsub_5
@@ -2561,7 +2561,7 @@ _scroll_msg08_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg09_test:
-		CMPWI	_cur_RCI_levels_sum,$003C	; 0.3Cfp
+		CMPWI	_cur_RCI_levels_sum,$003C		; 0.3Cfp
 		BCC		nullsub_5
 		LDA		_fire_stations_count
 		BNE		nullsub_5
@@ -2569,7 +2569,7 @@ _scroll_msg09_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0A_test:
-		CMPWI	_cur_RCI_levels_sum,$003C	; 0.3Cfp
+		CMPWI	_cur_RCI_levels_sum,$003C		; 0.3Cfp
 		BCC		nullsub_5
 		LDA		_police_stations_count
 		BNE		nullsub_5
@@ -2596,7 +2596,7 @@ _scroll_msg0E_test:
 		LDA		_fund_rate_fire
 		CMP		#$0B
 		BCS		nullsub_5
-		CMPWI	_cur_RCI_levels_sum,$0014	; 0.14fp
+		CMPWI	_cur_RCI_levels_sum,$0014		; 0.14fp
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
@@ -2605,7 +2605,7 @@ _scroll_msg0F_test:
 		LDA		_fund_rate_police
 		CMP		#$0B
 		BCS		nullsub_5
-		CMPWI	_cur_RCI_levels_sum,$0014	; 0.14fp
+		CMPWI	_cur_RCI_levels_sum,$0014		; 0.14fp
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
@@ -2615,10 +2615,10 @@ nullsub_5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg_start:
-		PLA									; if any new scroll msg is pending while other
-		PLA									; currently is displayed, then we just break
-		LDA		_tmpEA						; and reattempt to display this message on the
-		CMP		_scroll_msg_idx				; next loop.
+		PLA										; if any new scroll msg is pending while other
+		PLA										; currently is displayed, then we just break
+		LDA		_tmpEA							; and reattempt to display this message on the
+		CMP		_scroll_msg_idx					; next loop.
 		BEQ		locret_105124
 
 ; !FALLTHROUGH!
@@ -2626,13 +2626,13 @@ _scroll_msg_start:
 ; =============== S U B	R O U T	I N E =======================================
 ;
 _scroll_msg_force_start:
-		STA		_scroll_msg_idx				; however, there are some events that can
-		LDY		#$00						; break current scroll message display a new one
-		STY		_scroll_msg_start_pos		;
-		DEY									; theoretically this may lead to garbage data
-		STY		_scroll_msg_active_flag		; of the previous scroller on the screen
-locret_105124:								; but due to long duration period between tests
-		RTS									; this won't happen most of the time
+		STA		_scroll_msg_idx					; however, there are some events that can
+		LDY		#$00							; break current scroll message display a new one
+		STY		_scroll_msg_start_pos
+		DEY										; theoretically this may lead to garbage data
+		STY		_scroll_msg_active_flag			; of the previous scroller on the screen
+locret_105124:									; but due to long duration period between tests
+		RTS										; this won't happen most of the time
 
 		SECTION_START	100
 

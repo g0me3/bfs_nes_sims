@@ -62,7 +62,7 @@ _game_state_common:
 		SEC
 		SBC		_extnt_queue_pos_head
 		STA		_ptr0+1
-		LDA		_gui_active_controls_flags							; test for idle state, checking if
+		LDA		_gui_active_controls_flags		; test for idle state, checking if
 		EOR		#$03							; any of critical state flags arent
 		ORA		_ptr0							; clear, so mean there is some pending
 		ORA		_ptr0+1							; requests still
@@ -600,7 +600,7 @@ _game_state05_constr_palette_update:
 _game_state06_game_hud_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136472
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136472
 		LDA		_cur_map_wnd_pos._COL
 		STA		_update_rect_left
@@ -630,7 +630,7 @@ loc_136472:
 _game_state0A_power_build_menu:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136482
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136482
 		JSR		_power_build_menu
 		LDA		#$00
@@ -755,7 +755,7 @@ loc_1500E7:
 _game_state0C_RCI_meter_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136548
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136548
 		JSR		_RCI_meters_draw
 		LDA		#$00
@@ -767,7 +767,7 @@ loc_136548:
 _game_state0D_hud_date_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_13655C
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_13655C
 ;		FJSRA	_hud_date_draw,PRG7,PRG3
 		JSR		_hud_date_draw
@@ -780,7 +780,7 @@ loc_13655C:
 _game_state0E:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136582
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136582
 		INC		_tmp535
 		LDA		_cur_map_wnd_pos._COL
@@ -804,7 +804,7 @@ loc_136582:
 _game_state0F_hud_money_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136595
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136595
 ;		FJSRA	_hud_money_draw,PRGC,PRG3
 		JSR		_hud_money_draw
@@ -817,7 +817,7 @@ loc_136595:
 _game_state10_fiscal_year_draw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_1365C8
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_1365C8
 		LDA		#$02
 		STA		_scr_res_idx
@@ -841,7 +841,7 @@ loc_1365C8:
 _game_state11_hud_popul_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_1365DC
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_1365DC
 ;		FJSRA	_hud_popul_draw,PRG7,PRG3
 		JSR		_hud_popul_draw
@@ -854,7 +854,7 @@ loc_1365DC:
 _game_state12_airport_build_menu:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_1365EC
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_1365EC
 		JSR		_airport_build_menu
 		LDA		#$00
@@ -866,7 +866,7 @@ loc_1365EC:
 _game_state16_hud_city_name_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_136600
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_136600
 ;		FJSRA	_hud_city_name_draw,PRG7,PRG3
 		JSR		_hud_city_name_draw
@@ -1610,35 +1610,35 @@ _building_name_and_cost_hud_draw:
 		LDA		#$F2
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		LDA		_ppu_queue_pos_head						; backup queue buffers heads
+		LDA		_ppu_queue_pos_head				; backup queue buffers heads
 		STA		_ptr0
 		LDA		_extnt_queue_pos_head
 		STA		_ptr0+1
 		JSR		_building_name_and_cost_hud_pos_calc	; calc relative nt pos
-		LDA		_constr_palette_selected_idx				; check for additional
-		CMP		#$0B									; buildings
+		LDA		_constr_palette_selected_idx	; check for additional
+		CMP		#$0B							; buildings
 		BNE		loc_136C1D
-		LDX		_cur_power_type_select_idx				; if power plant selected
-		BEQ		loc_136C3A								; choose one of 0B or 0E
+		LDX		_cur_power_type_select_idx		; if power plant selected
+		BEQ		loc_136C3A						; choose one of 0B or 0E
 		CLC
 		ADC		#$03
 		BCC		loc_136C3A
 loc_136C1D:
 		CMP		#$0C
 		BNE		loc_136C28
-		LDX		_cur_port_type_select_idx				; if ports selected
-		BEQ		loc_136C3A								; choose 0C or 0F
+		LDX		_cur_port_type_select_idx		; if ports selected
+		BEQ		loc_136C3A						; choose 0C or 0F
 		CLC
 		ADC		#$03
 loc_136C28:
-;		CMP		#$0D									; REDUNDANT
-;		BNE		loc_136C3A								;
-;		LDX		_cur_present_select_idx					; presents have the same
-;		LDY		_city._presents_list,X					; name 0D, empty slot should
-;		DEY												; display "NoPresent", but
-;		BPL		loc_136C37								; it is not possible to select it
-;		LDY		#$0F									; so it goes unused as well as
-;loc_136C37:											; the whole this code is redundant
+;		CMP		#$0D							; REDUNDANT
+;		BNE		loc_136C3A						;
+;		LDX		_cur_present_select_idx			; presents have the same
+;		LDY		_city._presents_list,X			; name 0D, empty slot should
+;		DEY										; display "NoPresent", but
+;		BPL		loc_136C37						; it is not possible to select it
+;		LDY		#$0F							; so it goes unused as well as
+;loc_136C37:									; the whole this code is redundant
 ;		LDA		_present_names_length_list,Y
 loc_136C3A:
 		LDX		#$0C
@@ -1646,7 +1646,7 @@ loc_136C3A:
 		STA		_building_name_and_cost_hud_src_ofs
 		JSR		_building_name_and_cost_hud_nt_queue
 		JSR		_building_name_and_cost_hud_extnt_queue
-		LDA		_ptr0									; resore ppu queue buffers
+		LDA		_ptr0							; resore ppu queue buffers
 		STA		_ppu_queue_pos_head
 		LDA		_ptr0+1
 		STA		_extnt_queue_pos_head
@@ -2609,7 +2609,7 @@ loc_137326:
 		RTS
 loc_137331:
 		LDX		_tmp5
-;		FJSRA	_game_menu_exec,PRG7,PRG3	; FIX, no code use PRG7, but SRAM
+;		FJSRA	_game_menu_exec,PRG7,PRG3		; FIX, no code use PRG7, but SRAM
 		FJSRA	_game_menu_exec,SRAM,PRG3
 		LDA		#$00
 		STA		_wnd_lvl_idx
@@ -2776,7 +2776,7 @@ _wnd_draw_line:
 loc_137464:
 ;		JSR		_buffers_test_flush
 ;		BCC		loc_13746A
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BEQ		loc_13746A
 		RTS
 loc_13746A:
@@ -2851,7 +2851,7 @@ loc_1374D7:
 loc_1374DC:
 ;		JSR		_buffers_test_flush
 ;		BCC		loc_1374E2
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BEQ		loc_1374E2
 		RTS
 loc_1374E2:
@@ -3635,7 +3635,7 @@ _constr_palette_update:
 		BEQ		locret_137B5D
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_137B5D
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_137B5D
 		LDA		_constr_palette_flags
 		STA		_tmp4
@@ -3845,7 +3845,7 @@ _ppu_extnt_byte_queue:
 _constr_area_redraw:
 ;		JSR		_buffers_test_flush
 ;		BCS		locret_137D0A
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_137D0A
 		LDA		_constr_area_update_req
 		BEQ		locret_137D0A
@@ -4294,7 +4294,7 @@ _seasonal_pal_list:
 _game_state09_presents_building_name_and_cost_hud_draw:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_150028
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_150028
 		JSR		_building_name_and_cost_hud_draw
 		LDA		#$00
@@ -4306,7 +4306,7 @@ loc_150028:
 _game_state14_presents_build_menu:
 ;		JSR		_buffers_test_flush
 ;		BCS		loc_150055
-		JSR		_buffers_test_flush		; OPTIMIZED, merged
+		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		loc_150055
 		JSR		_spr_clear
 		LDA		#$00

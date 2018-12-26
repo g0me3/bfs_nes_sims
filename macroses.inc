@@ -270,6 +270,7 @@ OTHER_WIDX			EQU 4
 {1}		SET	.
 		DS	{2}
 {1}_end	SET	.
+{1}_size SET [{1}_end-{1}]
 	ENDM
 
 ;---------G-A-M-E--S-P-E-C-I-F-I-C--------------

@@ -478,7 +478,7 @@ locret_150474:
 ; another one), so we will have broken building here.
 ;
 _present_remove_from_list:
-		LDA		_constr_palette_selected_idx		; check if we selected a present button
+		LDA		_constr_palette_selected_idx	; check if we selected a present button
 		CMP		#$0D
 		BEQ		loc_15047C
 		RTS
@@ -503,7 +503,7 @@ loc_150492:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_building_price:
-		LDA		_constr_palette_selected_idx		; power station choosen?
+		LDA		_constr_palette_selected_idx	; power station choosen?
 		CMP		#$0B
 		BNE		loc_1504A6
 		LDX		_cur_power_type_select_idx		; test additionally for its type
@@ -564,7 +564,7 @@ _build_cur_constr_cursor_area:
 loc_150518:
 		LDA		(_tmp_ptrC3),Y					; read building data tiles from lib
 		BMI		loc_150531
-		LDX		_constr_palette_selected_idx		; top-left corner of the building starts here
+		LDX		_constr_palette_selected_idx	; top-left corner of the building starts here
 		CPX		#$0B
 		BNE		loc_150527						; additional test for power station type
 		CLC
@@ -759,13 +759,13 @@ _get_building_tile_map_ptr:
 		LDA		word_D2+1
 		ADC		#>[_city_map]
 		STA		word_D2+1
-		CMP		#>[_city_map]				; OUT UF BOUNDS TEST 2!!
+		CMP		#>[_city_map]					; OUT UF BOUNDS TEST 2!!
 		BCC		.out_of_bounds
-		CMP		#>[_power_map]			; out of bounds test 3
+		CMP		#>[_city_map_end]				; out of bounds test 3
 		BCC		.calc_ok
 		BNE		.out_of_bounds
 		LDA		word_D2
-		CMP		#<[_power_map]			; out of bounds test 4
+		CMP		#<[_city_map_end]				; out of bounds test 4
 		BCS		.out_of_bounds
 .calc_ok:
 		CLC
@@ -1285,10 +1285,10 @@ _bulldoze_a_building:
 		JSR		_sram_write_enable
 		LDY		#$00
 loc_1508CF:
-		STY		_ptr0								; erase building by scheme for all tiles inside
+		STY		_ptr0							; erase building by scheme for all tiles inside
 		LDA		(_tmp_ptrC5),Y
 		CMP		#$80
-		BEQ		loc_1508E1							; end of scheme list
+		BEQ		loc_1508E1						; end of scheme list
 		TAY
 		LDA		byte_CB
 		STA		(_tmp_ptrC1),Y
@@ -1489,7 +1489,7 @@ _get_cur_constr_cursor_map_ofs:
 		ADC		_cur_constr_cursor_map_pos._COL
 		STA		_tmp_ptrC1
 		TXA
-		ADC		#>[_city_map]				; map ofs + map buf start = map ptr
+		ADC		#>[_city_map]					; map ofs + map buf start = map ptr
 		STA		_tmp_ptrC1+1
 		RTS
 
@@ -4229,15 +4229,15 @@ _hud_year_str_queue:
 		STY		_tmp1
 		LDA		#$04
 		STA		_tmp2
-;		LDY		#$00						; FIX similar to the rest of the code
-		LDY		#$03						; -
+;		LDY		#$00							; FIX similar to the rest of the code
+		LDY		#$03							; -
 loc_58DE7:
 		JSR		_get_dec_digit16
 		STA		_pre_ppu_buf,X
 		INX
-;		INY									; FIX
-;		INY									; -
-		DEY									; -
+;		INY										; FIX
+;		INY										; -
+		DEY										; -
 		DEC		_tmp2
 		BNE		loc_58DE7
 		RTS
@@ -4247,7 +4247,7 @@ _get_dec_digit16:
 		LDA		#$00
 		STA		_tmp3
 loc_58DF9:
-;		LDA		_tmp0						; FIX
+;		LDA		_tmp0							; FIX
 ;		SEC
 ;		SBC		_dec_digit16_tbl,Y
 ;		STA		_tmp0
@@ -4255,13 +4255,13 @@ loc_58DF9:
 ;		SBC		_dec_digit16_tbl+1,Y
 ;		STA		_tmp1
 ;		BCC		loc_58E0E
-		LDA		_tmp0						; OPTIMIZED
-		CMP		_dec_digit_tbl0,Y			; -
-		LDA		_tmp1						; -
-		SBC		_dec_digit_tbl1,Y			; -
+		LDA		_tmp0							; OPTIMIZED
+		CMP		_dec_digit_tbl0,Y				; -
+		LDA		_tmp1							; -
+		SBC		_dec_digit_tbl1,Y				; -
 		BCC		loc_58E0E
-		LDA		_tmp0						; FIX, we has to sub here
-		SBC		_dec_digit_tbl0,Y			; also C already set as well
+		LDA		_tmp0							; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,Y				; also C already set as well
 		STA		_tmp0
 		LDA		_tmp1
 		SBC		_dec_digit_tbl1,Y
@@ -4269,7 +4269,7 @@ loc_58DF9:
 		INC		_tmp3
 		BNE		loc_58DF9
 loc_58E0E:
-;		LDA		_tmp0						; REDUNDANT
+;		LDA		_tmp0							; REDUNDANT
 ;		CLC
 ;		ADC		_dec_digit16_tbl,Y
 ;		STA		_tmp0
@@ -4279,7 +4279,7 @@ loc_58E0E:
 		LDA		_tmp3
 		RTS
 
-;_dec_digit16_tbl:							; REDUNDANT
+;_dec_digit16_tbl:								; REDUNDANT
 ;		.WORD	1000
 ;		.WORD	100
 ;		.WORD	10
@@ -4293,7 +4293,7 @@ _hud_month_str_queue:
 		STA		_ptr0
 		ASL
 		ASL
-;		CLC							; FIX: now entry size always 4
+;		CLC										; FIX: now entry size always 4
 ;		ADC		_ptr0
 		TAY
 		LDA		#$03
@@ -4327,7 +4327,7 @@ _hud_date_pos_calc:
 ;		CIADDB	_tmp1,_cur_screen_tile._ROW,#$1A,NONE,#$1E
 ;		CIADDB	_tmp0,_cur_screen_tile._COL,#$16,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$08,#$20
-;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZED, merged
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00		; OPTIMIZED, merged
 ;		RTS
 
 ; REDUNDANT, the same for this one
@@ -4336,11 +4336,11 @@ _hud_date_pos_calc:
 ;_hud_date_str_queue:
 ;		PPUQSTART
 ;		LDY		#$00
-;		LDA		_tmp2								; REDUNDANT, this is a leftover
-;		STA		_tmp4								; from using an extnt draw routine
-;		LDA		_tmp3								; below, to keep vars for it
-;		STA		_tmp5								; as soon as in unused, we don't need
-;		PPUQMOVB	_ptr0,OP_NOP,0					; these vars as well...
+;		LDA		_tmp2							; REDUNDANT, this is a leftover
+;		STA		_tmp4							; from using an extnt draw routine
+;		LDA		_tmp3							; below, to keep vars for it
+;		STA		_tmp5							; as soon as in unused, we don't need
+;		PPUQMOVB	_ptr0,OP_NOP,0				; these vars as well...
 ;loc_58ED9:
 ;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
 ;		PPUQMOVB	_tmp2,OP_NOP,0
@@ -4407,7 +4407,7 @@ _hud_date_pos_calc:
 ; =============== S U B	R O U T	I N E =======================================
 _hud_popul_draw:
 		JSR		_hud_popul_to_str
-;		JSR		_hud_popul_pos_calc					; OPTIMIZED, merged
+;		JSR		_hud_popul_pos_calc				; OPTIMIZED, merged
 		LDA		#$0E
 		STA		_tmp2
 		LDA		#$1A
@@ -4457,7 +4457,7 @@ _get_dec_digit24:
 		LDA		#$00
 		STA		_tmp4
 loc_5805A:
-;		SEC									; FIX, lets use less opcodes
+;		SEC										; FIX, lets use less opcodes
 ;		LDA		_tmp0
 ;		SBC		_dec_digit_tbl0,X
 ;		STA		_tmp0
@@ -4467,15 +4467,15 @@ loc_5805A:
 ;		LDA		_tmp2
 ;		SBC		_dec_digit_tbl2,X
 ;		STA		_tmp2
-		LDA		_tmp0						; OPTIMIZED
-		CMP		_dec_digit_tbl0,X			; -
-		LDA		_tmp1						; -
-		SBC		_dec_digit_tbl1,X			; -
-		LDA		_tmp2						; -
-		SBC		_dec_digit_tbl2,X			; -
+		LDA		_tmp0							; OPTIMIZED
+		CMP		_dec_digit_tbl0,X				; -
+		LDA		_tmp1							; -
+		SBC		_dec_digit_tbl1,X				; -
+		LDA		_tmp2							; -
+		SBC		_dec_digit_tbl2,X				; -
 		BCC		loc_58076
-		LDA		_tmp0						; FIX, we has to sub here
-		SBC		_dec_digit_tbl0,X			; also C already set as well
+		LDA		_tmp0							; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,X				; also C already set as well
 		STA		_tmp0
 		LDA		_tmp1
 		SBC		_dec_digit_tbl1,X
@@ -4486,7 +4486,7 @@ loc_5805A:
 		INC		_tmp4
 		BNE		loc_5805A
 loc_58076:
-;		CLC									; REDUNDANT
+;		CLC										; REDUNDANT
 ;		LDA		_tmp0
 ;		ADC		_dec_digit_tbl0,X
 ;		STA		_tmp0

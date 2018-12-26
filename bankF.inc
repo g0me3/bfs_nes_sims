@@ -163,9 +163,9 @@ loc_18A0F0:
 		STA		_budget_fund_rate,X
 		DEX
 		BPL		loc_18A0F0
-;		JSR		_sram_write_enable						; REDUNDANT
+;		JSR		_sram_write_enable				; REDUNDANT
 		FJSRA	_sram_init,SRAM,PRG3
-;		JSR		_sram_write_disable						; REDUNDANT
+;		JSR		_sram_write_disable				; REDUNDANT
 		LDA		#$FF
 		STA		_game_core_state
 ;		STA		byte_37							; REDUNDANT, never read!
@@ -1171,54 +1171,54 @@ _sram_write_disable:
 
 ; =============== S U B	R O U T	I N E =======================================
 _farcall_argsAXY_safe:
-		DEC		_mmc5_operation_in_progress_flag	; raise busy flag
-		STA		_tmp3								; backup registers
+		DEC		_mmc5_operation_in_progress_flag; raise busy flag
+		STA		_tmp3							; backup registers
 		STX		_tmp4
 		STY		_tmp5
-		POPB	_ptr0								; get the data offset from stack
+		POPB	_ptr0							; get the data offset from stack
 		CLC
 		ADC		#$04
-		STA		_tmp2								; adjust offset to next valid opcode
+		STA		_tmp2							; adjust offset to next valid opcode
 		POPB	_ptr0+1
 		ADC		#$00
-		PHA											; and push it back, not will return
-		PUSHB	_tmp2								; as usual by RTS
-		PUSHB	_prg_prg8000_shadow					; backup previous prg banks
+		PHA										; and push it back, not will return
+		PUSHB	_tmp2							; as usual by RTS
+		PUSHB	_prg_prg8000_shadow				; backup previous prg banks
 		PUSHB	_prg_prgA000_shadow
 		LDY		#$01
-		LDA		(_ptr0),Y							; fetch prg banks, store to stack for now
+		LDA		(_ptr0),Y						; fetch prg banks, store to stack for now
 		INY
 		PHA
 		LDA		(_ptr0),Y
 		INY
 		PHA
-		LDA		(_ptr0),Y							; fetch routine offset
+		LDA		(_ptr0),Y						; fetch routine offset
 		INY
 		TAX
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
 		STX		_ptr0
-		POPB	_prg_prgA000_shadow					; apply new prg banks
+		POPB	_prg_prgA000_shadow				; apply new prg banks
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-		LDA		_tmp3								; load registers / arguments
+		LDA		_tmp3							; load registers / arguments
 		LDX		_tmp4
 		LDY		_tmp5
-		INC		_mmc5_operation_in_progress_flag	; busy off
-		JSR		_jmp_ptr0							; far jump
-		DEC		_mmc5_operation_in_progress_flag	; busy again
-		STA		_tmp3								; store result regs
+		INC		_mmc5_operation_in_progress_flag; busy off
+		JSR		_jmp_ptr0						; far jump
+		DEC		_mmc5_operation_in_progress_flag; busy again
+		STA		_tmp3							; store result regs
 		STX		_tmp4
 		STY		_tmp5
-		POPB	_prg_prgA000_shadow					; restore prg for caller
+		POPB	_prg_prgA000_shadow				; restore prg for caller
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-		LDA		_tmp3								; load results in regs
+		LDA		_tmp3							; load results in regs
 		LDX		_tmp4
 		LDY		_tmp5
-		INC		_mmc5_operation_in_progress_flag	; busy off, exit
+		INC		_mmc5_operation_in_progress_flag; busy off, exit
 		RTS
 
 ; REDUNDANT
@@ -1542,7 +1542,7 @@ _ppu_set_vert_increment:
 _city_map_init:
 		JSR		_sram_write_enable
 		LDX		#$00
-		MOVWO	_ptr0,_city_map				; map buf ptr
+		MOVWO	_ptr0,_city_map					; map buf ptr
 		MOVWI	_tmp2,$1690						; map buf size
 ;		LDA		#$90
 ;		LDX		#$16
@@ -3708,8 +3708,8 @@ _tlm_lib:
 ; C=1 if cannot change
 ;
 _jump_to_near_to_tmp_map_pos_tile:
-		CPX		#$00						; we must keep X here, some routines
-		BEQ		_tmp_map_dec_pos_Y			; depends on it
+		CPX		#$00							; we must keep X here, some routines
+		BEQ		_tmp_map_dec_pos_Y				; depends on it
 		CPX		#$01
 		BEQ		_tmp_map_inc_pos_X
 		CPX		#$02
@@ -3721,7 +3721,7 @@ _jump_to_near_to_tmp_map_pos_tile:
 
 ; =============== S U B	R O U T	I N E =======================================
 _back_from_near_tmp_map_pos_tile:
-		CPX		#$00						; same here
+		CPX		#$00							; same here
 		BEQ		_tmp_map_inc_pos_Y
 		CPX		#$01
 		BEQ		_tmp_map_dec_pos_X

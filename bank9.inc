@@ -743,8 +743,8 @@ _tlm_extnt_new_game_push:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_screen_spr_draw:
-		JSR		_new_city_map_num_spr_insert		; insert default num frame
-		MOVW	_ptr0,_new_map_number				; insert actual number
+		JSR		_new_city_map_num_spr_insert	; insert default num frame
+		MOVW	_ptr0,_new_map_number			; insert actual number
 		JSR		_hex_to_dec9999
 		LDX		#$50
 		LDY		#$02
@@ -757,10 +757,10 @@ loc_EA419:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_map_num_spr_insert:
-		LDX		#$10								; draws map number control
+		LDX		#$10							; draws map number control
 		LDY		#$3B
 loc_EA426:
-		LDA		_spr_new_city_map_def,Y				; default map number frame sprites
+		LDA		_spr_new_city_map_def,Y			; default map number frame sprites
 		STA		_spr_buf,X
 		INX
 		DEY
@@ -1206,9 +1206,9 @@ _mini_map0_draw:
 		LDA		_mini_map_cur_col
 		ASL
 		ASL
-		ADC		_mini_map_wram_ofs_list,Y		; table calc for multiply
+		ADC		_city_mini_map_row_pos_list,Y	; table calc for multiply
 		STA		_ptr0
-		LDA		_mini_map_wram_ofs_list+1,Y
+		LDA		_city_mini_map_row_pos_list+1,Y
 		ADC		#$00
 		STA		_ptr0+1							; now we have ofs to left-top corner of 4x4 area
 		JSR		_mini_map_area_info_collect
@@ -1308,10 +1308,10 @@ loc_EA789:
 		TAY
 		CLC
 		LDA		#<[_power_map]
-		ADC		word_EB57A,Y
+		ADC		_pow_mul38_table,Y
 		STA		_ptr0
 		LDA		#>[_power_map]
-		ADC		word_EB57A+1,Y
+		ADC		_pow_mul38_table+1,Y
 		STA		_ptr0+1
 		LDA		_mini_map_cur_col
 		LSR
@@ -1411,10 +1411,10 @@ _mini_map4_draw:
 		TAY
 		CLC
 		LDA		#<[_traffic_map]
-		ADC		word_EB57A,Y
+		ADC		_pow_mul38_table,Y
 		STA		_ptr0
 		LDA		#>[_traffic_map]
-		ADC		word_EB57A+1,Y
+		ADC		_pow_mul38_table+1,Y
 		STA		_ptr0+1
 		LDA		_mini_map_cur_col
 		JSR		_adc_ptr0
@@ -1740,7 +1740,7 @@ loc_EAAE1:
 .area_collect_done:
 		LDA		_cur_info_maps_button_idx		; now we have stats for kind of ground tile, its
 		BNE		.area_simple_sum				; nubers, weighted sum as well as number of
-		LDX		_info_maps_menu_extra_idx	; buildings inside area
+		LDX		_info_maps_menu_extra_idx		; buildings inside area
 		BEQ		.area_simple_sum				; for all kinds of maps except overall map, use simple summing
 		DEX
 		BEQ		loc_EAB3E						; for overall maps use three different types of summing
@@ -1787,10 +1787,10 @@ _mini_map_weights_list:
 byte_EAE8A:
 		.BYTE	$00,$02,$04,$06,$04,$06,$00,$02
 _mini_map_building_types_list:
-		.BYTE	_MAP_C_AREA_DEF				; range for R areas
-		.BYTE	_MAP_I_AREA_DEF				; ...C
-		.BYTE	_MAP_POLICE_STATION			; ...I
-		.BYTE	_MAP_INTERNAL_BUILD0		; for all other buildings
+		.BYTE	_MAP_C_AREA_DEF					; range for R areas
+		.BYTE	_MAP_I_AREA_DEF					; ...C
+		.BYTE	_MAP_POLICE_STATION				; ...I
+		.BYTE	_MAP_INTERNAL_BUILD0			; for all other buildings
 		.BYTE	_MAP_GROUND0
 		.BYTE	_MAP_ROAD_LR
 		.BYTE	_MAP_ELECTRO_LR
@@ -2250,8 +2250,8 @@ _info_maps_popul_hud_draw:
 _info_maps_spr_arrows_hide:
 		LDX		#$2F
 loc_EADD7:
-;		LDA		#$00						; ORIGINAL: hides sprites to upper left corner
-		LDA		#$FA						; FIX: hides sprites out of screen
+;		LDA		#$00							; ORIGINAL: hides sprites to upper left corner
+		LDA		#$FA							; FIX: hides sprites out of screen
 		STA		_spr_buf+$20,X
 		DEX
 		BPL		loc_EADD7
@@ -2260,18 +2260,18 @@ loc_EADD7:
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_arrows_move:
 		LDA		#$28
-		STA		_scr_res_control_flags		; control flags are set to frame move mode
-		STA		_game_core_state			; THREAD0 takes control for now, THREAD1 suspended
-		LDA		_pad0_autorep_press			; d-pad autorep test
+		STA		_scr_res_control_flags			; control flags are set to frame move mode
+		STA		_game_core_state				; THREAD0 takes control for now, THREAD1 suspended
+		LDA		_pad0_autorep_press				; d-pad autorep test
 		AND		#$0F
 		BEQ		.dpad_released
 		LDX		#$04
-		STX		_pad0_dpad_autorep_delay	; when press, reload dpad autorep counter
+		STX		_pad0_dpad_autorep_delay		; when press, reload dpad autorep counter
 		BNE		.arrows_move
 .dpad_released:
 		LDA		_pad0_held
 		AND		#$0F
-		BEQ		.arrows_draw				; now test an actual input
+		BEQ		.arrows_draw					; now test an actual input
 		LDX		_pad0_dpad_autorep_delay
 		BEQ		.arrows_move
 		DEC		_pad0_dpad_autorep_delay
@@ -2322,22 +2322,22 @@ _info_maps_rect_limits_right_bottom:
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_A_graphs_draw:
 		LDA		#$00
-		STA		_MMC5_PRG_PAGES									; switch WRAM bank mode
+		STA		_MMC5_PRG_PAGES					; switch WRAM bank mode
 		INC		_scr_res_idx
-;		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9		; REDUNDANT SO MUCH!
-		LDY		#$FF											; OPTIMIZED, this is what
-		STY		_cur_graphs_button_press_idx					; to be far called lol
-		STY		_prev_graphs_button_press_idx					; -
-		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9			; graph draw is in external bank
+;		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9	; REDUNDANT SO MUCH!
+		LDY		#$FF							; OPTIMIZED, this is what
+		STY		_cur_graphs_button_press_idx	; to be far called lol
+		STY		_prev_graphs_button_press_idx	; -
+		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9	; graph draw is in external bank
 		LDA		#$04
-		STA		_MMC5_PRG_PAGES									; restore WRAM bank mode
+		STA		_MMC5_PRG_PAGES					; restore WRAM bank mode
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_B_graphs_input:
 		LDA		#$00
 		STA		_MMC5_PRG_PAGES
-		FJSRA	_scr_res_hndl1_B_graphs_input,PRG7,PRG9			; external again
+		FJSRA	_scr_res_hndl1_B_graphs_input,PRG7,PRG9	; external again
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		RTS
@@ -2554,7 +2554,7 @@ _budget_cur_fund_draw:
 		LDY		_budget_tax_cur_pos				; also library draw
 		LDA		_budget_tax_print_idx_list,Y
 		JSR		_printf_num_lib
-		JSR		_budget_overall_money_draw			; calc and draw cash flow and current funds fields
+		JSR		_budget_overall_money_draw		; calc and draw cash flow and current funds fields
 loc_EB328:
 ;		FJSRA	_save_taxes_data,PRG7,PRG9
 ; OPTIMIZED
@@ -2737,7 +2737,7 @@ loc_EB357:
 		SBC		#$00
 		STA		_tmp2
 		LDA		#$00
-		STA		_budget_fund_alloc,Y					; then zero it. drop that fund at all
+		STA		_budget_fund_alloc,Y			; then zero it. drop that fund at all
 		STA		_budget_fund_alloc+1,Y
 		DEY
 		DEY
@@ -3400,7 +3400,7 @@ _thread_lock_flag_set:
 ;locret_EB52A:
 ;		RTS
 
-word_EB57A:
+_pow_mul38_table:
 		.WORD	$000
 		.WORD	$026
 		.WORD	$04C
@@ -3421,13 +3421,13 @@ word_EB57A:
 		.WORD	$286
 		.WORD	$2AC
 off_EB5A0:
-		.WORD	_tmp_buf
+		.WORD	_tmp_map
 		.WORD	_power_map
 		.WORD	_pop_dencity_map
 		.WORD	_pop_growth_map
 		.WORD	_traffic_map
 		.WORD	_pollution_map
-		.WORD	_crime_level_map
+		.WORD	_crime_map
 		.WORD	_land_value_map
 		.WORD	_fire_map
 		.WORD	_police_map
@@ -3445,7 +3445,7 @@ byte_EB5E3:
 byte_EB603:
 		.BYTE	$50,$50,$D0,$10,$50,$FF,$FF,$FF,$D0,$FF,$FF,$FF,$10,$FF,$FF,$FF
 		.BYTE	$50,$50,$50,$50,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF,$50,$FF,$FF,$FF
-_mini_map_wram_ofs_list:
+_city_mini_map_row_pos_list:
 		.WORD	_city_map
 		.WORD	_city_map+$130
 		.WORD	_city_map+$260
@@ -3602,66 +3602,66 @@ locret_EB8F3:
 
 ; =============== S U B	R O U T	I N E =======================================
 _printf_num_lib:
-		STA		_tmp118					; tmp index of library string
-;		CMP		#$06					; REDUNDANT: never used, should disable
-;		BEQ		locret_EB903			; some screen positions in the table
-;		CMP		#$0B					; but why you need to call them if
-;		BEQ		locret_EB903			; they aren't displayed anyway?
+		STA		_tmp118							; tmp index of library string
+;		CMP		#$06							; REDUNDANT: never used, should disable
+;		BEQ		locret_EB903					; some screen positions in the table
+;		CMP		#$0B							; but why you need to call them if
+;		BEQ		locret_EB903					; they aren't displayed anyway?
 ;		CMP		#$10
 ;		BNE		loc_EB904
 ;locret_EB903:
 ;		RTS
 ;loc_EB904:
-		TAY								; convert decimal buffer into string
+		TAY										; convert decimal buffer into string
 		LDX		_printf_num_lib_spaces_list,Y	; fill leading zeroes with spaces
 		JSR		_printf_num_nt_convert
 		LDX		_tmp118
 loc_EB90E:
-		LDA		_ptr0,Y					; now shift tile indexes to corresponding
-		CLC								; tileset in CHR ROM
-		ADC		_printf_num_tile_ofs_list,X	; individual for all numbers
+		LDA		_ptr0,Y							; now shift tile indexes to corresponding
+		CLC										; tileset in CHR ROM
+		ADC		_printf_num_tile_ofs_list,X		; individual for all numbers
 		STA		_ptr0,Y
 		DEY
 		BPL		loc_EB90E
 		PPUQSTART
-		LDY		_tmp118					; FIX: optimized
-;		ASL								; REDUNDANT, optimized
-;		TAY								; REDUNDANT, optimized
-		LDA		_printf_num_screen_pos_list_lo,Y	; push ppu offset to queue
+		LDY		_tmp118							; FIX: optimized
+;		ASL										; REDUNDANT, optimized
+;		TAY										; REDUNDANT, optimized
+		LDA		_printf_num_screen_pos_list_lo,Y; push ppu offset to queue
 		PPUQMOVA
 		LDA		_printf_num_screen_pos_list_hi,Y
 		PPUQMOVA
-;		LDY		_tmp118					; REDUNDANT, optimized
-		LDA		_printf_num_len_list,Y	; queue length of number
+;		LDY		_tmp118							; REDUNDANT, optimized
+		LDA		_printf_num_len_list,Y			; queue length of number
 		PPUQMOVA
 		TAY
 		DEY
 loc_EB93C:
-		LDA		_ptr0,Y					; queue actual string
+		LDA		_ptr0,Y							; queue actual string
 		PPUQMOVA
 		DEY
 		BPL		loc_EB93C
 		PPUQEND
-		JSR		_printf_num_extnt_convert; now fill extnt data for number
+		JSR		_printf_num_extnt_convert		; now fill extnt data for number
 		EXTQSTART
 		LDY		_tmp118
 		CPY		#$22
-		BCS		locret_EB97F			; also we not need extnt for some numbers
-;		ASL								; REDUNDANT, optimized
-;		TAY								; REDUNDANT, optimized
-		LDA		_printf_num_screen_pos_list_lo,Y	; queue the rest of data
+		BCS		locret_EB97F					; also we not need extnt for some numbers
+;		ASL										; REDUNDANT, optimized
+;		TAY										; REDUNDANT, optimized
+		LDA		_printf_num_screen_pos_list_lo,Y; queue the rest of data
 		EXTQMOVA
 		LDA		_printf_num_screen_pos_list_hi,Y
 		CLC
-		ADC		#$38					; adjust ppu pos to extnt buffer
+		ADC		#$38							; adjust ppu pos to extnt buffer
 		EXTQMOVA
-;		LDY		_tmp118					; REDUNDANT, optimized
+;		LDY		_tmp118							; REDUNDANT, optimized
 		LDA		_printf_num_len_list,Y
 		EXTQMOVA
 		TAY
 		DEY
 loc_EB973:
-		LDA		_ptr0,Y					; store.
+		LDA		_ptr0,Y							; store.
 		EXTQMOVA
 		DEY
 		BPL		loc_EB973
@@ -3709,29 +3709,29 @@ _printf_num_nt_convert:
 		LDA		#$00
 		STA		_tmp7
 		LDY		_tmp118
-		LDA		_printf_num_len_list,Y		; read length of desires number
+		LDA		_printf_num_len_list,Y			; read length of desires number
 		TAY
 		DEY
 loc_EB9CB:
-		LDA		_ptr0,Y						; look for first non-zero digit
+		LDA		_ptr0,Y							; look for first non-zero digit
 		BNE		loc_EB9DA
-		STX		_ptr0,Y						; fill zero with corresponding space char (in X)
+		STX		_ptr0,Y							; fill zero with corresponding space char (in X)
 		DEY
 		BPL		loc_EB9CB
-		INY									; finish digit with zero-terminate code
+		INY										; finish digit with zero-terminate code
 		LDX		#$00
 		STX		_ptr0,Y
 loc_EB9DA:
-		LDX		_tmp118						; finish with a special symbol ("-" or "$"
-		LDA		#$24						; "$"
+		LDX		_tmp118							; finish with a special symbol ("-" or "$"
+		LDA		#$24							; "$"
 		CPX		#$1B
 		BEQ		loc_EB9F9
-		LDA		#$2D						; "-"
+		LDA		#$2D							; "-"
 		CPX		#$1A
 		BEQ		loc_EB9F4
 		CPX		#$1D
-		BNE		locret_EB9FE				;
-		LDX		_annual_score_change+1		; signed values also
+		BNE		locret_EB9FE					;
+		LDX		_annual_score_change+1			; signed values also
 		BPL		locret_EB9FE
 		BMI		loc_EB9F9
 loc_EB9F4:
@@ -3739,25 +3739,25 @@ loc_EB9F4:
 		BPL		locret_EB9FE
 loc_EB9F9:
 		INY
-		STA		_ptr0,Y						; put special character here
+		STA		_ptr0,Y							; put special character here
 		DEY
-locret_EB9FE:								; the rest not need any other symbols
+locret_EB9FE:									; the rest not need any other symbols
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; input args: 16bit _tmp0 * reg X, store 24bit _tmp0-tmp2, _tmp3_tmp5
 ;
 _mmc5_mul16to8_fast:
-		LDA		_tmp1					; local copy of MUL routine, not safe!
-		STA		_MMC5_MUL0				; THREAD1 won't restore mul registers
-		STX		_MMC5_MUL1				; however, most of calc using this routine
-		LDA		_MMC5_MUL0				; work when THREAD1 suspended, so does not
-		STA		_tmp2					; be interrupted...
+		LDA		_tmp1							; local copy of MUL routine, not safe!
+		STA		_MMC5_MUL0						; THREAD1 won't restore mul registers
+		STX		_MMC5_MUL1						; however, most of calc using this routine
+		LDA		_MMC5_MUL0						; work when THREAD1 suspended, so does not
+		STA		_tmp2							; be interrupted...
 		LDA		_MMC5_MUL1
 		STA		_tmp5
 		LDA		_tmp0
 		STA		_MMC5_MUL0
-;		LDA		#$64					; FIX: WTF LDA $64 redundant
+;		LDA		#$64							; REDUNDANT: WTF LDA $64 redundant
 		LDA		_MMC5_MUL0
 		STA		_tmp0
 		STA		_tmp3
@@ -3770,8 +3770,8 @@ _mmc5_mul16to8_fast:
 		ADC		#$00
 		STA		_tmp2
 		STA		_tmp5
-;		LDX		#$02					; OPTIMIZED, store results in _tmp3 for div operations
-;loc_EB230:								; stored directly to vars in code
+;		LDX		#$02							; OPTIMIZED, store results in _tmp3 for div operations
+;loc_EB230:										; stored directly to vars in code
 ;		LDA		_tmp0,X
 ;		STA		_tmp3,X
 ;		DEX
@@ -3780,7 +3780,7 @@ _mmc5_mul16to8_fast:
 
 ; =============== S U B	R O U T	I N E =======================================
 _div24_to_24:
-		JSR		loc_EBB02				; another local only division routine
+		JSR		loc_EBB02						; another local only division routine
 		ASL		_tmp3
 		ROL		_tmp4
 		ROL		_tmp5
@@ -4140,9 +4140,9 @@ _number_extnt_table1:
 ;		LDA		_budget_tax_cur_pos				; -
 ;		AND		#$FE							; -
 ;		TAY										; -
-;		LDA		_budget_fund_alloc,Y					; -
+;		LDA		_budget_fund_alloc,Y			; -
 ;		STA		_ptr0							; -
-;		LDA		_budget_fund_alloc+1,Y					; -
+;		LDA		_budget_fund_alloc+1,Y			; -
 ;		STA		_ptr0+1							; -
 ;
 ; !FALLTHROUGH!
@@ -4180,7 +4180,7 @@ _hex_to_dec9999999:
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec_ex:
 		LDY		#$00
-		STY		_tmp3						; prepare buffer
+		STY		_tmp3							; prepare buffer
 		STY		_tmp4
 		STY		_tmp5
 		STY		_tmp6
@@ -4188,14 +4188,14 @@ _hex_to_dec_ex:
 loc_EBA2D:
 		LDY		#$00
 loc_EBA2F:
-		LDA		_tmp0						; from 10m to 10 back count
-		CMP		_hex_to_dec_tbl0,X			; compare 24-bit value with table
+		LDA		_tmp0							; from 10m to 10 back count
+		CMP		_hex_to_dec_tbl0,X				; compare 24-bit value with table
 		LDA		_tmp1
 		SBC		_hex_to_dec_tbl1,X
 		LDA		_tmp2
 		SBC		_hex_to_dec_tbl2,X
 		BCC		loc_EBA58
-		LDA		_tmp0						; less than or equals, subtract
+		LDA		_tmp0							; less than or equals, subtract
 		SBC		_hex_to_dec_tbl0,X
 		STA		_tmp0
 		LDA		_tmp1

@@ -1260,7 +1260,7 @@ _MMC5_MUL1:
 		_tarray	_land_value_map,((19*19)/2)+1
 
 		; 4-bits array, 19 rows, 19 columns
-		_tarray	_crime_level_map,((19*19)/2)+1
+		_tarray	_crime_map,((19*19)/2)+1
 
 		; 4-bits array, 19 rows, 19 columns
 		_tarray	_pollution_map,((19*19)/2)+1
@@ -1277,7 +1277,7 @@ _MMC5_MUL1:
 		; 4-bits array, 10 rows, 10 columns
 		_tarray	_fire_map,(10*10)/2
 
-		_tarray	_tmp_buf,1024
+		_tarray	_tmp_map,1024
 
 		_tgraphs _graphs
 

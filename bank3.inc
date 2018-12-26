@@ -43,8 +43,8 @@ loc_58144:
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-;		FJSRA	_game_msg_chr_setup,PRG2,PRG2		; REDUNDANT
-		JSR		_game_msg_chr_setup					; OPTIMIZED: local sub now
+;		FJSRA	_game_msg_chr_setup,PRG2,PRG2	; REDUNDANT
+		JSR		_game_msg_chr_setup				; OPTIMIZED: local sub now
 		LDA		#$00
 		STA		_ptr0
 		JSR		_game_msg_txt_draw
@@ -120,13 +120,13 @@ loc_581EC:
 ;
 _game_msg_chr_setup:
 		LDX		_game_msg_idx
-;		LDA		_game_msg_chr0_list,X		; OPTIMIZED
+;		LDA		_game_msg_chr0_list,X			; OPTIMIZED
 		LDA		#$30
 		STA		_MMC5_CHR_BANKSA
-;		LDA		_game_msg_chr1_list,X		; OPTIMIZED
+;		LDA		_game_msg_chr1_list,X			; OPTIMIZED
 		LDA		#$31
 		STA		_MMC5_CHR_BANKSA+1
-;		LDA		_game_msg_chr2_list,X		; OPTIMIZED
+;		LDA		_game_msg_chr2_list,X			; OPTIMIZED
 		LDA		#$32
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		_game_msg_chr3_list,X
@@ -191,9 +191,9 @@ _game_msg_apu_types_list:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_txt_draw:
 		PUSHB	_ptr0
-;		JSR		_far_wnd_header_txt_draw				; REDUNDANT: direct call here
-;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0			; REDUNDANT: moved to local bank
-		JSR		_wnd_header_txt_draw					; -
+;		JSR		_far_wnd_header_txt_draw		; REDUNDANT: direct call here
+;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0	; REDUNDANT: moved to local bank
+		JSR		_wnd_header_txt_draw			; -
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -729,7 +729,7 @@ loc_583FA:
 		JMP		loc_583BE
 
 ; =============== S U B	R O U T	I N E =======================================
-;_game_msg_chr1_load:						; REDUNDANT, but WHY?!
+;_game_msg_chr1_load:							; REDUNDANT, but WHY?!
 ;		LDA		_mmc5_chr_banks_shadow+1
 ;		STA		_MMC5_CHR_BANKSA+1
 ;		RTS
@@ -983,7 +983,7 @@ _animB_data_table0:
 _game_msg_wnd_animC:
 		LDX		_game_msg_idx
 		LDA		_anim_seq_obj_count_list,X
-		STA		_tmp522						; tmp anim obj counter
+		STA		_tmp522							; tmp anim obj counter
 .anim_load_loop:
 		LDX		_game_msg_idx
 		LDA		_anim_seq_lib_lo,X
@@ -1286,23 +1286,23 @@ loc_588F6:
 		SEC
 		SBC		#$01
 		STA		_tmp51A
-		MOVWO	word_DA,_city._sister_name+1			; empty in practice, scenarios does not need it
+		MOVWO	word_DA,_city._sister_name+1	; empty in practice, scenarios does not need it
 		RTS
 loc_58908:
 		LDA		_city._bank_name
 		SEC
 		SBC		#$01
 		STA		_tmp51A
-		MOVWO	word_DA,_city._bank_name+1				; always empty, never initializes
-		RTS												; so displaying always just as "BANK"
+		MOVWO	word_DA,_city._bank_name+1		; always empty, never initializes
+		RTS										; so displaying always just as "BANK"
 loc_5891A:
 		LDA		_city._unused_name3
 		SEC
 		SBC		#$01
 		STA		_tmp51A
-		MOVWO	word_DA,_city._unused_name3+1			; unused buffers/name
-		RTS												; there is unknown what they
-loc_5892C:												; were intended for
+		MOVWO	word_DA,_city._unused_name3+1	; unused buffers/name
+		RTS										; there is unknown what they
+loc_5892C:										; were intended for
 		LDA		_city._unused_name4
 		SEC
 		SBC		#$01
@@ -1491,7 +1491,7 @@ loc_58A60:
 		BNE		loc_58A60
 loc_58A69:
 ;		PLA
-		LDY		_game_msg_idx				; OPTIMIZED
+		LDY		_game_msg_idx					; OPTIMIZED
 		LDA		_presents_list,Y
 		BMI		locret_58A6D
 		STA		_city._presents_list,X
@@ -1536,10 +1536,10 @@ locret_58A9E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_draw:
-;		JSR		_buffers_test_flush			; REDUNDANT, merged
+;		JSR		_buffers_test_flush				; REDUNDANT, merged
 ;		BCS		_game_msg_wnd_draw
-		JSR		_buffers_test_flush			; OPTIMIZED, the same function
-		BNE		_game_msg_wnd_draw			; just test Z instead of C
+		JSR		_buffers_test_flush				; OPTIMIZED, the same function
+		BNE		_game_msg_wnd_draw				; just test Z instead of C
 		LDA		#$00
 		STA		_tmp0
 loc_58AA8:
@@ -1696,7 +1696,7 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		JMP		_sram_write_disable
 loc_59C0E:
-		LDA		#>[_land_value_map]			; CAUTION: low nibble is zero
+		LDA		#>[_land_value_map]				; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
 		LDA		#<[_land_value_map]
 		STA		_ptr0
@@ -1783,10 +1783,10 @@ loc_5915A:
 		INC		_tmp3
 loc_5916A:
 		LDA		_tmp2
-		CMP		#<[_power_map]
+		CMP		#<[_city_map_end]
 		BNE		loc_5915A
 		LDA		_tmp3
-		CMP		#>[_power_map]
+		CMP		#>[_city_map_end]
 		BNE		loc_5915A
 		LDX		#$00
 loc_59178:
@@ -1822,10 +1822,10 @@ loc_58FD3:
 		INC		_tmp3
 loc_58FE3:
 		LDA		_ptr0
-		CMP		#<[_power_map]
+		CMP		#<[_city_map_end]
 		BNE		loc_58FD3
 		LDA		_ptr0+1
-		CMP		#>[_power_map]
+		CMP		#>[_city_map_end]
 		BNE		loc_58FD3
 		LDX		#$00
 loc_58FF1:
@@ -2100,7 +2100,7 @@ _game_menu_exec:
 		TAX
 		CPX		#$00
 		BNE		loc_58F72
-;		APUA_SE	_SE_IDX_CLICK								; move into function
+;		APUA_SE	_SE_IDX_CLICK					; move into function
 ;		FJSRA	_game_save_menu,SRAM,PRG3		; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_save_menu
 		JMP		_game_menu_break
@@ -2113,12 +2113,12 @@ loc_58F72:
 loc_58F7F:
 		DEX
 		BNE		loc_58F90
-;		APUA_SE	_SE_IDX_CLICK								; move into function
+;		APUA_SE	_SE_IDX_CLICK					; move into function
 ;		FJSRA	_game_title_return,SRAM,PRG3	; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_title_return
 		JMP		_game_menu_break
 loc_58F90:
-;		APUA_SE	_SE_IDX_CLICK								; move into function
+;		APUA_SE	_SE_IDX_CLICK					; move into function
 ;		FJSRA	_game_quit,SRAM,PRG3			; REDUNDANT: already enabled sram in FJSR for _game_menu_exec
 		JSR		_game_quit
 _game_menu_break:
@@ -2277,8 +2277,8 @@ loc_59103:
 		LDA		#$00
 		STA		_cur_game_mode
 		APUA_SE	_SE_IDX_CLICK
-;		JSR		_load_menu_exec						; REDUNDANT
-		LDA		#$10								; OPTIMIZED: load menu
+;		JSR		_load_menu_exec					; REDUNDANT
+		LDA		#$10							; OPTIMIZED: load menu
 		JSR		_common_yes_no_question_menu
 		BCS		loc_5912E
 		JSR		_sram_data_load
@@ -2534,7 +2534,7 @@ _generate_new_map:
 		STA		_mmc5_operation_in_progress_flag
 		RTS
 loc_59354:
-		JSR		_wram_map_clear
+		JSR		_city_map_clear
 		JSR		_generate_map_start
 		JSR		_generate_rivers
 		JSR		_generate_new_mapC
@@ -2675,7 +2675,7 @@ _isle_map_tile_read575:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_wram_map_clear:
+_city_map_clear:
 		MOVWO	_ptr0,_city_map
 		LDY		#$00
 loc_5946A:
@@ -2683,10 +2683,10 @@ loc_5946A:
 		STA		(_ptr0),Y
 		INCW	_ptr0
 		LDA		_ptr0+1
-		CMP		#>[_power_map]
+		CMP		#>[_city_map_end]
 		BCC		loc_5946A
 		LDA		_ptr0
-		CMP		#<[_power_map]
+		CMP		#<[_city_map_end]
 		BCC		loc_5946A
 		RTS
 
@@ -2817,7 +2817,7 @@ loc_5957F:
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_city_map_end_test
 		BCS		locret_595BA
-		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
+		JSR		_isle_map_tile_read577_0		; OPTIMIZED: size
 		BNE		loc_595B5
 		LDA		#$05
 		STA		(_ptr0),Y
@@ -3012,7 +3012,7 @@ _generate_new_map_sub1:
 		PHA
 		JSR		_generate_city_map_end_test
 		BCS		loc_597C7
-		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
+		JSR		_isle_map_tile_read577_0		; OPTIMIZED: size
 		BEQ		loc_597C9
 		CMP		#$04
 		BEQ		loc_597C7
@@ -3077,7 +3077,7 @@ _generate_new_map_sub5:
 		STA		_map_pos._COL
 		STA		_map_pos._ROW
 loc_5980A:
-		JSR		_isle_map_tile_read575				; OPTIMIZED size
+		JSR		_isle_map_tile_read575			; OPTIMIZED size
 		BMI		loc_5988D
 		BEQ		loc_5988D
 		LDA		#$00
@@ -3097,7 +3097,7 @@ loc_59835:
 		STA		_tmp578
 		JSR		_generate_city_map_end_test
 		BCS		loc_5987B
-		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
+		JSR		_isle_map_tile_read572_2		; OPTIMIZED size
 		BMI		loc_5987B
 		BEQ		loc_5987B
 		SEC
@@ -3142,7 +3142,7 @@ _generate_new_mapD:
 		STA		_map_pos._COL
 		STA		_map_pos._ROW
 loc_598C5:
-		JSR		_isle_map_tile_read575				; OPTIMIZED size
+		JSR		_isle_map_tile_read575			; OPTIMIZED size
 		CMP		#$03
 		BEQ		loc_598EC
 		JMP		loc_59991
@@ -3195,7 +3195,7 @@ loc_598FC:
 		SEC
 		BCS		loc_5997D
 loc_59957:
-		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
+		JSR		_isle_map_tile_read572_2		; OPTIMIZED size
 		BEQ		loc_5997C
 		SEC
 		BCS		loc_5997D
@@ -3259,10 +3259,10 @@ loc_599E6:
 loc_599E8:
 		INCW	_ptr0
 		LDA		_ptr0+1							; TODO: rearrange to use macro
-		CMP		#>[_power_map]
+		CMP		#>[_city_map_end]
 		BCC		loc_599D3
 		LDA		_ptr0
-		CMP		#<[_power_map]
+		CMP		#<[_city_map_end]
 		BCC		loc_599D3
 		RTS
 loc_599FB:
@@ -3301,10 +3301,10 @@ loc_59A2E:
 loc_59A30:
 		INCW	_ptr0
 		LDA		_ptr0+1
-		CMP		#>[_power_map]
+		CMP		#>[_city_map_end]
 		BCC		loc_59A11
 		LDA		_ptr0
-		CMP		#<[_power_map]
+		CMP		#<[_city_map_end]
 		BCC		loc_59A11
 		RTS
 loc_59A43:
