@@ -138,7 +138,7 @@ loc_B815F:
 ;		  C=0    - success
 ;		  _cur_build_store_tile_idx - index of tile to build
 ;
-_get_valid_1X1_building_tile:
+_get_new_map_single_tile:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#_MAP_GROUND
 		BEQ		.do_money_sub					; regular buldozered ground at this point

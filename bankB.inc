@@ -38,7 +38,7 @@ _THREAD1_MAIN:
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD1_LOOP:
-		JSR		_screen_invalidate				; priority as usual in THREAD0
+		JSR		_wait_for_hud_and_game_field_update				; priority as usual in THREAD0
 		INC		_city._cur_week					; one loop - one week here
 		LDA		_city._cur_week
 		LSR
@@ -99,7 +99,7 @@ _rci_meters_calc_skip:
 		LDY		_city._game_speed				; when city is in pause mode, we will stop here
 		CPY		#$03							; and loop forever. means no other calcs on town anymore
 		BNE		.game_core_calc
-		JSR		_screen_invalidate
+		JSR		_wait_for_hud_and_game_field_update
 		JMP		.game_stop_loop
 .game_core_calc:
 		LDA		_power_grid_recalc_delay_mask,Y	; another speed limit option goes here
@@ -215,7 +215,7 @@ loc_11F324:
 		INCW	_tmpE6
 		CMPWI	_tmpE6,_city_map_end			; test for end of buffer
 		BNE		loc_11F310
-		JSR		_screen_invalidate				; update the screen
+		JSR		_wait_for_hud_and_game_field_update				; update the screen
 		JMP		_map_corruption_tiles_animate
 loc_11F33A:
 		JMP		_sram_write_disable				; disable writes back
@@ -3151,13 +3151,13 @@ _tmp_map_pos_restore:
 		SECTION_START	B01
 
 ; =============== S U B	R O U T	I N E =======================================
-_screen_invalidate:
+_wait_for_hud_and_game_field_update:
 		LDA		#$FF							; set flag to the chain of redraw functions in THREAD0
-		STA		_hud_redraw_req					; redraws upper hud, tool palette, and game screen
+		STA		_hud_and_game_field_update_req	; redraws upper hud, tool palette, and game screen
 		LDA		#$01
 		STA		_game_core_state				; switch to the THREAD0 on next nmi
 loc_11E198:
-		LDA		_hud_redraw_req					; wait for request is accepted
+		LDA		_hud_and_game_field_update_req	; wait for request is accepted
 		BNE		loc_11E198
 		RTS
 
@@ -3599,7 +3599,7 @@ loc_11FB73:
 		STA		_game_msg_idx					; display an alert game message
 		LDA		#$01							; display msg, then go to the screen
 		STA		_game_msg_awaits_flag			; update wait, it will exit it only
-		JMP		_screen_invalidate				; after window closes and screen redrawn
+		JMP		_wait_for_hud_and_game_field_update				; after window closes and screen redrawn
 
 ; =============== S U B	R O U T	I N E =======================================
 _flood_disaster_start:
@@ -3669,7 +3669,7 @@ loc_11FC0E:
 		STA		_game_msg_idx					; then finally set the goto alert flag
 		LDA		#$01							; on the current map position
 		STA		_game_msg_awaits_flag
-		JSR		_screen_invalidate
+		JSR		_wait_for_hud_and_game_field_update
 		JMP		_goto_alert_start
 
 _near_tile_pos_delta_col_list:
@@ -3712,7 +3712,7 @@ loc_11FC69:
 		DEC		_tmp6CE							; look for another tile
 		BNE		loc_11FC3E
 loc_11FC6E:
-		JSR		_screen_invalidate				; invalidating the screen until shaking
+		JSR		_wait_for_hud_and_game_field_update				; invalidating the screen until shaking
 		LDA		_earthquake_shake_req			; is over
 		BNE		loc_11FC6E
 		LDY		#$0A
@@ -3770,7 +3770,7 @@ _tornado_disaster_start:
 		STA		_game_msg_idx					; draw message
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JSR		_screen_invalidate				; wait for invalidate
+		JSR		_wait_for_hud_and_game_field_update				; wait for invalidate
 		APUA_SE	_SE_IDX_TORNADO
 		JMP		_goto_alert_start				; start sound, show goto alert
 locret_11FCFC:
@@ -3841,7 +3841,7 @@ _monster_disaster_start_ex:
 		STA		_game_msg_idx					; game message display
 		LDA		#$01
 		STA		_game_msg_awaits_flag
-		JSR		_screen_invalidate
+		JSR		_wait_for_hud_and_game_field_update
 		JMP		_goto_alert_start
 locret_11FD73:
 		RTS

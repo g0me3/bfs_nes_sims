@@ -113,7 +113,7 @@ _screen_pal_extra_list:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
 		LDX		#$FF
-		STX		_game_field_update_req			; map area redraw request
+		STX		_game_field_redraw_req			; map area redraw request
 		INX
 		STX		_gui_active_controls_flags		; clear gui flags, request to redraw
 ;		STX		_update_rect_left				; REDUNDANT, redraw top-leftmost area of map
@@ -2207,10 +2207,10 @@ locret_EAE85:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_date_hud_draw:
-		LDA		_hud_redraw_req					; wait for external redraw request
+		LDA		_hud_and_game_field_update_req					; wait for external redraw request
 		BEQ		locret_EADB1
 		LDA		#$00
-		STA		_hud_redraw_req
+		STA		_hud_and_game_field_update_req
 
 ; !FALLTHROUGH!
 

@@ -1476,7 +1476,7 @@ _pal_fade_out:
 		LDA		#$01
 		STA		_game_core_state
 		JSR		_pal_buf_fade_out				; but no need to get the actual
-		LDA		#$04							; paletter offsets one more time
+		LDA		#$04							; palette offsets one more time
 		STA		_ptr0
 loc_18A99B:
 		LDA		#$05

@@ -397,7 +397,7 @@ _presents_build_menu:
 ;		STA		byte_37
 		LDA		#$00
 		STA		_cur_present_select_idx
-		JSR		_building_name_and_cost_hud_draw
+		JSR		_hud_build_name_draw
 .present_wnd_loop:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
@@ -468,7 +468,7 @@ _presents_build_menu:
 		STA		_cur_present_select_idx			; can't be zero.
 loc_3E6BD:
 		APUA_SE	_SE_IDX_SELECT					; play se
-		JSR		_building_name_and_cost_hud_draw; redraw selection name if needed
+		JSR		_hud_build_name_draw; redraw selection name if needed
 		JMP		.present_wnd_loop
 .present_wnd_buttons:							; exit with A/B buttons
 		LDA		#$03

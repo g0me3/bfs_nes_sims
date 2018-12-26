@@ -106,7 +106,7 @@ _hud_money_redraw_req:
 ;		.BYTE	0								; REDUNDANT, unused var
 _game_state_idx:
 		.BYTE	0
-_hud_static_redraw_req:
+_hud_redraw_req:
 		.BYTE	0
 _constr_palette_redraw_req:
 		.BYTE	0
@@ -144,7 +144,7 @@ _pad1_prev_held:
 
 		_tpos		_cur_map_wnd_pos
 
-_game_field_update_req:
+_game_field_redraw_req:
 		.BYTE	0
 _update_rect_left:
 		.BYTE	0
@@ -161,9 +161,9 @@ byte_59:
 
 		_tpos	_tmp_tile_pos
 
-byte_5C:
+_game_field_update_req:
 		.BYTE	0
-_game_field_update_req_tmp:
+_game_field_redraw_req_tmp:
 		.BYTE	0
 _update_rect_left_tmp:
 		.BYTE	0
@@ -365,9 +365,9 @@ byte_D4:
 		.BYTE	0
 byte_D5:
 		.BYTE	0
-_hud_present_name_draw_req:
+_hud_build_name_draw_req:
 		.BYTE	0
-_building_name_and_cost_hud_src_ofs:
+_hud_build_name_src_ofs:
 		.BYTE	0
 _game_msg_idx:
 		.BYTE	0
@@ -447,7 +447,7 @@ _tmp_map_pos_backup_buf_X:
 
 _mmc5_nt_mode_shadow:
 		.BYTE	0
-_hud_redraw_req:
+_hud_and_game_field_update_req:
 		.BYTE	0
 _game_msg_wnd_active_flag:
 		.BYTE	0

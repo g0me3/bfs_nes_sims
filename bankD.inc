@@ -10,11 +10,15 @@
 		SECTION_START	D00
 
 ; =============== S U B	R O U T	I N E =======================================
+; used when in map scroll mode, draws. mostly the same behavior like
+; map replacement routines _replace_hud_with_map and _replace_constr_palette_with_map
+; but draws only single line and uses intermediate buffer for it.
+;
 _map_scroll_line_draw:
 		LDA		byte_71
-		BEQ		loc_15012B
-		JMP		loc_1501C5
-loc_15012B:
+		BEQ		.map_scroll_hor_line_draw
+		JMP		.map_scroll_vert_line_draw
+.map_scroll_hor_line_draw:
 		LDA		_cur_map_wnd_pos._COL
 		SEC
 		SBC		#$07
@@ -23,12 +27,12 @@ loc_15012B:
 		CLC
 		ADC		_anim_pos_col
 		STA		_tmp_tile_pos._ROW
-		JSR		sub_150262
+		JSR		_map_scroll_hor_line_fill		; fill pre buffer with tile data
 		LDA		_cur_screen_tile._COL
 		LSR
 		STA		_anim_pos_row
 		CIADDB	byte_75,_cur_screen_tile._ROW,byte_73,NONE,#$1E
-		JSR		_buf_pos_calc_74_75_77
+		JSR		_map_scroll_line_pos_calc
 		LDA		_cur_screen_tile._COL
 		LSR
 		EOR		#$FF
@@ -75,7 +79,7 @@ loc_1501BF:
 		POPB	_ppu_queue_pos_head
 		EXTQEND
 		RTS
-loc_1501C5:
+.map_scroll_vert_line_draw:
 		LDA		_cur_map_wnd_pos._COL
 		CLC
 		ADC		_anim_pos_col
@@ -84,11 +88,11 @@ loc_1501C5:
 		SEC
 		SBC		#$07
 		STA		_tmp_tile_pos._ROW
-		JSR		sub_150282
+		JSR		_map_scroll_vert_line_fill
 		CIADDB	_anim_pos_row,_cur_screen_tile._COL,byte_73,NONE,#$20
 		LDA		#$00
 		STA		byte_75
-		JSR		_buf_pos_calc_74_75_77
+		JSR		_map_scroll_line_pos_calc
 		LDA		_cur_screen_tile._ROW
 		LSR
 		STA		_ptr0
@@ -144,7 +148,7 @@ loc_15025C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150262:
+_map_scroll_hor_line_fill:
 		LDA		#$20
 		STA		byte_79
 		LDX		#$00
@@ -166,7 +170,7 @@ loc_150269:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150282:
+_map_scroll_vert_line_fill:
 		LDA		#$1E
 		STA		byte_79
 		LDX		#$00
@@ -188,7 +192,7 @@ loc_150288:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_buf_pos_calc_74_75_77:
+_map_scroll_line_pos_calc:
 		BUFPOS	byte_77,_anim_pos_row,byte_75,#$20,#$20	; DST=(byte_75*#$20+_anim_pos_row)+#$2000
 		RTS
 
@@ -728,13 +732,6 @@ _surround_tiles3_list:
 		.BYTE	$80
 
 ; =============== S U B	R O U T	I N E =======================================
-; REDUNDANT, too much bounds checking with no actual reason..
-; when the building is build at the map side, the first two test
-; are enough to check if it out of right/bottom bounds,
-; and test 2 is enough to test left/top bounds
-; in any case, you just couldn't put the building out of
-; bounds, because they already checked by the building cursor code!
-;
 ; return C=0 if ptr calculated,
 ; 		 C=1 out of bounds
 ;		word_D2 - ptr to map tile
@@ -744,14 +741,14 @@ _get_building_tile_map_ptr:
 		CLC
 		ADC		_cur_constr_cursor_map_pos._COL
 		STA		_tmp511
-;		CMP		#$4C							; REDUNDANT, not needed!
-;		BCS		.out_of_bounds					; out of bounds test 0
+		CMP		#$4C							; test if rightmost tile
+		BCS		.out_of_bounds					; out of bound
 		LDA		(word_D0),Y
 		CLC
 		ADC		_cur_constr_cursor_map_pos._ROW
 		STA		_tmp512
-;		CMP		#$4C							; REDUNDANT, not needed!
-;		BCS		.out_of_bounds					; out of bounds test 1
+		CMP		#$4C							; same for bottom tiles
+		BCS		.out_of_bounds
 ; REDUNDANT
 ;		LDX		#$4C
 ;		MULXA
@@ -1438,7 +1435,7 @@ sub_1509CF:
 		BNE		loc_1509DF
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_constr_area_update_params:
+_calc_game_field_update_params:
 		LDA		#$00
 		STA		byte_CE
 		STA		byte_CF
@@ -1482,9 +1479,9 @@ loc_150A0A:
 loc_150A15:
 		STA		_update_rect_bottom_tmp
 		LDA		#$FF
-		STA		_game_field_update_req_tmp
-		STA		byte_5C
-		JMP		_swap_constr_area_update_params
+		STA		_game_field_redraw_req_tmp
+		STA		_game_field_update_req
+		JMP		_swap_game_field_update_params
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_constr_cursor_map_ofs:
@@ -1522,7 +1519,7 @@ loc_150A5C:
 ;		CPX		#$0C							; REDUNDANT, does nothing here
 		CPX		#$03
 		BNE		loc_150A66						; garden constr idx to lib idx (03 or 0C)
-		JSR		_build_part_tile_select
+		JSR		_build_park_tile_select
 loc_150A66:
 		CPX		#$0B
 		BNE		loc_150A70
@@ -1537,7 +1534,7 @@ loc_150A70:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_build_part_tile_select:
+_build_park_tile_select:
 		TXA
 		PHA
 		JSR		_rand
@@ -2984,7 +2981,6 @@ _tlm_hud_static_nt:
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$60,$B0,$B1,$B2,$B3,$B4,$B5,$B6,$B7,$B8,$B9,$BA,$BB,$BC,$BD,$DF,$DF,$DF,$DF,$DA,$DB,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$70,$C0,$C1,$C2,$C3,$C4,$C5,$C6,$C7,$C8,$C9,$CA,$CB,$CC,$CD,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
-		.BYTE	$00
 _tlm_hud_static_extnt:
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
@@ -2993,7 +2989,6 @@ _tlm_hud_static_extnt:
 		.BYTE	$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82
 		.BYTE	$01,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$01,$01,$01,$01,$04,$04,$02,$02,$02,$02,$02,$02,$02,$02,$01,$01
 		.BYTE	$01,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$82,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
-		.BYTE	$00
 byte_151698:
 		.BYTE	$82,$82,$82,$82,$82,$82,$82,$82
 		.BYTE	$82,$82,$82,$82,$02,$02,$02,$02
@@ -4035,14 +4030,19 @@ _scroll_msg_reset:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_hud_full_draw:
+; non-dinamic ful redraw function to draw complete screen while render off
+; used to redraw game screen after entering into info and other screens
+; does complete set of static and dinamic parameters draws in one run
+; without chaining.
+;
+_full_screen_redraw:
 		JSR		_render_off
 		LDA		#$FF
 		STA		_mmc5_operation_in_progress_flag
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		JSR		_buffers_force_flush
-		JSR		_hud_static_redraw
+		JSR		_hud_static_draw
 		JSR		_buffers_force_flush
 		JSR		_constr_palette_redraw
 		LDA		#$03
@@ -4053,7 +4053,7 @@ loc_151F3B:
 		LDA		_constr_palette_update_req
 		BNE		loc_151F3B
 		JSR		_buffers_force_flush
-		JSR		_building_name_and_cost_hud_draw
+		JSR		_hud_build_name_draw
 		JSR		_RCI_meters_draw
 ;		FJSRA	_hud_date_draw,PRG7,PRG3
 		JSR		_hud_date_draw
@@ -4066,8 +4066,8 @@ loc_151F3B:
 		JSR		_buffers_force_flush
 loc_151F6D:
 		JSR		_buffers_force_flush
-		JSR		_constr_area_redraw
-		LDA		_game_field_update_req
+		JSR		_game_field_redraw
+		LDA		_game_field_redraw_req
 		BNE		loc_151F6D
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
