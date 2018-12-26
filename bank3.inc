@@ -4,480 +4,6 @@
 		BANK_START $F3
 
 ; ---------------------------------------------------------------------------
-; ------------E-X-T-E-R-N-A-L--H-U-D--D-R-A-W--R-O-U-T-I-N-E-----------------
-; ---------------------------------------------------------------------------
-
-		SECTION_START CD1
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_money_draw:
-		JSR		_hud_money_to_str
-;		JSR		_hud_money_pos_calc				; OPTIMIZED, merged
-		LDA		#$16							; -
-		STA		_tmp2							; -
-		LDA		#$1C							; -
-		STA		_tmp3							; -
-		LDA		#$08							; -
-		STA		_tmp4							; -
-		JMP		_hud_str_pos_calc_and_queue		; -
-;		JSR		_pre_buf_str_queue				; -
-;		RTS										; -
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_money_to_str:
-		MOVD	_ptr0,_city._money
-		LDA		#$00
-		STA		_tmp3							; tmp flag
-		LDY		#$01							; start writing number in buf +1 pos
-		LDX		#$06							; start with highest digit
-		LDA		#$DF
-		STA		_pre_ppu_buf					; fill leftmost byte with space or maybe $ later
-loc_58026:
-		JSR		_get_dec_digit24				; extract decimal digit
-		CMP		#$00
-		BNE		loc_5803C						; if no-zero, put a number
-		LDA		_tmp3							; if zero, then there are two opts
-		BNE		loc_5804F						; opt 1 flag clear
-		CPX		#$00							; here two more opts
-		BEQ		loc_5803C						; if last digit, put it as zero (number 0)
-		LDA		#$DF							; or else trim it, becaue this is not a number still
-		STA		_pre_ppu_buf,Y
-		BNE		loc_5804A
-loc_5803C:
-		STA		_pre_ppu_buf,Y					; store non-zero number
-		LDA		_tmp3
-		BNE		loc_5804A						; if tmp flag set, we already done this
-		LDA		#$30							; if flag clear, then this is first
-		STA		_pre_ppu_buf-1,Y				; non zero letter, set $ symbol before it
-		DEC		_tmp3							; raise flag, we need this just once
-loc_5804A:
-		INY
-		DEX
-		BPL		loc_58026						; cycle
-		RTS
-loc_5804F:
-		LDA		#$00							; opt 2 flag already set, so we have
-		STA		_pre_ppu_buf,Y					; zero inside number, put it as is
-		BEQ		loc_5804A
-
-; =============== S U B	R O U T	I N E =======================================
-; screenY =  ((scrollX / 2) + 16) % 20
-; screenX =  ((scrollY / 2) + 1C) % 1E
-; lineLen =  (screenX < 20) ? 8 : (screenX - 1F)
-; wrapLen =  (screenX < 20) ? 0 : (8 - LineLen)
-; ppuOfs  = ((screenY * 20) + screenX) + 0x2000
-;
-;_hud_money_pos_calc:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-;		WRAPA	_tmp2,_tmp3,#$08,#$20
-;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00
-;		RTS
-
-; REDUNDANT, as soon as all three routines here appears exactly the same after
-; rearranged some constants and vars used, we can merge them and use only single
-; copy without any harm
-;
-; =============== S U B	R O U T	I N E =======================================
-;_hud_money_str_queue:
-;		PPUQSTART
-;		LDY		#$00
-;		PPUQMOVB	_ptr0,OP_NOP,0
-;loc_5810F:
-;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-;		PPUQMOVB	_tmp2,OP_NOP,0
-;loc_58110:
-;		LDA		_pre_ppu_buf,Y
-;		INY
-;		PPUQMOVA
-;		DEC		_tmp2
-;		BNE		loc_58110
-;		LDA		_tmp3
-;		BEQ		loc_5813D
-;		STA		_tmp2
-;		LDA		#$00
-;		STA		_tmp3
-;		PPUQMOVB	_ptr0,OP_AND,#$E0
-;		JMP		loc_5810F
-;loc_5813D:
-;		PPUQEND
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_date_draw:
-		JSR		_hud_date_to_str
-;		JSR		_hud_date_pos_calc					; OPTIMIZED, merged
-		LDA		#$16
-		STA		_tmp2
-		LDA		#$1A
-		STA		_tmp3
-		LDA		#$08
-		STA		_tmp4
-		JMP		_hud_str_pos_calc_and_queue
-;		JSR		_pre_buf_str_queue
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_date_to_str:
-		LDX		#$00
-		JSR		_hud_year_str_queue
-		LDA		#$DF
-		STA		_pre_ppu_buf,X
-		INX
-		JSR		_hud_month_str_queue
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_year_str_queue:
-		LDA		_city._cur_year
-		LDY		_city._cur_year+1
-		STA		_tmp0
-		STY		_tmp1
-		LDA		#$04
-		STA		_tmp2
-;		LDY		#$00						; FIX similar to the rest of the code
-		LDY		#$03						; -
-loc_58DE7:
-		JSR		_get_dec_digit16
-		STA		_pre_ppu_buf,X
-		INX
-;		INY									; FIX
-;		INY									; -
-		DEY									; -
-		DEC		_tmp2
-		BNE		loc_58DE7
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_get_dec_digit16:
-		LDA		#$00
-		STA		_tmp3
-loc_58DF9:
-;		LDA		_tmp0						; FIX
-;		SEC
-;		SBC		_dec_digit16_tbl,Y
-;		STA		_tmp0
-;		LDA		_tmp1
-;		SBC		_dec_digit16_tbl+1,Y
-;		STA		_tmp1
-;		BCC		loc_58E0E
-		LDA		_tmp0						; OPTIMIZE
-		CMP		_dec_digit_tbl0,Y			; -
-		LDA		_tmp1						; -
-		SBC		_dec_digit_tbl1,Y			; -
-		BCC		loc_58E0E
-		LDA		_tmp0						; FIX, we has to sub here
-		SBC		_dec_digit_tbl0,Y			; also C already set as well
-		STA		_tmp0
-		LDA		_tmp1
-		SBC		_dec_digit_tbl1,Y
-		STA		_tmp1
-		INC		_tmp3
-		BNE		loc_58DF9
-loc_58E0E:
-;		LDA		_tmp0						; REDUNDANT
-;		CLC
-;		ADC		_dec_digit16_tbl,Y
-;		STA		_tmp0
-;		LDA		_tmp1
-;		ADC		_dec_digit16_tbl+1,Y
-;		STA		_tmp1
-		LDA		_tmp3
-		RTS
-
-;_dec_digit16_tbl:							; REDUNDANT
-;		.WORD	1000
-;		.WORD	100
-;		.WORD	10
-;		.WORD	1
-
-; =============== S U B	R O U T	I N E =======================================
-; TODO: bank 9 different type of month display lib
-;
-_hud_month_str_queue:
-		LDA		_city._cur_month
-		STA		_ptr0
-		ASL
-		ASL
-;		CLC							; FIX: now entry size always 4
-;		ADC		_ptr0
-		TAY
-		LDA		#$03
-		STA		_ptr0
-loc_58E2E:
-		LDA		_months_lib,Y
-		INY
-		STA		_pre_ppu_buf,X
-		INX
-		DEC		_ptr0
-		BNE		loc_58E2E
-		RTS
-
-; REDUNDANT, merger in system bank
-;_months_lib:
-;		.BYTE	_J,_A,_N
-;		.BYTE	_F,_E,_B
-;		.BYTE	_M,_A,_R
-;		.BYTE	_A,_P,_R
-;		.BYTE	_M,_A,_Y
-;		.BYTE	_J,_U,_N
-;		.BYTE	_J,_U,_L
-;		.BYTE	_A,_U,_G
-;		.BYTE	_S,_E,_P
-;		.BYTE	_O,_C,_T
-;		.BYTE	_N,_O,_V
-;		.BYTE	_D,_E,_C
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_date_pos_calc:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-;		WRAPA	_tmp2,_tmp3,#$08,#$20
-;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZE, merged
-;		RTS
-
-; REDUNDANT, the same for this one
-;
-; =============== S U B	R O U T	I N E =======================================
-;_hud_date_str_queue:
-;		PPUQSTART
-;		LDY		#$00
-;		LDA		_tmp2								; REDUNDANT, this is a leftover
-;		STA		_tmp4								; from using an extnt draw routine
-;		LDA		_tmp3								; below, to keep vars for it
-;		STA		_tmp5								; as soon as in unused, we don't need
-;		PPUQMOVB	_ptr0,OP_NOP,0					; these vars as well...
-;loc_58ED9:
-;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-;		PPUQMOVB	_tmp2,OP_NOP,0
-;loc_58EDA:
-;		LDA		_pre_ppu_buf,Y
-;		INY
-;		PPUQMOVA
-;		DEC		_tmp2
-;		BNE		loc_58EDA
-;		LDA		_tmp3
-;		BEQ		loc_58F09
-;		STA		_tmp2
-;		LDA		#$00
-;		STA		_tmp3
-;		PPUQMOVB	_ptr0,OP_AND,#$E0
-;		JMP		loc_58ED9
-;loc_58F09:
-;		PPUQEND
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; unused/unref by the game, they do this somewhere else at once for all hud
-; no need to put extnt here at all
-;
-;_cur_date_extnt_queue_unref:
-;		EXTQSTART
-;		LDA		_ptr0
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_ptr0+1
-;		ORA		#>[_MMC5_EXRAM]
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_tmp2
-;		STA		_extnt_queue_buf,X
-;		INX
-;loc_58F22:
-;		LDA		#$02
-;		STA		_extnt_queue_buf,X
-;		INX
-;		DEC		_tmp2
-;		BNE		loc_58F22
-;		LDA		_tmp3
-;		BEQ		loc_58F4F
-;		STA		_tmp2
-;		LDA		#$00
-;		STA		_tmp3
-;		LDA		_ptr0
-;		AND		#$E0
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_ptr0+1
-;		ORA		#>[_MMC5_EXRAM]
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_tmp2
-;		STA		_extnt_queue_buf,X
-;		INX
-;		JMP		loc_58F22
-;loc_58F4F:
-;		EXTQEND
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_popul_draw:
-		JSR		_hud_popul_to_str
-;		JSR		_hud_popul_pos_calc					; OPTIMIZED, merged
-		LDA		#$0E
-		STA		_tmp2
-		LDA		#$1A
-		STA		_tmp3
-		LDA		#$06
-		STA		_tmp4
-		JMP		_hud_str_pos_calc_and_queue
-;		JSR		_pre_buf_str_queue
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; much simpler than money calc routine, no need to put extra symbols anywhere
-; so you just need to track the first non-zero digit to trim first zeroes
-;
-_hud_popul_to_str:
-		MOVD	_ptr0,_popul_cur
-		LDA		#$00
-		STA		_tmp3
-		LDY		#$00
-		LDX		#$05
-loc_59A88:
-		JSR		_get_dec_digit24
-		CMP		#$00
-		BNE		loc_59A9E
-		LDA		_tmp3
-		BNE		loc_59AA8
-		CPX		#$00
-		BEQ		loc_59A9E
-		LDA		#$DF
-		STA		_pre_ppu_buf,Y
-		BNE		loc_59AA3
-loc_59A9E:
-		STA		_pre_ppu_buf,Y
-		DEC		_tmp3
-loc_59AA3:
-		INY
-		DEX
-		BPL		loc_59A88
-		RTS
-loc_59AA8:
-		LDA		#$00
-		STA		_pre_ppu_buf,Y
-		BEQ		loc_59AA3
-
-; =============== S U B	R O U T	I N E =======================================
-_get_dec_digit24:
-		LDA		#$00
-		STA		_tmp4
-loc_5805A:
-;		SEC									; FIX, lets use less opcodes
-;		LDA		_tmp0
-;		SBC		_dec_digit_tbl0,X
-;		STA		_tmp0
-;		LDA		_tmp1
-;		SBC		_dec_digit_tbl1,X
-;		STA		_tmp1
-;		LDA		_tmp2
-;		SBC		_dec_digit_tbl2,X
-;		STA		_tmp2
-		LDA		_tmp0						; OPTIMIZE
-		CMP		_dec_digit_tbl0,X			; -
-		LDA		_tmp1						; -
-		SBC		_dec_digit_tbl1,X			; -
-		LDA		_tmp2						; -
-		SBC		_dec_digit_tbl2,X			; -
-		BCC		loc_58076
-		LDA		_tmp0						; FIX, we has to sub here
-		SBC		_dec_digit_tbl0,X			; also C already set as well
-		STA		_tmp0
-		LDA		_tmp1
-		SBC		_dec_digit_tbl1,X
-		STA		_tmp1
-		LDA		_tmp2
-		SBC		_dec_digit_tbl2,X
-		STA		_tmp2
-		INC		_tmp4
-		BNE		loc_5805A
-loc_58076:
-;		CLC									; REDUNDANT
-;		LDA		_tmp0
-;		ADC		_dec_digit_tbl0,X
-;		STA		_tmp0
-;		LDA		_tmp1
-;		ADC		_dec_digit_tbl1,X
-;		STA		_tmp1
-;		LDA		_tmp2
-;		ADC		_dec_digit_tbl2,X
-;		STA		_tmp2
-		LDA		_tmp4
-		RTS
-
-; REDUNDANT, merged to one common tables set
-; in system bank
-;
-;_dec_digit_tbl0:
-;		.BYTE	[[1 >> 0] & $FF]		; $01
-;		.BYTE	[[10 >> 0] & $FF]		; $0A
-;		.BYTE	[[100 >> 0] & $FF]		; $64
-;		.BYTE	[[1000 >> 0] & $FF]		; $E8
-;		.BYTE	[[10000 >> 0] & $FF]	; $10
-;		.BYTE	[[100000 >> 0] & $FF]	; $A0
-;		.BYTE	[[1000000 >> 0] & $FF]	; $40
-;_dec_digit_tbl1:
-;		.BYTE	[[1 >> 8] & $FF]		; $00
-;		.BYTE	[[10 >> 8] & $FF]		; $00
-;		.BYTE	[[100 >> 8] & $FF]		; $00
-;		.BYTE	[[1000 >> 8] & $FF]		; $03
-;		.BYTE	[[10000 >> 8] & $FF]	; $27
-;		.BYTE	[[100000 >> 8] & $FF]	; $86
-;		.BYTE	[[1000000 >> 8] & $FF]	; $42
-;_dec_digit_tbl2:
-;		.BYTE	[[1 >> 16] & $FF]		; $00
-;		.BYTE	[[10 >> 16] & $FF]		; $00
-;		.BYTE	[[100 >> 16] & $FF]		; $00
-;		.BYTE	[[1000 >> 16] & $FF]	; $00
-;		.BYTE	[[10000 >> 16] & $FF]	; $00
-;		.BYTE	[[100000 >> 16] & $FF]	; $01
-;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-
-; =============== S U B	R O U T	I N E =======================================
-;_hud_popul_pos_calc:
-;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-;		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
-;		WRAPA	_tmp2,_tmp3,#$06,#$20
-;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; let's make it common for all three pos calc routines as well
-; they are the same except position constants, and as soon as all
-; thre pair of routines uses both in row, let's combine them in one
-; sub as well.
-;
-_hud_str_pos_calc_and_queue:
-		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp3,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,_tmp2,NONE,#$20
-		WRAPB	_tmp2,_tmp3,_tmp0,_tmp4,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
-		PPUQSTART
-		LDY		#$00
-		PPUQMOVB	_ptr0,OP_NOP,0
-loc_59B65:
-		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-		PPUQMOVB	_tmp2,OP_NOP,0
-loc_59B66:
-		LDA		_pre_ppu_buf,Y
-		INY
-		PPUQMOVA
-		DEC		_tmp2
-		BNE		loc_59B66
-		LDA		_tmp3
-		BEQ		loc_59B93
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-		PPUQMOVB	_ptr0,OP_AND,#$E0
-		JMP		loc_59B65
-loc_59B93:
-		PPUQEND
-		RTS
-
-		SECTION_END CD1
-
-; ---------------------------------------------------------------------------
 ; --G-A-M-E--M-E-S-S-A-G-E--W-I-N-D-O-W-S--E-X-T-E-R-N-A-L--H-A-N-D-L-E-R-S--
 ; ---------------------------------------------------------------------------
 
@@ -666,7 +192,8 @@ _game_msg_apu_types_list:
 _game_msg_txt_draw:
 		PUSHB	_ptr0
 ;		JSR		_far_wnd_header_txt_draw				; FIX: direct call here
-		FJSRA	_wnd_header_txt_draw,PRG0,PRG0			; -
+;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0			; FIX: moved to local bank
+		JSR		_wnd_header_txt_draw					; -
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -698,6 +225,417 @@ loc_5829C:
 ;_far_wnd_header_txt_draw:
 ;		FJSRA	_wnd_header_txt_draw,PRG0,PRG0
 ;		RTS
+
+; FIX: moved from external bank to the place it belongs
+;
+; =============== S U B	R O U T	I N E =======================================
+_wnd_header_txt_draw:
+		LDA		#$02
+		STA		_tmp1
+loc_BB84:
+		LDX		_game_msg_idx
+		LDA		_wnd_header_txt_len,X
+		STA		_tmp3							; FIX: replace table with auto calc
+		LDA		#23
+		SEC
+		SBC		_tmp3
+		LSR
+		CLC
+		ADC		#8
+		STA		_tmp2
+;		LDA		_wnd_header_txt_pos,X			; OPTIMIZED
+;		STA		_tmp2
+
+		JSR		_wnd_header_txt_pos_calc
+;		LDA		_game_msg_idx					; REDUNDANT no need to calculate
+;		ASL										; idx * 3 value, there is only single
+;		CLC										; byte array left
+;		ADC		_tmp1							; -
+;		ADC		_game_msg_idx					; -
+;		TAX										; -
+		LDX		_game_msg_idx
+		LDA		_wnd_header_tlm_lo,X
+		STA		_tmp2
+		LDA		_wnd_header_tlm_hi,X
+		STA		_tmp3
+		LDX		_tmp1							; OPTIMIZED read special symbols
+		LDA		_wnd_header_char_delta,X		; table and space symbol for a line
+		STA		_ptr0							; -
+		LDA		_wnd_header_space_table,X		; -
+		STA		_tmp8							; -
+		JSR		_wnd_header_queue
+		DEC		_tmp1
+		BPL		loc_BB84
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; args:
+;		_tmp1 - Y offset,
+;		_tmp2 - X offset,
+;		_tmp3 - width
+; return:
+;		_ptr4 - ppu offset
+;		_tmp6 - line len
+;		_tmp7 - wrap len
+;
+_wnd_header_txt_pos_calc:
+		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
+		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
+		WRAPB	_tmp6,_tmp7,_tmp5,_tmp3,#32
+		BUFPOS	_ptr4,_tmp5,_tmp4,#$20,#$00	; DST=(_tmp4*#$20+_tmp5)+#$0000
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_header_queue:
+		PPUQSTART
+		LDY		#$00
+		PPUQMOVB	_tmp4,OP_NOP,0
+loc_BC1A:										; OPTIMIZE
+		PPUQMOVB	_tmp5,OP_ORA,#$20
+		PPUQMOVB	_tmp6,OP_NOP,0
+loc_BC1B:
+		LDA		(_tmp2),Y
+		INY
+		CMP		#$20							; ADDED, if not space,
+		BEQ		loc_BC1C						; adjust character idx
+		CLC										; for a corresponding line
+		ADC		_ptr0							; -
+		.BYTE	$2C								; -
+loc_BC1C:										; -
+		LDA		_tmp8							; or replace with space symbol
+		PPUQMOVA
+		DEC		_tmp6
+		BNE		loc_BC1B
+		LDA		_tmp7
+		BEQ		loc_BC49
+		STA		_tmp6
+		LDA		#$00
+		STA		_tmp7
+		PPUQMOVB	_tmp4,OP_AND,#$E0
+;		PPUQMOVB	_tmp5,OP_ORA,#$20			; REDUNDANT, dupe of the code
+;		PPUQMOVB	_tmp6,OP_NOP,0				; at the beginning of the loop,
+;		JMP		loc_BC1B						; reuse them with longer jump
+		JMP		loc_BC1A						; OPTIMIZE
+loc_BC49:
+		PPUQEND
+		RTS
+
+; REDUNDANT, the autocalculated lengths are the same as in the original
+; list, but except the very first line, which is mover one tile
+; forward for some reasons... no now it fixed
+;
+;_wnd_header_txt_pos:
+;		.BYTE	$10,$11,$11,$10,$0E,$0E,$0E,$0E,$11,$0C,$0E,$10,$0E,$10,$10,$10
+;		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$0F,$0F,$0F,$0F,$0E
+;		.BYTE	$11,$11,$0F,$10
+
+	MAC	LEN
+		.BYTE	{1}_len
+	ENDM
+
+_wnd_header_txt_len:
+		LEN		aGoodjob
+		LEN		aTown
+		LEN		aCity
+		LEN		aCapital
+		LEN		aMetropolis
+		LEN		aMegaropolis
+		LEN		aTrafficjam
+		LEN		aTrafficjam
+		LEN		aCrime
+		LEN		aMonsterattack
+		LEN		aEarthquake
+		LEN		aPresent
+		LEN		aSistercity
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPresent
+		LEN		aPractice
+		LEN		aPractice
+		LEN		aPractice
+		LEN		aPractice
+		LEN		aHowtoloan
+		LEN		aFire
+		LEN		aFlood
+		LEN		aAircrash
+		LEN		aTornade
+
+; OPTIMIZE: instead of keep all dupes for three different encodings of one
+; header name line, we can just keep the difference between characters
+; and a special symbol (space)
+;
+_wnd_header_char_delta:
+		.BYTE	[-$40]&$FF,$00,$40
+_wnd_header_space_table:
+		.BYTE	$00,$00,$81
+
+; REDUNDANT: here is three rows of the same message in 24x8 letters,
+; middle row indexes are the same as corresponding ASCII codes
+; but upper and lower are shifted, but it is the same letters (except spaces)
+; unneeded data replaced with on-the-fly calcs, obviously cannot be used
+; with anything except this particular kind of fonts.
+; size of routine reduced by half
+
+;		DELTA	-0x40			0				+0x40
+;_wnd_header_tlm_lo:
+;		.BYTE	<[byte_BD6C],	<[aGoodjob],	<[byte_BE90]
+;		.BYTE	<[byte_BD74],	<[aTown],		<[byte_BE98]
+;		.BYTE	<[byte_BD78],	<[aCity],		<[byte_BE9C]
+;		.BYTE	<[byte_BD7C],	<[aCapital],	<[byte_BEA0]
+;		.BYTE	<[byte_BD83],	<[aMetropolis],	<[byte_BEA7]
+;		.BYTE	<[byte_BD8D],	<[aMegaropolis],<[byte_BEB1]
+;		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
+;		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
+;		.BYTE	<[byte_BDA3],	<[aCrime],		<[byte_BEC7]
+;		.BYTE	<[byte_BDA8],	<[aMonsterattack],<[byte_BECC]
+;		.BYTE	<[byte_BDB6],	<[aEarthquake],	<[byte_BEDA]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC7],	<[aSistercity],	<[byte_BEEB]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
+;		.BYTE	<[byte_BDDA],	<[aHowtoloan],	<[byte_BEFE]
+;		.BYTE	<[byte_BDE5],	<[aFire],		<[byte_BF09]
+;		.BYTE	<[byte_BDE9],	<[aFlood],		<[byte_BF0D]
+;		.BYTE	<[byte_BDEE],	<[aAircrash],	<[byte_BF12]
+;		.BYTE	<[byte_BDF7],	<[aTornade],	<[byte_BF1B]
+;_wnd_header_tlm_hi:
+;		.BYTE	>[byte_BD6C],	>[aGoodjob],	>[byte_BE90]
+;		.BYTE	>[byte_BD74],	>[aTown],		>[byte_BE98]
+;		.BYTE	>[byte_BD78],	>[aCity],		>[byte_BE9C]
+;		.BYTE	>[byte_BD7C],	>[aCapital],	>[byte_BEA0]
+;		.BYTE	>[byte_BD83],	>[aMetropolis],	>[byte_BEA7]
+;		.BYTE	>[byte_BD8D],	>[aMegaropolis],>[byte_BEB1]
+;		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
+;		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
+;		.BYTE	>[byte_BDA3],	>[aCrime],		>[byte_BEC7]
+;		.BYTE	>[byte_BDA8],	>[aMonsterattack],>[byte_BECC]
+;		.BYTE	>[byte_BDB6],	>[aEarthquake],	>[byte_BEDA]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC7],	>[aSistercity],	>[byte_BEEB]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
+;		.BYTE	>[byte_BDDA],	>[aHowtoloan],	>[byte_BEFE]
+;		.BYTE	>[byte_BDE5],	>[aFire],		>[byte_BF09]
+;		.BYTE	>[byte_BDE9],	>[aFlood],		>[byte_BF0D]
+;		.BYTE	>[byte_BDEE],	>[aAircrash],	>[byte_BF12]
+;		.BYTE	>[byte_BDF7],	>[aTornade],	>[byte_BF1B]
+
+_wnd_header_tlm_lo:
+		.BYTE	<[aGoodjob]
+		.BYTE	<[aTown]
+		.BYTE	<[aCity]
+		.BYTE	<[aCapital]
+		.BYTE	<[aMetropolis]
+		.BYTE	<[aMegaropolis]
+		.BYTE	<[aTrafficjam]
+		.BYTE	<[aTrafficjam]
+		.BYTE	<[aCrime]
+		.BYTE	<[aMonsterattack]
+		.BYTE	<[aEarthquake]
+		.BYTE	<[aPresent]
+		.BYTE	<[aSistercity]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPresent]
+		.BYTE	<[aPractice]
+		.BYTE	<[aPractice]
+		.BYTE	<[aPractice]
+		.BYTE	<[aPractice]
+		.BYTE	<[aHowtoloan]
+		.BYTE	<[aFire]
+		.BYTE	<[aFlood]
+		.BYTE	<[aAircrash]
+		.BYTE	<[aTornade]
+_wnd_header_tlm_hi:
+		.BYTE	>[aGoodjob]
+		.BYTE	>[aTown]
+		.BYTE	>[aCity]
+		.BYTE	>[aCapital]
+		.BYTE	>[aMetropolis]
+		.BYTE	>[aMegaropolis]
+		.BYTE	>[aTrafficjam]
+		.BYTE	>[aTrafficjam]
+		.BYTE	>[aCrime]
+		.BYTE	>[aMonsterattack]
+		.BYTE	>[aEarthquake]
+		.BYTE	>[aPresent]
+		.BYTE	>[aSistercity]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPresent]
+		.BYTE	>[aPractice]
+		.BYTE	>[aPractice]
+		.BYTE	>[aPractice]
+		.BYTE	>[aPractice]
+		.BYTE	>[aHowtoloan]
+		.BYTE	>[aFire]
+		.BYTE	>[aFlood]
+		.BYTE	>[aAircrash]
+		.BYTE	>[aTornade]
+
+;byte_BD6C:
+;		.BYTE	$07,$2F,$2F,$24,$00,$2A,$2F,$22
+;byte_BD74:
+;		.BYTE	$14,$2F,$37,$2E
+;byte_BD78:
+;		.BYTE	$03,$29,$34,$39
+;byte_BD7C:
+;		.BYTE	$03,$21,$30,$29,$34,$21,$2C
+;byte_BD83:
+;		.BYTE	$0D,$25,$34,$32,$2F,$30,$2F,$2C,$29,$33
+;byte_BD8D:
+;		.BYTE	$0D,$25,$27,$21,$32,$2F,$30,$2F,$2C,$29,$33
+;byte_BD98:
+;		.BYTE	$14,$32,$21,$26,$26,$29,$23,$00,$2A,$21,$2D
+;byte_BDA3:
+;		.BYTE	$03,$32,$29,$2D,$25
+;byte_BDA8:
+;		.BYTE	$0D,$2F,$2E,$33,$34,$25,$32,$00,$21,$34,$34,$21,$23,$2B
+;byte_BDB6:
+;		.BYTE	$05,$21,$32,$34,$28,$31,$35,$21,$2B,$25
+;byte_BDC0:
+;		.BYTE	$10,$32,$25,$33,$25,$2E,$34
+;byte_BDC7:
+;		.BYTE	$13,$29,$33,$34,$25,$32,$00,$03,$29,$34,$39
+;byte_BDD2:
+;		.BYTE	$10,$32,$21,$23,$34,$29,$23,$25
+;byte_BDDA:
+;		.BYTE	$08,$2F,$37,$00,$14,$2F,$00,$0C,$2F,$21,$2E
+;byte_BDE5:
+;		.BYTE	$06,$29,$32,$25
+;byte_BDE9:
+;		.BYTE	$06,$2C,$2F,$2F,$24
+;byte_BDEE:
+;		.BYTE	$01,$29,$32,$00,$23,$32,$21,$33,$28
+;byte_BDF7:
+;		.BYTE	$14,$2F,$32,$2E,$21,$24,$25
+
+	MAC	STR
+{1}		EQU	.
+		.BYTE	{2}
+{1}_len	EQU	.-{1}
+	ENDM
+
+		STR		aGoodjob,		"Good job"
+		STR		aTown,			"Town"
+		STR		aCity,			"City"
+		STR		aCapital,		"Capital"
+		STR		aMetropolis,	"Metropolis"
+		STR		aMegaropolis,	"Megaropolis"
+		STR		aTrafficjam,	"Traffic jam"
+		STR		aCrime,			"Crime"
+		STR		aMonsterattack,	"Monster attack"
+		STR		aEarthquake,	"Earthquake"
+		STR		aPresent,		"Present"
+		STR		aSistercity,	"Sister City"
+		STR		aPractice,		"Practice"
+		STR		aHowtoloan,		"How To Loan"
+		STR		aFire,			"Fire"
+		STR		aFlood,			"Flood"
+		STR		aAircrash,		"Air crash"
+		STR		aTornade,		"Tornade"
+
+;byte_BE90:
+;		.BYTE	$87,$AF,$AF,$A4,$81,$AA,$AF,$A2
+;byte_BE98:
+;		.BYTE	$94,$AF,$B7,$AE
+;byte_BE9C:
+;		.BYTE	$83,$A9,$B4,$B9
+;byte_BEA0:
+;		.BYTE	$83,$A1,$B0,$A9,$B4,$A1,$AC
+;byte_BEA7:
+;		.BYTE	$8D,$A5,$B4,$B2,$AF,$B0,$AF,$AC,$A9,$B3
+;byte_BEB1:
+;		.BYTE	$8D,$A5,$A7,$A1,$B2,$AF,$B0,$AF,$AC,$A9,$B3
+;byte_BEBC:
+;		.BYTE	$94,$B2,$A1,$A6,$A6,$A9,$A3,$81,$AA,$A1,$AD
+;byte_BEC7:
+;		.BYTE	$83,$B2,$A9,$AD,$A5
+;byte_BECC:
+;		.BYTE	$8D,$AF,$AE,$B3,$B4,$A5,$B2,$81,$A1,$B4,$B4,$A1,$A3,$AB
+;byte_BEDA:
+;		.BYTE	$85,$A1,$B2,$B4,$A8,$B1,$B5,$A1,$AB,$A5
+;byte_BEE4:
+;		.BYTE	$90,$B2,$A5,$B3,$A5,$AE,$B4
+;byte_BEEB:
+;		.BYTE	$93,$A9,$B3,$B4,$A5,$B2,$81,$83,$A9,$B4,$B9
+;byte_BEF6:
+;		.BYTE	$90,$B2,$A1,$A3,$B4,$A9,$A3,$A5
+;byte_BEFE:
+;		.BYTE	$88,$AF,$B7,$81,$94,$AF,$81,$8C,$AF,$A1,$AE
+;byte_BF09:
+;		.BYTE	$86,$A9,$B2,$A5
+;byte_BF0D:
+;		.BYTE	$86,$AC,$AF,$AF,$A4
+;byte_BF12:
+;		.BYTE	$81,$A9,$B2,$81,$A3,$B2,$A1,$B3,$A8
+;byte_BF1B:
+;		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_line_pos_calc:

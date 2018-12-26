@@ -711,7 +711,7 @@ _airport_build_menu_req:
 		.BYTE	0
 _hud_popul_redraw_req:
 		.BYTE	0
-_city_name_redraw_req:
+_hud_city_name_redraw_req:
 		.BYTE	0
 byte_542:
 		.BYTE	0

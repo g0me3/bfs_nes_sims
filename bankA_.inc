@@ -6,73 +6,6 @@
 		SECTION_START	01
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se8_start:
-		STY		_apu_se_loop_flags
-		LDA		#$0A
-		STA		byte_F8
-		JSR		_apu_tri_chnl_with_dpcm
-		LDA		#$01
-		STA		_APU_TRI_COUNT
-		LDA		#$88
-		STA		_APU_PULSE2_ENV
-		LDA		#$D7
-		STA		_APU_PULSE2_SWEEP
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se8_loop:
-		LDY		byte_F8
-		LDA		byte_195834-1,Y
-		JSR		_apu_tri_note_load
-		LDY		byte_F8
-		LDA		byte_195834,Y
-		JSR		_apu_pulse1_note_load
-		DEC		byte_F8
-		BNE		locret_195833
-		LDA		#$00
-		STA		_apu_se_loop_flags
-		JSR		_apu_status_reset
-locret_195833:
-		RTS
-byte_195834:
-		.BYTE	$02,$3E,$3A,$36,$46,$3C,$02,$46,$46,$3C,$34,$34
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se80_start:
-		JSR		_apu_status_reset
-		STY		_apu_se_loop_flags
-		LDA		byte_FD
-		BNE		loc_19584D
-		LDA		#$14
-		STA		byte_FD
-loc_19584D:
-		LDA		#$C6
-		STA		_APU_PULSE2_ENV
-		LDA		#$7F
-		STA		_APU_PULSE2_SWEEP
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se80_loop:
-		LDA		byte_FD
-		ASL
-		ASL
-		ASL
-		ASL
-		BCS		loc_195861
-		EOR		#$F0
-loc_195861:
-		STA		_APU_PULSE2_TIME
-		LDA		#$08
-		STA		_APU_PULSE2_LEN
-		DEC		byte_FD
-		DEC		byte_FD
-		BNE		locret_195876
-		LDA		#$00
-		STA		_apu_se_loop_flags
-		JSR		_apu_status_reset
-locret_195876:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _apu_se20_start:
 		JSR		_apu_tri_chnl_with_dpcm
 		STY		_apu_se_loop_flags
@@ -123,6 +56,42 @@ byte_1958CF:
 		.BYTE	$02,$76,$76,$76
 
 ; =============== S U B	R O U T	I N E =======================================
+_apu_se80_start:
+		JSR		_apu_status_reset
+		STY		_apu_se_loop_flags
+		LDA		byte_FD
+		BNE		loc_19584D
+		LDA		#$14
+		STA		byte_FD
+loc_19584D:
+		LDA		#$C6
+		STA		_APU_PULSE2_ENV
+		LDA		#$7F
+		STA		_APU_PULSE2_SWEEP
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se80_loop:
+		LDA		byte_FD
+		ASL
+		ASL
+		ASL
+		ASL
+		BCS		loc_195861
+		EOR		#$F0
+loc_195861:
+		STA		_APU_PULSE2_TIME
+		LDA		#$08
+		STA		_APU_PULSE2_LEN
+		DEC		byte_FD
+		DEC		byte_FD
+		BNE		locret_195876
+		LDA		#$00
+		STA		_apu_se_loop_flags
+		JSR		_apu_status_reset
+locret_195876:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _apu_play_se1:
 		LDY		_apu_se_flags+1
 		TYA
@@ -164,6 +133,14 @@ _apu_play_se1:
 		LSR
 		BCS		_j_apu_se8000_loop
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se30_start:
+		JMP		_apu_se30_start
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se30_loop:
+		JMP		_apu_se30_loop
 
 ; =============== S U B	R O U T	I N E =======================================
 _j_apu_se100_start:
@@ -220,14 +197,6 @@ _j_apu_se8000_start:
 ; =============== S U B	R O U T	I N E =======================================
 _j_apu_se8000_loop:
 		JMP		_apu_se8000_loop
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se30_start:
-		JMP		_apu_se30_start
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se30_loop:
-		JMP		_apu_se30_loop
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se200_start:
@@ -510,67 +479,6 @@ _apu_se8000_loop:
 locret_195BD2:
 		RTS
 
-byte_195C00:
-		.BYTE	$D0,$D0,$D0,$D1,$D1,$D1,$D1,$D2,$D2,$D2,$D2,$D3,$D3,$D3,$D4,$D5
-		.BYTE	$D6,$D7,$D6,$D6,$D6,$D5,$D5,$D4,$90,$90,$90,$91,$91,$91,$92,$92
-		.BYTE	$92,$92,$92,$93,$93,$93,$94,$95,$96,$97,$96,$96,$96,$95,$95,$94
-		.BYTE	$50,$50,$50,$50,$50,$51,$52,$52,$52,$52,$52,$52,$53,$53,$53,$53
-		.BYTE	$54,$95,$56,$56,$57,$97,$D7,$17,$D0,$D0,$D1,$D1,$D2,$D2,$D2,$D2
-		.BYTE	$D2,$D3,$D3,$D3,$D3,$D4,$D3,$D2,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1
-		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$92,$92,$92,$92,$93,$93,$94
-		.BYTE	$95,$96,$97,$97,$96,$94,$93,$91,$50,$50,$50,$51,$51,$51,$51,$51
-		.BYTE	$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$52,$53,$54,$55,$56,$57
-		.BYTE	$90,$90,$90,$91,$91,$91,$92,$92,$92,$93,$93,$93,$93,$94,$93,$92
-		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91
-byte_195CA8:
-		.BYTE	$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0
-		.BYTE	$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2,$D2
-		.BYTE	$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2
-		.BYTE	$D2,$D3,$D3,$D4,$D5,$D5,$D6,$D6,$D7,$D7,$D7,$D7,$D7,$D7,$D7,$D7
-		.BYTE	$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90
-		.BYTE	$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90
-		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$92,$92,$92,$92,$93,$93,$93
-		.BYTE	$94,$94,$94,$94,$95,$95,$95,$95,$95,$96,$96,$97,$97,$97,$96,$94
-		.BYTE	$50,$50,$50,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51
-		.BYTE	$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51
-		.BYTE	$51,$51,$51,$51,$51,$51,$52,$52,$52,$52,$52,$53,$53,$53,$53,$53
-		.BYTE	$53,$54,$54,$54,$54,$94,$D4,$15,$15,$56,$16,$57,$57,$97,$D6,$14
-		.BYTE	$F0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0
-		.BYTE	$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2,$D2,$D3,$D3,$D3,$D3,$D4,$D4
-		.BYTE	$D3,$D3,$D3,$D2,$D2,$D2,$D2,$D2,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1
-		.BYTE	$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1
-byte_195DA8:
-		.BYTE	$B2,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92
-		.BYTE	$92,$92,$92,$92,$92,$92,$92,$92,$93,$93,$93,$93,$93,$93,$93,$93
-		.BYTE	$93,$93,$94,$94,$94,$94,$94,$95,$95,$95,$95,$96,$96,$96,$96,$96
-		.BYTE	$96,$97,$97,$97,$97,$97,$97,$97,$97,$97,$97,$96,$95,$94,$92,$91
-		.BYTE	$50,$50,$50,$51,$51,$51,$51,$51,$51,$51,$51,$51,$52,$52,$52,$53
-		.BYTE	$50,$50,$51,$51,$51,$51,$52,$52,$52,$52,$53,$53,$53,$54,$54,$55
-		.BYTE	$50,$51,$51,$52,$52,$52,$53,$53,$53,$54,$54,$55,$55,$56,$56,$57
-		.BYTE	$51,$52,$52,$52,$53,$53,$54,$55,$55,$55,$56,$56,$57,$58,$59,$5A
-		.BYTE	$B0,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90
-		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$92,$92,$93,$93,$93,$93,$94,$94
-		.BYTE	$93,$93,$93,$92,$92,$92,$92,$92,$91,$91,$91,$91,$91,$91,$91,$91
-		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$90,$90
-
-_apu_pulse_len_tbl:
-		.WORD	$F007,$0000,$D400,$C800,$BD00,$B200,$A800,$9F00
-		.WORD	$9600,$8D00,$8500,$7E00,$7600,$7000,$AB01,$9301
-		.WORD	$7C01,$6701,$5201,$3F01,$2D01,$1C01,$0C01,$FD00
-		.WORD	$EE00,$E100,$5703,$2703,$F902,$CF02,$A602,$8002
-		.WORD	$5C02,$3A02,$1A02,$FC01,$DF01,$C401,$AE06,$4E06
-		.WORD	$F305,$9E05,$4D05,$0105,$B904,$7504,$3504,$F803
-		.WORD	$BF03,$8903,$6900,$6300,$5E00,$5800,$5300,$4F00
-		.WORD	$4A00,$4600,$4200,$3E00
-byte_195F78:
-		.BYTE	$03,$06,$0C,$18,$30,$12,$24,$09,$01
-		.BYTE	$04,$08,$10,$20,$40,$18,$30,$0C,$00
-		.BYTE	$05,$0A,$14,$28,$50,$1E,$3C,$0F,$08
-		.BYTE	$06,$0C,$18,$30,$60,$24,$48,$12,$08
-		.BYTE	$07,$0E,$1C,$38,$70,$2A,$54,$15,$0C
-		.BYTE	$09,$12,$24,$48,$90,$36,$6C,$1B,$03
-		.BYTE	$0A,$14,$28,$50,$A0,$3C,$78,$1E,$11
-
 ; =============== S U B	R O U T	I N E =======================================
 _apu_tri_chnl_with_dpcm:
 		LDA		_APU_STATUS
@@ -578,13 +486,14 @@ _apu_tri_chnl_with_dpcm:
 		STA		_APU_STATUS
 		ORA		#$0F
 		STA		_APU_STATUS
-		LDA		#$01
-		STA		_APU_TRI_COUNT
-		LDA		#$FF
-		STA		_APU_TRI_TIME
-		LDA		#$0F
-		STA		_APU_TRI_LEN
-		RTS
+		BNE		_apu_tri_load					; OPTIMIZE
+;		LDA		#$01							; REDUNDANT
+;		STA		_APU_TRI_COUNT
+;		LDA		#$FF
+;		STA		_APU_TRI_TIME
+;		LDA		#$0F
+;		STA		_APU_TRI_LEN
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_tri_chnl_no_dpcm:
@@ -592,6 +501,11 @@ _apu_tri_chnl_no_dpcm:
 		AND		#$0F
 		ORA		#$0F
 		STA		_APU_STATUS
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_tri_load:
 		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$FF

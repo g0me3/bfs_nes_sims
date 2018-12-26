@@ -4,62 +4,6 @@
 		BANK_START $F7
 
 ; =============== S U B	R O U T	I N E =======================================
-_city_name_draw:
-		JSR		_get_city_name_str
-		JSR		_city_name_str_pos_set
-		JSR		_city_name_str_queue
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_get_city_name_str:
-		LDX		_city._name
-		DEX
-		STX		byte_51A
-		MOVWO	word_DA,_city._name+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_city_name_str_pos_set:
-		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
-		WRAPA	_tmp2,_tmp3,#$0A,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_city_name_str_queue:
-		PPUQSTART
-		LDY		#$00
-		PPUQMOVB	_ptr0,OP_NOP,0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-loc_B8086:
-		LDA		byte_51A
-		BNE		loc_B808F
-		LDA		#$20
-		BNE		loc_B8095
-loc_B808F:
-		LDA		(word_DA),Y
-		DEC		byte_51A
-		INY
-loc_B8095:
-		PPUQMOVA
-		DEC		_tmp2
-		BNE		loc_B8086
-		LDA		_tmp3
-		BEQ		loc_B80BE
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-		PPUQMOVB	_ptr0,OP_AND,#$E0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-		JMP		loc_B8086
-loc_B80BE:
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _constr_palette_state_update:
 		LDA		#$00
 		STA		_ptr0

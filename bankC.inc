@@ -45,7 +45,7 @@ loc_13601B:
 		.WORD	_game_state13_msg_wnd_display
 		.WORD	_game_state14_presents_build_menu
 		.WORD	_game_state15_game_cursor_area_switch
-		.WORD	_game_state16_city_name_redraw
+		.WORD	_game_state16_hud_city_name_redraw
 		.WORD	_game_state17_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -74,7 +74,7 @@ _game_state_common:
 		ORA		_RCI_meter_redraw_req
 		ORA		_hud_date_redraw_req
 		ORA		_hud_popul_redraw_req
-		ORA		_city_name_redraw_req
+		ORA		_hud_city_name_redraw_req
 		ORA		_game_core_stop_flag
 		ORA		_hud_money_redraw_req
 		ORA		_scroll_msg_active_flag
@@ -117,7 +117,7 @@ _game_state00:
 		STA		_hud_date_redraw_req
 		STA		_hud_money_redraw_req
 		STA		_hud_popul_redraw_req
-		STA		_city_name_redraw_req
+		STA		_hud_city_name_redraw_req
 loc_1360DD:
 		JMP		_game_state_common
 
@@ -600,7 +600,7 @@ _game_state06_game_hud_redraw:
 		STA		_RCI_meter_redraw_req
 		STA		_hud_date_redraw_req
 		STA		_hud_popul_redraw_req
-		STA		_city_name_redraw_req
+		STA		_hud_city_name_redraw_req
 		STA		_hud_money_redraw_req
 		JSR		_seasonal_pal_load
 loc_136472:
@@ -699,6 +699,37 @@ loc_136530:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
+_game_msg_wnd_pos_calc:
+		LDA		_cur_screen_tile._Y
+		LSR
+		CLC
+		ADC		#$1B
+		CMP		#$1E
+		BCC		loc_1500BA
+		SBC		#$1E
+loc_1500BA:
+		LDX		#$20
+		MULXA
+		STA		_ptr0
+		TXA
+		CLC
+		ADC		#$20
+		STA		_ptr0+1
+		PPUQSTART
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		LDA		#$20
+		TAY
+		PPUQMOVA
+		LDA		#$DF
+loc_1500E7:
+		PPUQMOVA
+		DEY
+		BNE		loc_1500E7
+		PPUQEND
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _game_state0C_RCI_meter_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136548
@@ -712,7 +743,8 @@ loc_136548:
 _game_state0D_hud_date_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_13655C
-		FJSRA	_hud_date_draw,PRG7,PRG3
+;		FJSRA	_hud_date_draw,PRG7,PRG3
+		JSR		_hud_date_draw
 		LDA		#$00
 		STA		_hud_date_redraw_req
 loc_13655C:
@@ -744,7 +776,8 @@ loc_136582:
 _game_state0F_hud_money_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136595
-		FJSRA	_hud_money_draw,PRGC,PRG3
+;		FJSRA	_hud_money_draw,PRGC,PRG3
+		JSR		_hud_money_draw
 		LDA		#$00
 		STA		_hud_money_redraw_req
 loc_136595:
@@ -776,7 +809,8 @@ loc_1365C8:
 _game_state11_hud_popul_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_1365DC
-		FJSRA	_hud_popul_draw,PRG7,PRG3
+;		FJSRA	_hud_popul_draw,PRG7,PRG3
+		JSR		_hud_popul_draw
 		LDA		#$00
 		STA		_hud_popul_redraw_req
 loc_1365DC:
@@ -793,12 +827,13 @@ loc_1365EC:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state16_city_name_redraw:
+_game_state16_hud_city_name_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136600
-		FJSRA	_city_name_draw,PRG7,PRG3
+;		FJSRA	_hud_city_name_draw,PRG7,PRG3
+		JSR		_hud_city_name_draw
 		LDA		#$00
-		STA		_city_name_redraw_req
+		STA		_hud_city_name_redraw_req
 loc_136600:
 		JMP		_game_state_common
 
@@ -886,7 +921,7 @@ loc_13668E:
 		LDA		#$15
 		JMP		_set_game_state_idx
 loc_136699:
-		LDA		_city_name_redraw_req
+		LDA		_hud_city_name_redraw_req
 		BEQ		loc_1366A3
 		LDA		#$16
 		JMP		_set_game_state_idx
@@ -4165,6 +4200,38 @@ sub_137F22:
 		BNE		locret_137F29
 		JSR		sub_15011A
 locret_137F29:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_1500F1:
+		LDA		byte_53
+		LDX		byte_5D
+		STA		byte_5D
+		STX		byte_53
+		LDA		byte_54
+		LDX		byte_5E
+		STA		byte_5E
+		STX		byte_54
+		LDA		byte_55
+		LDX		byte_5F
+		STA		byte_5F
+		STX		byte_55
+		LDA		byte_56
+		LDX		byte_60
+		STA		byte_60
+		STX		byte_56
+		LDA		byte_57
+		LDX		byte_61
+		STA		byte_61
+		STX		byte_57
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+sub_15011A:
+		JSR		sub_1500F1
+		LDA		#$00
+		STA		byte_5D
+		STA		byte_5C
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

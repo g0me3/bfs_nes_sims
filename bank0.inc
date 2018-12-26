@@ -10,8 +10,6 @@
 ; -------------M-A-I-N--M-U-S-I-C--A-N-D--S-E--E-N-G-I-N-E-------------------
 ; ---------------------------------------------------------------------------
 
-		SECTION_START	0
-
 ; =============== S U B	R O U T	I N E =======================================
 _apu_play:
 		LDA		#$C0
@@ -637,7 +635,7 @@ _apu_play_se0:
 		LSR		_apu_se_flags
 		BCS		_apu_se1_start
 		LSR
-		BCS		_apu_se0_loop
+		BCS		_apu_se1_loop
 		LSR		_apu_se_flags
 		BCS		_j_apu_se2_start
 		LSR
@@ -669,6 +667,30 @@ _apu_play_se0:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+_j_apu_se2_start:
+		JMP		_apu_se2_start
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se2_loop:
+		JMP		_apu_se2_loop
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se4_start:
+		JMP		_apu_se4_start
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se4_loop:
+		JMP		_apu_se4_loop
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se8_start:
+		JMP		_apu_se8_start
+
+; =============== S U B	R O U T	I N E =======================================
+_j_apu_se8_loop:
+		JMP		_apu_se8_loop
+
+; =============== S U B	R O U T	I N E =======================================
 _j_apu_se10_start:
 		JMP		_apu_se10_start
 
@@ -691,30 +713,6 @@ _j_apu_se40_start:
 ; =============== S U B	R O U T	I N E =======================================
 _j_apu_se40_loop:
 		JMP		_apu_se40_loop
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se4_start:
-		JMP		_apu_se4_start
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se4_loop:
-		JMP		_apu_se4_loop
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se8_start:
-		JMP		_apu_se8_start
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se8_loop:
-		JMP		_apu_se8_loop
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se2_start:
-		JMP		_apu_se2_start
-
-; =============== S U B	R O U T	I N E =======================================
-_j_apu_se2_loop:
-		JMP		_apu_se2_loop
 
 ; FIX: re-enabled, TODO: find where may be used
 ;
@@ -740,7 +738,7 @@ _apu_se1_start:
 		STA		_APU_PULSE2_SWEEP
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_se0_loop:
+_apu_se1_loop:
 		LDA		#$6E
 		JSR		_apu_tri_note_load
 		LDA		#$6E
@@ -793,6 +791,64 @@ byte_A51C:
 		.BYTE	$00,$00,$D4,$D4,$D4,$D4,$D4,$D4
 
 ; =============== S U B	R O U T	I N E =======================================
+_apu_se4_start:
+		STY		_apu_se_loop_flags
+		LDA		#$03
+		STA		byte_F8
+		JSR		_apu_tri_chnl_with_dpcm
+		LDA		#$01
+		STA		_APU_TRI_COUNT
+		LDA		#$83
+		STA		_APU_PULSE2_ENV
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se4_loop:
+		LDY		byte_F8
+		LDA		byte_A5A3-1,Y
+		JSR		_apu_tri_note_load
+		LDY		byte_F8
+		LDA		byte_A5A3,Y
+		JSR		_apu_pulse1_note_load
+		DEC		byte_F8
+		BNE		locret_A5A2
+		LDA		#$00
+		STA		_apu_se_loop_flags
+		JSR		_apu_status_reset
+locret_A5A2:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se8_start:
+		STY		_apu_se_loop_flags
+		LDA		#$0A
+		STA		byte_F8
+		JSR		_apu_tri_chnl_with_dpcm
+		LDA		#$01
+		STA		_APU_TRI_COUNT
+		LDA		#$88
+		STA		_APU_PULSE2_ENV
+		LDA		#$D7
+		STA		_APU_PULSE2_SWEEP
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se8_loop:
+		LDY		byte_F8
+		LDA		byte_195834-1,Y
+		JSR		_apu_tri_note_load
+		LDY		byte_F8
+		LDA		byte_195834,Y
+		JSR		_apu_pulse1_note_load
+		DEC		byte_F8
+		BNE		locret_195833
+		LDA		#$00
+		STA		_apu_se_loop_flags
+		JSR		_apu_status_reset
+locret_195833:
+		RTS
+byte_195834:
+		.BYTE	$02,$3E,$3A,$36,$46,$3C,$02,$46,$46,$3C,$34,$34
+
+; =============== S U B	R O U T	I N E =======================================
 _apu_se10_start:
 		JSR		_apu_tri_chnl_with_dpcm
 		STY		_apu_se_loop_flags
@@ -830,35 +886,68 @@ loc_A556:
 locret_A573:
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_apu_se4_start:
-		STY		_apu_se_loop_flags
-		LDA		#$03
-		STA		byte_F8
-		JSR		_apu_tri_chnl_with_dpcm
-		LDA		#$01
-		STA		_APU_TRI_COUNT
-		LDA		#$83
-		STA		_APU_PULSE2_ENV
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se4_loop:
-		LDY		byte_F8
-		LDA		byte_A5A3-1,Y
-		JSR		_apu_tri_note_load
-		LDY		byte_F8
-		LDA		byte_A5A3,Y
-		JSR		_apu_pulse1_note_load
-		DEC		byte_F8
-		BNE		locret_A5A2
-		LDA		#$00
-		STA		_apu_se_loop_flags
-		JSR		_apu_status_reset
-locret_A5A2:
-		RTS
-
 byte_A5A3:
 		.BYTE	$30,$32,$30,$2E
+_apu_pulse_len_tbl:
+		.WORD	$F007,$0000,$D400,$C800,$BD00,$B200,$A800,$9F00
+		.WORD	$9600,$8D00,$8500,$7E00,$7600,$7000,$AB01,$9301
+		.WORD	$7C01,$6701,$5201,$3F01,$2D01,$1C01,$0C01,$FD00
+		.WORD	$EE00,$E100,$5703,$2703,$F902,$CF02,$A602,$8002
+		.WORD	$5C02,$3A02,$1A02,$FC01,$DF01,$C401,$AE06,$4E06
+		.WORD	$F305,$9E05,$4D05,$0105,$B904,$7504,$3504,$F803
+		.WORD	$BF03,$8903,$6900,$6300,$5E00,$5800,$5300,$4F00
+		.WORD	$4A00,$4600,$4200,$3E00
+byte_195F78:
+		.BYTE	$03,$06,$0C,$18,$30,$12,$24,$09,$01
+		.BYTE	$04,$08,$10,$20,$40,$18,$30,$0C,$00
+		.BYTE	$05,$0A,$14,$28,$50,$1E,$3C,$0F,$08
+		.BYTE	$06,$0C,$18,$30,$60,$24,$48,$12,$08
+		.BYTE	$07,$0E,$1C,$38,$70,$2A,$54,$15,$0C
+		.BYTE	$09,$12,$24,$48,$90,$36,$6C,$1B,$03
+		.BYTE	$0A,$14,$28,$50,$A0,$3C,$78,$1E,$11
+
+byte_195C00:
+		.BYTE	$D0,$D0,$D0,$D1,$D1,$D1,$D1,$D2,$D2,$D2,$D2,$D3,$D3,$D3,$D4,$D5
+		.BYTE	$D6,$D7,$D6,$D6,$D6,$D5,$D5,$D4,$90,$90,$90,$91,$91,$91,$92,$92
+		.BYTE	$92,$92,$92,$93,$93,$93,$94,$95,$96,$97,$96,$96,$96,$95,$95,$94
+		.BYTE	$50,$50,$50,$50,$50,$51,$52,$52,$52,$52,$52,$52,$53,$53,$53,$53
+		.BYTE	$54,$95,$56,$56,$57,$97,$D7,$17,$D0,$D0,$D1,$D1,$D2,$D2,$D2,$D2
+		.BYTE	$D2,$D3,$D3,$D3,$D3,$D4,$D3,$D2,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1
+		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$92,$92,$92,$92,$93,$93,$94
+		.BYTE	$95,$96,$97,$97,$96,$94,$93,$91,$50,$50,$50,$51,$51,$51,$51,$51
+		.BYTE	$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$52,$53,$54,$55,$56,$57
+		.BYTE	$90,$90,$90,$91,$91,$91,$92,$92,$92,$93,$93,$93,$93,$94,$93,$92
+		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91
+byte_195CA8:
+		.BYTE	$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0
+		.BYTE	$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2,$D2
+		.BYTE	$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2,$D2
+		.BYTE	$D2,$D3,$D3,$D4,$D5,$D5,$D6,$D6,$D7,$D7,$D7,$D7,$D7,$D7,$D7,$D7
+		.BYTE	$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90
+		.BYTE	$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90
+		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$92,$92,$92,$92,$93,$93,$93
+		.BYTE	$94,$94,$94,$94,$95,$95,$95,$95,$95,$96,$96,$97,$97,$97,$96,$94
+		.BYTE	$50,$50,$50,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51
+		.BYTE	$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51,$51
+		.BYTE	$51,$51,$51,$51,$51,$51,$52,$52,$52,$52,$52,$53,$53,$53,$53,$53
+		.BYTE	$53,$54,$54,$54,$54,$94,$D4,$15,$15,$56,$16,$57,$57,$97,$D6,$14
+		.BYTE	$F0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0,$D0
+		.BYTE	$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2,$D2,$D3,$D3,$D3,$D3,$D4,$D4
+		.BYTE	$D3,$D3,$D3,$D2,$D2,$D2,$D2,$D2,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1
+		.BYTE	$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1
+byte_195DA8:
+		.BYTE	$B2,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92,$92
+		.BYTE	$92,$92,$92,$92,$92,$92,$92,$92,$93,$93,$93,$93,$93,$93,$93,$93
+		.BYTE	$93,$93,$94,$94,$94,$94,$94,$95,$95,$95,$95,$96,$96,$96,$96,$96
+		.BYTE	$96,$97,$97,$97,$97,$97,$97,$97,$97,$97,$97,$96,$95,$94,$92,$91
+		.BYTE	$50,$50,$50,$51,$51,$51,$51,$51,$51,$51,$51,$51,$52,$52,$52,$53
+		.BYTE	$50,$50,$51,$51,$51,$51,$52,$52,$52,$52,$53,$53,$53,$54,$54,$55
+		.BYTE	$50,$51,$51,$52,$52,$52,$53,$53,$53,$54,$54,$55,$55,$56,$56,$57
+		.BYTE	$51,$52,$52,$52,$53,$53,$54,$55,$55,$55,$56,$56,$57,$58,$59,$5A
+		.BYTE	$B0,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90,$90
+		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$92,$92,$93,$93,$93,$93,$94,$94
+		.BYTE	$93,$93,$93,$92,$92,$92,$92,$92,$91,$91,$91,$91,$91,$91,$91,$91
+		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$90,$90
 
 	MAC	_TMUS
 		.BYTE	[{1}-_apu_mus_res_ofs_list]
@@ -1364,424 +1453,5 @@ byte_BABC:
 		.BYTE	$02,$22,$02,$3A,$3C,$02,$02,$24,$02,$3C,$3E,$02,$02,$26,$02,$3E
 		.BYTE	$3C,$02,$02,$24,$02,$3C,$38,$02,$3C,$3E,$02,$42,$02,$02,$38,$42
 		.BYTE	$02,$02
-
-		SECTION_END		0
-
-		SECTION_START	30A
-
-; ---------------------------------------------------------------------------
-; ---------E-X-T-E-R-N-A-L--G-A-M-E--E-V-E-N-T--W-N-D--H-E-A-D-E-R-----------
-; ---------------------------------------------------------------------------
-
-; =============== S U B	R O U T	I N E =======================================
-_wnd_header_txt_draw:
-		LDA		#$02
-		STA		_tmp1
-loc_BB84:
-		LDX		_game_msg_idx
-		LDA		_wnd_header_txt_len,X
-		STA		_tmp3							; FIX: replace table with auto calc
-		LDA		#23
-		SEC
-		SBC		_tmp3
-		LSR
-		CLC
-		ADC		#8
-		STA		_tmp2
-;		LDA		_wnd_header_txt_pos,X			; OPTIMIZED
-;		STA		_tmp2
-
-		JSR		_wnd_header_txt_pos_calc
-;		LDA		_game_msg_idx					; REDUNDANT no need to calculate
-;		ASL										; idx * 3 value, there is only single
-;		CLC										; byte array left
-;		ADC		_tmp1							; -
-;		ADC		_game_msg_idx					; -
-;		TAX										; -
-		LDX		_game_msg_idx
-		LDA		_wnd_header_tlm_lo,X
-		STA		_tmp2
-		LDA		_wnd_header_tlm_hi,X
-		STA		_tmp3
-		LDX		_tmp1							; OPTIMIZED read special symbols
-		LDA		_wnd_header_char_delta,X		; table and space symbol for a line
-		STA		_ptr0							; -
-		LDA		_wnd_header_space_table,X		; -
-		STA		_tmp8							; -
-		JSR		_wnd_header_queue
-		DEC		_tmp1
-		BPL		loc_BB84
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; args:
-;		_tmp1 - Y offset,
-;		_tmp2 - X offset,
-;		_tmp3 - width
-; return:
-;		_ptr4 - ppu offset
-;		_tmp6 - line len
-;		_tmp7 - wrap len
-;
-_wnd_header_txt_pos_calc:
-		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
-		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
-		WRAPB	_tmp6,_tmp7,_tmp5,_tmp3,#32
-		BUFPOS	_ptr4,_tmp5,_tmp4,#$20,#$00	; DST=(_tmp4*#$20+_tmp5)+#$0000
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_wnd_header_queue:
-		PPUQSTART
-		LDY		#$00
-		PPUQMOVB	_tmp4,OP_NOP,0
-loc_BC1A:										; OPTIMIZE
-		PPUQMOVB	_tmp5,OP_ORA,#$20
-		PPUQMOVB	_tmp6,OP_NOP,0
-loc_BC1B:
-		LDA		(_tmp2),Y
-		INY
-		CMP		#$20							; ADDED, if not space,
-		BEQ		loc_BC1C						; adjust character idx
-		CLC										; for a corresponding line
-		ADC		_ptr0							; -
-		.BYTE	$2C								; -
-loc_BC1C:										; -
-		LDA		_tmp8							; or replace with space symbol
-		PPUQMOVA
-		DEC		_tmp6
-		BNE		loc_BC1B
-		LDA		_tmp7
-		BEQ		loc_BC49
-		STA		_tmp6
-		LDA		#$00
-		STA		_tmp7
-		PPUQMOVB	_tmp4,OP_AND,#$E0
-;		PPUQMOVB	_tmp5,OP_ORA,#$20			; REDUNDANT, dupe of the code
-;		PPUQMOVB	_tmp6,OP_NOP,0				; at the beginning of the loop,
-;		JMP		loc_BC1B						; reuse them with longer jump
-		JMP		loc_BC1A						; OPTIMIZE
-loc_BC49:
-		PPUQEND
-		RTS
-
-; REDUNDANT, the autocalculated lengths are the same as in the original
-; list, but except the very first line, which is mover one tile
-; forward for some reasons... no now it fixed
-;
-;_wnd_header_txt_pos:
-;		.BYTE	$10,$11,$11,$10,$0E,$0E,$0E,$0E,$11,$0C,$0E,$10,$0E,$10,$10,$10
-;		.BYTE	$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$10,$0F,$0F,$0F,$0F,$0E
-;		.BYTE	$11,$11,$0F,$10
-
-	MAC	LEN
-		.BYTE	{1}_len
-	ENDM
-
-_wnd_header_txt_len:
-		LEN		aGoodjob
-		LEN		aTown
-		LEN		aCity
-		LEN		aCapital
-		LEN		aMetropolis
-		LEN		aMegaropolis
-		LEN		aTrafficjam
-		LEN		aTrafficjam
-		LEN		aCrime
-		LEN		aMonsterattack
-		LEN		aEarthquake
-		LEN		aPresent
-		LEN		aSistercity
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPresent
-		LEN		aPractice
-		LEN		aPractice
-		LEN		aPractice
-		LEN		aPractice
-		LEN		aHowtoloan
-		LEN		aFire
-		LEN		aFlood
-		LEN		aAircrash
-		LEN		aTornade
-
-; OPTIMIZE: instead of keep all dupes for three different encodings of one
-; header name line, we can just keep the difference between characters
-; and a special symbol (space)
-;
-_wnd_header_char_delta:
-		.BYTE	[-$40]&$FF,$00,$40
-_wnd_header_space_table:
-		.BYTE	$00,$00,$81
-
-; REDUNDANT: here is three rows of the same message in 24x8 letters,
-; middle row indexes are the same as corresponding ASCII codes
-; but upper and lower are shifted, but it is the same letters (except spaces)
-; unneeded data replaced with on-the-fly calcs, obviously cannot be used
-; with anything except this particular kind of fonts.
-; size of routine reduced by half
-
-;		DELTA	-0x40			0				+0x40
-;_wnd_header_tlm_lo:
-;		.BYTE	<[byte_BD6C],	<[aGoodjob],	<[byte_BE90]
-;		.BYTE	<[byte_BD74],	<[aTown],		<[byte_BE98]
-;		.BYTE	<[byte_BD78],	<[aCity],		<[byte_BE9C]
-;		.BYTE	<[byte_BD7C],	<[aCapital],	<[byte_BEA0]
-;		.BYTE	<[byte_BD83],	<[aMetropolis],	<[byte_BEA7]
-;		.BYTE	<[byte_BD8D],	<[aMegaropolis],<[byte_BEB1]
-;		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
-;		.BYTE	<[byte_BD98],	<[aTrafficjam],	<[byte_BEBC]
-;		.BYTE	<[byte_BDA3],	<[aCrime],		<[byte_BEC7]
-;		.BYTE	<[byte_BDA8],	<[aMonsterattack],<[byte_BECC]
-;		.BYTE	<[byte_BDB6],	<[aEarthquake],	<[byte_BEDA]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC7],	<[aSistercity],	<[byte_BEEB]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDC0],	<[aPresent],	<[byte_BEE4]
-;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-;		.BYTE	<[byte_BDD2],	<[aPractice],	<[byte_BEF6]
-;		.BYTE	<[byte_BDDA],	<[aHowtoloan],	<[byte_BEFE]
-;		.BYTE	<[byte_BDE5],	<[aFire],		<[byte_BF09]
-;		.BYTE	<[byte_BDE9],	<[aFlood],		<[byte_BF0D]
-;		.BYTE	<[byte_BDEE],	<[aAircrash],	<[byte_BF12]
-;		.BYTE	<[byte_BDF7],	<[aTornade],	<[byte_BF1B]
-;_wnd_header_tlm_hi:
-;		.BYTE	>[byte_BD6C],	>[aGoodjob],	>[byte_BE90]
-;		.BYTE	>[byte_BD74],	>[aTown],		>[byte_BE98]
-;		.BYTE	>[byte_BD78],	>[aCity],		>[byte_BE9C]
-;		.BYTE	>[byte_BD7C],	>[aCapital],	>[byte_BEA0]
-;		.BYTE	>[byte_BD83],	>[aMetropolis],	>[byte_BEA7]
-;		.BYTE	>[byte_BD8D],	>[aMegaropolis],>[byte_BEB1]
-;		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
-;		.BYTE	>[byte_BD98],	>[aTrafficjam],	>[byte_BEBC]
-;		.BYTE	>[byte_BDA3],	>[aCrime],		>[byte_BEC7]
-;		.BYTE	>[byte_BDA8],	>[aMonsterattack],>[byte_BECC]
-;		.BYTE	>[byte_BDB6],	>[aEarthquake],	>[byte_BEDA]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC7],	>[aSistercity],	>[byte_BEEB]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDC0],	>[aPresent],	>[byte_BEE4]
-;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-;		.BYTE	>[byte_BDD2],	>[aPractice],	>[byte_BEF6]
-;		.BYTE	>[byte_BDDA],	>[aHowtoloan],	>[byte_BEFE]
-;		.BYTE	>[byte_BDE5],	>[aFire],		>[byte_BF09]
-;		.BYTE	>[byte_BDE9],	>[aFlood],		>[byte_BF0D]
-;		.BYTE	>[byte_BDEE],	>[aAircrash],	>[byte_BF12]
-;		.BYTE	>[byte_BDF7],	>[aTornade],	>[byte_BF1B]
-
-_wnd_header_tlm_lo:
-		.BYTE	<[aGoodjob]
-		.BYTE	<[aTown]
-		.BYTE	<[aCity]
-		.BYTE	<[aCapital]
-		.BYTE	<[aMetropolis]
-		.BYTE	<[aMegaropolis]
-		.BYTE	<[aTrafficjam]
-		.BYTE	<[aTrafficjam]
-		.BYTE	<[aCrime]
-		.BYTE	<[aMonsterattack]
-		.BYTE	<[aEarthquake]
-		.BYTE	<[aPresent]
-		.BYTE	<[aSistercity]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPresent]
-		.BYTE	<[aPractice]
-		.BYTE	<[aPractice]
-		.BYTE	<[aPractice]
-		.BYTE	<[aPractice]
-		.BYTE	<[aHowtoloan]
-		.BYTE	<[aFire]
-		.BYTE	<[aFlood]
-		.BYTE	<[aAircrash]
-		.BYTE	<[aTornade]
-_wnd_header_tlm_hi:
-		.BYTE	>[aGoodjob]
-		.BYTE	>[aTown]
-		.BYTE	>[aCity]
-		.BYTE	>[aCapital]
-		.BYTE	>[aMetropolis]
-		.BYTE	>[aMegaropolis]
-		.BYTE	>[aTrafficjam]
-		.BYTE	>[aTrafficjam]
-		.BYTE	>[aCrime]
-		.BYTE	>[aMonsterattack]
-		.BYTE	>[aEarthquake]
-		.BYTE	>[aPresent]
-		.BYTE	>[aSistercity]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPresent]
-		.BYTE	>[aPractice]
-		.BYTE	>[aPractice]
-		.BYTE	>[aPractice]
-		.BYTE	>[aPractice]
-		.BYTE	>[aHowtoloan]
-		.BYTE	>[aFire]
-		.BYTE	>[aFlood]
-		.BYTE	>[aAircrash]
-		.BYTE	>[aTornade]
-
-;byte_BD6C:
-;		.BYTE	$07,$2F,$2F,$24,$00,$2A,$2F,$22
-;byte_BD74:
-;		.BYTE	$14,$2F,$37,$2E
-;byte_BD78:
-;		.BYTE	$03,$29,$34,$39
-;byte_BD7C:
-;		.BYTE	$03,$21,$30,$29,$34,$21,$2C
-;byte_BD83:
-;		.BYTE	$0D,$25,$34,$32,$2F,$30,$2F,$2C,$29,$33
-;byte_BD8D:
-;		.BYTE	$0D,$25,$27,$21,$32,$2F,$30,$2F,$2C,$29,$33
-;byte_BD98:
-;		.BYTE	$14,$32,$21,$26,$26,$29,$23,$00,$2A,$21,$2D
-;byte_BDA3:
-;		.BYTE	$03,$32,$29,$2D,$25
-;byte_BDA8:
-;		.BYTE	$0D,$2F,$2E,$33,$34,$25,$32,$00,$21,$34,$34,$21,$23,$2B
-;byte_BDB6:
-;		.BYTE	$05,$21,$32,$34,$28,$31,$35,$21,$2B,$25
-;byte_BDC0:
-;		.BYTE	$10,$32,$25,$33,$25,$2E,$34
-;byte_BDC7:
-;		.BYTE	$13,$29,$33,$34,$25,$32,$00,$03,$29,$34,$39
-;byte_BDD2:
-;		.BYTE	$10,$32,$21,$23,$34,$29,$23,$25
-;byte_BDDA:
-;		.BYTE	$08,$2F,$37,$00,$14,$2F,$00,$0C,$2F,$21,$2E
-;byte_BDE5:
-;		.BYTE	$06,$29,$32,$25
-;byte_BDE9:
-;		.BYTE	$06,$2C,$2F,$2F,$24
-;byte_BDEE:
-;		.BYTE	$01,$29,$32,$00,$23,$32,$21,$33,$28
-;byte_BDF7:
-;		.BYTE	$14,$2F,$32,$2E,$21,$24,$25
-
-	MAC	STR
-{1}		EQU	.
-		.BYTE	{2}
-{1}_len	EQU	.-{1}
-	ENDM
-
-		STR		aGoodjob,		"Good job"
-		STR		aTown,			"Town"
-		STR		aCity,			"City"
-		STR		aCapital,		"Capital"
-		STR		aMetropolis,	"Metropolis"
-		STR		aMegaropolis,	"Megaropolis"
-		STR		aTrafficjam,	"Traffic jam"
-		STR		aCrime,			"Crime"
-		STR		aMonsterattack,	"Monster attack"
-		STR		aEarthquake,	"Earthquake"
-		STR		aPresent,		"Present"
-		STR		aSistercity,	"Sister City"
-		STR		aPractice,		"Practice"
-		STR		aHowtoloan,		"How To Loan"
-		STR		aFire,			"Fire"
-		STR		aFlood,			"Flood"
-		STR		aAircrash,		"Air crash"
-		STR		aTornade,		"Tornade"
-
-;byte_BE90:
-;		.BYTE	$87,$AF,$AF,$A4,$81,$AA,$AF,$A2
-;byte_BE98:
-;		.BYTE	$94,$AF,$B7,$AE
-;byte_BE9C:
-;		.BYTE	$83,$A9,$B4,$B9
-;byte_BEA0:
-;		.BYTE	$83,$A1,$B0,$A9,$B4,$A1,$AC
-;byte_BEA7:
-;		.BYTE	$8D,$A5,$B4,$B2,$AF,$B0,$AF,$AC,$A9,$B3
-;byte_BEB1:
-;		.BYTE	$8D,$A5,$A7,$A1,$B2,$AF,$B0,$AF,$AC,$A9,$B3
-;byte_BEBC:
-;		.BYTE	$94,$B2,$A1,$A6,$A6,$A9,$A3,$81,$AA,$A1,$AD
-;byte_BEC7:
-;		.BYTE	$83,$B2,$A9,$AD,$A5
-;byte_BECC:
-;		.BYTE	$8D,$AF,$AE,$B3,$B4,$A5,$B2,$81,$A1,$B4,$B4,$A1,$A3,$AB
-;byte_BEDA:
-;		.BYTE	$85,$A1,$B2,$B4,$A8,$B1,$B5,$A1,$AB,$A5
-;byte_BEE4:
-;		.BYTE	$90,$B2,$A5,$B3,$A5,$AE,$B4
-;byte_BEEB:
-;		.BYTE	$93,$A9,$B3,$B4,$A5,$B2,$81,$83,$A9,$B4,$B9
-;byte_BEF6:
-;		.BYTE	$90,$B2,$A1,$A3,$B4,$A9,$A3,$A5
-;byte_BEFE:
-;		.BYTE	$88,$AF,$B7,$81,$94,$AF,$81,$8C,$AF,$A1,$AE
-;byte_BF09:
-;		.BYTE	$86,$A9,$B2,$A5
-;byte_BF0D:
-;		.BYTE	$86,$AC,$AF,$AF,$A4
-;byte_BF12:
-;		.BYTE	$81,$A9,$B2,$81,$A3,$B2,$A1,$B3,$A8
-;byte_BF1B:
-;		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
-
-		SECTION_END	30A
 
 		BANK_END F0,$C000

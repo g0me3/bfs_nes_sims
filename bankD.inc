@@ -4,69 +4,6 @@
 		BANK_START $FD
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_wnd_pos_calc:
-		LDA		_cur_screen_tile._Y
-		LSR
-		CLC
-		ADC		#$1B
-		CMP		#$1E
-		BCC		loc_1500BA
-		SBC		#$1E
-loc_1500BA:
-		LDX		#$20
-		MULXA
-		STA		_ptr0
-		TXA
-		CLC
-		ADC		#$20
-		STA		_ptr0+1
-		PPUQSTART
-		PPUQMOVB	_ptr0,OP_NOP,0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		LDA		#$20
-		TAY
-		PPUQMOVA
-		LDA		#$DF
-loc_1500E7:
-		PPUQMOVA
-		DEY
-		BNE		loc_1500E7
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_1500F1:
-		LDA		byte_53
-		LDX		byte_5D
-		STA		byte_5D
-		STX		byte_53
-		LDA		byte_54
-		LDX		byte_5E
-		STA		byte_5E
-		STX		byte_54
-		LDA		byte_55
-		LDX		byte_5F
-		STA		byte_5F
-		STX		byte_55
-		LDA		byte_56
-		LDX		byte_60
-		STA		byte_60
-		STX		byte_56
-		LDA		byte_57
-		LDX		byte_61
-		STA		byte_61
-		STX		byte_57
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_15011A:
-		JSR		sub_1500F1
-		LDA		#$00
-		STA		byte_5D
-		STA		byte_5C
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 sub_150124:
 		LDA		byte_71
 		BEQ		loc_15012B
@@ -3961,10 +3898,14 @@ loc_151F3B:
 		JSR		_ppu_flush_wait
 		JSR		_building_name_and_cost_hud_draw
 		JSR		_RCI_meters_draw
-		FJSRA	_hud_date_draw,PRG7,PRG3
-		FJSRA	_hud_money_draw,PRGC,PRG3
-		FJSRA	_hud_popul_draw,PRG7,PRG3
-		FJSRA	_city_name_draw,PRG7,PRG3
+;		FJSRA	_hud_date_draw,PRG7,PRG3
+		JSR		_hud_date_draw
+;		FJSRA	_hud_money_draw,PRGC,PRG3
+		JSR		_hud_money_draw
+;		FJSRA	_hud_popul_draw,PRG7,PRG3
+		JSR		_hud_popul_draw
+;		FJSRA	_hud_city_name_draw,PRG7,PRG3
+		JSR		_hud_city_name_draw
 		JSR		_ppu_flush_wait
 loc_151F6D:
 		JSR		_ppu_flush_wait
@@ -3994,6 +3935,531 @@ _far_heavy_traffic_report_test:
 		LDY		_obj_pos._heli._Y
 		FJSRA	_heavy_traffic_report_test,SRAM,PRGB
 locret_151FA1:
+		RTS
+
+; FIX: moved here from bank3 to bank it belongs
+; now all calls are local here
+;
+; =============== S U B	R O U T	I N E =======================================
+_hud_money_draw:
+		JSR		_hud_money_to_str
+;		JSR		_hud_money_pos_calc				; OPTIMIZED, merged
+		LDA		#$16							; -
+		STA		_tmp2							; -
+		LDA		#$1C							; -
+		STA		_tmp3							; -
+		LDA		#$08							; -
+		STA		_tmp4							; -
+		JMP		_hud_str_pos_calc_and_queue		; -
+;		JSR		_pre_buf_str_queue				; -
+;		RTS										; -
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_money_to_str:
+		MOVD	_ptr0,_city._money
+		LDA		#$00
+		STA		_tmp3							; tmp flag
+		LDY		#$01							; start writing number in buf +1 pos
+		LDX		#$06							; start with highest digit
+		LDA		#$DF
+		STA		_pre_ppu_buf					; fill leftmost byte with space or maybe $ later
+loc_58026:
+		JSR		_get_dec_digit24				; extract decimal digit
+		CMP		#$00
+		BNE		loc_5803C						; if no-zero, put a number
+		LDA		_tmp3							; if zero, then there are two opts
+		BNE		loc_5804F						; opt 1 flag clear
+		CPX		#$00							; here two more opts
+		BEQ		loc_5803C						; if last digit, put it as zero (number 0)
+		LDA		#$DF							; or else trim it, becaue this is not a number still
+		STA		_pre_ppu_buf,Y
+		BNE		loc_5804A
+loc_5803C:
+		STA		_pre_ppu_buf,Y					; store non-zero number
+		LDA		_tmp3
+		BNE		loc_5804A						; if tmp flag set, we already done this
+		LDA		#$30							; if flag clear, then this is first
+		STA		_pre_ppu_buf-1,Y				; non zero letter, set $ symbol before it
+		DEC		_tmp3							; raise flag, we need this just once
+loc_5804A:
+		INY
+		DEX
+		BPL		loc_58026						; cycle
+		RTS
+loc_5804F:
+		LDA		#$00							; opt 2 flag already set, so we have
+		STA		_pre_ppu_buf,Y					; zero inside number, put it as is
+		BEQ		loc_5804A
+
+; =============== S U B	R O U T	I N E =======================================
+; screenY =  ((scrollX / 2) + 16) % 20
+; screenX =  ((scrollY / 2) + 1C) % 1E
+; lineLen =  (screenX < 20) ? 8 : (screenX - 1F)
+; wrapLen =  (screenX < 20) ? 0 : (8 - LineLen)
+; ppuOfs  = ((screenY * 20) + screenX) + 0x2000
+;
+;_hud_money_pos_calc:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$08,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00
+;		RTS
+
+; REDUNDANT, as soon as all three routines here appears exactly the same after
+; rearranged some constants and vars used, we can merge them and use only single
+; copy without any harm
+;
+; =============== S U B	R O U T	I N E =======================================
+;_hud_money_str_queue:
+;		PPUQSTART
+;		LDY		#$00
+;		PPUQMOVB	_ptr0,OP_NOP,0
+;loc_5810F:
+;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;loc_58110:
+;		LDA		_pre_ppu_buf,Y
+;		INY
+;		PPUQMOVA
+;		DEC		_tmp2
+;		BNE		loc_58110
+;		LDA		_tmp3
+;		BEQ		loc_5813D
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		JMP		loc_5810F
+;loc_5813D:
+;		PPUQEND
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_date_draw:
+		JSR		_hud_date_to_str
+;		JSR		_hud_date_pos_calc					; OPTIMIZED, merged
+		LDA		#$16
+		STA		_tmp2
+		LDA		#$1A
+		STA		_tmp3
+		LDA		#$08
+		STA		_tmp4
+		JMP		_hud_str_pos_calc_and_queue
+;		JSR		_pre_buf_str_queue
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_date_to_str:
+		LDX		#$00
+		JSR		_hud_year_str_queue
+		LDA		#$DF
+		STA		_pre_ppu_buf,X
+		INX
+		JSR		_hud_month_str_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_year_str_queue:
+		LDA		_city._cur_year
+		LDY		_city._cur_year+1
+		STA		_tmp0
+		STY		_tmp1
+		LDA		#$04
+		STA		_tmp2
+;		LDY		#$00						; FIX similar to the rest of the code
+		LDY		#$03						; -
+loc_58DE7:
+		JSR		_get_dec_digit16
+		STA		_pre_ppu_buf,X
+		INX
+;		INY									; FIX
+;		INY									; -
+		DEY									; -
+		DEC		_tmp2
+		BNE		loc_58DE7
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_dec_digit16:
+		LDA		#$00
+		STA		_tmp3
+loc_58DF9:
+;		LDA		_tmp0						; FIX
+;		SEC
+;		SBC		_dec_digit16_tbl,Y
+;		STA		_tmp0
+;		LDA		_tmp1
+;		SBC		_dec_digit16_tbl+1,Y
+;		STA		_tmp1
+;		BCC		loc_58E0E
+		LDA		_tmp0						; OPTIMIZE
+		CMP		_dec_digit_tbl0,Y			; -
+		LDA		_tmp1						; -
+		SBC		_dec_digit_tbl1,Y			; -
+		BCC		loc_58E0E
+		LDA		_tmp0						; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,Y			; also C already set as well
+		STA		_tmp0
+		LDA		_tmp1
+		SBC		_dec_digit_tbl1,Y
+		STA		_tmp1
+		INC		_tmp3
+		BNE		loc_58DF9
+loc_58E0E:
+;		LDA		_tmp0						; REDUNDANT
+;		CLC
+;		ADC		_dec_digit16_tbl,Y
+;		STA		_tmp0
+;		LDA		_tmp1
+;		ADC		_dec_digit16_tbl+1,Y
+;		STA		_tmp1
+		LDA		_tmp3
+		RTS
+
+;_dec_digit16_tbl:							; REDUNDANT
+;		.WORD	1000
+;		.WORD	100
+;		.WORD	10
+;		.WORD	1
+
+; =============== S U B	R O U T	I N E =======================================
+; TODO: bank 9 different type of month display lib
+;
+_hud_month_str_queue:
+		LDA		_city._cur_month
+		STA		_ptr0
+		ASL
+		ASL
+;		CLC							; FIX: now entry size always 4
+;		ADC		_ptr0
+		TAY
+		LDA		#$03
+		STA		_ptr0
+loc_58E2E:
+		LDA		_months_lib,Y
+		INY
+		STA		_pre_ppu_buf,X
+		INX
+		DEC		_ptr0
+		BNE		loc_58E2E
+		RTS
+
+; REDUNDANT, merger in system bank
+;_months_lib:
+;		.BYTE	_J,_A,_N
+;		.BYTE	_F,_E,_B
+;		.BYTE	_M,_A,_R
+;		.BYTE	_A,_P,_R
+;		.BYTE	_M,_A,_Y
+;		.BYTE	_J,_U,_N
+;		.BYTE	_J,_U,_L
+;		.BYTE	_A,_U,_G
+;		.BYTE	_S,_E,_P
+;		.BYTE	_O,_C,_T
+;		.BYTE	_N,_O,_V
+;		.BYTE	_D,_E,_C
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_date_pos_calc:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$08,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZE, merged
+;		RTS
+
+; REDUNDANT, the same for this one
+;
+; =============== S U B	R O U T	I N E =======================================
+;_hud_date_str_queue:
+;		PPUQSTART
+;		LDY		#$00
+;		LDA		_tmp2								; REDUNDANT, this is a leftover
+;		STA		_tmp4								; from using an extnt draw routine
+;		LDA		_tmp3								; below, to keep vars for it
+;		STA		_tmp5								; as soon as in unused, we don't need
+;		PPUQMOVB	_ptr0,OP_NOP,0					; these vars as well...
+;loc_58ED9:
+;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;loc_58EDA:
+;		LDA		_pre_ppu_buf,Y
+;		INY
+;		PPUQMOVA
+;		DEC		_tmp2
+;		BNE		loc_58EDA
+;		LDA		_tmp3
+;		BEQ		loc_58F09
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		JMP		loc_58ED9
+;loc_58F09:
+;		PPUQEND
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; unused/unref by the game, they do this somewhere else at once for all hud
+; no need to put extnt here at all
+;
+;_cur_date_extnt_queue_unref:
+;		EXTQSTART
+;		LDA		_ptr0
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_ptr0+1
+;		ORA		#>[_MMC5_EXRAM]
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_tmp2
+;		STA		_extnt_queue_buf,X
+;		INX
+;loc_58F22:
+;		LDA		#$02
+;		STA		_extnt_queue_buf,X
+;		INX
+;		DEC		_tmp2
+;		BNE		loc_58F22
+;		LDA		_tmp3
+;		BEQ		loc_58F4F
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		LDA		_ptr0
+;		AND		#$E0
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_ptr0+1
+;		ORA		#>[_MMC5_EXRAM]
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_tmp2
+;		STA		_extnt_queue_buf,X
+;		INX
+;		JMP		loc_58F22
+;loc_58F4F:
+;		EXTQEND
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_popul_draw:
+		JSR		_hud_popul_to_str
+;		JSR		_hud_popul_pos_calc					; OPTIMIZED, merged
+		LDA		#$0E
+		STA		_tmp2
+		LDA		#$1A
+		STA		_tmp3
+		LDA		#$06
+		STA		_tmp4
+		JMP		_hud_str_pos_calc_and_queue
+;		JSR		_pre_buf_str_queue
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; much simpler than money calc routine, no need to put extra symbols anywhere
+; so you just need to track the first non-zero digit to trim first zeroes
+;
+_hud_popul_to_str:
+		MOVD	_ptr0,_popul_cur
+		LDA		#$00
+		STA		_tmp3
+		LDY		#$00
+		LDX		#$05
+loc_59A88:
+		JSR		_get_dec_digit24
+		CMP		#$00
+		BNE		loc_59A9E
+		LDA		_tmp3
+		BNE		loc_59AA8
+		CPX		#$00
+		BEQ		loc_59A9E
+		LDA		#$DF
+		STA		_pre_ppu_buf,Y
+		BNE		loc_59AA3
+loc_59A9E:
+		STA		_pre_ppu_buf,Y
+		DEC		_tmp3
+loc_59AA3:
+		INY
+		DEX
+		BPL		loc_59A88
+		RTS
+loc_59AA8:
+		LDA		#$00
+		STA		_pre_ppu_buf,Y
+		BEQ		loc_59AA3
+
+; =============== S U B	R O U T	I N E =======================================
+_get_dec_digit24:
+		LDA		#$00
+		STA		_tmp4
+loc_5805A:
+;		SEC									; FIX, lets use less opcodes
+;		LDA		_tmp0
+;		SBC		_dec_digit_tbl0,X
+;		STA		_tmp0
+;		LDA		_tmp1
+;		SBC		_dec_digit_tbl1,X
+;		STA		_tmp1
+;		LDA		_tmp2
+;		SBC		_dec_digit_tbl2,X
+;		STA		_tmp2
+		LDA		_tmp0						; OPTIMIZE
+		CMP		_dec_digit_tbl0,X			; -
+		LDA		_tmp1						; -
+		SBC		_dec_digit_tbl1,X			; -
+		LDA		_tmp2						; -
+		SBC		_dec_digit_tbl2,X			; -
+		BCC		loc_58076
+		LDA		_tmp0						; FIX, we has to sub here
+		SBC		_dec_digit_tbl0,X			; also C already set as well
+		STA		_tmp0
+		LDA		_tmp1
+		SBC		_dec_digit_tbl1,X
+		STA		_tmp1
+		LDA		_tmp2
+		SBC		_dec_digit_tbl2,X
+		STA		_tmp2
+		INC		_tmp4
+		BNE		loc_5805A
+loc_58076:
+;		CLC									; REDUNDANT
+;		LDA		_tmp0
+;		ADC		_dec_digit_tbl0,X
+;		STA		_tmp0
+;		LDA		_tmp1
+;		ADC		_dec_digit_tbl1,X
+;		STA		_tmp1
+;		LDA		_tmp2
+;		ADC		_dec_digit_tbl2,X
+;		STA		_tmp2
+		LDA		_tmp4
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_city_name_draw:
+		JSR		_get_city_name_str
+		JSR		_hud_city_name_pos_set
+		JSR		_hud_city_name_str_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_city_name_str:
+		LDX		_city._name
+		DEX
+		STX		byte_51A
+		MOVWO	word_DA,_city._name+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_city_name_pos_set:
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
+		WRAPA	_tmp2,_tmp3,#$0A,#$20
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_city_name_str_queue:
+		PPUQSTART
+		LDY		#$00
+		PPUQMOVB	_ptr0,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
+loc_B8086:
+		LDA		byte_51A
+		BNE		loc_B808F
+		LDA		#$20
+		BNE		loc_B8095
+loc_B808F:
+		LDA		(word_DA),Y
+		DEC		byte_51A
+		INY
+loc_B8095:
+		PPUQMOVA
+		DEC		_tmp2
+		BNE		loc_B8086
+		LDA		_tmp3
+		BEQ		loc_B80BE
+		STA		_tmp2
+		LDA		#$00
+		STA		_tmp3
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
+		JMP		loc_B8086
+loc_B80BE:
+		PPUQEND
+		RTS
+
+; REDUNDANT, merged to one common tables set
+; in system bank
+;
+;_dec_digit_tbl0:
+;		.BYTE	[[1 >> 0] & $FF]		; $01
+;		.BYTE	[[10 >> 0] & $FF]		; $0A
+;		.BYTE	[[100 >> 0] & $FF]		; $64
+;		.BYTE	[[1000 >> 0] & $FF]		; $E8
+;		.BYTE	[[10000 >> 0] & $FF]	; $10
+;		.BYTE	[[100000 >> 0] & $FF]	; $A0
+;		.BYTE	[[1000000 >> 0] & $FF]	; $40
+;_dec_digit_tbl1:
+;		.BYTE	[[1 >> 8] & $FF]		; $00
+;		.BYTE	[[10 >> 8] & $FF]		; $00
+;		.BYTE	[[100 >> 8] & $FF]		; $00
+;		.BYTE	[[1000 >> 8] & $FF]		; $03
+;		.BYTE	[[10000 >> 8] & $FF]	; $27
+;		.BYTE	[[100000 >> 8] & $FF]	; $86
+;		.BYTE	[[1000000 >> 8] & $FF]	; $42
+;_dec_digit_tbl2:
+;		.BYTE	[[1 >> 16] & $FF]		; $00
+;		.BYTE	[[10 >> 16] & $FF]		; $00
+;		.BYTE	[[100 >> 16] & $FF]		; $00
+;		.BYTE	[[1000 >> 16] & $FF]	; $00
+;		.BYTE	[[10000 >> 16] & $FF]	; $00
+;		.BYTE	[[100000 >> 16] & $FF]	; $01
+;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+
+; =============== S U B	R O U T	I N E =======================================
+;_hud_popul_pos_calc:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$06,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; let's make it common for all three pos calc routines as well
+; they are the same except position constants, and as soon as all
+; thre pair of routines uses both in row, let's combine them in one
+; sub as well.
+;
+_hud_str_pos_calc_and_queue:
+		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp3,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,_tmp2,NONE,#$20
+		WRAPB	_tmp2,_tmp3,_tmp0,_tmp4,#$20
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
+		PPUQSTART
+		LDY		#$00
+		PPUQMOVB	_ptr0,OP_NOP,0
+loc_59B65:
+		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+		PPUQMOVB	_tmp2,OP_NOP,0
+loc_59B66:
+		LDA		_pre_ppu_buf,Y
+		INY
+		PPUQMOVA
+		DEC		_tmp2
+		BNE		loc_59B66
+		LDA		_tmp3
+		BEQ		loc_59B93
+		STA		_tmp2
+		LDA		#$00
+		STA		_tmp3
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+		JMP		loc_59B65
+loc_59B93:
+		PPUQEND
 		RTS
 
 		BANK_END FD,$C000
