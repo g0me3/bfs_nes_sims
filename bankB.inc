@@ -24,20 +24,20 @@ _THREAD1_MAIN:
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD1_LOOP:
-		JSR		_wait_for_hud_redraw
-		INC		_city._cur_week
+		JSR		_wait_for_hud_redraw			; priority as usual in THREAD0
+		INC		_city._cur_week					; one loop - one week here
 		LDA		_city._cur_week
 		LSR
 		BCC		loc_11E047
-		FJSR	_RCI_meters_recalc,SRAM,PRGA
+		FJSR	_RCI_meters_recalc,SRAM,PRGA	; recalc RCI once in two weeks
 loc_11E047:
-		JSR		_map_corruption_tiles_animate
+		JSR		_map_corruption_tiles_animate	; animate map tiles that bulldozed
 		LDA		_frames_counter					; adjust random seed
 		STA		_rand_seed
-		ADDWB	_city._tax_year_rate,_city._tax_rate
-		MOVWI	_power_nodes_cnt,0
+		ADDWB	_city._tax_year_rate,_city._tax_rate	; summing tax rates every week
+		MOVWI	_power_nodes_cnt,0				; reset power grid nodes list
 		LDA		#$07
-		STA		_thread0_flags+1
+		STA		_thread0_flags+1				; take some priority
 		JSR		_overall_stats_clear
 		JSR		_overall_stats_recalc
 		LDA		#$03
@@ -611,7 +611,7 @@ loc_11E51F:
 loc_11E526:
 		JMP		_I_areas_develop
 _inc_hospital:
-		INCW	_R_hospitals_count
+		INCW	_hospitals_count
 		LDA		_hospitals_delta
 		BPL		locret_11E558
 		LDA		#$15
@@ -619,7 +619,7 @@ _inc_hospital:
 		BNE		locret_11E558
 		BEQ		loc_11E553
 _inc_school:
-		INCW	_R_schools_count
+		INCW	_schools_count
 		LDA		_schools_delta
 		BPL		locret_11E558
 		LDA		#$15
@@ -1543,7 +1543,7 @@ loc_11EB9A:
 		MOVW	_tmpEA,_tmp6CE
 		JSR		_div_32to16
 loc_11EBB7:
-		MOVW	_city._overall_land_value,_tmpE6
+		MOVW	_city._land_value,_tmpE6
 		LDA		#$00
 		STA		_tmp6C4
 		STA		_tmp6D0
@@ -1762,45 +1762,52 @@ _interpolate_police_fire_maps:
 		JMP		_interpolate_recalc_to_select_police_fire_map_div4
 
 ; =============== S U B	R O U T	I N E =======================================
+; all maps here are 16 times smaller than game map
+; calculation done on areas 4x4 tiles combined
+; land value, population dencity and police radius value for each area
+; are calculated previously
+;
+; start from the beginning of the map in 0,0 position
+;
 _crime_level_recalc:
 		LDA		#$00
-		STA		_tmp6CC
+		STA		_tmp6CC							; CRIME_SUM here is overall sum of crime levels on map
 		STA		_tmp6CC+1
-		STA		_tmp6D0
+		STA		_tmp6D0							; LAND_CNT here is the counter for areas with land values>0
 		STA		_tmp6D0+1
 loc_11EDBB:
-		STA		_tmp_map_pos._ROW
+		STA		_tmp_map_pos._ROW				; set cur ROW
 		LDA		#$00
 loc_11EDC0:
-		STA		_tmp_map_pos._COL
-		JSR		_read_land_value_map_nibble
-		BEQ		loc_11EDF1
+		STA		_tmp_map_pos._COL				; set cur COL
+		JSR		_read_land_value_map_nibble		; read LAND value nibble [0-15]
+		BEQ		loc_11EDF1						; skip if zero value, no crime
 		STA		_tmpE7
-		INCW	_tmp6D0
-		LDA		#$0F
-		SEC
-		SBC		_tmpE7
+		INCW	_tmp6D0							; increment lands counter
+		LDA		#$0F							; calc complement of land value 15-LAND
+		SEC										; so we have reverse proportion, less
+		SBC		_tmpE7							; land value, higher the parameter here
 		STA		_tmpE7
-		JSR		_read_pop_dencity_map_nibble
-		CLC
+		JSR		_read_pop_dencity_map_nibble	; add here the POPUL dencity value [0-15]
+		CLC										; sum would be [0-30]
 		ADC		_tmpE7
 		STA		_tmpE7
-		JSR		_read_police_radius_map_nibble
-		ASL
-		ASL
-		STA		_tmpE6
-		LDA		_tmpE7
+		JSR		_read_police_radius_map_nibble	; and then subtract the POLICE radius value times 4
+		ASL										; value [0-60]
+		ASL										; as a result, we will have slightly less crime
+		STA		_tmpE6							; inside most of the police station area
+		LDA		_tmpE7							; and less only on its edges and outside it
 		SEC
 		SBC		_tmpE6
-		BCS		loc_11EDF1
+		BCS		loc_11EDF1						; negative values are discarded
 		LDA		#$00
 loc_11EDF1:
-		PHA
+		PHA										; backup crime level value
 		JSR		_write_crime_level_map_nibble
-		PLA
+		PLA										; restore and add to sum
 		CLC
-		ADC		_tmp6CC
-		STA		_tmp6CC
+		ADC		_tmp6CC							; add calculated crime value here
+		STA		_tmp6CC							; max value here may be 19*19*30 = 10830
 		BCC		loc_11EE02
 		INC		_tmp6CC+1
 loc_11EE02:
@@ -1814,27 +1821,16 @@ loc_11EE02:
 		ADC		#$04
 		CMP		#$4C
 		BCC		loc_11EDBB
-		LDA		_tmp6CC
-		STA		_tmpE7
-		LDA		_tmp6CC+1
-		STA		_tmpE8
-		LDA		#$00
+		MOVW	_tmpE7,_tmp6CC					; divident CRIME_SUM (10830 max)
+		MOVW	_tmpEA,_tmp6D0					; divider LAND_CNT (19*19 max)
+		LDA		#$00							; so overall value less than 30.0fp
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_tmp6D0
-		STA		_tmpEA
-		LDA		_tmp6D0+1
-		STA		_tmpEB
 		JSR		_div_32to16
 		BCC		loc_11EE3B
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE7
+		MOVWI	_tmpE6,0						; default value 0
 loc_11EE3B:
-		LDA		_tmpE6
-		STA		_city._crime_level
-		LDA		_tmpE7
-		STA		_city._crime_level+1
+		MOVW	_city._crime_level,_tmpE6
 		LDA		#$40
 		JMP		_critical_section_leave
 
@@ -4006,7 +4002,7 @@ loc_11FF45:
 		AND		#$30							; wait for tornado disappear if any.
 		BNE		loc_11FF45						; as a side effect, town freezed by this time
 		LDA		#$1A
-		JSR		_rand_clamp_A						; as against manually selected monster disaster
+		JSR		_rand_clamp_A					; as against manually selected monster disaster
 		ADC		#$2D							; scenario starting point is area near the center
 		STA		_obj_pos._monster._COL			; of the map within square in 26 tiles
 		STA		_tmp_map_pos._COL
@@ -4019,7 +4015,7 @@ loc_11FF45:
 		LDA		#$4B
 		STA		_obj_dst_pos._monster._ROW
 		LDA		#$97
-		JSR		_rand_clamp_A						; but rnd will change one of the coordinates, so
+		JSR		_rand_clamp_A					; but rnd will change one of the coordinates, so
 		LSR										; it will travel either to the leftmost of the bottom side
 		BCS		loc_11FF7B						; in the direction of the sea
 		STA		_obj_dst_pos._monster._COL
@@ -4082,7 +4078,7 @@ loc_11FFBB:
 		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
-		POPW	_traffic_level_value
+		POPW	_traffic_level
 		PLA
 		RTS
 

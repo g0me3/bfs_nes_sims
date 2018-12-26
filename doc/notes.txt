@@ -34,6 +34,13 @@
 - TODO BUGS#18
 - Fixed	BUGS#19
 - Fixed BUGS#20, workaround somehow, there are a lot of paches needed to fix it in the original version, but can be patched much more easy in recompile if throw the difficult settings out of resetable area of the game variables. Currently it may cause some errors if I made any mistake in disasm, so let it just a workaround now. But it's work.
+- TODO BUGS#21
+- TODO BUGS#22
+- Fixed	BUGS#23
+- TODO BUGS#23.1
+- TODO BUGS#23.2
+- TODO BUGS#23.3
+- TODO BUGS#23.4
 - Added UNFINISHED#1.4, now "FREEDOM" scenario treated as a Practice mode with Freedom map and speed setting of the Scenarios (SLOW).
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
@@ -81,7 +88,7 @@
 	5.5 Only two portions of code are looking for a special water tiles either to retarget the ship (object movements routines) or build a special road tiles (construction routines) which intercept the special sea tiles to make some kind of "bridges" (see APPEND C). However, the rest of the code does not aware about special "bridge" tiles or special water tiles to make all this stuff working together properly. Even the Ship movements code knows about sailable waters but does not know about "bridges".
 	5.6 The unused Ship vehicle has two sets of sprites for years before and after 1950. Sprites 5 and 6 of the first set are broken, as well as sprite 3 of the second set. CAN'T BE PATCHED
 6. In the data for in-game menus there are two unused "YES/NO" windows: "DO YOU QUIT PLAYING WITHOUT SAVING?" and "DO YOU WANT TO START NEW CITY?". Both unused. In all cases except "LOAD GAME" the common "SAVE GAME" menu used instead.
-7. Every year, the current state of city parameters are stored in the graphs arrays. Since all values used here are fixed point, they attempt to scale them down to 8-bit fixed values, also calculate the max value for further scaling. However, this scaling value never used, the actual graphs display routine calculate it's own max value and scaling factor. Also, the fixed point conversion seems kinda messy for R values, looks like some kind of iverlooked bug.
+7. Every year, the current state of city parameters are stored in the graphs arrays. Since all values used here are fixed point, they attempt to scale them down to 8-bit fixed values, also calculate the max value for further scaling. However, this scaling value never used, the actual graphs display routine calculate it's own max value and scaling factor for each graph independently.
 8. Auto Budget setting in Options does nothing. Budget is planned and trimmed automatically always, and the Budget screen can't be disabled or skipped during the game.
 9. Helicopter sprites contain a 4 frame animations of the flight for every movement direction. However, only two of four used for some reason. FIX GG: 039-E37-E6E
 10. There are a lot of unused CHR data for BG objects:
@@ -138,6 +145,11 @@
 20. Difficult settings does not work for New City mode. Although it can be selected, it will clear at the beginning of any game mode, so in any case you'll play on EASY by default.
 21. When you buid a present, a corresponding item removed from the list and when empty disables the menu. If you select first one and build a present, then you'll be able to build a second present immediately. They will be properly removed from the list. However, if you choose to build the second prize first, then immediately build another one, you'll build a glitched construction that can't be removed or bulldozered.
 22. Some electric tiles near the water electric tiles treated as non-powered in some cases.
+23. Graphs calculations slightly broken and mangled.
+	23.1 For R it should multiply level value by 2, but instead multiplied integer part of value with itself. The R levels usually are in range 1 to 2, so most of the time we have roughly rounded integer value for this in case of this bug.
+	23.2 For "Pollution" button they uses crime level value instead.
+	23.3 For "Money" button they uses highest nibble of money without highest bit which means only money above 65535 will be documented and used also this means they used copy-pasted code here from previous calculations.
+	23.4 For "Crime" button they uses tax income value which may be positive or negative. They attempted to att signed values to graph by shifting the Y axis to -128, but didn't tested the tax incom value for negativeness at all, so all negative values turns max parameters when clamped.
 
 	MISC
 

@@ -114,19 +114,19 @@ loc_10415F:
 ; L_C+L_I = L_CI
 ; L_R/8 = L_r
 ; for R proportion = L_CI/L_r, default 1.3, max 2.00
-; for C proportion = ((L_r/L_CI)*(L_CI+L_r)*256*0.27)/(L_C*256)
+; for C proportion = ((L_r/L_CI)*(L_CI+L_r)*0.27)/L_C
 ; for I proportion = (L_r/L_CI)*1.2), default 1.2, max 1.56
 ;
 ; NOTE, RCI levels here are depending on people requirements, if no requirements,
-; then calc as usual if any requirement is set, then delta will be always 0 forced,
+; then calc as usual if any requirement is set, then delta will be always 0,
 ; .ignore_requirements delta already bad enough, so no need to force it to zero.
 ; for R meter it depending on stadium requirement, for C meter - on seaport
 ; requirement and for I meter - on airport requirement
 ;
 _RCI_meter_recalc:
-		LDA		_city._delta,X					; read area development level delta value
-		BMI		.ignore_requirements
-		LDA		#$00
+		LDA		_city._delta,X					; requirements are preventing only growth
+		BMI		.ignore_requirements			; they does not work for fall down, so test
+		LDA		#$00							; if delta negative here and if yes, skip
 		LDY		_required,X
 		BNE		.delta_update
 .ignore_requirements:
@@ -254,7 +254,7 @@ _power_grid_recalc:
 		JSR		_clear_buf
 ; -
 		JSR		_sram_write_disable
-		PUSHWI	700								; calculate power generation
+		PUSHWI	700								; calculate power amount
 		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8					; E6 = COL * 700
 		POPD	_tmpE6
@@ -454,7 +454,7 @@ _power_grid_test:
 ; REDUNDANT
 ;		LDA		_tmp_map_pos._ROW				; now calc the power map grid idx again
 ;		MULAI	#$4C							; as done in power map set routine before
-;		LDA		_MMC5_MUL0						; TODO: optimize me!
+;		LDA		_MMC5_MUL0
 ;		CLC
 ;		ADC		_tmp_map_pos._COL
 ;		STA		_tmpE6
@@ -550,6 +550,9 @@ _power_grid_set:
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: when space is enough, merge me with my copy
+; copy of _test_power_grid_map_bit in PRGB
+;
 _power_grid_read:
 		LDA		_tmp_map_pos._ROW				; calculate map buf offset
 		MULAI	#$4C
@@ -589,11 +592,11 @@ _power_grid_read:
 _graphs_10_year_data_update:
 		LDA		#$00
 		STA		_tmpE6
-		JSR		_sram_write_enable
+		JSR		_sram_write_enable				; prepape sram
 		LDX		#$00
 loc_104559:
-		LDA		_wram_graphs._10y._R+1,X
-		STA		_wram_graphs._10y._R,X
+		LDA		_wram_graphs._10y._R+1,X		; shift graphs data to the left
+		STA		_wram_graphs._10y._R,X			; collect R/C/I max value
 		CMP		_tmpE6
 		BCC		loc_104565
 		STA		_tmpE6
@@ -610,37 +613,41 @@ loc_104571:
 		BCC		loc_10457D
 		STA		_tmpE6
 loc_10457D:
-		LDA		_wram_graphs._10y._crime+1,X
-		STA		_wram_graphs._10y._crime,X
+		LDA		_wram_graphs._10y._pollution+1,X	; the rest does not need to save min max
+		STA		_wram_graphs._10y._pollution,X
 		LDA		_wram_graphs._10y._money+1,X
 		STA		_wram_graphs._10y._money,X
-		LDA		_wram_graphs._10y._tax_income+1,X
-		STA		_wram_graphs._10y._tax_income,X
+		LDA		_wram_graphs._10y._crime+1,X
+		STA		_wram_graphs._10y._crime,X
 		INX
 		CPX		#$09
 		BNE		loc_104559
 		LDA		_tmpE6
-		STA		_RCI_max_range_10_years			; TODO: fixme! never used for scaling!
-		LDA		_city._level._R.FRAC			; BUG! _tmpE6 writeen twice, low nibble
-		STA		_tmpE6							; of _R lost, further calcs are correct
-		LDA		_city._level._R.INT
-		STA		_tmpE6
+; TODO: fixme! never used for scaling!
+		STA		_RCI_max_range_10_years
+; -
+		LDA		_city._level._R.FRAC			; here we multiply to 2 the whole fixed point number
+		STA		_tmpE6							; take higher bit of FRAC into integer part once
+		LDA		_city._level._R.INT				; then shift integer part
+; BUG! _tmpE6 writeen twice, low nibble of _R lost
+; FIX, remove it and we get actual value
+;		STA		_tmpE6
 		ASL		_tmpE6
 		ROL
-		STA		_wram_graphs._10y._R+9
-		LDA		_city._level._C.INT				; TODO: fixme, differnt order of low/hi
-		STA		_tmpE6							; nibbles are in different orders
-		LDA		_city._level._C.FRAC			; unificato to make a common macro for it
+		STA		_wram_graphs._10y._R+9			; graph data = [L_R * 2]
+		LDA		_city._level._C.INT				; little bit ticky here, we divide frac by 16
+		STA		_tmpE6							; but then get the result as an integer. this
+		LDA		_city._level._C.FRAC			; equivalent of * 256 of the fixed point result
+		LSR		_tmpE6							;
+		ROR										; NOTE, if we do the same as for _R calc,
+		LSR		_tmpE6							; swap INT/FRAC and get left shift/rors instead
+		ROR										; result would be the same
 		LSR		_tmpE6
 		ROR
 		LSR		_tmpE6
 		ROR
-		LSR		_tmpE6
-		ROR
-		LSR		_tmpE6
-		ROR
-		STA		_wram_graphs._10y._C+9
-		LDA		_city._level._I.INT
+		STA		_wram_graphs._10y._C+9			; graph data = [L_C * 16]
+		LDA		_city._level._I.INT				; same as previous
 		STA		_tmpE6
 		LDA		_city._level._I.FRAC
 		LSR		_tmpE6
@@ -651,33 +658,43 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_wram_graphs._10y._I+9
-		LDA		_city._crime_level+1
-		AND		#$7F
-		SEC
-		SBC		_wram_graphs._10y._crime+8
+		STA		_wram_graphs._10y._I+9			; graph data = [L_I * 16]
+; BUG! "crime" button is the last one, this is a pollution button.
+; use pollution value instead!
+;
+		LDA		_city._crime_level.INT			; integer part of the _crime_level value is a special
+		AND		#$7F							; flag for ingame warning messages, so remove it
+		SEC										; interpolate with previous values for nice curvy graph
+		SBC		_wram_graphs._10y._pollution+8
 		LSR
 		LSR
-		ADC		_wram_graphs._10y._crime+8
+		ADC		_wram_graphs._10y._pollution+8
 		BCC		loc_1045E9
-		LDA		#$FF
+		LDA		#$FF							; clamp to 255 max
 loc_1045E9:
-		STA		_wram_graphs._10y._crime+9
-		LDA		_city._money+2
-		AND		#$7F
+		STA		_wram_graphs._10y._pollution+9
+; BUG, it seems they copy=pasted code above and just put the money var here
+; all this thing looks wrong then.
+;
+		LDA		_city._money+2					; money above 65535 counts but clamped to 7 bit only
+		AND		#$7F							; lol
 		SEC
 		SBC		_wram_graphs._10y._money+8
 		LSR
 		LSR
 		ADC		_wram_graphs._10y._money+8
 		BCC		loc_1045FE
-		LDA		#$FF
+		LDA		#$FF							; clamp to 255 max
 loc_1045FE:
 		STA		_wram_graphs._10y._money+9
-		LDA		byte_137
-		BNE		loc_104625
-		LDA		_taxes_income+1
-		STA		_tmpE6
+; BUG, Also odd calculation, _taxes_income never gets higher nibble calculated before now in the original code
+; also _taxes_income may be negative, so further calculations may be incorrect and clamp negative values to
+; max on the graph instead...
+;
+		LDA		_taxes_income+2					; NOTE, taxes wer income never calculated as 24-bit value
+		BNE		loc_104625						; only as 16-bit, now it is so this check isnt redundant now
+		LDA		_taxes_income+1					; graph value = (_taxes_income / 32) - 128
+		STA		_tmpE6							; so values here are inrange -128 to +127
 		LDA		_taxes_income
 		LSR		_tmpE6
 		ROR
@@ -690,21 +707,21 @@ loc_1045FE:
 		LSR		_tmpE6
 		ROR
 		LDY		_tmpE6
-		BNE		loc_104625
+		BNE		loc_104625						; attempt to clamp
 		ADC		#$80
-		BCC		loc_104627
+		BCC		loc_104627						; attempt to shift graph to the middle of the axis
 loc_104625:
-		LDA		#$FF
+		LDA		#$FF							; clamp to 255 max
 loc_104627:
-		STA		_wram_graphs._10y._tax_income+9
+		STA		_wram_graphs._10y._crime+9
 		JSR		_sram_write_disable
-		LDX		#$00
-		LDA		_city._level._R.INT
-		CMP		_R_hospitals_count
-		BCC		loc_10463B
-		BNE		loc_10463F
-		BEQ		loc_104641
-loc_10463B:
+		LDX		#$00							; the final calculation for schools and hospitals
+		LDA		_city._level._R.INT				; based on integer part of R level value
+		CMP		_hospitals_count				; [L_R]<school/hospitals, school/hospitals delta negative
+		BCC		loc_10463B						; [L_R]=school/hospitals, school/hospitals delta zero
+		BNE		loc_10463F						; [L_R]<school/hospitals, school/hospitals delta positive
+		BEQ		loc_104641						; so we see that a number of schools/hospitals would be exactly
+loc_10463B:										; equal the R level
 		LDX		#$FF
 		BNE		loc_104641
 loc_10463F:
@@ -713,7 +730,7 @@ loc_104641:
 		STX		_hospitals_delta
 		LDX		#$00
 		LDA		_city._level._R.INT
-		CMP		_R_schools_count
+		CMP		_schools_count
 		BCC		loc_104652
 		BNE		loc_104656
 		BEQ		loc_104658
@@ -728,9 +745,9 @@ loc_104658:
 
 ; =============== S U B	R O U T	I N E =======================================
 _graphs_100_year_data_update:
-		LDA		#$00
-		STA		_tmpE6
-		JSR		_sram_write_enable
+		LDA		#$00							; FIXME: simple copy cur data for year,
+		STA		_tmpE6							; not so much relevant info. maybe need
+		JSR		_sram_write_enable				; an interpolation of all 10years graphs instead?
 		LDX		#$00
 loc_104665:
 		LDA		_wram_graphs._100y._R+1,X
@@ -751,42 +768,43 @@ loc_10467D:
 		BCC		loc_104689
 		STA		_tmpE6
 loc_104689:
-		LDA		_wram_graphs._100y._crime+1,X
-		STA		_wram_graphs._100y._crime,X
+		LDA		_wram_graphs._100y._pollution+1,X
+		STA		_wram_graphs._100y._pollution,X
 		LDA		_wram_graphs._100y._money+1,X
 		STA		_wram_graphs._100y._money,X
-		LDA		_wram_graphs._100y._tax_income+1,X
-		STA		_wram_graphs._100y._tax_income,X
+		LDA		_wram_graphs._100y._crime+1,X
+		STA		_wram_graphs._100y._crime,X
 		INX
 		CPX		#$09
 		BNE		loc_104665
 		LDA		_tmpE6
 		STA		_RCI_max_range_100_years		; TODO: fixme, the same unused max value
-		LDA		_wram_graphs._10y._R+9			; TODO: simple copy cur data for year,
-		STA		_wram_graphs._100y._R+9			; may be not so much relevant. maybe need
-		LDA		_wram_graphs._10y._C+9			; an interpolation of all 10years graphs instead?
+		LDA		_wram_graphs._10y._R+9
+		STA		_wram_graphs._100y._R+9
+		LDA		_wram_graphs._10y._C+9
 		STA		_wram_graphs._100y._C+9
 		LDA		_wram_graphs._10y._I+9
 		STA		_wram_graphs._100y._I+9
-		LDA		_wram_graphs._10y._crime+9
-		STA		_wram_graphs._100y._crime+9
+		LDA		_wram_graphs._10y._pollution+9
+		STA		_wram_graphs._100y._pollution+9
 		LDA		_wram_graphs._10y._money+9
 		STA		_wram_graphs._100y._money+9
-		LDA		_wram_graphs._10y._tax_income+9
-		STA		_wram_graphs._100y._tax_income+9
+		LDA		_wram_graphs._10y._crime+9
+		STA		_wram_graphs._100y._crime+9
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _fiscal_year_results_calc:
-		LDA		#$00
-		STA		_taxes_income
-		MOVW	_tmp6CC,_city._tax_year_rate
-		MOVWI	_city._tax_year_rate,0
-		LDA		_budget_scr_draw_req
-		BEQ		loc_1046EB
+; FIX, for some reason, here were zeroed only lower nibble of value, let them zero completely
+		MOVDI	_taxes_income, 0
+; -
+		MOVW	_tmp6CC,_city._tax_year_rate	; get sum of year taxes
+		MOVWI	_city._tax_year_rate,0			; reset global value then
+		LDA		_budget_scr_draw_req			; if we already on the budget screen when end of the year
+		BEQ		loc_1046EB						; happens, skip this
 		RTS
 loc_1046EB:
-		LDA		_rails_count+1
+		LDA		_rails_count+1					; summing all needed values
 		STA		_tmpE7
 		LDA		_rails_count
 		ASL
@@ -797,42 +815,45 @@ loc_1046EB:
 		LDA		_tmpE7
 		ADC		_roads_count+1
 		STA		_tmpE7
-		PUSHW	_tmpE6							; E6 = (rails_count*2)+_roads_count
+		PUSHW	_tmpE6							; multiplier 1 E6 = (rails_count*2)+_roads_count
 		LDY		_city._difficult
-		LDA		_trans_fund_coefs_hi,Y
+		LDA		_trans_fund_coefs_hi,Y			; multiplier 2 coeff = diff[1,2/0.9/0.7]
 		PHA
 ;		LDY		_city._difficult				; REDUNDANT, Y already loaded with difficult here
 		LDA		_trans_fund_coefs_lo,Y
 		PHA
-		JSR		_mmc5_mul16to16					; E6 * [1,2/0.9/0.7]*difficult
+		JSR		_mmc5_mul16to16					; E6 * coeff
 		PLA
-		POPW	_fund_request_trans
+		POPW	_fund_request_trans				; total funds request for transport system value
 		PLA
-		MMULB8	_fund_request_police,_police_stations_count,#$64
-		MMULB8	_fund_request_fire,_fire_stations_count,#$64
-		MMULB8	_fund_request_education,_R_schools_count,#$32
-		PUSHW	_cur_RCI_levels_sum
-		PUSHW	_city._overall_land_value
-		JSR		_mmc5_mul16to16
-		PLA
+		MMULB8	_fund_request_police,_police_stations_count,#$64	; other requests are simpler. just
+		MMULB8	_fund_request_fire,_fire_stations_count,#$64		; number of corresponding building times 100
+		MMULB8	_fund_request_education,_schools_count,#$32			; or times 50 for schools
+;
+; NOTE, see, there is no hospitals because this is CAPITALISM and medicine uses insurance systemfor funding itself
+;
+		PUSHW	_cur_RCI_levels_sum				; two fixed point 8.8 values multiply
+		PUSHW	_city._land_value
+		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*_land_value
+		PLA										; skip lower FRAC nibbles
 		PLA
 		TAX
 		PLA
-		TAY
-		PLA
-		TYA
+		TAY										; result in X/Y now
+		PLA										; skip higher nibble as well
+		TYA										; push result again for next multiply
 		PHA
 		TXA
 		PHA
 		LDY		_city._difficult
-		LDA		_tax_coefs_hi,Y					; * diff[1.4/1.2/0.8]
+		LDA		_tax_coefs_int,Y				; multiply to scale coeff diff[1.4/1.2/0.8]
 		PHA
-		LDA		_tax_coefs_lo,Y
+		LDA		_tax_coefs_frac,Y
 		PHA
-		JSR		_mmc5_mul16to16
-		PLA
-		PLA
-		TAX
+		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*OVERALL_LAND_VALUE*diff[1.4/1.2/0.8]
+		PLA										; migrate results to the multiply arguments again
+		PLA										; looks crypic but little bit faster than using
+		TAX										; temp vars
 		PLA
 		TAY
 		PLA
@@ -840,18 +861,18 @@ loc_1046EB:
 		PHA
 		TXA
 		PHA
-		PUSHB	#$B6							; 0.71
-		JSR		_mmc5_mul16to8
+		PUSHB	#$B6							; final scale coeff common for all difficulties = 0.71
+		JSR		_mmc5_mul16to8					; multiply fp 8.8 to 0.8 fraction
 		PLA
-		PUSHW	_tmp6CC							; *tax value
-		JSR		_mmc5_mul16to16
-		PLA
-		POPD	_city_taxes_collected
-		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings, then taxes
-		ORA		_cur_RCI_levels_sum.INT			; does not calculated, skip budget screen at all
+		PUSHW	_tmp6CC							; result already in stack, just push _tax_year_rate
+		JSR		_mmc5_mul16to16					; full equation is
+		PLA										; _city_taxes_collected=(L_R+L_C+L_I)*_land_value*diff[1.4/1.2/0.8]*0.71*_tax_year_rate
+		POPD	_city_taxes_collected			; result is 24-bit
+		LDA		_cur_RCI_levels_sum.FRAC		; if there is no buildings at all, then skip budget screen
+		ORA		_cur_RCI_levels_sum.INT
 		BNE		.do_budget_screen
 		LDA		#$0F
-		STA		_fund_rate_police
+		STA		_fund_rate_police				; default values preventing unnecessary alerts
 		STA		_fund_rate_fire
 		RTS
 .do_budget_screen:
@@ -861,20 +882,35 @@ loc_1046EB:
 loc_1047C7:
 		LDA		_budget_scr_draw_req			; wait for request is clear means that
 		BNE		loc_1047C7						; the budget screen were displayed, and
-		LDA		_city._money					; player has finished adjustements, so
-		CLC										; now all fundings are recalculated
-		ADC		_city_taxes_collected			; and we can finally spend our money
-		STA		_city._money					; note, that budget can't get more money
-		LDA		_city._money+1					; than you have, so further subtraction never
-		ADC		_city_taxes_collected+1			; goes over
-		STA		_city._money+1
-		BCC		loc_1047E4
-		INC		_city._money+2					; first add taxes collected to our money
+; REDUNDANT, all cals here are already has been done in budget screen calculations
+; as against the budget screen, these cals are linear and non-onpimal at all
+; also, most of these values are already calculated in budget screen
+; -
+; REDUNDANT, this value already calculated and can be accessed via _budget_money
+;		LDA		_city._money					; player has finished adjustements, so
+;		CLC										; now all fundings are recalculated
+;		ADC		_city_taxes_collected			; and we can finally spend our money.
+;		STA		_city._money					; NOTE, that budget can't get more money
+;		LDA		_city._money+1					; than you have, so further subtraction never
+;		ADC		_city_taxes_collected+1			; goes over
+;		STA		_city._money+1
+;		BCC		loc_1047E4
+;		INC		_city._money+2					; first add taxes collected to our money
+; -
+; OPTIMIZED
+		MOVD	_city._money,_budget_money
+; -
 loc_1047E4:
-		SUBDW	_city._money,_fund_alloc_trans	; subtract funds
-		SUBDW	_city._money,_fund_alloc_fire
-		SUBDW	_city._money,_fund_alloc_police
-		SUBDW	_city._money,_fund_alloc_education
+; REDUNDANT, all funding alloc sums including loan are already calculated in _budget_funds_alloc_sum_loan
+; we only need to adjust loan period here
+;		SUBDW	_city._money,_fund_alloc_trans	; subtract funds allocated
+;		SUBDW	_city._money,_fund_alloc_fire
+;		SUBDW	_city._money,_fund_alloc_police
+;		SUBDW	_city._money,_fund_alloc_education
+; -
+; OPTIMIZED
+		SUBD	_city._money,_budget_funds_alloc_sum_loan
+; -
 		LDA		_city._loan_period				; if loan period isn't zero
 		BEQ		loc_10486C
 		DEC		_city._loan_period				; decrement loan year count
@@ -883,46 +919,36 @@ loc_1047E4:
 		AND		#$BF
 		STA		_city._bank_flags
 loc_104856:
-		SUBDI16	_city._money,500				; loan amount hardcoded here, the var never used
+;		SUBDI16	_city._money,500				; REDUNDANT, loan amount hardcoded here, the var never used
 loc_10486C:
-		LDA		_city_taxes_collected
-		SEC
-		SBC		_fund_request_trans
-		STA		_tmpE6
-		LDA		_city_taxes_collected+1
-		SBC		_fund_request_trans+1
-		STA		_tmpE7
-		LDA		_tmpE6
-		SEC
-		SBC		_fund_request_fire
-		STA		_tmpE6
-		LDA		_tmpE7
-		SBC		_fund_request_fire+1
-		STA		_tmpE7
-		LDA		_tmpE6
-		SEC
-		SBC		_fund_request_police
-		STA		_taxes_income
-		LDA		_tmpE7
-		SBC		_fund_request_police+1
-		STA		_taxes_income+1
+; BUG, note, we calculate here _taxes_income value, it used only for graphs data display
+; but as you may see, they calculate it for fund request values, not fund alloc values
+; so results may be either negative and sometimes not correct, however, if all fundings
+; on 100%, then these values are equal, also this value does not include education alloc!
+;		MSUBW	_tmpE6,_city_taxes_collected,_fund_request_trans
+;		MSUBW	_tmpE6,_tmpE6,_fund_request_fire
+;		MSUBW	_taxes_income,_tmpE6,_fund_request_police
+; -
+; FIX, OPTIMIZED
+		MSUBD	_taxes_income,_city_taxes_collected,_budget_funds_alloc_sum_loan
+; -
+; NOTE, also ingame rates values are not in percents, but in fixed point fraction only
+; form: 0.xx and in range [0.00 to 0.129] for transport funds and [0.00 to 0.062] for the rest
+;
+; also, for some odd reason, rates other than transport are clamped to max 0.99, and
+; only transport funds may be 1.00 when fully funded...
+;
 		LDA		_fund_request_trans
 		ORA		_fund_request_trans+1
 		BNE		loc_1048A9
-		LDA		#$20
+		LDA		#$20							; default 0.125
 		BNE		loc_1048D7
 loc_1048A9:
+		MOVW	_tmpE7,_fund_alloc_trans
+		MOVW	_tmpEA,_fund_request_trans
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_fund_alloc_trans
-		STA		_tmpE7
-		LDA		_fund_alloc_trans+1
-		STA		_tmpE8
-		LDA		_fund_request_trans
-		STA		_tmpEA
-		LDA		_fund_request_trans+1
-		STA		_tmpEB
 		JSR		_div_32to16
 		PUSHW	_tmpE6
 		PUSHB	#$21
@@ -937,7 +963,7 @@ loc_1048D7:
 		LDA		_fund_request_police
 		ORA		_fund_request_police+1
 		BNE		loc_1048E6
-		LDA		#$0F
+		LDA		#$0F							; default 0.059
 		BNE		loc_104914
 loc_1048E6:
 		LDA		#$00
@@ -995,13 +1021,15 @@ loc_104948:
 loc_104951:
 		STA		_fund_rate_fire
 		RTS
+; -
+
 _trans_fund_coefs_lo:
 		.BYTE	$B3,$E6,$33
 _trans_fund_coefs_hi:
 		.BYTE	$00,$00,$01
-_tax_coefs_lo:
+_tax_coefs_frac:
 		.BYTE	$66,$33,$CC
-_tax_coefs_hi:
+_tax_coefs_int:
 		.BYTE	$01,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1057,7 +1085,7 @@ _city_assessed_value_recalc:
 		ADC		_tmpE8
 		STA		_tmpE8
 		PUSHWI	$9001						; BUG! SWAP NIBBLES
-		PUSHB	_R_hospitals_count
+		PUSHB	_hospitals_count
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
@@ -1174,9 +1202,9 @@ byte_104B17:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_problems_list_recalc:
-		LDA		_city._crime_level
+		LDA		_city._crime_level.FRAC
 		STA		_tmp6CE
-		LDA		_city._crime_level+1
+		LDA		_city._crime_level.INT
 		AND		#$7F
 		STA		_tmp6CE+1
 		LDA		_city._var_5FC
@@ -1184,14 +1212,14 @@ _city_problems_list_recalc:
 		LDA		_city._var_5FD
 		AND		#$7F
 		STA		_tmp6D1
-		PUSHW	_city._overall_land_value
+		PUSHW	_city._land_value
 		PUSHB	#$A0
 		JSR		_mmc5_mul16to8
 		PLA
 		POPW	_tmp6D2
 		MMULB8	_tmp6D4,_city._tax_rate,#$0A
 		FJSR	_traffic_jam_recalc,SRAM,PRGB
-		MOVW	_tmp6D6,_traffic_level_value
+		MOVW	_tmp6D6,_traffic_level
 		JSR		sub_104C2B
 		STA		_tmp6D8
 		JSR		_wrong_var_mul5
@@ -1721,32 +1749,32 @@ _event01_city_growt:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event06_total_jam:
-		LDA		_traffic_level_value+1
+		LDA		_traffic_level.INT
 		BMI		nullsub_4
 		CMP		#$07
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_traffic_level_value+1
+		STA		_traffic_level.INT
 		JMP		_new_event_set
 
 ; =============== S U B	R O U T	I N E =======================================
 _event07_traffic:
-		LDA		_traffic_level_value+1
+		LDA		_traffic_level.INT
 		BMI		nullsub_4
 		CMP		#$02
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_traffic_level_value+1
+		STA		_traffic_level.INT
 		JMP		_new_event_set
 
 ; =============== S U B	R O U T	I N E =======================================
 _event08_crime:
-		LDA		_city._crime_level+1
+		LDA		_city._crime_level.INT
 		BMI		nullsub_4
 		CMP		#$07
 		BCC		nullsub_4
 		ORA		#$80
-		STA		_city._crime_level+1
+		STA		_city._crime_level.INT
 		JMP		_new_event_set
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2033,18 +2061,18 @@ _scenario_result_test:
 loc_105142:
 		DEX
 		BNE		loc_105153
-		LDA		_traffic_level_value+1			; SCENARIO 1 "BERN"
+		LDA		_traffic_level.INT				; SCENARIO 1 "BERN"
 		BNE		.scenario_failed
-		LDA		_traffic_level_value
+		LDA		_traffic_level.FRAC
 		CMP		#$50
 		BCS		.scenario_failed
 		BCC		loc_105198
 loc_105153:
 		DEX
 		BNE		loc_105164
-		LDA		_city._crime_level+1			; SCENARIO 2 "DETROIT"
+		LDA		_city._crime_level.INT			; SCENARIO 2 "DETROIT"
 		BNE		.scenario_failed
-		LDA		_city._crime_level
+		LDA		_city._crime_level.FRAC
 		CMP		#$3C
 		BCS		.scenario_failed
 		BCC		loc_105198

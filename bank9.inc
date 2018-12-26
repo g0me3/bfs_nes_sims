@@ -2554,7 +2554,7 @@ _budget_cur_fund_draw:
 		LDY		_budget_tax_cur_pos				; also library draw
 		LDA		_budget_tax_print_idx_list,Y
 		JSR		_printf_num_lib
-		JSR		_budget_cash_flow_draw			; calc and draw cash flow and current funds fields
+		JSR		_budget_overall_money_draw			; calc and draw cash flow and current funds fields
 loc_EB328:
 ;		FJSRA	_save_taxes_data,PRG7,PRG9
 ; OPTIMIZED
@@ -2816,7 +2816,7 @@ loc_EB3F0:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_budget_cash_flow_draw:
+_budget_overall_money_draw:
 		JSR		_budget_cash_flow_calc			; got amount calculated and sign already in queue
 		JSR		_hex_to_dec9999999				; now convert to decimal string
 		LDA		#$11
@@ -2946,7 +2946,7 @@ loc_EB4EF:
 		STX		_ptr0
 		LDA		#$00
 		STA		_tmp2
-		JSR		_div24_to_24							; X=alloc*100/request = allocation percent
+		JSR		_div24_to_24					; X=alloc*100/request = allocation percent
 loc_EB4F8:
 		LDA		_budget_tax_cur_pos				; adjust cur tax pos to _budget_fund_rate structure
 		LSR										; Y = (_budget_tax_cur_pos>>1) - 1
@@ -2964,7 +2964,7 @@ _budget_cash_flow_calc:
 		LDX		#$03
 		SEC
 loc_EBAB4:
-		LDA		_city_taxes_collected,Y				; subtract funds
+		LDA		_city_taxes_collected,Y			; subtract funds
 		SBC		_budget_funds_alloc_sum,Y
 		STA		_ptr0,Y
 		INY
@@ -2977,7 +2977,7 @@ loc_EBAB4:
 		LDX		#$03
 		SEC
 loc_EBACC:
-		LDA		_budget_funds_alloc_sum,Y					; calc negative value
+		LDA		_budget_funds_alloc_sum,Y		; calc negative value
 		SBC		_city_taxes_collected,Y
 		STA		_ptr0,Y
 		INY
@@ -3310,8 +3310,8 @@ _overview_var_ptr_list:
 		.WORD	_stats._undeveloped			; 04
 		.WORD	_stats._other				; 05
 		.WORD	_stats._total				; 06
-		.WORD	_R_schools_count			; 07
-		.WORD	_R_hospitals_count			; 08
+		.WORD	_schools_count				; 07
+		.WORD	_hospitals_count			; 08
 		.WORD	_stadiums_count				; 09
 		.WORD	_fire_stations_count		; 0A
 		.WORD	_police_stations_count		; 0B

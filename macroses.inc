@@ -141,8 +141,8 @@ I_AREA_WIDX	EQU 4
 		_trci							{1}._delta
 {1}._var_5F6:							.BYTE	0
 {1}._var_5F7:							.BYTE	0
-		_tfix8_8						{1}._overall_land_value
-{1}._crime_level:						.WORD	0
+		_tfix8_8						{1}._land_value
+		_tfix8_8						{1}._crime_level
 {1}._var_5FC:							.BYTE	0
 {1}._var_5FD:							.BYTE	0
 {1}._difficult:							.BYTE	0
@@ -256,9 +256,9 @@ OTHER_WIDX			EQU 4
 		_tgraph	{1}._R
 		_tgraph	{1}._C
 		_tgraph	{1}._I
-		_tgraph	{1}._crime
+		_tgraph	{1}._pollution
 		_tgraph	{1}._money
-		_tgraph	{1}._tax_income
+		_tgraph	{1}._crime
 	ENDM
 
 	MAC	_tgraphs
@@ -739,12 +739,19 @@ _total_free	SET _total_free+_bank{1}_free
 	; \t\tMOVDI\t\2,$\4\3\1\n
 	;
 	MAC	MOVDI
+	#if {2}==0
+		LDA		#0
+		STA		{1}
+		STA		{1}+1
+		STA		{1}+2
+	#else
 		LDA		#[[{2}>>0 ]&$FF]
 		STA		{1}
 		LDA		#[[{2}>>8 ]&$FF]
 		STA		{1}+1
 		LDA		#[[{2}>>16]&$FF]
 		STA		{1}+2
+	#endif
 	ENDM
 
 	; \t\tINC\t\t(.*)\n\t\tBNE\t\t(.*)\n\t\tINC\t\t\1\+1\n\2:\n
@@ -827,6 +834,16 @@ _total_free	SET _total_free+_bank{1}_free
 		SBC		#[[{2}>>8]&$FF]
 	ENDM
 
+	MAC	MSUBW
+		LDA		{2}
+		SEC
+		SBC		{3}
+		STA		{1}
+		LDA		{2}+1
+		SBC		{3}+1
+		STA		{1}+1
+	ENDM
+
 	; \t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t\#\$(..)\n\t\tSTA\t\t\1\n\t\tLDA\t\t\1\+1\n\t\tSBC\t\t\#\$(..)\n\t\tSTA\t\t\1\+1\n\t\tBCS\t\t(.*)\n\t\tDEC\t\t\1\+2\n\4\:\n
 	; \t\tSUBDI16\t\1,\$\3\2\n\4\:\n
 	;
@@ -860,6 +877,32 @@ _total_free	SET _total_free+_bank{1}_free
 		BCS		.1
 		DEC		{1}+2
 .1:
+	ENDM
+
+	MAC	SUBD
+		LDA		{1}
+		SEC
+		SBC		{2}
+		STA		{1}
+		LDA		{1}+1
+		SBC		{2}+1
+		STA		{1}+1
+		LDA		{1}+2
+		SBC		{2}+2
+		STA		{1}+2
+	ENDM
+
+	MAC	MSUBD
+		LDA		{2}
+		SEC
+		SBC		{3}
+		STA		{1}
+		LDA		{2}+1
+		SBC		{3}+1
+		STA		{1}+1
+		LDA		{2}+2
+		SBC		{3}+2
+		STA		{1}+2
 	ENDM
 
 ;-------------------F-O-N-T-S-------------------

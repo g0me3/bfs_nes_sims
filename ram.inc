@@ -493,9 +493,7 @@ _budget_tax_adjust_value:
 _max_tax_rate:
 		.BYTE	0,0
 _taxes_income:
-		.BYTE	0,0
-byte_137:
-		.BYTE	0
+		.BYTE	0,0,0
 
 		_tpos	_info_maps_rect_pos
 
@@ -883,18 +881,18 @@ _city_taxes_collected:
 ; and in THREAD0 when adjusting the budget, has a default values
 ; at the beginning of the game
 ;
-_fund_rate_police:
-		.BYTE	0
 _fund_rate_fire:
+		.BYTE	0
+_fund_rate_police:
 		.BYTE	0
 _fund_rate_trans:
 		.BYTE	0
 ;
 ; requested funding amounts recalculated every time by THREAD1
 ;
-_fund_request_police:
-		.BYTE	0,0
 _fund_request_fire:
+		.BYTE	0,0
+_fund_request_police:
 		.BYTE	0,0
 _fund_request_trans:
 		.BYTE	0,0
@@ -903,9 +901,9 @@ _fund_request_education:
 ;
 ; actual current funding amounts
 ;
-_fund_alloc_police:
-		.BYTE	0,0
 _fund_alloc_fire:
+		.BYTE	0,0
+_fund_alloc_police:
 		.BYTE	0,0
 _fund_alloc_trans:
 		.BYTE	0,0
@@ -913,8 +911,8 @@ _fund_alloc_education:
 		.BYTE	0,0
 ; -
 
-_traffic_level_value:
-		.BYTE	0,0
+		_tfix8_8	_traffic_level
+
 _doing_a_good_job_votes:
 		.BYTE	0
 _doing_a_bad_job_votes:
@@ -954,9 +952,9 @@ _wrong_var:
 ; into ptr list and accessed via indexes, if you change
 ; it's order, make sure you change indexes as well
 ;
-_R_hospitals_count:
+_hospitals_count:
 		.BYTE	0,0
-_R_schools_count:
+_schools_count:
 		.BYTE	0,0
 _police_stations_count:
 		.BYTE	0
