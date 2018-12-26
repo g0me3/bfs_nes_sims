@@ -54,11 +54,10 @@ byte_EA08C:
 		.BYTE	$00,$00,$20,$08,$08,$08,$08,$A8
 
 ; =============== S U B	R O U T	I N E =======================================
-; handles 2, 3,$05, 6 are called once before tha main loop
-; once,$02, 3, 5 are unrefrenced here, 6 refrenced anyway
-;
-;
+; handles 2, 3, 5, 6 are called once before tha main loop
+; once, handles 2, 3, 5 are unrefrenced here, 6 refrenced anyway
 ; BUT WHY?!
+;
 _scr_res_hndl_common_exec:
 		LDA		_scr_res_idx
 		JSR		_switch
@@ -1882,7 +1881,10 @@ _far_scr_res_hndl1_A_graphs_draw:
 		LDA		#$00
 		STA		_MMC5_PRG_PAGES
 		INC		_scr_res_idx
-		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9
+;		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9		; REDUNDANT SO MUCH!
+		LDY		#$FF											; OPTIMIZED, this is what
+		STY		byte_598										; to be far called lol
+		STY		byte_599										; -
 		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
@@ -2524,7 +2526,7 @@ loc_EB3DA:
 locret_EB3E7:
 		RTS
 _bank_loan_amount:
-		.BYTE	 $0F4,$01,$00
+		.BYTE	$F4,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _funding_rates_recalc:
@@ -2726,25 +2728,25 @@ byte_EB55A:
 byte_EB56A:
 		.BYTE	$10,$10,$10,$10,$10,$10,$D0,$D0,$D0,$D0,$50,$50,$D0,$D0,$90,$90
 word_EB57A:
-		.WORD	$00
-		.WORD	$26
-		.WORD	$4C
-		.WORD	$72
-		.WORD	$98
-		.WORD	$BE
-		.WORD	$E4
-		.WORD	 $10A
-		.WORD	 $130
-		.WORD	 $156
-		.WORD	 $17C
-		.WORD	 $1A2
-		.WORD	 $1C8
-		.WORD	 $1EE
-		.WORD	 $214
-		.WORD	 $23A
-		.WORD	 $260
-		.WORD	 $286
-		.WORD	 $2AC
+		.WORD	$000
+		.WORD	$026
+		.WORD	$04C
+		.WORD	$072
+		.WORD	$098
+		.WORD	$0BE
+		.WORD	$0E4
+		.WORD	$10A
+		.WORD	$130
+		.WORD	$156
+		.WORD	$17C
+		.WORD	$1A2
+		.WORD	$1C8
+		.WORD	$1EE
+		.WORD	$214
+		.WORD	$23A
+		.WORD	$260
+		.WORD	$286
+		.WORD	$2AC
 off_EB5A0:
 		.WORD	_tmp_recalc_bufs
 		.WORD	_power_grid_map_buf
@@ -3278,7 +3280,7 @@ _txt_libs:
 		.WORD	_txt_history_lib
 		.WORD	_txt_history_lib
 		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib	; "Become Town	     "
+		.WORD	_txt_history_lib
 _txt_len_lib:
 		.WORD	_txt_problems_lel_list
 		.WORD	_txt_problems_lel_list
@@ -3294,7 +3296,7 @@ _txt_town_names_lib:
 		.BYTE	$09,$0A,$0B,$0C,$0D,$0E,$10,$11
 		.BYTE	$09,$12,$13,$14,$15,$16,$17,$18
 _txt_town_names_len_list:
-		.BYTE	 $05,$05, $05,$05, $06,$06
+		.BYTE	 $05,$05,$05,$05,$06,$06
 _txt_difficult_lib:
 		.BYTE	$AD,$AE,$AF,$DC
 		.BYTE	$27,$28,$29,$2A
@@ -3510,20 +3512,20 @@ loc_EBA2D:
 		LDY		#$00
 loc_EBA2F:
 		LDA		_ptr0						; from 10m to 10 back count
-		CMP		_hex_to_dec9999999_tbl2,X	; compare 24-bit value with table
+		CMP		_hex_to_dec_tbl2,X	; compare 24-bit value with table
 		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1,X
+		SBC		_hex_to_dec_tbl1,X
 		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0,X
+		SBC		_hex_to_dec_tbl0,X
 		BCC		loc_EBA58
 		LDA		_ptr0						; less than or equals, subtract
-		SBC		_hex_to_dec9999999_tbl2,X
+		SBC		_hex_to_dec_tbl2,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1,X
+		SBC		_hex_to_dec_tbl1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0,X
+		SBC		_hex_to_dec_tbl0,X
 		STA		_tmp2
 		INY
 		BNE		loc_EBA2F
@@ -3540,29 +3542,32 @@ loc_EBA5F:
 		BNE		loc_EBA5F
 		RTS
 
-_hex_to_dec9999999_tbl0:
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-		.BYTE	[[10000000 >> 16] & $FF]; $98
-_hex_to_dec9999999_tbl1:
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]  ; $42
-		.BYTE	[[10000000 >> 8] & $FF] ; $96
-_hex_to_dec9999999_tbl2:
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]  ; $40
-		.BYTE	[[10000000 >> 0] & $FF] ; $80
+; REDUNDANT, merged to one common tables set
+; in system bank
+;
+;_hex_to_dec_tbl0:
+;		.BYTE	[[10 >> 16] & $FF]		; $00
+;		.BYTE	[[100 >> 16] & $FF]		; $00
+;		.BYTE	[[1000 >> 16] & $FF]	; $00
+;		.BYTE	[[10000 >> 16] & $FF]	; $00
+;		.BYTE	[[100000 >> 16] & $FF]	; $01
+;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+;		.BYTE	[[10000000 >> 16] & $FF]; $98
+;_hex_to_dec_tbl1:
+;		.BYTE	[[10 >> 8] & $FF]		; $00
+;		.BYTE	[[100 >> 8] & $FF]		; $00
+;		.BYTE	[[1000 >> 8] & $FF]		; $03
+;		.BYTE	[[10000 >> 8] & $FF]	; $27
+;		.BYTE	[[100000 >> 8] & $FF]	; $86
+;		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+;		.BYTE	[[10000000 >> 8] & $FF] ; $96
+;_hex_to_dec_tbl2:
+;		.BYTE	[[10 >> 0] & $FF]		; $0A
+;		.BYTE	[[100 >> 0] & $FF]		; $64
+;		.BYTE	[[1000 >> 0] & $FF]		; $E8
+;		.BYTE	[[10000 >> 0] & $FF]	; $10
+;		.BYTE	[[100000 >> 0] & $FF]	; $A0
+;		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+;		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
 		BANK_END F9,$C000

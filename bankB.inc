@@ -824,9 +824,9 @@ loc_11E726:
 locret_11E72B:
 		RTS
 _twin_area_ofsX_list:
-		.BYTE	$00, $00,$02,$FE
+		.BYTE	$00,$00,$02,$FE
 _twin_area_ofsY_list:
-		.BYTE	$02,$FE,$00, $00
+		.BYTE	$02,$FE,$00,$00
 _C_twin_idx_test_list:
 		.BYTE	$36,$35,$38,$37
 _R_twin_idx_test_list:

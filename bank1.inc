@@ -3,6 +3,10 @@
 
 		BANK_START $F1
 
+; ---------------------------------------------------------------------------
+; -------------G-A-M-E--S-E-T-U-P--A-N-D--I-N-I-T--S-T-U-F-F-----------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup:
 		LDA		#$80
@@ -466,9 +470,9 @@ _scenario_map_load:
 		LDA		_scenario_data_ppu_lo,Y
 		STA		_PPU_ADDR
 		LDA		_PPU_DATA
-		LDA		off_251A3,Y
+		LDA		_scenario_map_dicts_lib_lo,Y
 		STA		_tmp2
-		LDA		off_251AC,Y
+		LDA		_scenario_map_dicts_lib_hi,Y
 		STA		_tmp3
 		MOVWO	_tmp4,_wram_map_buf
 		JSR		_sram_on
@@ -765,6 +769,8 @@ loc_245EE:
 _name_input_clear_header_area:
 		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_clear_area
 		JSRXY	_rle_extnt_res_queue,_rle_tlm_extnt_clear_area
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_flush:
@@ -1636,7 +1642,7 @@ _rle_tlm_extnt_input_word:
 		.BYTE	$CA,$02,$5D,$1C,$CA,$9A,$06,$05,$CA,$22,$5D,$1C,$CA,$9A,$06,$04
 		.BYTE	$CA,$42,$5D,$1C,$9C,$CA,$00
 _scenario_titles_ofs_lib:
-		.BYTE	 $00,$06, $0B,$13,$19,$20,$24,$2E,$36
+		.BYTE	$00,$06,$0B,$13,$19,$20,$24,$2E,$36
 _scenario_town_names_list:
 		.BYTE	"CISCO",$FF
 		.BYTE	"BERN",$FF
@@ -1793,44 +1799,122 @@ _scenario_data_ppu_lo:
 		.BYTE	$A2,$00,$36,$D3,$36,$C2,$12,$9E,$E3
 _scenario_data_ppu_hi:
 		.BYTE	$18,$00,$24,$0D,$31,$3D,$4A,$56,$56
-off_251A3:
-		.BYTE	<[byte_251B5]
-		.BYTE	<[byte_251D3]
-		.BYTE	<[byte_251F1]
-		.BYTE	<[byte_2520F]
-		.BYTE	<[byte_2522D]
-		.BYTE	<[byte_2524B]
-		.BYTE	<[byte_251F1]
-		.BYTE	<[byte_251B5]
-		.BYTE	<[byte_2522D]
-off_251AC:
-		.BYTE	>[byte_251B5]
-		.BYTE	>[byte_251D3]
-		.BYTE	>[byte_251F1]
-		.BYTE	>[byte_2520F]
-		.BYTE	>[byte_2522D]
-		.BYTE	>[byte_2524B]
-		.BYTE	>[byte_251F1]
-		.BYTE	>[byte_251B5]
-		.BYTE	>[byte_2522D]
-byte_251B5:
-		.BYTE	$90,$90,$90,$92,$92,$90,$91,$91,$91,$98,$97,$91,$92,$9D,$99,$91
-		.BYTE	$91,$99,$9D,$90,$9D,$92,$90,$9D,$DB,$D1,$95,$91,$93,$91
-byte_251D3:
-		.BYTE	$9B,$91,$91,$9B,$91,$91,$90,$90,$DA,$DB,$92,$90,$DE,$DB,$90,$92
-		.BYTE	$DB,$DE,$DD,$DE,$DE,$DF,$9A,$91,$91,$99,$D7,$D8,$97,$91
-byte_251F1:
-		.BYTE	$9B,$91,$91,$9B,$91,$91,$BD,$BD,$90,$90,$91,$BA,$9D,$92,$BD,$AE
-		.BYTE	$92,$9D,$90,$92,$AE,$BD,$B8,$9C,$B7,$9B,$92,$90,$91,$B7
-byte_2520F:
-		.BYTE	$91,$BA,$9B,$91,$BA,$9B,$90,$90,$9C,$BC,$91,$91,$9D,$92,$BD,$BD
-		.BYTE	$DA,$DB,$90,$92,$92,$92,$DB,$DC,$D9,$90,$9A,$91,$DB,$DE
-byte_2522D:
-		.BYTE	$90,$90,$CC,$C4,$C4,$CC,$C7,$BF,$D1,$D2,$BF,$C7,$BD,$BD,$DD,$DE
-		.BYTE	$DA,$DB,$DE,$DF,$D8,$D9,$DB,$DC,$CD,$90,$C9,$BD,$D7,$D8
-byte_2524B:
-		.BYTE	$DD,$DE,$DA,$DB,$91,$91,$92,$90,$92,$92,$9A,$91,$DE,$DF,$BA,$91
-		.BYTE	$B2,$92,$9D,$92,$90,$92,$DE,$DB,$B2,$B2,$99,$91,$91,$99
+_scenario_map_dicts_lib_lo:
+		.BYTE	<[_scenario0_map_dict]
+		.BYTE	<[_scenario1_map_dict]
+		.BYTE	<[_scenario2_map_dict]
+		.BYTE	<[_scenario3_map_dict]
+		.BYTE	<[_scenario4_map_dict]
+		.BYTE	<[_scenario5_map_dict]
+		.BYTE	<[_scenario2_map_dict]
+		.BYTE	<[_scenario0_map_dict]
+		.BYTE	<[_scenario4_map_dict]
+_scenario_map_dicts_lib_hi:
+		.BYTE	>[_scenario0_map_dict]
+		.BYTE	>[_scenario1_map_dict]
+		.BYTE	>[_scenario2_map_dict]
+		.BYTE	>[_scenario3_map_dict]
+		.BYTE	>[_scenario4_map_dict]
+		.BYTE	>[_scenario5_map_dict]
+		.BYTE	>[_scenario2_map_dict]
+		.BYTE	>[_scenario0_map_dict]
+		.BYTE	>[_scenario4_map_dict]
+_scenario0_map_dict:
+		.BYTE	$90,$90
+		.BYTE	$90,$92
+		.BYTE	$92,$90
+		.BYTE	$91,$91
+		.BYTE	$91,$98
+		.BYTE	$97,$91
+		.BYTE	$92,$9D
+		.BYTE	$99,$91
+		.BYTE	$91,$99
+		.BYTE	$9D,$90
+		.BYTE	$9D,$92
+		.BYTE	$90,$9D
+		.BYTE	$DB,$D1
+		.BYTE	$95,$91
+		.BYTE	$93,$91
+_scenario1_map_dict:
+		.BYTE	$9B,$91
+		.BYTE	$91,$9B
+		.BYTE	$91,$91
+		.BYTE	$90,$90
+		.BYTE	$DA,$DB
+		.BYTE	$92,$90
+		.BYTE	$DE,$DB
+		.BYTE	$90,$92
+		.BYTE	$DB,$DE
+		.BYTE	$DD,$DE
+		.BYTE	$DE,$DF
+		.BYTE	$9A,$91
+		.BYTE	$91,$99
+		.BYTE	$D7,$D8
+		.BYTE	$97,$91
+_scenario2_map_dict:
+		.BYTE	$9B,$91
+		.BYTE	$91,$9B
+		.BYTE	$91,$91
+		.BYTE	$BD,$BD
+		.BYTE	$90,$90
+		.BYTE	$91,$BA
+		.BYTE	$9D,$92
+		.BYTE	$BD,$AE
+		.BYTE	$92,$9D
+		.BYTE	$90,$92
+		.BYTE	$AE,$BD
+		.BYTE	$B8,$9C
+		.BYTE	$B7,$9B
+		.BYTE	$92,$90
+		.BYTE	$91,$B7
+_scenario3_map_dict:
+		.BYTE	$91,$BA
+		.BYTE	$9B,$91
+		.BYTE	$BA,$9B
+		.BYTE	$90,$90
+		.BYTE	$9C,$BC
+		.BYTE	$91,$91
+		.BYTE	$9D,$92
+		.BYTE	$BD,$BD
+		.BYTE	$DA,$DB
+		.BYTE	$90,$92
+		.BYTE	$92,$92
+		.BYTE	$DB,$DC
+		.BYTE	$D9,$90
+		.BYTE	$9A,$91
+		.BYTE	$DB,$DE
+_scenario4_map_dict:
+		.BYTE	$90,$90
+		.BYTE	$CC,$C4
+		.BYTE	$C4,$CC
+		.BYTE	$C7,$BF
+		.BYTE	$D1,$D2
+		.BYTE	$BF,$C7
+		.BYTE	$BD,$BD
+		.BYTE	$DD,$DE
+		.BYTE	$DA,$DB
+		.BYTE	$DE,$DF
+		.BYTE	$D8,$D9
+		.BYTE	$DB,$DC
+		.BYTE	$CD,$90
+		.BYTE	$C9,$BD
+		.BYTE	$D7,$D8
+_scenario5_map_dict:
+		.BYTE	$DD,$DE
+		.BYTE	$DA,$DB
+		.BYTE	$91,$91
+		.BYTE	$92,$90
+		.BYTE	$92,$92
+		.BYTE	$9A,$91
+		.BYTE	$DE,$DF
+		.BYTE	$BA,$91
+		.BYTE	$B2,$92
+		.BYTE	$9D,$92
+		.BYTE	$90,$92
+		.BYTE	$DE,$DB
+		.BYTE	$B2,$B2
+		.BYTE	$99,$91
+		.BYTE	$91,$99
 
 _eof	EQU		$5B
 _quo	EQU		$22
@@ -1999,7 +2083,7 @@ _tlm_res_fullscreen_wnd:
 		.BYTE	1
 		.WORD	_pak_tlm_fullscreen_wnd0
 _pak_tlm_fullscreen_wnd0:
-		.BYTE	$E4,$61,$DD,$00,$A5,$39,$A6,$00,$A7,$23,$DD,$00,$B5,$24, $00,$0F
+		.BYTE	$E4,$61,$DD,$00,$A5,$39,$A6,$00,$A7,$23,$DD,$00,$B5,$24,$00,$0F
 		.BYTE	$19,$2F,$35,$00,$21,$32,$25,$00,$21,$00,$37,$29,$2E,$2E,$25,$32
 		.BYTE	$24,$00,$00,$B7,$89,$00,$7E,$0F,$59,$6F,$75,$00,$61,$72,$65,$00
 		.BYTE	$61,$00,$77,$69,$6E,$6E,$65,$72,$8A,$00,$98,$24,$81,$0F,$99,$AF
@@ -2054,7 +2138,7 @@ _tlm_res_game_play_level:
 		.BYTE	1
 		.WORD	_pak_tlm_game_play_level0
 _pak_tlm_game_play_level0:
-		.BYTE	 $0E5,$03,$DD,$00,$A5,$35,$A6,$00,$A7,$27,$DD,$00,$B5,$23,$DF,$0E
+		.BYTE	$E5,$03,$DD,$00,$A5,$35,$A6,$00,$A7,$27,$DD,$00,$B5,$23,$DF,$0E
 		.BYTE	$8A,$AC,$C6,$87,$DF,$8E,$C9,$AC,$7B,$DF,$FA,$AF,$C7,$AF,$C9,$22
 		.BYTE	$DF,$00,$B7,$8C,$01,$1C,$0E,$9F,$BC,$D6,$97,$DF,$9E,$D9,$BC,$8B
 		.BYTE	$DF,$FB,$BF,$D7,$BF,$D9,$8C,$01,$38,$2B,$F9,$00,$7A,$28,$F9,$89

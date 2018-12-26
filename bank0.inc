@@ -1400,8 +1400,8 @@ loc_BB84:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; screenY = ((scrollY / 2) + _tmp1 + 1) % $1E
-; screenX = ((scrollX / 2) + _tmp2 + 0) % $20
+; screenY = ((scrollY / 2) + _tmp1 + 1) % 30
+; screenX = ((scrollX / 2) + _tmp2 + 0) % 32
 ; lineLen = (32 - screenX) >= _tmp3 ? _tmp3 : (32 - screenX)
 ; wrapLen = _tmp3 - lineLen
 ; ppuOfs  = (screenY * 32) + screenX
@@ -1409,7 +1409,7 @@ loc_BB84:
 _wnd_header_pos_calc:
 		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
 		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
-		LDA		#$20
+		LDA		#32
 		SEC
 		SBC		_tmp5
 		CMP		_tmp3

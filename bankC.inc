@@ -639,12 +639,12 @@ loc_1364A3:
 		INX
 		LDA		_gui_ctrl_menu_pos_list,X
 		STA		_wnd_top_tile
-		JSR		_draw_wnd_header_nt
+		JSR		_gui_ctrl_menu_icon_push_draw
 		JSR		_wnd_draw
 		JSR		_gui_ctrl_menu_input
 		BCS		loc_1364C9
 		JSR		_wnd_erase
-		JSR		_draw_wnd_header_extnt
+		JSR		_gui_ctrl_menu_icon_release_draw
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JMP		_game_state_common
@@ -654,7 +654,7 @@ loc_1364C9:
 		BEQ		loc_1364DA
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		JMP		_game_state_common
 loc_1364DA:
 		STA		_scr_res_idx
@@ -664,7 +664,7 @@ loc_1364DA:
 		FJSRA	_scr_res_common,SRAM,PRG9
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		JSR		_game_hud_full_draw
 		JSR		_scroll_msg_reset
 		LDA		#$00
@@ -684,9 +684,9 @@ _game_msg_wnd_display:
 		JSR		_wait_for_nmi
 		LDA		#$05
 		STA		_gui_ctrl_menu_press_idx
-		JSR		_draw_wnd_header_nt
+		JSR		_gui_ctrl_menu_icon_push_draw
 		FJSRA	_game_msg_handler,PRG4,PRG3
-		JSR		_draw_wnd_header_extnt
+		JSR		_gui_ctrl_menu_icon_release_draw
 		JSR		_scroll_msg_reset
 		LDA		_debug_scroll_msg_flags
 		CMP		#$03
@@ -2103,7 +2103,7 @@ loc_137018:
 		BEQ		loc_13704A
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		LDA		#$00
 		STA		byte_514
 		PLA
@@ -2119,7 +2119,7 @@ loc_13704E:
 loc_137054:
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		LDA		#$00
 		STA		byte_514
 		CLC
@@ -3558,7 +3558,7 @@ loc_137A35:
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_pos_calc:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$0F,NONE,#$1E
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$0F,NONE,#$1E
 		CLC
 		ADC		#$04
 		CMP		#$1E
@@ -3576,7 +3576,7 @@ loc_137A64:
 		LDA		#$00
 		STA		_tmp3
 loc_137A6C:
-		CIADDB	_ptr0,_cur_screen_tile._X,#$02,NONE,#$20
+		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
 		CLC
 		ADC		#$02
 		CMP		#$20
@@ -3594,18 +3594,7 @@ loc_137A8E:
 		LDA		#$00
 		STA		_tmp5
 loc_137A96:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_ptr0
-		BCC		loc_137AAC
-		INX
-loc_137AAC:
-		STA		_ptr0
-		TXA
-		ORA		#$20
-		STA		_ptr0+1
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -339,7 +339,7 @@ _tlm_nt_game_msg_presentss_icons_lib:
 		.BYTE	$47,$48,$49
 		.BYTE	$57,$58,$59
 _tlm_extnt_game_msg_presentss_icons_lib:
-		.BYTE	 $0D2,$D2,$D2
+		.BYTE	$D2,$D2,$D2
 		.BYTE	$D2,$92,$D2
 		.BYTE	$D2,$D2,$D2
 		.BYTE	$92,$92,$92

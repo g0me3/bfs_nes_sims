@@ -20,8 +20,8 @@ _get_city_name_str:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_name_str_pos_set:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_ptr0,_cur_screen_tile._X,#$02,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
 		CLC
 		ADC		#$09
 		CMP		#$20
@@ -39,18 +39,7 @@ loc_B804A:
 		LDA		#$00
 		STA		_tmp3
 loc_B8052:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_ptr0
-		BCC		loc_B8068
-		INX
-loc_B8068:
-		STA		_ptr0
-		TXA
-		ORA		#$20
-		STA		_ptr0+1
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -919,7 +908,7 @@ loc_B8631:
 _title_menu_item_select_up:
 		.BYTE	$00,$02,$03,$01
 _title_menu_item_select_down:
-		.BYTE	$00, $03,$01, $02
+		.BYTE	$00,$03,$01,$02
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_cursor_draw:
@@ -1901,7 +1890,7 @@ loc_B9123:
 loc_B9136:
 		STA		_ptr0+1
 		STY		_ptr0
-		JSR		_hex_to_dec9999999_1
+		JSR		_hex_to_dec9999999_0
 		LDA		_graphs_scr_period_mode
 		BEQ		locret_B9146
 		LDA		#$00
@@ -2618,25 +2607,25 @@ _hex_to_dec9999999_0:
 		STY		_tmp4
 		STY		_tmp5
 		STY		_tmp6
-		STY		_tmp6+1
+		STY		_tmp7
 loc_B97A7:
 		LDY		#$00
 loc_B97A9:
-		LDA		_ptr0
-		CMP		_hex_to_dec9999999_tbl2_0,X
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1_0,X
+		LDA		_tmp0
+		CMP		_hex_to_dec_tbl2,X
+		LDA		_tmp1
+		SBC		_hex_to_dec_tbl1,X
 		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0_0,X
+		SBC		_hex_to_dec_tbl0,X
 		BCC		loc_B97D2
-		LDA		_ptr0
-		SBC		_hex_to_dec9999999_tbl2_0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1_0,X
-		STA		_ptr0+1
+		LDA		_tmp0
+		SBC		_hex_to_dec_tbl2,X
+		STA		_tmp0
+		LDA		_tmp1
+		SBC		_hex_to_dec_tbl1,X
+		STA		_tmp1
 		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0_0,X
+		SBC		_hex_to_dec_tbl0,X
 		STA		_tmp2
 		INY
 		BNE		loc_B97A9
@@ -2647,104 +2636,112 @@ loc_B97D2:
 		LDX		#$00
 loc_B97D9:
 		LDA		_tmp2,X
-		STA		_ptr0+1,X
+		STA		_tmp1,X
 		INX
 		CPX		#$06
 		BNE		loc_B97D9
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_hex_to_dec9999999_1:
-		LDY		#$00
-		STY		_tmp2
-		LDX		#$03
-		LDY		#$00
-		STY		_tmp3
-		STY		_tmp4
-		STY		_tmp5
-		STY		_tmp6
-		STY		_tmp6+1
-loc_B917F:
-		LDY		#$00
-loc_B9181:
-		LDA		_ptr0
-		CMP		_hex_to_dec9999999_tbl2_1,X
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1_1,X
-		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0_1,X
-		BCC		loc_B91AA
-		LDA		_ptr0
-		SBC		_hex_to_dec9999999_tbl2_1,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec9999999_tbl1_1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		_hex_to_dec9999999_tbl0_1,X
-		STA		_tmp2
-		INY
-		BNE		loc_B9181
-loc_B91AA:
-		STY		_tmp2,X
-		DEX
-		BPL		loc_B917F
-		LDX		#$00
-loc_B91B1:
-		LDA		_tmp2,X
-		STA		_ptr0+1,X
-		INX
-		CPX		#$06
-		BNE		loc_B91B1
-		RTS
-_hex_to_dec9999999_tbl0_1:
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-		.BYTE	[[10000000 >> 16] & $FF]; $98
-_hex_to_dec9999999_tbl1_1:
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]  ; $42
-		.BYTE	[[10000000 >> 8] & $FF] ; $96
-_hex_to_dec9999999_tbl2_1:
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]  ; $40
-		.BYTE	[[10000000 >> 0] & $FF] ; $80
+; REDUNDANT, merged in system bank
+;
+;_hex_to_dec_tbl0:
+;		.BYTE	[[10 >> 16] & $FF]		; $00
+;		.BYTE	[[100 >> 16] & $FF]		; $00
+;		.BYTE	[[1000 >> 16] & $FF]	; $00
+;		.BYTE	[[10000 >> 16] & $FF]	; $00
+;		.BYTE	[[100000 >> 16] & $FF]	; $01
+;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+;		.BYTE	[[10000000 >> 16] & $FF]; $98
+;_hex_to_dec_tbl1:
+;		.BYTE	[[10 >> 8] & $FF]		; $00
+;		.BYTE	[[100 >> 8] & $FF]		; $00
+;		.BYTE	[[1000 >> 8] & $FF]		; $03
+;		.BYTE	[[10000 >> 8] & $FF]	; $27
+;		.BYTE	[[100000 >> 8] & $FF]	; $86
+;		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+;		.BYTE	[[10000000 >> 8] & $FF] ; $96
+;_hex_to_dec_tbl2:
+;		.BYTE	[[10 >> 0] & $FF]		; $0A
+;		.BYTE	[[100 >> 0] & $FF]		; $64
+;		.BYTE	[[1000 >> 0] & $FF]		; $E8
+;		.BYTE	[[10000 >> 0] & $FF]	; $10
+;		.BYTE	[[100000 >> 0] & $FF]	; $A0
+;		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+;		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
-_hex_to_dec9999999_tbl0_0:
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-		.BYTE	[[10000000 >> 16] & $FF]; $98
-_hex_to_dec9999999_tbl1_0:
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]  ; $42
-		.BYTE	[[10000000 >> 8] & $FF] ; $96
-_hex_to_dec9999999_tbl2_0:
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]  ; $40
-		.BYTE	[[10000000 >> 0] & $FF] ; $80
+; REDUNDANT, two identical copy-pasted hex to str routines with 9999999 range
+; used here twice to convert year to string lol
+; first, we remove copy and not needed data, then we merge it with other
+; commont str convert routines
+;
+; =============== S U B	R O U T	I N E =======================================
+;_hex_to_dec9999999_0:
+;		LDY		#$00
+;		STY		_tmp2
+;		LDX		#$03
+;		LDY		#$00
+;		STY		_tmp3
+;		STY		_tmp4
+;		STY		_tmp5
+;		STY		_tmp6
+;		STY		_tmp6+1
+;loc_B917F:
+;		LDY		#$00
+;loc_B9181:
+;		LDA		_ptr0
+;		CMP		_hex_to_dec_tbl2,X
+;		LDA		_ptr0+1
+;		SBC		_hex_to_dec_tbl1,X
+;		LDA		_tmp2
+;		SBC		_hex_to_dec_tbl0,X
+;		BCC		loc_B91AA
+;		LDA		_ptr0
+;		SBC		_hex_to_dec_tbl2,X
+;		STA		_ptr0
+;		LDA		_ptr0+1
+;		SBC		_hex_to_dec_tbl1,X
+;		STA		_ptr0+1
+;		LDA		_tmp2
+;		SBC		_hex_to_dec_tbl0,X
+;		STA		_tmp2
+;		INY
+;		BNE		loc_B9181
+;loc_B91AA:
+;		STY		_tmp2,X
+;		DEX
+;		BPL		loc_B917F
+;		LDX		#$00
+;loc_B91B1:
+;		LDA		_tmp2,X
+;		STA		_ptr0+1,X
+;		INX
+;		CPX		#$06
+;		BNE		loc_B91B1
+;		RTS
+;
+;_hex_to_dec_tbl0:
+;		.BYTE	[[10 >> 16] & $FF]		; $00
+;		.BYTE	[[100 >> 16] & $FF]		; $00
+;		.BYTE	[[1000 >> 16] & $FF]	; $00
+;		.BYTE	[[10000 >> 16] & $FF]	; $00
+;		.BYTE	[[100000 >> 16] & $FF]	; $01
+;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+;		.BYTE	[[10000000 >> 16] & $FF]; $98
+;_hex_to_dec_tbl1:
+;		.BYTE	[[10 >> 8] & $FF]		; $00
+;		.BYTE	[[100 >> 8] & $FF]		; $00
+;		.BYTE	[[1000 >> 8] & $FF]		; $03
+;		.BYTE	[[10000 >> 8] & $FF]	; $27
+;		.BYTE	[[100000 >> 8] & $FF]	; $86
+;		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+;		.BYTE	[[10000000 >> 8] & $FF] ; $96
+;_hex_to_dec_tbl2:
+;		.BYTE	[[10 >> 0] & $FF]		; $0A
+;		.BYTE	[[100 >> 0] & $FF]		; $64
+;		.BYTE	[[1000 >> 0] & $FF]		; $E8
+;		.BYTE	[[10000 >> 0] & $FF]	; $10
+;		.BYTE	[[100000 >> 0] & $FF]	; $A0
+;		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+;		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
 		BANK_END F7,$A000

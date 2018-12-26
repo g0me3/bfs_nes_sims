@@ -3,6 +3,12 @@
 
 		BANK_START $F3
 
+; ---------------------------------------------------------------------------
+; ------------E-X-T-E-R-N-A-L--H-U-D--D-R-A-W--R-O-U-T-I-N-E-----------------
+; ---------------------------------------------------------------------------
+
+		SECTION_START CD1
+
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_draw:
 		JSR		_cur_money_str_calc
@@ -76,7 +82,7 @@ loc_580D4:
 loc_580DC:
 ;		LDA		_tmp1						; REDUNDANT
 ;		LDX		#$20						; exactly the same as BUFPOS calcs
-;		MULXA								; but with different method of adding ofs
+;		MULXA								; but with different method of adding
 ;		CLC
 ;		ADC		_tmp0
 ;		BCC		loc_580F2
@@ -116,6 +122,369 @@ loc_58110:
 loc_5813D:
 		PPUQEND
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_date_draw:
+		JSR		_cur_date_str_calc
+		JSR		_cur_date_str_pos_calc
+		JSR		_cur_date_str_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_date_str_calc:
+		LDX		#$00
+		JSR		_cur_year_str_queue
+		LDA		#$DF
+		STA		_pre_ppu_buf,X
+		INX
+		JSR		_cur_month_str_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_year_str_queue:
+		LDA		_city._cur_year
+		LDY		_city._cur_year+1
+		STA		_ptr0
+		STY		_ptr0+1
+		LDA		#$04
+		STA		_tmp2
+		LDY		#$00
+loc_58DE7:
+		JSR		_get_dec_digit16
+		STA		_pre_ppu_buf,X
+		INX
+		INY
+		INY
+		DEC		_tmp2
+		BNE		loc_58DE7
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_get_dec_digit16:
+		LDA		#$00
+		STA		_tmp3
+loc_58DF9:
+		LDA		_ptr0
+		SEC
+		SBC		_dec_digit16_tbl,Y
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		_dec_digit16_tbl+1,Y
+		STA		_ptr0+1
+		BCC		loc_58E0E
+		INC		_tmp3
+		BNE		loc_58DF9
+loc_58E0E:
+		LDA		_ptr0
+		CLC
+		ADC		_dec_digit16_tbl,Y
+		STA		_ptr0
+		LDA		_ptr0+1
+		ADC		_dec_digit16_tbl+1,Y
+		STA		_ptr0+1
+		LDA		_tmp3
+		RTS
+
+_dec_digit16_tbl:
+		.WORD	1000
+		.WORD	100
+		.WORD	10
+		.WORD	1
+
+; =============== S U B	R O U T	I N E =======================================
+; TODO: bank 9 different type of month display lib
+;
+_cur_month_str_queue:
+		LDA		_city._cur_month
+		STA		_ptr0
+		ASL
+		CLC
+		ADC		_ptr0
+		TAY
+		LDA		#$03
+		STA		_ptr0
+loc_58E2E:
+		LDA		_months_lib,Y
+		INY
+		STA		_pre_ppu_buf,X
+		INX
+		DEC		_ptr0
+		BNE		loc_58E2E
+		RTS
+
+_months_lib:
+		.BYTE	_J,_A,_N
+		.BYTE	_F,_E,_B
+		.BYTE	_M,_A,_R
+		.BYTE	_A,_P,_R
+		.BYTE	_M,_A,_Y
+		.BYTE	_J,_U,_N
+		.BYTE	_J,_U,_L
+		.BYTE	_A,_U,_G
+		.BYTE	_S,_E,_P
+		.BYTE	_O,_C,_T
+		.BYTE	_N,_O,_V
+		.BYTE	_D,_E,_C
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_date_str_pos_calc:
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+		CLC
+		ADC		#$07
+		CMP		#$20
+		BCC		loc_58E97
+		SBC		#$1F
+		STA		_tmp3
+		LDA		#$08
+		SEC
+		SBC		_tmp3
+		STA		_tmp2
+		BNE		loc_58E9F
+loc_58E97:
+		LDA		#$08
+		STA		_tmp2
+		LDA		#$00
+		STA		_tmp3
+loc_58E9F:
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$0000
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_date_str_queue:
+		PPUQSTART
+		LDY		#$00
+		LDA		_tmp2
+		STA		_tmp4
+		LDA		_tmp3
+		STA		_tmp5
+		PPUQMOVB	_ptr0,OP_NOP,0
+loc_58ED9:
+		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+		PPUQMOVB	_tmp4,OP_NOP,0
+loc_58EDA:
+		LDA		_pre_ppu_buf,Y
+		INY
+		PPUQMOVA
+		DEC		_tmp4
+		BNE		loc_58EDA
+		LDA		_tmp5
+		BEQ		loc_58F09
+		STA		_tmp4
+		LDA		#$00
+		STA		_tmp5
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
+;		PPUQMOVB	_tmp4,OP_NOP,0
+;		JMP		loc_58EDA
+		JMP		loc_58ED9
+loc_58F09:
+		PPUQEND
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; unused/unref by the game, they do this somewhere else at once for all hud
+; no need to put extnt here at all
+;
+;_cur_date_extnt_queue_unref:
+;		EXTQSTART
+;		LDA		_ptr0
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_ptr0+1
+;		ORA		#>[_MMC5_EXRAM]
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_tmp2
+;		STA		_extnt_queue_buf,X
+;		INX
+;loc_58F22:
+;		LDA		#$02
+;		STA		_extnt_queue_buf,X
+;		INX
+;		DEC		_tmp2
+;		BNE		loc_58F22
+;		LDA		_tmp3
+;		BEQ		loc_58F4F
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		LDA		_ptr0
+;		AND		#$E0
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_ptr0+1
+;		ORA		#>[_MMC5_EXRAM]
+;		STA		_extnt_queue_buf,X
+;		INX
+;		LDA		_tmp2
+;		STA		_extnt_queue_buf,X
+;		INX
+;		JMP		loc_58F22
+;loc_58F4F:
+;		EXTQEND
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_popul_draw:
+		JSR		_cur_popul_str_calc
+		JSR		_cur_popul_str_pos_set
+		JSR		_cur_popul_str_queue
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; much simpler than money calc routine, no need to put extra symbols anywhere
+; so you just need to track the first non-zero digit to trim first zeroes
+;
+_cur_popul_str_calc:
+		MOVD	_ptr0,_popul_cur
+		LDA		#$00
+		STA		_tmp3
+		LDY		#$00
+		LDX		#$05
+loc_59A88:
+		JSR		_get_dec_digit24
+		CMP		#$00
+		BNE		loc_59A9E
+		LDA		_tmp3
+		BNE		loc_59AA8
+		CPX		#$00
+		BEQ		loc_59A9E
+		LDA		#$DF
+		STA		_pre_ppu_buf,Y
+		BNE		loc_59AA3
+loc_59A9E:
+		STA		_pre_ppu_buf,Y
+		DEC		_tmp3
+loc_59AA3:
+		INY
+		DEX
+		BPL		loc_59A88
+		RTS
+loc_59AA8:
+		LDA		#$00
+		STA		_pre_ppu_buf,Y
+		BEQ		loc_59AA3
+
+; =============== S U B	R O U T	I N E =======================================
+_get_dec_digit24:
+		LDA		#$00
+		STA		_tmp4
+loc_5805A:
+		SEC
+		LDA		_ptr0
+		SBC		_get_dec_digit_tbl0,X
+		STA		_ptr0
+		LDA		_ptr0+1
+		SBC		_get_dec_digit_tbl1,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		SBC		_get_dec_digit_tbl2,X
+		STA		_tmp2
+		BCC		loc_58076
+		INC		_tmp4
+		BNE		loc_5805A
+loc_58076:
+		CLC
+		LDA		_ptr0
+		ADC		_get_dec_digit_tbl0,X
+		STA		_ptr0
+		LDA		_ptr0+1
+		ADC		_get_dec_digit_tbl1,X
+		STA		_ptr0+1
+		LDA		_tmp2
+		ADC		_get_dec_digit_tbl2,X
+		STA		_tmp2
+		LDA		_tmp4
+		RTS
+
+; REDUNDANT, merged to one common tables set
+; in system bank
+;
+;_get_dec_digit_tbl0:
+;		.BYTE	[[1 >> 0] & $FF]		; $01
+;		.BYTE	[[10 >> 0] & $FF]		; $0A
+;		.BYTE	[[100 >> 0] & $FF]		; $64
+;		.BYTE	[[1000 >> 0] & $FF]		; $E8
+;		.BYTE	[[10000 >> 0] & $FF]	; $10
+;		.BYTE	[[100000 >> 0] & $FF]	; $A0
+;		.BYTE	[[1000000 >> 0] & $FF]	; $40
+;_get_dec_digit_tbl1:
+;		.BYTE	[[1 >> 8] & $FF]		; $00
+;		.BYTE	[[10 >> 8] & $FF]		; $00
+;		.BYTE	[[100 >> 8] & $FF]		; $00
+;		.BYTE	[[1000 >> 8] & $FF]		; $03
+;		.BYTE	[[10000 >> 8] & $FF]	; $27
+;		.BYTE	[[100000 >> 8] & $FF]	; $86
+;		.BYTE	[[1000000 >> 8] & $FF]	; $42
+;_get_dec_digit_tbl2:
+;		.BYTE	[[1 >> 16] & $FF]		; $00
+;		.BYTE	[[10 >> 16] & $FF]		; $00
+;		.BYTE	[[100 >> 16] & $FF]		; $00
+;		.BYTE	[[1000 >> 16] & $FF]	; $00
+;		.BYTE	[[10000 >> 16] & $FF]	; $00
+;		.BYTE	[[100000 >> 16] & $FF]	; $01
+;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_popul_str_pos_set:
+		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
+		CLC
+		ADC		#$05
+		CMP		#$20
+		BCC		loc_59B2A
+		SBC		#$1F
+		STA		_tmp3
+		LDA		#$06
+		SEC
+		SBC		_tmp3
+		STA		_tmp2
+		BNE		loc_59B32
+loc_59B2A:
+		LDA		#$06
+		STA		_tmp2
+		LDA		#$00
+		STA		_tmp3
+loc_59B32:
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_cur_popul_str_queue:
+		PPUQSTART
+		LDY		#$00
+		PPUQMOVB	_ptr0,OP_NOP,0
+loc_59B65:
+		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_tmp2,OP_NOP,0
+loc_59B66:
+		LDA		_pre_ppu_buf,Y
+		INY
+		PPUQMOVA
+		DEC		_tmp2
+		BNE		loc_59B66
+		LDA		_tmp3
+		BEQ		loc_59B93
+		STA		_tmp2
+		LDA		#$00
+		STA		_tmp3
+		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		PPUQMOVB	_ptr0+1,OP_NOP,0
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;		JMP		loc_59B66
+		JMP		loc_59B65
+loc_59B93:
+		PPUQEND
+		RTS
+
+		SECTION_END CD1
+
+; ---------------------------------------------------------------------------
+; --G-A-M-E--M-E-S-S-A-G-E--W-I-N-D-O-W-S--E-X-T-E-R-N-A-L--H-A-N-D-L-E-R-S--
+; ---------------------------------------------------------------------------
+
+		SECTION_START C01
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_handler:
@@ -200,10 +569,12 @@ loc_581EC:
 		JSR		_pal_load_lib
 		LDA		#$FF
 		STA		_ppu_pal_dequeue_req
-		JSR		_game_msg_chr_common_load
-		JSR		_game_msg_chr1_load
-		LDA		_mmc5_chr_banks_shadow+3
-		STA		_MMC5_CHR_BANKSA+3
+		JSR		_game_chr_common_reload
+;		JSR		_game_msg_chr1_load
+		LDA		_mmc5_chr_banks_shadow+1		; OPTIMIZE, restore CHR 1 from here
+		STA		_MMC5_CHR_BANKSA+1
+;		LDA		_mmc5_chr_banks_shadow+3		; REDUNDANT, already loaded in
+;		STA		_MMC5_CHR_BANKSA+3				; _game_chr_common_reload routine!
 		LDA		#$FF
 		STA		byte_53
 		LDA		#$00
@@ -441,10 +812,10 @@ loc_583FA:
 		JMP		loc_583BE
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_chr1_load:
-		LDA		_mmc5_chr_banks_shadow+1
-		STA		_MMC5_CHR_BANKSA+1
-		RTS
+;_game_msg_chr1_load:						; REDUNDANT, but WHY?!
+;		LDA		_mmc5_chr_banks_shadow+1
+;		STA		_MMC5_CHR_BANKSA+1
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_animA:
@@ -519,8 +890,8 @@ loc_5847A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_pos_calc:
-		CIADDB	_tmp2,_cur_screen_tile._Y,#$0C,_ptr0+1,#$1E
-		CIADDB	_tmp3,_cur_screen_tile._X,#$11,NONE,   #$20
+		CIADDB	_tmp2,_cur_screen_tile._Y,#$0C,_tmp1,#$1E
+		CIADDB	_tmp3,_cur_screen_tile._X,#$11, NONE,#$20
 		LDA		#$20
 		SEC
 		SBC		_tmp3
@@ -1125,13 +1496,13 @@ loc_589CC:
 loc_589D1:
 		SEC
 		LDA		_tmp_popul_hex
-		SBC		_hex_to_dec_tbl0,Y
+		SBC		_get_dec_digit_tbl0,Y
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		SBC		_hex_to_dec_tbl1,Y
+		SBC		_get_dec_digit_tbl1,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		SBC		_hex_to_dec_tbl2,Y
+		SBC		_get_dec_digit_tbl2,Y
 		STA		_tmp_popul_hex+2
 		BCC		loc_589FA
 		LDA		_tmp_popul_decimal_buf,Y
@@ -1142,13 +1513,13 @@ loc_589D1:
 loc_589FA:
 		CLC
 		LDA		_tmp_popul_hex
-		ADC		_hex_to_dec_tbl0,Y
+		ADC		_get_dec_digit_tbl0,Y
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		ADC		_hex_to_dec_tbl1,Y
+		ADC		_get_dec_digit_tbl1,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		ADC		_hex_to_dec_tbl2,Y
+		ADC		_get_dec_digit_tbl2,Y
 		STA		_tmp_popul_hex+2
 		LDA		_tmp_popul_decimal_buf,Y
 		CLC
@@ -1264,23 +1635,23 @@ _game_msg_wnd_draw:
 		JSR		_ppu_queue_empty_test
 		BCS		_game_msg_wnd_draw
 		LDA		#$00
-		STA		_ptr0
+		STA		_tmp0
 loc_58AA8:
-		PUSHB	_ptr0
+		PUSHB	_tmp0
 		JSR		_game_msg_wnd_line_pos_calc
 		JSR		_game_msg_wnd_line_draw
 		JSR		_wait_for_nmi
-		POPB	_ptr0
-		INC		_ptr0
-		LDA		_ptr0
+		POPB	_tmp0
+		INC		_tmp0
+		LDA		_tmp0
 		CMP		#$15
 		BCC		loc_58AA8
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,_ptr0,NONE,#$1E
-		CIADDB	_tmp2,  _cur_screen_tile._X, #$07,NONE,#$20
+		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp0,NONE,#$1E
+		CIADDB	_tmp2,_cur_screen_tile._X, #$07,NONE,#$20
 		LDA		#$20
 		SEC
 		SBC		_tmp2
@@ -1356,6 +1727,7 @@ loc_58BB0:
 		STY		_ppu_queue_pos_head
 		EXTQEND
 		RTS
+
 byte_58BB7:
 		.BYTE	$00,$19,$19,$32,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B,$4B
 		.BYTE	$4B,$4B,$4B,$4B,$64
@@ -1380,6 +1752,146 @@ byte_58C49:
 		.BYTE	$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E1,$E2
 
 ; =============== S U B	R O U T	I N E =======================================
+_msg_wnd_cheat_test:
+		LDA		_pad0_held
+		ORA		_pad1_prev_held
+		AND		#$CF
+		CMP		#$CF
+		BNE		loc_59BA9
+		LDA		_debug_scroll_msg_flags
+		ORA		#$01
+		STA		_debug_scroll_msg_flags
+		RTS
+loc_59BA9:
+		LDA		_pad0_held
+		AND		_pad1_prev_held
+		BEQ		locret_59BBF
+		LDA		_pad0_held
+		CMP		_pad1_prev_held
+		BEQ		locret_59BBF
+		BCC		locret_59BBF
+		LDA		_debug_scroll_msg_flags
+		ORA		#$02
+		STA		_debug_scroll_msg_flags
+locret_59BBF:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_debug_flag_toggle_test:
+		LDA		_debug_scroll_msg_flags
+		CMP		#$03
+		BNE		locret_59BCF
+		LDA		_city._game_flags
+		EOR		#$10
+		STA		_city._game_flags
+locret_59BCF:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_sram_reset:
+		JSR		_sram_on
+		INC		_sram_data_crc
+		JSR		_sram_off
+		JMP		RESET
+
+; =============== S U B	R O U T	I N E =======================================
+_sram_sum_reinit:
+		JSR		_sram_sum_calc
+		LDA		_tmp2
+		STA		_sram_data_crc
+		LDA		_tmp3
+		STA		_sram_data_crc+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_sram_init:
+		JSR		_sram_sum_calc
+		LDA		_sram_data_crc
+		CMP		_tmp2
+		BNE		loc_59C0E
+		LDA		_sram_data_crc+1
+		CMP		_tmp3
+		BNE		loc_59C0E
+		LDA		_sram_vars._scenarios_clear_flags
+		STA		_city._scenarios_clear_flags
+		LDA		_sram_vars._all_scenarios_are_clear_ram_flag
+		STA		_city._all_scenarios_are_clear_ram_flag
+		LDA		_sram_has_saved_city_data_flag
+		STA		_has_saved_city_data_flag
+		RTS
+loc_59C0E:
+		LDA		#>[_land_value_map_buf]			; TODO: rearrange to use macro!
+		STA		_ptr0+1
+		LDA		#<[_land_value_map_buf]
+		STA		_ptr0
+		STA		_has_saved_city_data_flag
+		TAY
+loc_59C1A:
+		STA		(_ptr0),Y
+		INY
+		BNE		loc_59C1A
+		INC		_ptr0+1
+		LDX		_ptr0+1
+		CPX		#$A0
+		BNE		loc_59C1A
+		INC		_sram_data_crc
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_sram_sum_calc:
+		LDY		#$00
+		STY		_tmp4
+		STY		_tmp5
+		STY		_tmp6
+		STY		_tmp2
+		STY		_tmp3
+		STY		_ptr0
+		LDA		#>[_sram_graphs]
+		STA		_ptr0+1
+		LDY		#<[_sram_graphs]
+loc_59C3F:
+		LDA		(_ptr0),Y
+		JSR		_sum_calc
+		INY
+		BNE		loc_59C3F
+		INC		_ptr0+1
+		LDA		_ptr0+1
+		CMP		#$A0
+		BNE		loc_59C3F
+		LDA		#$00
+		JSR		_sum_calc
+		LDA		#$00
+
+; =============== S U B	R O U T	I N E =======================================
+_sum_calc:
+		STA		_tmp6
+		LDA		_tmp2
+		STA		_tmp4
+		LDA		_tmp3
+		STA		_tmp5
+		LDX		#$00
+loc_59C62:
+		LSR		_tmp6
+		ROR		_tmp5
+		ROR		_tmp4
+		BCC		loc_59C76
+		LDA		_tmp4
+		EOR		#$05
+		STA		_tmp4
+		LDA		_tmp5
+		EOR		#$C0
+		STA		_tmp5
+loc_59C76:
+		INX
+		CPX		#$08
+		BNE		loc_59C62
+		LDA		_tmp4
+		STA		_tmp2
+		LDA		_tmp5
+		STA		_tmp3
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _ppu_queue_empty_test:
 		LDA		_ppu_queue_pos_tail				; TODO: one more queue empty test lol
 		CMP		_ppu_queue_pos_head
@@ -1392,6 +1904,14 @@ _ppu_queue_empty_test:
 loc_58CD4:
 		SEC
 		RTS
+
+		SECTION_END C01
+
+; ---------------------------------------------------------------------------
+; -----------------H-U-D--S-C-R-O-L-L-E-R--H-A-N-D-L-E-R-S-------------------
+; ---------------------------------------------------------------------------
+
+		SECTION_START F03
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg_char_output:
@@ -1492,216 +2012,127 @@ loc_58D9E:
 		LDA		#$DF
 		STA		_ppu_queue_buf,X
 		BNE		loc_58D94
+
 _scroll_msg_sizes_list:
 		.BYTE	$3D,$3C,$3C,$33,$36,$33,$3A,$3C,$3C,$41,$43,$43,$48,$49,$3D,$3F
 		.BYTE	$33,$32,$2F,$34,$39,$38,$32,$44,$36
 
-; =============== S U B	R O U T	I N E =======================================
-_cur_date_draw:
-		JSR		_cur_date_str_calc
-		JSR		_cur_date_str_pos_calc
-		JSR		_cur_date_str_queue
-		RTS
+_scroll_txt_i_am_god:
+		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_I,__,_W,_I,_S,_H,__,_Y,_O,_U,__,_H,_A,_P,_P,_Y,$FF
+_scroll_txt_debug_off:
+		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_D,_E,_B,_U,_G,__,_O,_F,_F,$FF
 
-; =============== S U B	R O U T	I N E =======================================
-_cur_date_str_calc:
-		LDX		#$00
-		JSR		_cur_year_str_queue
-		LDA		#$DF
-		STA		_pre_ppu_buf,X
-		INX
-		JSR		_cur_month_str_queue
-		RTS
+_scroll_msg_lib_lo:
+		.BYTE	<[_scroll_txt00_more_residental]
+		.BYTE	<[_scroll_txt01_more_commercial]
+		.BYTE	<[_scroll_txt02_more_industrial]
+		.BYTE	<[_scroll_txt03_more_roads]
+		.BYTE	<[_scroll_txt04_inadeqate_rail_system]
+		.BYTE	<[_scroll_txt05_build_a_power_plant]
+		.BYTE	<[_scroll_txt06_demand_a_stadium]
+		.BYTE	<[_scroll_txt07_requires_a_sea_port]
+		.BYTE	<[_scroll_txt08_requires_airport]
+		.BYTE	<[_scroll_txt09_demand_a_fire_department]
+		.BYTE	<[_scroll_txt0A_demand_a_police_department]
+		.BYTE	<[_scroll_txt0B_blackouts_reported]
+		.BYTE	<[_scroll_txt0C_tax_rate_is_too_high]
+		.BYTE	<[_scroll_txt0D_roads_deteriorating]
+		.BYTE	<[_scroll_txt0E_fire_department_need_funding]
+		.BYTE	<[_scroll_txt0F_police_need_funding]
+		.BYTE	<[_scroll_txt10_plane_crashed]
+		.BYTE	<[_scroll_txt11_shipwreck_reported]
+		.BYTE	<[_scroll_txt12_train_crashed]
+		.BYTE	<[_scroll_txt13_heli_crashed]
+		.BYTE	<[_scroll_txt14_hi_unemployment_rate]
+		.BYTE	<[_scroll_txt15_city_gone_broke]
+		.BYTE	<[_scroll_txt16_explosion_detected]
+		.BYTE	<[_scroll_txt17_brownouts]
+		.BYTE	<[_scroll_txt18_heavy_traffic_repotrted]
+_scroll_msg_lib_hi:
+		.BYTE	>[_scroll_txt00_more_residental]
+		.BYTE	>[_scroll_txt01_more_commercial]
+		.BYTE	>[_scroll_txt02_more_industrial]
+		.BYTE	>[_scroll_txt03_more_roads]
+		.BYTE	>[_scroll_txt04_inadeqate_rail_system]
+		.BYTE	>[_scroll_txt05_build_a_power_plant]
+		.BYTE	>[_scroll_txt06_demand_a_stadium]
+		.BYTE	>[_scroll_txt07_requires_a_sea_port]
+		.BYTE	>[_scroll_txt08_requires_airport]
+		.BYTE	>[_scroll_txt09_demand_a_fire_department]
+		.BYTE	>[_scroll_txt0A_demand_a_police_department]
+		.BYTE	>[_scroll_txt0B_blackouts_reported]
+		.BYTE	>[_scroll_txt0C_tax_rate_is_too_high]
+		.BYTE	>[_scroll_txt0D_roads_deteriorating]
+		.BYTE	>[_scroll_txt0E_fire_department_need_funding]
+		.BYTE	>[_scroll_txt0F_police_need_funding]
+		.BYTE	>[_scroll_txt10_plane_crashed]
+		.BYTE	>[_scroll_txt11_shipwreck_reported]
+		.BYTE	>[_scroll_txt12_train_crashed]
+		.BYTE	>[_scroll_txt13_heli_crashed]
+		.BYTE	>[_scroll_txt14_hi_unemployment_rate]
+		.BYTE	>[_scroll_txt15_city_gone_broke]
+		.BYTE	>[_scroll_txt16_explosion_detected]
+		.BYTE	>[_scroll_txt17_brownouts]
+		.BYTE	>[_scroll_txt18_heavy_traffic_repotrted]
 
-; =============== S U B	R O U T	I N E =======================================
-_cur_year_str_queue:
-		LDA		_city._cur_year
-		LDY		_city._cur_year+1
-		STA		_ptr0
-		STY		_ptr0+1
-		LDA		#$04
-		STA		_tmp2
-		LDY		#$00
-loc_58DE7:
-		JSR		_get_dec_digit16
-		STA		_pre_ppu_buf,X
-		INX
-		INY
-		INY
-		DEC		_tmp2
-		BNE		loc_58DE7
-		RTS
+_scroll_txt00_more_residental:
+		.BYTE	_M,_O,_R,_E,__,_R,_E,_S,_I,_D,_E,_N,_T,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
+_scroll_txt01_more_commercial:
+		.BYTE	_M,_O,_R,_E,__,_C,_O,_M,_M,_E,_R,_C,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
+_scroll_txt02_more_industrial:
+		.BYTE	_M,_O,_R,_E,__,_I,_N,_D,_U,_S,_T,_R,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
+_scroll_txt03_more_roads:
+		.BYTE	_M,_O,_R,_E,__,_R,_O,_A,_D,_S,__,_R,_E,_Q,_U,_I,_R,_E,_D,$FF
+_scroll_txt04_inadeqate_rail_system:
+		.BYTE	_I,_N,_A,_D,_E,_Q,_U,_A,_T,_E,__,_R,_A,_I,_L,__,_S,_Y,_S,_T,_E,_M,$FF
+_scroll_txt05_build_a_power_plant:
+		.BYTE	_B,_U,_I,_L,_D,__,_A,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
+_scroll_txt06_demand_a_stadium:
+		.BYTE	_R,_E,_S,_I,_D,_E,_N,_T,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_S,_T,_A,_D,_I,_U,_M,$FF
+_scroll_txt07_requires_a_sea_port:
+		.BYTE	_I,_N,_D,_U,_S,_T,_R,_Y,__,_R,_E,_Q,_U,_I,_R,_E,_S,__,_A,__,_S,_E,_A,__,_P,_O,_R,_T,$FF
+_scroll_txt08_requires_airport:
+		.BYTE	_C,_O,_M,_M,_E,_R,_C,_E,__,_R,_E,_Q,_U,_I,_R,_E,_S,__,_A,_N,__,_A,_I,_R,_P,_O,_R,_T,$FF
+_scroll_txt09_demand_a_fire_department:
+		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_F,_I,_R,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,$FF
+_scroll_txt0A_demand_a_police_department:
+		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_P,_O,_L,_I,_C,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,$FF
+_scroll_txt0B_blackouts_reported:
+		.BYTE	_B,_L,_A,_C,_K,_O,_U,_T,_S,__,_R,_E,_P,_O,_R,_T,_E,_D,__,__,_C,_H,_E,_C,_K,__,_P,_O,_W,_E,_R,__,_M,_A,_P,$FF
+_scroll_txt0C_tax_rate_is_too_high:
+		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_U,_P,_S,_E,_T,__,__,_T,_H,_E,__,_T,_A,_X,__,_R,_A,_T,_E,__,_I,_S,__,_T,_O,_O,__,_H,_I,_G,_H,$FF
+_scroll_txt0D_roads_deteriorating:
+		.BYTE	_R,_O,_A,_D,_S,__,_D,_E,_T,_E,_R,_I,_O,_R,_A,_T,_I,_N,_G,__,__,_D,_U,_E,__,_T,_O,__,_L,_A,_C,_K,__,_O,_F,__,_F,_U,_N,_D,_S,$FF
+_scroll_txt0E_fire_department_need_funding:
+		.BYTE	_F,_I,_R,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,_S,__,_N,_E,_E,_D,__,_F,_U,_N,_D,_I,_N,_G,$FF
+_scroll_txt0F_police_need_funding:
+		.BYTE	_P,_O,_L,_I,_C,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,_S,__,_N,_E,_E,_D,__,_F,_U,_N,_D,_I,_N,_G,$FF
+_scroll_txt10_plane_crashed:
+		.BYTE	_A,__,_P,_L,_A,_N,_E,__,_H,_A,_S,__,_C,_R,_A,_S,_H,_E,_D,$FF
+_scroll_txt11_shipwreck_reported:
+		.BYTE	_S,_H,_I,_P,_W,_R,_E,_C,_K,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
+_scroll_txt12_train_crashed:
+		.BYTE	_A,__,_T,_R,_A,_I,_N,__,_C,_R,_A,_S,_H,_E,_D,$FF
+_scroll_txt13_heli_crashed:
+		.BYTE	_A,__,_H,_E,_L,_I,_C,_O,_P,_T,_E,_R,__,_C,_R,_A,_S,_H,_E,_D,$FF
+_scroll_txt14_hi_unemployment_rate:
+		.BYTE	_U,_N,_E,_M,_P,_L,_O,_Y,_M,_E,_N,_T,__,_R,_A,_T,_E,__,_I,_S,__,_H,_I,_G,_H,$FF
+_scroll_txt15_city_gone_broke:
+		.BYTE	_Y,_O,_U,_R,__,_C,_I,_T,_Y,__,_H,_A,_S,__,_G,_O,_N,_E,__,_B,_R,_O,_K,_E,$FF
+_scroll_txt16_explosion_detected:
+		.BYTE	_E,_X,_P,_L,_O,_S,_I,_O,_N,__,_D,_E,_T,_E,_C,_T,_E,_D,$FF
+_scroll_txt17_brownouts:
+		.BYTE	_B,_R,_O,_W,_N,_O,_U,_T,_S,__,__,_B,_U,_I,_L,_D,__,_A,_N,_O,_T,_H,_E,_R,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
+_scroll_txt18_heavy_traffic_repotrted:
+		.BYTE	_H,_E,_A,_V,_Y,__,_T,_R,_A,_F,_F,_I,_C,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
 
-; =============== S U B	R O U T	I N E =======================================
-_get_dec_digit16:
-		LDA		#$00
-		STA		_tmp3
-loc_58DF9:
-		LDA		_ptr0
-		SEC
-		SBC		_dec_digit16_tbl,Y
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_dec_digit16_tbl+1,Y
-		STA		_ptr0+1
-		BCC		loc_58E0E
-		INC		_tmp3
-		BNE		loc_58DF9
-loc_58E0E:
-		LDA		_ptr0
-		CLC
-		ADC		_dec_digit16_tbl,Y
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		_dec_digit16_tbl+1,Y
-		STA		_ptr0+1
-		LDA		_tmp3
-		RTS
+		SECTION_END F03
 
-_dec_digit16_tbl:
-		.WORD	1000
-		.WORD	100
-		.WORD	10
-		.WORD	1
+; ---------------------------------------------------------------------------
+; -----------------G-A-M-E--M-E-N-U-S--H-A-N-D-L-E-R-S-----------------------
+; ---------------------------------------------------------------------------
 
-; =============== S U B	R O U T	I N E =======================================
-; TODO: bank 9 different type of month display lib
-_cur_month_str_queue:
-		LDA		_city._cur_month
-		STA		_ptr0
-		ASL
-		CLC
-		ADC		_ptr0
-		TAY
-		LDA		#$03
-		STA		_ptr0
-loc_58E2E:
-		LDA		_months_lib,Y
-		INY
-		STA		_pre_ppu_buf,X
-		INX
-		DEC		_ptr0
-		BNE		loc_58E2E
-		RTS
-
-_months_lib:
-		.BYTE	_J,_A,_N
-		.BYTE	_F,_E,_B
-		.BYTE	_M,_A,_R
-		.BYTE	_A,_P,_R
-		.BYTE	_M,_A,_Y
-		.BYTE	_J,_U,_N
-		.BYTE	_J,_U,_L
-		.BYTE	_A,_U,_G
-		.BYTE	_S,_E,_P
-		.BYTE	_O,_C,_T
-		.BYTE	_N,_O,_V
-		.BYTE	_D,_E,_C
-
-; =============== S U B	R O U T	I N E =======================================
-_cur_date_str_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-		CLC
-		ADC		#$07
-		CMP		#$20
-		BCC		loc_58E97
-		SBC		#$1F
-		STA		_tmp3
-		LDA		#$08
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_58E9F
-loc_58E97:
-		LDA		#$08
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_58E9F:
-		LDA		_tmp1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_tmp0
-		BCC		loc_58EB5
-		INX
-loc_58EB5:
-		STA		_tmp0
-		STX		_tmp1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_cur_date_str_queue:
-		PPUQSTART
-		LDY		#$00
-		LDA		_tmp2
-		STA		_tmp4
-		LDA		_tmp3
-		STA		_tmp5
-		PPUQMOVB	_ptr0,OP_NOP,0
-loc_58ED9:
-		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-loc_58EDA:
-		LDA		_pre_ppu_buf,Y
-		INY
-		PPUQMOVA
-		DEC		_tmp4
-		BNE		loc_58EDA
-		LDA		_tmp5
-		BEQ		loc_58F09
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-		PPUQMOVB	_ptr0,OP_AND,#$E0
-;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-;		PPUQMOVB	_tmp4,OP_NOP,0
-;		JMP		loc_58EDA
-		JMP		loc_58ED9
-loc_58F09:
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-;_unref_2:
-;		EXTQSTART
-;		LDA		_ptr0
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_ptr0+1
-;		ORA		#>[_MMC5_EXRAM]
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_tmp2
-;		STA		_extnt_queue_buf,X
-;		INX
-;loc_58F22:
-;		LDA		#$02
-;		STA		_extnt_queue_buf,X
-;		INX
-;		DEC		_tmp2
-;		BNE		loc_58F22
-;		LDA		_tmp3
-;		BEQ		loc_58F4F
-;		STA		_tmp2
-;		LDA		#$00
-;		STA		_tmp3
-;		LDA		_ptr0
-;		AND		#$E0
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_ptr0+1
-;		ORA		#>[_MMC5_EXRAM]
-;		STA		_extnt_queue_buf,X
-;		INX
-;		LDA		_tmp2
-;		STA		_extnt_queue_buf,X
-;		INX
-;		JMP		loc_58F22
-;loc_58F4F:
-;		EXTQEND
-;		RTS
+		SECTION_START C02
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_menu_exec:
@@ -1748,7 +2179,7 @@ _game_save_menu:
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_erase,PRGC,PRGD
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		SEC
 		RTS
 loc_58FBA:
@@ -1876,7 +2307,7 @@ loc_5909F:
 		STA		_mmc5_operation_in_progress_flag
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_erase,PRGC,PRGD
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		PLA
 		SEC
 		RTS
@@ -1939,7 +2370,7 @@ loc_59103:
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_erase,PRGC,PRGD
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		JSR		_pal_fade_out
 		TSX
 		TXA
@@ -2015,7 +2446,7 @@ loc_591A1:
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_erase,PRGC,PRGD
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 		JSR		_pal_fade_out
 loc_591B7:
 		JMP		_turn_off_power_screen
@@ -2033,7 +2464,7 @@ loc_591C5:
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
 		FJSRA	_wnd_erase,PRGC,PRGD
-		JSR		_game_msg_chr_common_load
+		JSR		_game_chr_common_reload
 loc_591D8:
 		LDA		#$00
 		STA		_main_sub_idx
@@ -2198,6 +2629,14 @@ byte_5930F:
 		.BYTE	$3F,$A7
 		.BYTE	$42,$A8
 		.BYTE	$52,$FF
+
+		SECTION_END C02
+
+; ---------------------------------------------------------------------------
+; ------N-E-W--C-I-T-Y--M-A-P--A-U-T-O-G-E-N-E-R-A-T-E--R-O-U-T-I-N-E-S------
+; ---------------------------------------------------------------------------
+
+		SECTION_START 901
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map:
@@ -3001,411 +3440,6 @@ _mul_rand:
 		MULAX
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_cur_popul_draw:
-		JSR		_cur_popul_str_calc
-		JSR		_cur_popul_str_pos_set
-		JSR		_cur_popul_str_queue
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_cur_popul_str_calc:
-		MOVD	_ptr0,_popul_cur
-		LDA		#$00
-		STA		_tmp3
-		LDY		#$00
-		LDX		#$05
-loc_59A88:
-		JSR		_get_dec_digit24
-		CMP		#$00
-		BNE		loc_59A9E
-		LDA		_tmp3
-		BNE		loc_59AA8
-		CPX		#$00
-		BEQ		loc_59A9E
-		LDA		#$DF
-		STA		_pre_ppu_buf,Y
-		BNE		loc_59AA3
-loc_59A9E:
-		STA		_pre_ppu_buf,Y
-		DEC		_tmp3
-loc_59AA3:
-		INY
-		DEX
-		BPL		loc_59A88
-		RTS
-loc_59AA8:
-		LDA		#$00
-		STA		_pre_ppu_buf,Y
-		BEQ		loc_59AA3
-
-; =============== S U B	R O U T	I N E =======================================
-_get_dec_digit24:
-		LDA		#$00
-		STA		_tmp4
-loc_5805A:
-		SEC
-		LDA		_ptr0
-		SBC		_hex_to_dec_tbl0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		SBC		_hex_to_dec_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		SBC		_hex_to_dec_tbl2,X
-		STA		_tmp2
-		BCC		loc_58076
-		INC		_tmp4
-		BNE		loc_5805A
-loc_58076:
-		CLC
-		LDA		_ptr0
-		ADC		_hex_to_dec_tbl0,X
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		_hex_to_dec_tbl1,X
-		STA		_ptr0+1
-		LDA		_tmp2
-		ADC		_hex_to_dec_tbl2,X
-		STA		_tmp2
-		LDA		_tmp4
-		RTS
-
-_hex_to_dec_tbl0:
-		.BYTE	[[1 >> 0] & $FF]		; $01
-		.BYTE	[[10 >> 0] & $FF]		; $0A
-		.BYTE	[[100 >> 0] & $FF]		; $64
-		.BYTE	[[1000 >> 0] & $FF]		; $E8
-		.BYTE	[[10000 >> 0] & $FF]	; $10
-		.BYTE	[[100000 >> 0] & $FF]	; $A0
-		.BYTE	[[1000000 >> 0] & $FF]	; $40
-_hex_to_dec_tbl1:
-		.BYTE	[[1 >> 8] & $FF]		; $00
-		.BYTE	[[10 >> 8] & $FF]		; $00
-		.BYTE	[[100 >> 8] & $FF]		; $00
-		.BYTE	[[1000 >> 8] & $FF]		; $03
-		.BYTE	[[10000 >> 8] & $FF]	; $27
-		.BYTE	[[100000 >> 8] & $FF]	; $86
-		.BYTE	[[1000000 >> 8] & $FF]	; $42
-_hex_to_dec_tbl2:
-		.BYTE	[[1 >> 16] & $FF]		; $00
-		.BYTE	[[10 >> 16] & $FF]		; $00
-		.BYTE	[[100 >> 16] & $FF]		; $00
-		.BYTE	[[1000 >> 16] & $FF]	; $00
-		.BYTE	[[10000 >> 16] & $FF]	; $00
-		.BYTE	[[100000 >> 16] & $FF]	; $01
-		.BYTE	[[1000000 >> 16] & $FF] ; $0F
-
-; =============== S U B	R O U T	I N E =======================================
-_cur_popul_str_pos_set:
-		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_ptr0,  _cur_screen_tile._X,#$0E,NONE,#$20
-		CLC
-		ADC		#$05
-		CMP		#$20
-		BCC		loc_59B2A
-		SBC		#$1F
-		STA		_tmp3
-		LDA		#$06
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_59B32
-loc_59B2A:
-		LDA		#$06
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_59B32:
-		LDA		_ptr0+1
-		LDX		#$20
-		MULXA
-		CLC
-		ADC		_ptr0
-		BCC		loc_59B48
-		INX
-loc_59B48:
-		STA		_ptr0
-		TXA
-		ORA		#$20
-		STA		_ptr0+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_cur_popul_str_queue:
-		PPUQSTART
-		LDY		#$00
-		PPUQMOVB	_ptr0,OP_NOP,0
-loc_59B65:
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-loc_59B66:
-		LDA		_pre_ppu_buf,Y
-		INY
-		PPUQMOVA
-		DEC		_tmp2
-		BNE		loc_59B66
-		LDA		_tmp3
-		BEQ		loc_59B93
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-		PPUQMOVB	_ptr0,OP_AND,#$E0
-;		PPUQMOVB	_ptr0+1,OP_NOP,0
-;		PPUQMOVB	_tmp2,OP_NOP,0
-;		JMP		loc_59B66
-		JMP		loc_59B65
-loc_59B93:
-		PPUQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_msg_wnd_cheat_test:
-		LDA		_pad0_held
-		ORA		_pad1_prev_held
-		AND		#$CF
-		CMP		#$CF
-		BNE		loc_59BA9
-		LDA		_debug_scroll_msg_flags
-		ORA		#$01
-		STA		_debug_scroll_msg_flags
-		RTS
-loc_59BA9:
-		LDA		_pad0_held
-		AND		_pad1_prev_held
-		BEQ		locret_59BBF
-		LDA		_pad0_held
-		CMP		_pad1_prev_held
-		BEQ		locret_59BBF
-		BCC		locret_59BBF
-		LDA		_debug_scroll_msg_flags
-		ORA		#$02
-		STA		_debug_scroll_msg_flags
-locret_59BBF:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_debug_flag_toggle_test:
-		LDA		_debug_scroll_msg_flags
-		CMP		#$03
-		BNE		locret_59BCF
-		LDA		_city._game_flags
-		EOR		#$10
-		STA		_city._game_flags
-locret_59BCF:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_sram_reset:
-		JSR		_sram_on
-		INC		_sram_data_crc
-		JSR		_sram_off
-		JMP		RESET
-
-; =============== S U B	R O U T	I N E =======================================
-_sram_sum_reinit:
-		JSR		_sram_sum_calc
-		LDA		_tmp2
-		STA		_sram_data_crc
-		LDA		_tmp3
-		STA		_sram_data_crc+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_sram_init:
-		JSR		_sram_sum_calc
-		LDA		_sram_data_crc
-		CMP		_tmp2
-		BNE		loc_59C0E
-		LDA		_sram_data_crc+1
-		CMP		_tmp3
-		BNE		loc_59C0E
-		LDA		_sram_vars._scenarios_clear_flags
-		STA		_city._scenarios_clear_flags
-		LDA		_sram_vars._all_scenarios_are_clear_ram_flag
-		STA		_city._all_scenarios_are_clear_ram_flag
-		LDA		_sram_has_saved_city_data_flag
-		STA		_has_saved_city_data_flag
-		RTS
-loc_59C0E:
-		LDA		#>[_land_value_map_buf]			; TODO: rearrange to use macro!
-		STA		_ptr0+1
-		LDA		#<[_land_value_map_buf]
-		STA		_ptr0
-		STA		_has_saved_city_data_flag
-		TAY
-loc_59C1A:
-		STA		(_ptr0),Y
-		INY
-		BNE		loc_59C1A
-		INC		_ptr0+1
-		LDX		_ptr0+1
-		CPX		#$A0
-		BNE		loc_59C1A
-		INC		_sram_data_crc
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_sram_sum_calc:
-		LDY		#$00
-		STY		_tmp4
-		STY		_tmp5
-		STY		_tmp6
-		STY		_tmp2
-		STY		_tmp3
-		STY		_ptr0
-		LDA		#>[_sram_graphs]
-		STA		_ptr0+1
-		LDY		#<[_sram_graphs]
-loc_59C3F:
-		LDA		(_ptr0),Y
-		JSR		_sum_calc
-		INY
-		BNE		loc_59C3F
-		INC		_ptr0+1
-		LDA		_ptr0+1
-		CMP		#$A0
-		BNE		loc_59C3F
-		LDA		#$00
-		JSR		_sum_calc
-		LDA		#$00
-
-; =============== S U B	R O U T	I N E =======================================
-_sum_calc:
-		STA		_tmp6
-		LDA		_tmp2
-		STA		_tmp4
-		LDA		_tmp3
-		STA		_tmp5
-		LDX		#$00
-loc_59C62:
-		LSR		_tmp6
-		ROR		_tmp5
-		ROR		_tmp4
-		BCC		loc_59C76
-		LDA		_tmp4
-		EOR		#$05
-		STA		_tmp4
-		LDA		_tmp5
-		EOR		#$C0
-		STA		_tmp5
-loc_59C76:
-		INX
-		CPX		#$08
-		BNE		loc_59C62
-		LDA		_tmp4
-		STA		_tmp2
-		LDA		_tmp5
-		STA		_tmp3
-		RTS
-
-_scroll_txt_i_am_god:
-		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_I,__,_W,_I,_S,_H,__,_Y,_O,_U,__,_H,_A,_P,_P,_Y,$FF
-_scroll_txt_debug_off:
-		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_D,_E,_B,_U,_G,__,_O,_F,_F,$FF
-
-_scroll_msg_lib_lo:
-		.BYTE	<[_scroll_txt00_more_residental]
-		.BYTE	<[_scroll_txt01_more_commercial]
-		.BYTE	<[_scroll_txt02_more_industrial]
-		.BYTE	<[_scroll_txt03_more_roads]
-		.BYTE	<[_scroll_txt04_inadeqate_rail_system]
-		.BYTE	<[_scroll_txt05_build_a_power_plant]
-		.BYTE	<[_scroll_txt06_demand_a_stadium]
-		.BYTE	<[_scroll_txt07_requires_a_sea_port]
-		.BYTE	<[_scroll_txt08_requires_airport]
-		.BYTE	<[_scroll_txt09_demand_a_fire_department]
-		.BYTE	<[_scroll_txt0A_demand_a_police_department]
-		.BYTE	<[_scroll_txt0B_blackouts_reported]
-		.BYTE	<[_scroll_txt0C_tax_rate_is_too_high]
-		.BYTE	<[_scroll_txt0D_roads_deteriorating]
-		.BYTE	<[_scroll_txt0E_fire_department_need_funding]
-		.BYTE	<[_scroll_txt0F_police_need_funding]
-		.BYTE	<[_scroll_txt10_plane_crashed]
-		.BYTE	<[_scroll_txt11_shipwreck_reported]
-		.BYTE	<[_scroll_txt12_train_crashed]
-		.BYTE	<[_scroll_txt13_heli_crashed]
-		.BYTE	<[_scroll_txt14_hi_unemployment_rate]
-		.BYTE	<[_scroll_txt15_city_gone_broke]
-		.BYTE	<[_scroll_txt16_explosion_detected]
-		.BYTE	<[_scroll_txt17_brownouts]
-		.BYTE	<[_scroll_txt18_heavy_traffic_repotrted]
-_scroll_msg_lib_hi:
-		.BYTE	>[_scroll_txt00_more_residental]
-		.BYTE	>[_scroll_txt01_more_commercial]
-		.BYTE	>[_scroll_txt02_more_industrial]
-		.BYTE	>[_scroll_txt03_more_roads]
-		.BYTE	>[_scroll_txt04_inadeqate_rail_system]
-		.BYTE	>[_scroll_txt05_build_a_power_plant]
-		.BYTE	>[_scroll_txt06_demand_a_stadium]
-		.BYTE	>[_scroll_txt07_requires_a_sea_port]
-		.BYTE	>[_scroll_txt08_requires_airport]
-		.BYTE	>[_scroll_txt09_demand_a_fire_department]
-		.BYTE	>[_scroll_txt0A_demand_a_police_department]
-		.BYTE	>[_scroll_txt0B_blackouts_reported]
-		.BYTE	>[_scroll_txt0C_tax_rate_is_too_high]
-		.BYTE	>[_scroll_txt0D_roads_deteriorating]
-		.BYTE	>[_scroll_txt0E_fire_department_need_funding]
-		.BYTE	>[_scroll_txt0F_police_need_funding]
-		.BYTE	>[_scroll_txt10_plane_crashed]
-		.BYTE	>[_scroll_txt11_shipwreck_reported]
-		.BYTE	>[_scroll_txt12_train_crashed]
-		.BYTE	>[_scroll_txt13_heli_crashed]
-		.BYTE	>[_scroll_txt14_hi_unemployment_rate]
-		.BYTE	>[_scroll_txt15_city_gone_broke]
-		.BYTE	>[_scroll_txt16_explosion_detected]
-		.BYTE	>[_scroll_txt17_brownouts]
-		.BYTE	>[_scroll_txt18_heavy_traffic_repotrted]
-
-_scroll_txt00_more_residental:
-		.BYTE	_M,_O,_R,_E,__,_R,_E,_S,_I,_D,_E,_N,_T,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
-_scroll_txt01_more_commercial:
-		.BYTE	_M,_O,_R,_E,__,_C,_O,_M,_M,_E,_R,_C,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
-_scroll_txt02_more_industrial:
-		.BYTE	_M,_O,_R,_E,__,_I,_N,_D,_U,_S,_T,_R,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
-_scroll_txt03_more_roads:
-		.BYTE	_M,_O,_R,_E,__,_R,_O,_A,_D,_S,__,_R,_E,_Q,_U,_I,_R,_E,_D,$FF
-_scroll_txt04_inadeqate_rail_system:
-		.BYTE	_I,_N,_A,_D,_E,_Q,_U,_A,_T,_E,__,_R,_A,_I,_L,__,_S,_Y,_S,_T,_E,_M,$FF
-_scroll_txt05_build_a_power_plant:
-		.BYTE	_B,_U,_I,_L,_D,__,_A,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
-_scroll_txt06_demand_a_stadium:
-		.BYTE	_R,_E,_S,_I,_D,_E,_N,_T,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_S,_T,_A,_D,_I,_U,_M,$FF
-_scroll_txt07_requires_a_sea_port:
-		.BYTE	_I,_N,_D,_U,_S,_T,_R,_Y,__,_R,_E,_Q,_U,_I,_R,_E,_S,__,_A,__,_S,_E,_A,__,_P,_O,_R,_T,$FF
-_scroll_txt08_requires_airport:
-		.BYTE	_C,_O,_M,_M,_E,_R,_C,_E,__,_R,_E,_Q,_U,_I,_R,_E,_S,__,_A,_N,__,_A,_I,_R,_P,_O,_R,_T,$FF
-_scroll_txt09_demand_a_fire_department:
-		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_F,_I,_R,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,$FF
-_scroll_txt0A_demand_a_police_department:
-		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_P,_O,_L,_I,_C,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,$FF
-_scroll_txt0B_blackouts_reported:
-		.BYTE	_B,_L,_A,_C,_K,_O,_U,_T,_S,__,_R,_E,_P,_O,_R,_T,_E,_D,__,__,_C,_H,_E,_C,_K,__,_P,_O,_W,_E,_R,__,_M,_A,_P,$FF
-_scroll_txt0C_tax_rate_is_too_high:
-		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_U,_P,_S,_E,_T,__,__,_T,_H,_E,__,_T,_A,_X,__,_R,_A,_T,_E,__,_I,_S,__,_T,_O,_O,__,_H,_I,_G,_H,$FF
-_scroll_txt0D_roads_deteriorating:
-		.BYTE	_R,_O,_A,_D,_S,__,_D,_E,_T,_E,_R,_I,_O,_R,_A,_T,_I,_N,_G,__,__,_D,_U,_E,__,_T,_O,__,_L,_A,_C,_K,__,_O,_F,__,_F,_U,_N,_D,_S,$FF
-_scroll_txt0E_fire_department_need_funding:
-		.BYTE	_F,_I,_R,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,_S,__,_N,_E,_E,_D,__,_F,_U,_N,_D,_I,_N,_G,$FF
-_scroll_txt0F_police_need_funding:
-		.BYTE	_P,_O,_L,_I,_C,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,_S,__,_N,_E,_E,_D,__,_F,_U,_N,_D,_I,_N,_G,$FF
-_scroll_txt10_plane_crashed:
-		.BYTE	_A,__,_P,_L,_A,_N,_E,__,_H,_A,_S,__,_C,_R,_A,_S,_H,_E,_D,$FF
-_scroll_txt11_shipwreck_reported:
-		.BYTE	_S,_H,_I,_P,_W,_R,_E,_C,_K,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
-_scroll_txt12_train_crashed:
-		.BYTE	_A,__,_T,_R,_A,_I,_N,__,_C,_R,_A,_S,_H,_E,_D,$FF
-_scroll_txt13_heli_crashed:
-		.BYTE	_A,__,_H,_E,_L,_I,_C,_O,_P,_T,_E,_R,__,_C,_R,_A,_S,_H,_E,_D,$FF
-_scroll_txt14_hi_unemployment_rate:
-		.BYTE	_U,_N,_E,_M,_P,_L,_O,_Y,_M,_E,_N,_T,__,_R,_A,_T,_E,__,_I,_S,__,_H,_I,_G,_H,$FF
-_scroll_txt15_city_gone_broke:
-		.BYTE	_Y,_O,_U,_R,__,_C,_I,_T,_Y,__,_H,_A,_S,__,_G,_O,_N,_E,__,_B,_R,_O,_K,_E,$FF
-_scroll_txt16_explosion_detected:
-		.BYTE	_E,_X,_P,_L,_O,_S,_I,_O,_N,__,_D,_E,_T,_E,_C,_T,_E,_D,$FF
-_scroll_txt17_brownouts:
-		.BYTE	_B,_R,_O,_W,_N,_O,_U,_T,_S,__,__,_B,_U,_I,_L,_D,__,_A,_N,_O,_T,_H,_E,_R,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
-_scroll_txt18_heavy_traffic_repotrted:
-		.BYTE	_H,_E,_A,_V,_Y,__,_T,_R,_A,_F,_F,_I,_C,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
+		SECTION_END 901
 
 		BANK_END F3,$C000

@@ -503,7 +503,7 @@ _tlm_nt_building_names_lib:
 		.BYTE	$DF,$90,$96,$97,$98,$99,$9A,$DF,$DF,$30,$26,$5A ; "BuildPresent     $100"
 		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$59,$5A ; "BuildPowerPlant  $5000"
 		.BYTE	$DF,$90,$96,$52,$53,$54,$55,$DF,$30,$26,$5A,$5A ; "BuildAirPort     $10000"
-;		.BYTE	$DF,$A3,$A4,$A5,$A6,$A7,$A8,$DF,$DF,$DF,$DF,$DF ; "NoPresents"	   *unused*	REDUNDANT
+;		.BYTE	$DF,$A3,$A4,$A5,$A6,$A7,$A8,$DF,$DF,$DF,$DF,$DF ; "NoPresents"      *unused* REDUNDANT
 _tlm_extnt_building_names_lib:
 		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
 		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06

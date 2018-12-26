@@ -93,7 +93,7 @@ _screen_pal_spr_init:
 ;		RTS
 
 _screen_pal_spr_list:
-		.BYTE	$03, $08,$02, $02,$03, $03,$06, $04,$00
+		.BYTE	$03,$08,$02,$02,$03,$03,$06,$04,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_wnd_close:
@@ -287,8 +287,9 @@ sub_A01E9:
 		TAY
 		JSR		sub_A01F8
 
-; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
 sub_A01F8:
 		LDA		#$03
 		STA		_tmp5
@@ -303,12 +304,14 @@ loc_A01FC:
 		EXTQMOVB	_tmp3,OP_NOP,0
 		RTS
 
+; REDUNDANT, returned back to bank 9 where it belongs
+;
 ; =============== S U B	R O U T	I N E =======================================
-_scr_res_hndl1_A_graphs_draw_init:
-		LDY		#$FF
-		STY		byte_598
-		STY		byte_599
-		RTS
+;_scr_res_hndl1_A_graphs_draw_init:
+;		LDY		#$FF
+;		STY		byte_598
+;		STY		byte_599
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_A021E:

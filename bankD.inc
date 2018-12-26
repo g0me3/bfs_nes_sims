@@ -211,7 +211,7 @@ loc_15012B:
 		LSR
 		STA		byte_74
 		CIADDB	byte_75,_cur_screen_tile._Y,byte_73,NONE,#$1E
-		JSR		sub_1502A2
+		JSR		_buf_pos_calc_74_75_77
 		LDA		_cur_screen_tile._X
 		LSR
 		EOR		#$FF
@@ -271,7 +271,7 @@ loc_1501C5:
 		CIADDB	byte_74,_cur_screen_tile._X,byte_73,NONE,#$20
 		LDA		#$00
 		STA		byte_75
-		JSR		sub_1502A2
+		JSR		_buf_pos_calc_74_75_77
 		LDA		_cur_screen_tile._Y
 		LSR
 		STA		_ptr0
@@ -371,7 +371,7 @@ loc_150288:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1502A2:
+_buf_pos_calc_74_75_77:
 		BUFPOS	byte_77,byte_74,byte_75,#$20,#$20	; DST=(byte_75*#$20+byte_74)+#$2000
 		RTS
 
@@ -712,7 +712,7 @@ loc_1504BF:
 		STA		_money_delta+1
 		RTS
 _buildings_cost_list:
-		.BYTE	$01, $00
+		.BYTE	$01,$00
 		.BYTE	$0A,$00
 		.BYTE	$05,$00
 		.BYTE	$14,$00
@@ -729,7 +729,7 @@ _buildings_cost_list:
 		.BYTE	$88,$13
 		.BYTE	$10,$27
 _presents_cost_idx_list:
-		.BYTE	 $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D, $0D,$0D
+		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1504FD:
@@ -2781,37 +2781,47 @@ _regular_building_name_and_cost_hud_draw_req_set:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_draw_wnd_header_nt:
-		LDX		_gui_ctrl_menu_press_idx
-		LDA		byte_151375,X
-		STA		_tmp6
-		LDA		byte_15136F,X
-		STA		_tmp4
-		LDA		#$1C
-		STA		_tmp5
-		JSR		_calc_wnd_pos
-		JSR		_queue_wnd_header_nt
-		RTS
+_gui_ctrl_menu_icon_push_draw:
+; REDUNDANT, merged too
+;		LDX		_gui_ctrl_menu_press_idx
+;		LDA		gui_ctrl_menu_icons_posY_list,X
+;		STA		_tmp6
+;		LDA		gui_ctrl_menu_icons_posX_list,X
+;		STA		_tmp4
+;		LDA		#$1C
+;		STA		_tmp5
+;		JSR		gui_ctrl_menu_icon_pos_calc
+;		JSR		gui_ctrl_menu_icon_push_queue
+;		RTS
+		LDY		#$00							; OPTIMIZE, merged
+		BEQ		_gui_ctrl_menu_icon_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_draw_wnd_header_extnt:
+_gui_ctrl_menu_icon_release_draw:
+		LDY		#$01							; OPTIMIZE, merged
+
+; !FALLTHROUTH!
+
+_gui_ctrl_menu_icon_draw:
 		LDX		_gui_ctrl_menu_press_idx
-		LDA		byte_151375,X
+		LDA		gui_ctrl_menu_icons_posY_list,X
 		STA		_tmp6
-		LDA		byte_15136F,X
+		LDA		gui_ctrl_menu_icons_posX_list,X
 		STA		_tmp4
 		LDA		#$1C
 		STA		_tmp5
-		JSR		_calc_wnd_pos
-		JSR		_queue_wnd_header_extnt
+		JSR		gui_ctrl_menu_icon_pos_calc
+;		JSR		gui_ctrl_menu_icon_release_queue; REDUNDANT, merged
+		JSR		gui_ctrl_menu_icon_queue		; FIX: merged
 		RTS
-byte_15136F:
+
+gui_ctrl_menu_icons_posX_list:
 		.BYTE	$02,$04,$06,$08,$0A,$0C
-byte_151375:
+gui_ctrl_menu_icons_posY_list:
 		.BYTE	$02,$02,$02,$02,$02,$04
 
 ; =============== S U B	R O U T	I N E =======================================
-_calc_wnd_pos:
+gui_ctrl_menu_icon_pos_calc:
 		CIADDB	_tmp0,_cur_screen_tile._X,_tmp4,NONE,#$20
 		LDA		#$20
 		SEC
@@ -2847,68 +2857,26 @@ loc_1513C9:
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#>[_MMC5_EXRAM]	; DST=(_ptr0+1*#$20+_ptr0)+#>[_MMC5_EXRAM]00
 		RTS
 
+; FIX: merged version of two following functions without using arrays of
+; similar bytes.
+; CAUTION! if you ever need to move the gui ctrl icons graphics, make sure
+; they aren't in different banks and are together, or else re-enable all
+; redundant functions.
+;
 ; =============== S U B	R O U T	I N E =======================================
-_queue_wnd_header_extnt:
+; input Y = byte to draw.
+; draw 2x2 rect of extnt bytes to push/release icons
+;
+gui_ctrl_menu_icon_queue:
 		EXTQSTART
-		LDY		_gui_ctrl_menu_press_idx
-loc_1513E8:
+loc_15145B:
 		MOVW	_tmp6,_tmp2
 		EXTQMOVB	_ptr0,OP_NOP,0
-		EXTQMOVB	_ptr0+1,OP_NOP,0
-		EXTQMOVB	_tmp6,OP_NOP,0
-loc_151402:
-		LDA		byte_1514CA,Y
-		EXTQMOVA
-		DEC		_tmp6
-		BNE		loc_151402
-		LDA		_tmp6+1
-		BEQ		loc_15142D
-		STA		_tmp6
-		EXTQMOVB	_ptr0,OP_AND,#$E0
-		EXTQMOVB	_ptr0+1,OP_NOP,0
-		EXTQMOVB	_tmp6,OP_NOP,0
-		LDA		#$00
-		STA		_tmp6+1
-		BEQ		loc_151402
-loc_15142D:
-		LDA		_ptr0							; TODO: optimize, this is ADDW8 opcode actually
-		CLC
-		ADC		#$20
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		#$00
-		STA		_ptr0+1
-		DEC		_tmp4
-		BNE		loc_1513E8
-		LDA		_tmp5
-		BEQ		loc_151454
-		STA		_tmp4
-		LDA		_ptr0
-		AND		#<[_MMC5_EXRAM+$1F]
-		STA		_ptr0
-		LDA		#>[_MMC5_EXRAM+$1F]
-		STA		_ptr0+1
-		LDA		#$00
-		STA		_tmp5
-		BEQ		loc_1513E8
-loc_151454:
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_queue_wnd_header_nt:
-		EXTQSTART
-		LDY		_gui_ctrl_menu_press_idx
-loc_15145B:
-		LDA		_tmp2
-		STA		_tmp6
-		LDA		_tmp3
-		STA		_tmp6+1
-		EXTQMOVB	_ptr0,OP_NOP,0
+loc_151474:
 		EXTQMOVB	_ptr0+1,OP_NOP,0
 		EXTQMOVB	_tmp6,OP_NOP,0
 loc_151475:
-		LDA		byte_1514D0,Y
+		LDA		gui_ctrl_menu_mode_byte,Y
 		EXTQMOVA
 		DEC		_tmp6
 		BNE		loc_151475
@@ -2916,19 +2884,11 @@ loc_151475:
 		BEQ		loc_1514A0
 		STA		_tmp6
 		EXTQMOVB	_ptr0,OP_AND,#$E0
-		EXTQMOVB	_ptr0+1,OP_NOP,0
-		EXTQMOVB	_tmp6,OP_NOP,0
 		LDA		#$00
 		STA		_tmp6+1
-		BEQ		loc_151475
+		BEQ		loc_151474
 loc_1514A0:
-		LDA		_ptr0
-		CLC
-		ADC		#$20
-		STA		_ptr0
-		LDA		_ptr0+1
-		ADC		#$00
-		STA		_ptr0+1
+		ADDW8	_ptr0,#$20
 		DEC		_tmp4
 		BNE		loc_15145B
 		LDA		_tmp5
@@ -2945,10 +2905,114 @@ loc_1514A0:
 loc_1514C7:
 		EXTQEND
 		RTS
-byte_1514CA:
-		.BYTE	$82,$82,$82,$82,$82,$82
-byte_1514D0:
-		.BYTE	$83,$83,$83,$83,$83,$83
+
+gui_ctrl_menu_mode_byte:
+		.BYTE	$83,$82
+
+; REDUNDANT: even more, the values are the same for every window, maybe they have been
+; different someday, but not now.
+;
+; =============== S U B	R O U T	I N E =======================================
+;gui_ctrl_menu_icon_release_queue:
+;		EXTQSTART
+;		LDY		_gui_ctrl_menu_press_idx
+;loc_1513E8:
+;		MOVW	_tmp6,_tmp2
+;		EXTQMOVB	_ptr0,OP_NOP,0
+;		EXTQMOVB	_ptr0+1,OP_NOP,0
+;		EXTQMOVB	_tmp6,OP_NOP,0
+;loc_151402:
+;		LDA		byte_1514CA,Y
+;		EXTQMOVA
+;		DEC		_tmp6
+;		BNE		loc_151402
+;		LDA		_tmp6+1
+;		BEQ		loc_15142D
+;		STA		_tmp6
+;		EXTQMOVB	_ptr0,OP_AND,#$E0
+;		EXTQMOVB	_ptr0+1,OP_NOP,0
+;		EXTQMOVB	_tmp6,OP_NOP,0
+;		LDA		#$00
+;		STA		_tmp6+1
+;		BEQ		loc_151402
+;loc_15142D:
+;		LDA		_ptr0							; TODO: optimize, this is ADDW8 opcode actually
+;		CLC
+;		ADC		#$20
+;		STA		_ptr0
+;		LDA		_ptr0+1
+;		ADC		#$00
+;		STA		_ptr0+1
+;		DEC		_tmp4
+;		BNE		loc_1513E8
+;		LDA		_tmp5
+;		BEQ		loc_151454
+;		STA		_tmp4
+;		LDA		_ptr0
+;		AND		#<[_MMC5_EXRAM+$1F]
+;		STA		_ptr0
+;		LDA		#>[_MMC5_EXRAM+$1F]
+;		STA		_ptr0+1
+;		LDA		#$00
+;		STA		_tmp5
+;		BEQ		loc_1513E8
+;loc_151454:
+;		EXTQEND
+;		RTS
+;
+; =============== S U B	R O U T	I N E =======================================
+;gui_ctrl_menu_icon_push_queue:
+;		EXTQSTART
+;		LDY		_gui_ctrl_menu_press_idx
+;loc_15145B:
+;		MOVW	_tmp6,_tmp2
+;		EXTQMOVB	_ptr0,OP_NOP,0
+;		EXTQMOVB	_ptr0+1,OP_NOP,0
+;		EXTQMOVB	_tmp6,OP_NOP,0
+;loc_151475:
+;		LDA		byte_1514D0,Y
+;		EXTQMOVA
+;		DEC		_tmp6
+;		BNE		loc_151475
+;		LDA		_tmp6+1
+;		BEQ		loc_1514A0
+;		STA		_tmp6
+;		EXTQMOVB	_ptr0,OP_AND,#$E0
+;		EXTQMOVB	_ptr0+1,OP_NOP,0
+;		EXTQMOVB	_tmp6,OP_NOP,0
+;		LDA		#$00
+;		STA		_tmp6+1
+;		BEQ		loc_151475
+;loc_1514A0:
+;		LDA		_ptr0
+;		CLC
+;		ADC		#$20
+;		STA		_ptr0
+;		LDA		_ptr0+1
+;		ADC		#$00
+;		STA		_ptr0+1
+;		DEC		_tmp4
+;		BNE		loc_15145B
+;		LDA		_tmp5
+;		BEQ		loc_1514C7
+;		STA		_tmp4
+;		LDA		_ptr0
+;		AND		#<[_MMC5_EXRAM+$1F]
+;		STA		_ptr0
+;		LDA		#>[_MMC5_EXRAM+$1F]
+;		STA		_ptr0+1
+;		LDA		#$00
+;		STA		_tmp5
+;		BEQ		loc_15145B
+;loc_1514C7:
+;		EXTQEND
+;		RTS
+;
+;byte_1514CA:
+;		.BYTE	$82,$82,$82,$82,$82,$82
+;byte_1514D0:
+;		.BYTE	$83,$83,$83,$83,$83,$83
+
 byte_1514D6:
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF

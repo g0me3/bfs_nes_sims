@@ -1558,7 +1558,7 @@ _gui_ctrl_menu_pos_data:
 		.BYTE	$0C,$07
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_chr_common_load:
+_game_chr_common_reload:
 		LDA		#$34
 		STA		_mmc5_chr_banks_shadow
 		STA		_MMC5_CHR_BANKSA
@@ -1572,31 +1572,32 @@ _game_msg_chr_common_load:
 
 ; =============== S U B	R O U T	I N E =======================================
 _thread1_init:
-		LDA		#<[_stack_upper+$49]
-		STA		_thread_stack+1
-		LDA		#$FB
-		STA		_thread_prgA000+1
-		LDA		#>[_THREAD1_MAIN]
-		STA		_stack_upper+$4F
-		LDA		#$00
-		STA		_thread_prg8000+1
-		STA		_stack_upper+$4E
-		STA		_stack_upper+$4D
-		STA		_game_core_state
+		LDA		#<[_stack_upper+$49]			; offset to the top of the
+		STA		_thread_stack+1					; thread1 stack
+		LDA		#$FB							; pushing all stack data here
+		STA		_thread_prgA000+1				; prg state is SRAM,PRGB
+		LDA		#>[_THREAD1_MAIN]				; CAUTION! the lower nibble
+		STA		_stack_upper+$4F				; assumed to be 00!, so won't
+		LDA		#$00							; move thread1_main unless you
+		STA		_thread_prg8000+1				; fix it
+		STA		_stack_upper+$4E				; <- here
+		STA		_stack_upper+$4D				; flags
+		STA		_game_core_state				; threads core init
 		LDA		#$80
-		STA		_ppu_ctrl_shadow
-		LDA		#$34
-		STA		_MMC5_CHR_BANKSA
-		STA		_mmc5_chr_banks_shadow
+		STA		_ppu_ctrl_shadow				; initial game CHR banks
+		JSR		_game_chr_common_reload		; OPTIMIZE
+;		LDA		#$34							; REDUNDANT, call routine above
+;		STA		_MMC5_CHR_BANKSA				; instead.
+;		STA		_mmc5_chr_banks_shadow
 		LDA		#$35
 		STA		_MMC5_CHR_BANKSA+1
 		STA		_mmc5_chr_banks_shadow+1
-		LDA		#$3A
-		STA		_MMC5_CHR_BANKSA+2
-		STA		_mmc5_chr_banks_shadow+2
-		LDA		#$37
-		STA		_MMC5_CHR_BANKSA+3
-		STA		_mmc5_chr_banks_shadow+3
+;		LDA		#$3A							; REDUNDANT
+;		STA		_MMC5_CHR_BANKSA+2
+;		STA		_mmc5_chr_banks_shadow+2
+;		LDA		#$37
+;		STA		_MMC5_CHR_BANKSA+3
+;		STA		_mmc5_chr_banks_shadow+3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3667,6 +3668,37 @@ _mmc5_mul16to16:
 
 _bg_music_list:
 		.BYTE	$08,$20,$41,$42,$44,$48
+
+_get_dec_digit_tbl0:
+		.BYTE	[[1 >> 0] & $FF]		; $01
+_hex_to_dec_tbl2:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]	; $40
+		.BYTE	[[10000000 >> 0] & $FF] ; $80
+_get_dec_digit_tbl1:
+		.BYTE	[[1 >> 8] & $FF]		; $00
+_hex_to_dec_tbl1:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]	; $42
+		.BYTE	[[10000000 >> 8] & $FF] ; $96
+_get_dec_digit_tbl2:
+		.BYTE	[[1 >> 16] & $FF]		; $00
+_hex_to_dec_tbl0:
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+		.BYTE	[[10000000 >> 16] & $FF]; $98
 
 		LAST_BANK_END FF,$10000
 

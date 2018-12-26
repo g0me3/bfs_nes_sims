@@ -417,11 +417,20 @@ OP_ADD	EQU	3
 		MULXA
 		CLC
 		ADC		{2}		; 3 x
+	#if {5}!=$00
 		STA		{1}		; 4 dst
 		TXA
 		ADC		{5}		; 5 page
 		STA		{1}+1	; 6 dst+1
+	#else
+		BCC		.1
+		INX
+.1:
+		STA		{1}
+		STX		{1}+1
+	#endif
 	ENDM
+
 
 ;-----------------C-O-M-M-O-N-------------------
 
