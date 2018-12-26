@@ -166,7 +166,7 @@ loc_B8194:
 		BCC		.do_auto_bulldoze				; can autobulldoze sea shores
 		CMP		#_MAP_CORRUPT0
 		BCC		.no_auto_bulldoze				; more transport tiles
-		CMP		#_MAP_BRIDGE_WATER_LR
+		CMP		#_MAP_BRIDGE_ROAD_LR
 		BCS		.no_auto_bulldoze				; the rest of transport tiles
 .do_auto_bulldoze:
 		INCW	_cur_building_price				; yes, autobulldoze it
@@ -367,7 +367,7 @@ _water_tile_build_select:
 		LDA		_cur_build_sample_tile_idx		; special water tiles
 		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B82CA
-		LDA		#_MAP_BRIDGE_WATER_LR			; set the special "bridge" road tile
+		LDA		#_MAP_BRIDGE_ROAD_LR			; set the special "bridge" road tile
 		BNE		loc_B82CC
 loc_B82CA:
 		LDA		#_MAP_WATER_ROAD_LR				; let's build a regular hor road
@@ -381,7 +381,7 @@ loc_B82CC:
 		LDA		_cur_build_sample_tile_idx
 		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B82DD
-		LDA		#_MAP_BRIDGE_WATER_UD			; another bridge road
+		LDA		#_MAP_BRIDGE_ROAD_UD			; another bridge road
 		BNE		loc_B82DF
 loc_B82DD:
 		LDA		#_MAP_WATER_ROAD_UD
@@ -436,7 +436,7 @@ _test_for_valid_hor_road_water_joint:
 		BEQ		.valid_road_water_joint			; also UD road+electric
 		CMP		#_MAP_WATER_ROAD_LR
 		BEQ		.valid_road_water_joint			; also LR road+water
-		CMP		#_MAP_BRIDGE_WATER_LR
+		CMP		#_MAP_BRIDGE_ROAD_LR
 		BEQ		.valid_road_water_joint			; and finally LR road+water copy, unused
 .invalid_road_water_joint:
 		CLC
@@ -457,7 +457,7 @@ _test_for_valid_vert_road_water_joint:
 		BEQ		.valid_road_water_joint
 		CMP		#_MAP_WATER_ROAD_UD
 		BEQ		.valid_road_water_joint
-		CMP		#_MAP_BRIDGE_WATER_UD
+		CMP		#_MAP_BRIDGE_ROAD_UD
 		BEQ		.valid_road_water_joint
 		CLC
 		RTS
@@ -610,7 +610,7 @@ loc_B8401:
 		BCC		.allow_with_bulldoze			; here is the reange for sea shores and grounds
 		CMP		#_MAP_CORRUPT0
 		BCC		.forbid
-		CMP		#_MAP_BRIDGE_WATER_LR			; the rest of forbiddent tiles are for fire, etc
+		CMP		#_MAP_BRIDGE_ROAD_LR			; the rest of forbiddent tiles are for fire, etc
 		BCS		.forbid
 .allow_with_bulldoze:
 		INCW	_cur_building_price				; increment bulldoze price

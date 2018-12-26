@@ -811,6 +811,13 @@ _total_free	SET _total_free+_bank{1}_free
 .1:
 	ENDM
 
+	MAC	ADDB
+		LDA		{1}
+		CLC
+		ADC		{2}
+		STA		{1}
+	ENDM
+
 	; \t\tLDA\t\t(.*)\n\t\tCLC\n\t\tADC\t\t(.*)\n\t\tSTA\t\t\1\n\t\tBCC\t\t(.*)\n\t\tINC\t\t\1\+1\n\3:
 	; \t\tADDWB\t\1,\2\n\3:
 	;
@@ -889,6 +896,13 @@ _total_free	SET _total_free+_bank{1}_free
 		LDA		{2}+1
 		SBC		{3}+1
 		STA		{1}+1
+	ENDM
+
+	MAC	SUBB
+		LDA		{1}
+		SEC
+		SBC		{2}
+		STA		{1}
 	ENDM
 
 	; \t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t\#\$(..)\n\t\tSTA\t\t\1\n\t\tLDA\t\t\1\+1\n\t\tSBC\t\t\#\$(..)\n\t\tSTA\t\t\1\+1\n\t\tBCS\t\t(.*)\n\t\tDEC\t\t\1\+2\n\4\:\n
@@ -996,7 +1010,7 @@ __		EQU		$DF
 ;-------------T-I-L-E--F-L-A-G-S----------------
 
 _FL_CONDUCTOR		EQU	$80
-_FL_DESTRUCTIBLE	EQU	$40
+_FL_FLAMMABLE		EQU	$40
 _FL_ROAD			EQU	$20
 _FL_RAIL			EQU	$10
 _FL_TRANSPORT		EQU	_FL_ROAD|_FL_RAIL
@@ -1004,6 +1018,7 @@ _FL_BUILDING		EQU $08
 _FL_PROTECTED		EQU $04
 _FL_FLOODABLE		EQU	$02
 _FL_WATER			EQU	$01
+_FL_AREA			EQU	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_BUILDING|_FL_FLOODABLE
 
 ;--------------M-A-P--T-I-L-E-S-----------------
 
@@ -1242,24 +1257,24 @@ _MAP_CORRUPT0			EQU		$E7
 _MAP_CORRUPT1			EQU		$E8
 _MAP_CORRUPT2			EQU		$E9
 _MAP_CORRUPT3			EQU		$EA
-_MAP_BRIDGE_WATER_LR	EQU		$EB
-_MAP_BRIDGE_WATER_UD	EQU		$EC
-_MAP_ROAD_DIAG0			EQU		$ED
-_MAP_ROAD_DIAG1			EQU		$EE
-_MAP_ROAD_DIAG2			EQU		$EF
-_MAP_ROAD_DIAG3			EQU		$F0
-_MAP_ROAD_DIAG4			EQU		$F1
-_MAP_ROAD_DIAG5			EQU		$F2
-_MAP_ROAD_DIAG6			EQU		$F3
-_MAP_ROAD_DIAG7			EQU		$F4
-_MAP_ROAD_DIAG8			EQU		$F5
-_MAP_ROAD_DIAG9			EQU		$F6
-_MAP_ROAD_DIAGA			EQU		$F7
-_MAP_ROAD_DIAGB			EQU		$F8
-_MAP_ROAD_DIAGC			EQU		$F9
-_MAP_ROAD_DIAGD			EQU		$FA
-_MAP_ROAD_DIAGE			EQU		$FB
-_MAP_ROAD_DIAGF			EQU		$FC
+_MAP_BRIDGE_ROAD_LR		EQU		$EB
+_MAP_BRIDGE_ROAD_UD		EQU		$EC
+_MAP_BRIDGE0			EQU		$ED
+_MAP_BRIDGE1			EQU		$EE
+_MAP_BRIDGE2			EQU		$EF
+_MAP_BRIDGE3			EQU		$F0
+_MAP_BRIDGE4			EQU		$F1
+_MAP_BRIDGE5			EQU		$F2
+_MAP_BRIDGE6			EQU		$F3
+_MAP_BRIDGE7			EQU		$F4
+_MAP_BRIDGE8			EQU		$F5
+_MAP_BRIDGE9			EQU		$F6
+_MAP_BRIDGEA			EQU		$F7
+_MAP_BRIDGEB			EQU		$F8
+_MAP_BRIDGEC			EQU		$F9
+_MAP_BRIDGED			EQU		$FA
+_MAP_BRIDGEE			EQU		$FB
+_MAP_BRIDGEF			EQU		$FC
 ;						EQU		$FD
 _MAP_WATER_ROUTE		EQU		$FE
 ;						EQU		$FF

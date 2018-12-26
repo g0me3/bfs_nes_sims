@@ -569,15 +569,28 @@ _power_grid_set:
 ; copy of _test_power_grid_map_bit in PRGB
 ;
 _power_grid_read:
-		LDA		_tmp_map_pos._ROW				; calculate map buf offset
-		MULAI	#$4C
-		LDA		_MMC5_MUL0
+; REDUNDANT
+;		LDA		_tmp_map_pos._ROW				; calculate map buf offset
+;		MULAI	#$4C
+;		LDA		_MMC5_MUL0
+;		CLC
+;		ADC		_tmp_map_pos._COL
+;		STA		_tmpE6							; store low nibble
+;		TAY										; backup it for now
+;		LDA		_MMC5_MUL1						; adjust high nibble in A
+;		ADC		#$00
+; -
+; OPTIMIZED
+		LDX		_tmp_map_pos._ROW				; copy of BUFPOS for _map_buf
+		LDA		_city_map_row_pos_list_lo,X		; but with some modifications
 		CLC
 		ADC		_tmp_map_pos._COL
-		STA		_tmpE6							; store low nibble
-		TAY										; backup it for now
-		LDA		_MMC5_MUL1						; adjust high nibble in A
+		STA		_tmpE6
+		TAY										; not forget this
+		LDA		_city_map_row_pos_list_hi,X
 		ADC		#$00
+		AND		#$1F							; remove higher bits of buf ofset
+; -
 		LSR										; div 8, since every tile uses
 		ROR		_tmpE6							; one bit in power grid map
 		LSR

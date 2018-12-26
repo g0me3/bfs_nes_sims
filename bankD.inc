@@ -1393,9 +1393,9 @@ _test_valid_buildings_to_bulldoze:
 		BEQ		.cant_bulldoze_that0
 		CMP		#_MAP_FIRE
 		BEQ		.cant_bulldoze_that0
-		CMP		#_MAP_ROAD_DIAG0
+		CMP		#_MAP_BRIDGE0
 		BCC		loc_150997
-		CMP		#_MAP_ROAD_DIAGF+1
+		CMP		#_MAP_BRIDGEF+1
 		BCC		.cant_bulldoze_that0
 loc_150997:
 		CMP		#_MAP_WATER_ROUTE
@@ -1409,9 +1409,9 @@ loc_150997:
 		BCC		.large_bulldoze_area_test
 		CMP		#_MAP_CORRUPT0
 		BCC		loc_1509B5
-		CMP		#_MAP_BRIDGE_WATER_LR
+		CMP		#_MAP_BRIDGE_ROAD_LR
 		BCC		.large_bulldoze_area_test
-		CMP		#_MAP_ROAD_DIAG0
+		CMP		#_MAP_BRIDGE0
 		BCS		.cant_bulldoze_that0
 loc_1509B5:
 		LDX		#_MAP_WATER
@@ -1822,7 +1822,7 @@ loc_150C7E:
 		RTS
 loc_150C99:
 		PHA
-		LDA		_stadium_R_delta_positive_bonus_flag
+		LDA		_stadium_anim_enable_flag
 		BNE		loc_150CA2
 		PLA
 		CLC

@@ -1851,8 +1851,8 @@ loc_1044A3:
 		LDA		#$20
 		STA		_fund_rate_trans
 		LDA		#$26
-		STA		_max_population_dencity_pos._COL
-		STA		_max_population_dencity_pos._ROW
+		STA		_max_popul_dencity_pos._COL
+		STA		_max_popul_dencity_pos._ROW
 		JSR		_sram_write_enable
 		MOVWO	_tmpE6,_power_map				; clear power grid + traffic maps
 ; REDUNDANT, for some reason they clear $570 instead of full $5A4

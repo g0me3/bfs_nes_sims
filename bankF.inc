@@ -1235,8 +1235,8 @@ _farcall_argsAXY_safe:
 ; at all...
 ;
 _farcall_argsXY_safe:
-		STX		word_EE
-		STY		word_EE+1
+		STX		_ptrEE
+		STY		_ptrEE+1
 		DEC		_mmc5_operation_in_progress_flag
 		POPB	_ptrDC
 		CLC
@@ -1273,8 +1273,8 @@ _farcall_argsXY_safe:
 		STA		_MMC5_PRG_PAGES+2
 		POPB	_prg_prg8000_shadow
 		STA		_MMC5_PRG_PAGES+1
-		LDX		word_EE
-		LDY		word_EE+1
+		LDX		_ptrEE
+		LDY		_ptrEE+1
 		INC		_mmc5_operation_in_progress_flag
 		JSR		_jmp_ptrDC
 		DEC		_mmc5_operation_in_progress_flag
@@ -3782,10 +3782,10 @@ _map_tile_read:
 ;		PLA
 ;		CLC
 ;		ADC		#<[_city_map]
-;		STA		word_EC
+;		STA		_ptrEC
 ;		PLA
 ;		ADC		#>[_city_map]
-;		STA		word_EC+1
+;		STA		_ptrEC+1
 ;		LDY		_tmp_map_pos._COL
 ; -
 ; OPTIMIZED, FASTER!
@@ -3800,11 +3800,11 @@ _map_tile_read:
 ;
 		TXA
 		PHA
-		BUFPOS	word_EC,_tmp_map_pos._COL,_tmp_map_pos._ROW,#$4C,#>[_city_map]
+		BUFPOS	_ptrEC,_tmp_map_pos._COL,_tmp_map_pos._ROW,#$4C,#>[_city_map]
 		PLA
 		TAX
 		LDY		#$00
-		LDA		(word_EC),Y
+		LDA		(_ptrEC),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4153,22 +4153,302 @@ _hex_to_dec_tbl2:
 
 ; OPTIMIZED, moved here to be usable from both PRGA and PRGB by now
 _map_tiles_flags_tbl:
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$00
-		.BYTE	$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00
-		.BYTE	$02,$62,$62,$62,$62,$62,$62,$62,$62,$62,$62,$62,$52,$52,$52,$52
-		.BYTE	$52,$52,$52,$52,$52,$52,$52,$C2,$C2,$C2,$C2,$C2,$C2,$C2,$C2,$C2
-		.BYTE	$C2,$C2,$46,$06,$02,$00,$00,$52,$52,$E2,$E2,$D2,$D2,$05,$06,$06
-		.BYTE	$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$46,$46
-		.BYTE	$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46
-		.BYTE	$05,$05,$15,$15,$85,$85,$00,$00,$00,$00,$00,$05,$05,$05,$05,$05
-		.BYTE	$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$00,$05,$00
+; R areas
+		.BYTE	_FL_AREA											; 00
+		.BYTE	_FL_AREA											; 01
+		.BYTE	_FL_AREA											; 02
+		.BYTE	_FL_AREA											; 03
+		.BYTE	_FL_AREA											; 04
+		.BYTE	_FL_AREA											; 05
+		.BYTE	_FL_AREA											; 06
+		.BYTE	_FL_AREA											; 07
+		.BYTE	_FL_AREA											; 08
+		.BYTE	_FL_AREA											; 09
+		.BYTE	_FL_AREA											; 0A
+		.BYTE	_FL_AREA											; 0B
+		.BYTE	_FL_AREA											; 0C
+		.BYTE	_FL_AREA											; 0D
+		.BYTE	_FL_AREA											; 0E
+		.BYTE	_FL_AREA											; 0F
+		.BYTE	_FL_AREA											; 10
+		.BYTE	_FL_AREA											; 11
+		.BYTE	_FL_AREA											; 12
+		.BYTE	_FL_AREA											; 13
+		.BYTE	_FL_AREA											; 14
+		.BYTE	_FL_AREA											; 15
+		.BYTE	_FL_AREA											; 16
+		.BYTE	_FL_AREA											; 17
+		.BYTE	_FL_AREA											; 18
+		.BYTE	_FL_AREA											; 19
+		.BYTE	_FL_AREA											; 1A
+		.BYTE	0													; 1B
+		.BYTE	0													; 1C
+		.BYTE	0													; 1D
+		.BYTE	0													; 1E
+		.BYTE	0													; 1F
+; C areas
+		.BYTE	_FL_AREA											; 20
+		.BYTE	_FL_AREA											; 21
+		.BYTE	_FL_AREA											; 22
+		.BYTE	_FL_AREA											; 23
+		.BYTE	_FL_AREA											; 24
+		.BYTE	_FL_AREA											; 25
+		.BYTE	_FL_AREA											; 26
+		.BYTE	_FL_AREA											; 27
+		.BYTE	_FL_AREA											; 28
+		.BYTE	_FL_AREA											; 29
+		.BYTE	_FL_AREA											; 2A
+		.BYTE	_FL_AREA											; 2B
+		.BYTE	_FL_AREA											; 2C
+		.BYTE	_FL_AREA											; 2D
+		.BYTE	_FL_AREA											; 2E
+		.BYTE	_FL_AREA											; 2F
+		.BYTE	_FL_AREA											; 30
+		.BYTE	_FL_AREA											; 31
+		.BYTE	_FL_AREA											; 32
+		.BYTE	_FL_AREA											; 33
+		.BYTE	_FL_AREA											; 34
+		.BYTE	_FL_AREA											; 35
+		.BYTE	_FL_AREA											; 36
+		.BYTE	_FL_AREA											; 37
+		.BYTE	_FL_AREA											; 38
+		.BYTE	0													; 39
+		.BYTE	0													; 3A
+		.BYTE	0													; 3B
+		.BYTE	0													; 3C
+		.BYTE	0													; 3D
+		.BYTE	0													; 3E
+		.BYTE	0													; 3F
+; I areas
+		.BYTE	_FL_AREA											; 40
+		.BYTE	_FL_AREA											; 41
+		.BYTE	_FL_AREA											; 42
+		.BYTE	_FL_AREA											; 43
+		.BYTE	_FL_AREA											; 44
+		.BYTE	_FL_AREA											; 45
+		.BYTE	_FL_AREA											; 46
+		.BYTE	_FL_AREA											; 47
+		.BYTE	_FL_AREA											; 48
+		.BYTE	0													; 49
+		.BYTE	0													; 4A
+		.BYTE	0													; 4B
+		.BYTE	0													; 4C
+		.BYTE	0													; 4D
+		.BYTE	0													; 4E
+		.BYTE	0													; 4F
+; Police station
+		.BYTE	_FL_AREA											; 50
+; Fire station
+		.BYTE	_FL_AREA											; 51
+		.BYTE	0													; 52
+		.BYTE	0													; 53
+		.BYTE	0													; 54
+		.BYTE	0													; 55
+		.BYTE	0													; 56
+		.BYTE	0													; 57
+		.BYTE	0													; 58
+		.BYTE	0													; 59
+		.BYTE	0													; 5A
+		.BYTE	0													; 5B
+		.BYTE	0													; 5C
+		.BYTE	0													; 5D
+		.BYTE	0													; 5E
+		.BYTE	0													; 5F
+; Power stations
+		.BYTE	_FL_AREA											; 60
+		.BYTE	_FL_AREA											; 61
+; Sea port
+		.BYTE	_FL_AREA											; 62
+; Stadium
+		.BYTE	_FL_AREA											; 63
+; Air port
+		.BYTE	_FL_AREA											; 64
+		.BYTE	0													; 65
+		.BYTE	0													; 66
+		.BYTE	0													; 67
+		.BYTE	0													; 68
+		.BYTE	0													; 69
+		.BYTE	0													; 6A
+		.BYTE	0													; 6B
+		.BYTE	0													; 6C
+		.BYTE	0													; 6D
+		.BYTE	0													; 6E
+		.BYTE	0													; 6F
+; Presents
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 70
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 71
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 72
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 73
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 74
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 75
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 76
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 77
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 78
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 79
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 7A
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 7B
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 7C
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 7D
+		.BYTE	_FL_AREA|_FL_PROTECTED								; 7E
+		.BYTE	0													; 7F
+; Internal area tiles
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 80
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 81
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 82
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 83
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 84
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 85
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 86
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 87
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 88
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 89
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 8A
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 8B
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 8C
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 8D
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE							; 8E
+		.BYTE	0													; 8F
+; Ground
+		.BYTE	_FL_FLOODABLE										; 90
+; Regular roads
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 91
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 92
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 93
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 94
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 95
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 96
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 97
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 98
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 99
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 9A
+		.BYTE	_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE				; 9B
+; Regular rails
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; 9C
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; 9D
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; 9E
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; 9F
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A0
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A1
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A2
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A3
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A4
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A5
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; A6
+; Regular electrics
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; A7
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; A8
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; A9
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; AA
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; AB
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; AC
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; AD
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; AE
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; AF
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; B0
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_FLOODABLE			; B1
+; Park grass
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; B2
+; Park trees
+;		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; B3 BUG for some reasons inflammable!
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; B3 FIX, now flammable
+; Rubble ground
+		.BYTE	_FL_FLOODABLE										; B4
+; Flood and pollution has no flags obviously
+		.BYTE	0													; B5
+		.BYTE	0													; B6
+; Road-rails crossection, NOTE, only rail flag here!
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; B7
+		.BYTE	_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE				; B8
+; Electro-road crossection
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE	; B9
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_ROAD|_FL_FLOODABLE	; BA
+; Electro-rail crossection
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE	; BB
+		.BYTE	_FL_CONDUCTOR|_FL_FLAMMABLE|_FL_RAIL|_FL_FLOODABLE	; BC
+; Water tiles with shores. Pure water non floodable obviously
+		.BYTE	_FL_PROTECTED|_FL_WATER								; BD
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; BE
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; BF
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C0
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C1
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C2
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C3
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C4
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C5
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C6
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C7
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C8
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; C9
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; CA
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; CB
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; CC
+		.BYTE	_FL_PROTECTED|_FL_FLOODABLE							; CD
+; Regular woods
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; CE
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; CF
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D0
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D1
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D2
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D3
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D4
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D5
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D6
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D7
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D8
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; D9
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DA
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DB
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DC
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DD
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DE
+		.BYTE	_FL_FLAMMABLE|_FL_PROTECTED|_FL_FLOODABLE			; DF
+; Water based roads
+; BUG! no road flags here!
+;		.BYTE	_FL_PROTECTED|_FL_WATER								; E0
+;		.BYTE	_FL_PROTECTED|_FL_WATER								; E1
+; FIX
+		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; E0
+		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; E1
+; Water based rails, here see, rails flag set!
+		.BYTE	_FL_RAIL|_FL_PROTECTED|_FL_WATER					; E2
+		.BYTE	_FL_RAIL|_FL_PROTECTED|_FL_WATER					; E3
+; Water based electrics
+		.BYTE	_FL_CONDUCTOR|_FL_PROTECTED|_FL_WATER				; E4
+		.BYTE	_FL_CONDUCTOR|_FL_PROTECTED|_FL_WATER				; E5
+; Fire and rubbish animation
+		.BYTE	0													; E6
+		.BYTE	0													; E7
+		.BYTE	0													; E8
+		.BYTE	0													; E9
+		.BYTE	0													; EA
+; Water based road bridges
+; BUG, again no roads flag!
+;		.BYTE	_FL_PROTECTED|_FL_WATER								; EB
+;		.BYTE	_FL_PROTECTED|_FL_WATER								; EC
+; FIX
+		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; EB
+		.BYTE	_FL_ROAD|_FL_PROTECTED|_FL_WATER					; EC
+; Water based opened road bridges tiles
+		.BYTE	_FL_PROTECTED|_FL_WATER								; ED
+		.BYTE	_FL_PROTECTED|_FL_WATER								; EE
+		.BYTE	_FL_PROTECTED|_FL_WATER								; EF
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F0
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F1
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F2
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F3
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F4
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F5
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F6
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F7
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F8
+		.BYTE	_FL_PROTECTED|_FL_WATER								; F9
+		.BYTE	_FL_PROTECTED|_FL_WATER								; FA
+		.BYTE	_FL_PROTECTED|_FL_WATER								; FB
+		.BYTE	_FL_PROTECTED|_FL_WATER								; FC
+		.BYTE	0													; FD
+; Water canal/route
+		.BYTE	_FL_PROTECTED|_FL_WATER								; FE
+		.BYTE	0													; FF
 
 		LAST_BANK_END FF,$10000
 

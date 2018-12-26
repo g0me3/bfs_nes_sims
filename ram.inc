@@ -305,7 +305,7 @@ _constr_palette_flags:
 		.BYTE	0,0,0,0
 
 ; NOTE: this is a copy of _constr_palette_selected_idx and has the same
-; value as it, used only in const palette enable test routine
+; value, used only in const palette enable test routine
 ;
 _cur_constr_palette_selected_idx:
 		.BYTE	0
@@ -394,9 +394,9 @@ _tmpEB	EQU		_tmpEA+1
 
 		_tfix8_8	_dvdr
 
-word_EC:
+_ptrEC:
 		.BYTE	0,0
-word_EE:
+_ptrEE:
 		.BYTE	0,0
 
 _apu_mus_idx_req:
@@ -644,7 +644,7 @@ _game_core_timer:
 		.BYTE	0
 _debug_scroll_msg_flags:
 		.BYTE	0
-_stadium_R_delta_positive_bonus_flag:
+_stadium_anim_enable_flag:
 		.BYTE	0
 _scroll_msg_active_flag:
 		.BYTE	0
@@ -927,6 +927,9 @@ _ground_count:
 		.BYTE	0,0
 _water_count:
 		.BYTE	0,0
+
+_counters_area_size	EQU	[.-_total_RCI_counts]
+
 ; end if statistic parameters
 ; -
 
@@ -968,7 +971,7 @@ _tmp_map_pos_backup_buf_Y:
 _tmp_map_pos_backup_buf_X:
 		.BYTE	0,0,0
 
-		_tpos	_max_population_dencity_pos
+		_tpos	_max_popul_dencity_pos
 
 		_tpos	_tmp_area_pos
 

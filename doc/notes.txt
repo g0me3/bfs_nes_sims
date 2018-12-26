@@ -85,9 +85,10 @@ UNFINISHED#16. There is an unused unreferenced type of Fire disaster which fires
 UNFINISHED#17. There is an unused music command in a music engine code that adds a different type of envelope calculation to the note. If you replace all regular notes with such alt enveloped this will sounds like under water or maybe like in UFO-style. No music sequences are using it at all. Probably this is a leftover of the unimplemented UFO object?
 UNFINISHED#18.TODO Pollution value calculated once per THREAD1 loop, but used currently only for calculating overall city problems list. Never used for any alerts display as well as not used for Graph screen because of BUG#23.
 UNFINISHED#19.FIXED RAM addresses $5F6/$5F7 in the main city data array never used by any part of the game. However, they reside at the beginning of average states of the city. The only missing average here is Traffic Level average, which currently assigned to other RAM address $656.
-UNFINISHED#20. Unless the SNES version, Casino present in this game does not add a special income to the cash flow.
+UNFINISHED#20.TODO Unless the SNES version, Casino present in this game does not add a special income to the cash flow.
 UNFINISHED#21. The unused tiles with indexes $ED-$FC represents the drawbridge tiles in opened state. The same drawbridges inmplemented in the SNES version, they may be opened or closed depending on time. There is no code for this in the NES version at all.
-UNFINISHED#22. Roads included in pollution calculation as a entities of value on the map, but has no impact for overall pollution value, because in the NES version there is no possible to fetch animation tile with traffic which used in original Micropolis source. So traffic does not counts at all now.
+UNFINISHED#22.TODO Roads included in pollution calculation as a entities of value on the map, but has no impact for overall pollution value, because in the NES version there is no possible to fetch animation tile with traffic which used in original Micropolis source. So traffic does not counts at all now.
+UNFINISHED#23.ADDED The road tiles for water bridges E0-E1 and EB-EC does not have a road flag set in _map_tiles_flags_tbl. So as a result, even if you build something near such tiles, they not treated as transport, cause some problems with driving from these areas and growth.
 
 	ORIGINAL GAME BUGS
 
@@ -100,7 +101,7 @@ BUGS#4.FIXED(BFS) Some events haven't appear automatically when you get it (see 
 BUGS#5.FIXED(BFS) The extra scenarios selecting screen code trying to draw "CLEAR" icons on unlocked scenarios, but there aren't proper icon position data for that, so if you manage to beat at least one of them, the scenarios select screen will glitch, if you beat both, game will hang. This is not really important at all, because you just can't beat any of extra scenarios. Also there is an copy-paste error mistakenly put a wrong variable as a counter, this isn't break anything but does an extra redundant cycles.
 BUGS#6.FIXED(BFS) The briefing messages has a couple of spelling errors and incorrect spacing comparing to the original Micropolis messages where they were taken from.
 BUGS#7.FIXED(BFS) There is non-critical bug in present items free slot search routine. In case you have no free slots, it will run for 256 redundant extra cycles. This does not break anything though anyway except stolen CPU cycles.
-BUGS#8.FIXED(GG KIEXNPVU+OLOZEPUX) There is a routine at PRGB:$A8D9 which fetch power grid buffer data, then test if the particular tile is powered up or not. The opcode at PRGB:$A90E (AND $A3B6,X) refers to the bitmasks table from PRGA, but in PRGB it refers to the portion of the game's code so masking will get the wrong result most of the time, reporting they are powered while they are not or vice versa. Seems they overlooked this when moving the code around.
+BUGS#8.FIXED(GG KIEXNPVU+OLOZEPUX) The City scan routine uses a copy of power map data fetch routine at PRGB:$A8D9 to check if scanned building is powered or not. This fetch routine uses a bitmask array to test individual bits for every building in the power grid map. If bit 0, then building isn't powered and won't grow or drop down growth instantly. If bit is 1, then all developements are enabled. The problem is opcode to read bitmask data at PRGB:$A90E (AND $A3B6,X) refers to the bitmask table in PRGA, but in PRGB it refers to the portion of the game's code. Seems they overlooked this when moving the code around. As a result, this function may returning non zero values because more than one bit are unmasked then. If you have some powered areas nearby or just not-connected electrics, then not powered building may develop and grow even with no power icon blinking on it.
 BUGS#9.FIXED(GG EPXXYZNP) Sound is cracking sometimes in two channels. There is a reasonable solution for square channel by now, thanks to Chris Covell.
 BUGS#10.FIXED(GG KEEAGEVE) When airplane crashes, it's damaging one particular tile on the map with enabling "GOTO" alert button. However, due to copy-paste bug, the coordinates of "GOTO" are wrong and not points to the crash site.
 BUGS#11.TODO Pollution area zone calculated as a sum of weights of the tiles for every 4x4 map area. Weights are follow: developer I area +2 for a tile (+8 for 2x2 building), coal power station/sea-air ports/fires +3 for a tile (+36 for 3x3 building), and flooded ground +15 for a tile, the rest gives 0. The flooded ground has index B5, the nuclear waste pollution have index B6, so the seems mistakenly swapped them. The Micropolis source uses exactly nuclear waste for this calcu as max pollution source.
@@ -279,12 +280,12 @@ FF		-							-		-
 	APPEND D. FLAG BITS DESCRIPTION
 
 	7bit (80) - conduct power tile
-	6bit (40) - tile can be burned/destroyed
+	6bit (40) - flammable tile
 	5bit (20) - road tile
 	4bit (10) -	rail tile
 	3bit (08) -	building large tile
-	2bit (04) - non-destructable tiles
-	1bit (02) - floodable
+	2bit (04) - protected tile
+	1bit (02) - floodable tile
 	0bit (01) - water tile
 
 	BFS CHANGES LIST

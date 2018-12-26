@@ -26,7 +26,7 @@ _THREAD1_MAIN:
 		FJSR	_power_grid_recalc,SRAM,PRGA	; power connections and consumption recalc
 		JSR		_land_value_recalc				; land map and average recalc
 		JSR		_crime_recalc			; crime map and average recalc
-		JSR		_population_dencity_recalc		; population dencity and with migration point
+		JSR		_popul_dencity_recalc		; population dencity and with migration point
 		LDA		#$FF
 		STA		_thread1_flags					; disable all ctitical sections, now all priorities are
 		STA		_thread1_flags+1				; reset
@@ -143,7 +143,7 @@ loc_11E153:
 		BNE		loc_11E171						; at once
 		LDA		#$04
 		JSR		_critical_section_enter
-		JSR		_population_dencity_recalc
+		JSR		_popul_dencity_recalc
 		LDA		#$04
 		JSR		_critical_section_leave			; animate map corruptions every time we exit the
 		JSR		_map_corruption_tiles_animate	; long routine.
@@ -325,7 +325,7 @@ loc_11E23D:
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_stats_collect:
 		LDY		_last_map_tile_read
-;		CPY		#_MAP_BRIDGE_WATER_LR			; UNFINISHED: here they planned to animate
+;		CPY		#_MAP_BRIDGE_ROAD_LR			; UNFINISHED: here they planned to animate
 ;		BNE		loc_11E2EA						; drawbridges
 ;		NOP
 ;loc_11E2EA:
@@ -377,9 +377,9 @@ loc_11E344:
 		LDA		_map_tiles_flags_tbl,Y			; all protected but not the buildings
 		AND		#_FL_PROTECTED					; are water, sea shores and special tiles
 ;		BEQ		loc_11E34E						; REDUNDANT
-;		JMP		_non_destructable_collect
+;		JMP		_protected_collect
 ;loc_11E34E:
-		BNE		_non_destructable_collect		; FIX
+		BNE		_protected_collect				; FIX
 		CPY		#_MAP_CORRUPT0
 		BNE		locret_11E355
 		STY		_corruption_anim_flag			; animate corrupted tile request
@@ -387,7 +387,7 @@ locret_11E355:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_non_destructable_collect:
+_protected_collect:
 		LDA		_last_map_tile_read
 		CMP		#_MAP_GRASS						; look for park grass/threes
 		BCC		locret_11E387
@@ -431,18 +431,11 @@ loc_11E396:
 		BCS		loc_11E3B5						; skip if at the map edge
 ; BUG! this routine isn't X safe! it can reset X to 0
 ; sometimes, so we will skip a lot of near tiles for fires!
-; FIX, workaround for X issue
-		TXA
-		PHA
-; -
+; FIX, function now X-safe
 		JSR		_get_cur_building_tile			; read near tile index
-; FIX, workaround for X issue finish
-		PLA
-		TAX
-; -
 		LDY		_last_map_tile_read				; test if flammable
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#_FL_DESTRUCTIBLE
+		AND		#_FL_FLAMMABLE
 		BEQ		loc_11E3B2						; if no, then return back to the
 		JSR		_rand							; current tile
 		CMP		#$F4							; or with probability 12/256
@@ -680,7 +673,7 @@ _R_areas_develop:
 ;		INX
 loc_11E573:
 		JSR		_inc_areas_stats
-		JSR		_R_twin_areas_cleanup; special test for double areas
+		JSR		_R_twin_areas_cleanup			; special test for double areas
 		LDA		#$24
 		JSR		_rand_clamp_A					; probability dev_state/36
 		CMP		_cur_area_develop_state			; higher dev state, higher traffic
@@ -807,71 +800,61 @@ loc_11E726:
 locret_11E72B:
 		RTS
 
+_R_twin_idx_test_list:
+		.BYTE	_MAP_R_AREA_TWINA1,_MAP_R_AREA_TWINA0,_MAP_R_AREA_TWINB1,_MAP_R_AREA_TWINB0
+
 ; =============== S U B	R O U T	I N E =======================================
 _R_develop_down:
 		JSR		_map_tile_read					; if twin buildings, destroy them
 		CMP		#_MAP_R_AREA_TWINA0				; they destroyed instantly if develop
 		BNE		loc_11F4C9						; goes down
-		LDA		#_MAP_R_AREA14					; TODO, optimize me
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
+; OPTIMIZED, we have already calculated offset here
+		JSR		_sram_write_enable				; TODO: better do the reset
+		LDY		#[$00*2]
 		LDA		#_MAP_R_AREA14
-		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		RTS
+		STA		(_ptrEC),Y
+		LDY		#[$4C*2]
+		STA		(_ptrEC),Y
+		JMP		_sram_write_disable
+; -
+; REDUNDANT
+;		LDA		#_MAP_R_AREA14
+;		JSR		_map_tile_write
+;		ADDB	_tmp_map_pos._ROW,#$02
+;		LDA		#_MAP_R_AREA14
+;		JSR		_map_tile_write
+;		SUBB	_tmp_map_pos._ROW,#$02
+;		RTS
+; -
 loc_11F4C9:
 		CMP		#_MAP_R_AREA_TWINA1
 		BNE		loc_11F4EA
 		LDA		#_MAP_R_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
+		SUBB	_tmp_map_pos._ROW,#$02
 		LDA		#_MAP_R_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
+		ADDB	_tmp_map_pos._ROW,#$02
 		RTS
 loc_11F4EA:
 		CMP		#_MAP_R_AREA_TWINB0
 		BNE		loc_11F50B
 		LDA		#_MAP_R_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
+		ADDB	_tmp_map_pos._COL,#$02
 		LDA		#_MAP_R_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F50B:
 		CMP		#_MAP_R_AREA_TWINB1
 		BNE		loc_11F52C
 		LDA		#_MAP_R_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$02
 		LDA		#_MAP_R_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
+		ADDB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F52C:
 		LDX		_life_ratio_idx					; if life ratio is low
@@ -899,80 +882,62 @@ locret_11F550:
 
 ; =============== S U B	R O U T	I N E =======================================
 _R_develop_up:
-		JSR		_read_pollution_map_nibble
-		CMP		#$08
+		JSR		_read_pollution_map_nibble		; even if you have good delta and other stuff
+		CMP		#$08							; hight area pollution disable the grow up
 		BCS		locret_11F3BE
 		JSR		_map_tile_read
-		CMP		#$05
+		CMP		#_MAP_R_AREA05
 		BCS		loc_11F393
-		LDA		_cur_area_develop_state
-		CMP		#$09
-		BCS		loc_11F382
-		LDY		_last_map_tile_read
-		INY
-		TYA
+		LDA		_cur_area_develop_state			; for R areas less than 5
+		CMP		#$09							; and with dev state lower than 09
+		BCS		loc_11F382						; increase 1. oddly enough, they compare
+		LDY		_last_map_tile_read				; two connected values, why not just compare
+		INY										; for area _MAP_R_AREA03 which is only lower
+		TYA										; than 09 after _MAP_R_AREA05
 		JMP		_map_tile_write
 loc_11F382:
-		JSR		_read_pop_dencity_map_nibble
-		CMP		#$04
+		JSR		_read_pop_dencity_map_nibble	; for _MAP_R_AREA04 area special case
+		CMP		#$04							; if pop dencity less than 4, skip
 		BCC		locret_11F3BE
-		LDA		#$00
+		LDA		#$00							; or else increase slightly
 		JSR		_R_area_new_state_set
 		LDA		#$01
 		JMP		_pop_growth_map_update
 loc_11F393:
-		CMP		#$15
+		CMP		#_MAP_R_AREA_TWINA0				; if twins already done, skip, we have max
 		BCS		locret_11F40D
-		CMP		#$14
-		BNE		loc_11F3F5
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
+		CMP		#_MAP_R_AREA14					; if there are two _MAP_R_AREA14 nearby, build twin
+		BNE		loc_11F3F5						; either horizontal
+		ADDB	_tmp_map_pos._ROW,#$02
 		JSR		_map_tile_read
-		CMP		#$14
+		CMP		#_MAP_R_AREA14
 		BNE		loc_11F3BF
-		LDA		#$16
+		LDA		#_MAP_R_AREA_TWINA1
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#$15
+		SUBB	_tmp_map_pos._ROW,#$02
+		LDA		#_MAP_R_AREA_TWINA0
 		JMP		_map_tile_write
 locret_11F3BE:
 		RTS
 loc_11F3BF:
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._ROW,#$02			; or vertical
+		ADDB	_tmp_map_pos._COL,#$02
 		JSR		_map_tile_read
-		CMP		#$14
+		CMP		#_MAP_R_AREA14
 		BNE		loc_11F3EB
-		LDA		#$18
+		LDA		#_MAP_R_AREA_TWINB1
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#$17
+		SUBB	_tmp_map_pos._COL,#$02
+		LDA		#_MAP_R_AREA_TWINB0
 		JMP		_map_tile_write
 loc_11F3EB:
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F3F5:
-		LDA		_cur_area_develop_state
-		CMP		#$28
-		BCS		locret_11F40D
-		LDA		_cur_area_develop_state
+		LDA		_cur_area_develop_state			; for areas _MAP_R_AREA05 to
+		CMP		#$28							; _MAP_R_AREA13 use one more additional mode
+		BCS		locret_11F40D					; also odd compare for particular area dev state
+;		LDA		_cur_area_develop_state			; REDUNDANT, already loaded
 		LSR
 		LSR
 		LSR
@@ -1098,71 +1063,54 @@ loc_11E6E1:
 locret_11E6E6:
 		RTS
 
+_twin_area_col_list:
+		.BYTE	$00,$00,$02,$FE
+_twin_area_row_list:
+		.BYTE	$02,$FE,$00,$00
+_C_twin_idx_test_list:
+		.BYTE	_MAP_C_AREA_TWINA1,_MAP_C_AREA_TWINA0,_MAP_C_AREA_TWINB1,_MAP_C_AREA_TWINB0
+
 ; =============== S U B	R O U T	I N E =======================================
 _C_develop_down:
-		JSR		_map_tile_read					; remove twins
+		JSR		_map_tile_read					; remove twins, same as for R
 		CMP		#_MAP_C_AREA_TWINA0
 		BNE		loc_11F575
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
+		ADDB	_tmp_map_pos._ROW,#$02
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
+		SUBB	_tmp_map_pos._ROW,#$02
 		RTS
 loc_11F575:
 		CMP		#_MAP_C_AREA_TWINA1
 		BNE		loc_11F596
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
+		SUBB	_tmp_map_pos._ROW,#$02
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
+		ADDB	_tmp_map_pos._ROW,#$02
 		RTS
 loc_11F596:
 		CMP		#_MAP_C_AREA_TWINB0
 		BNE		loc_11F5B7
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
+		ADDB	_tmp_map_pos._COL,#$02
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F5B7:
 		CMP		#_MAP_C_AREA_TWINB1
 		BNE		loc_11F5D8
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$02
 		LDA		#_MAP_C_AREA14
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
+		ADDB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F5D8:
 		LDA		_cur_area_develop_state			; for low C developement
@@ -1173,7 +1121,7 @@ loc_11F5D8:
 		LDA		#$FF
 		JMP		_pop_growth_map_update
 loc_11F5E8:
-		LDA		_cur_area_develop_state			; less than 1 only 0
+		LDA		_cur_area_develop_state			; less than 1 - only 0
 		CMP		#$01
 		BNE		locret_11F5F4
 		LDA		#_MAP_C_AREA_DEF
@@ -1183,60 +1131,41 @@ locret_11F5F4:
 
 ; =============== S U B	R O U T	I N E =======================================
 _C_develop_up:
-		JSR		_map_tile_read
-		CMP		#$35
+		JSR		_map_tile_read					; also the same for C areas as for R
+		CMP		#_MAP_C_AREA_TWINA0				; first check for twins, then others..
 		BCS		locret_11F48C
-		CMP		#$34
+		CMP		#_MAP_C_AREA14
 		BNE		loc_11F474
-		LDA		_tmp_map_pos._ROW
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._ROW
+		ADDB	_tmp_map_pos._ROW,#$02
 		JSR		_map_tile_read
-		CMP		#$34
+		CMP		#_MAP_C_AREA14
 		BNE		loc_11F43D
-		LDA		#$36
+		LDA		#_MAP_C_AREA_TWINA1
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		#$35
+		SUBB	_tmp_map_pos._ROW,#$02
+		LDA		#_MAP_C_AREA_TWINA0
 		JMP		_map_tile_write
 loc_11F43D:
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._ROW
-		LDA		_tmp_map_pos._COL
-		CLC
-		ADC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._ROW,#$02
+		ADDB	_tmp_map_pos._COL,#$02
 		JSR		_map_tile_read
-		CMP		#$34
+		CMP		#_MAP_C_AREA14
 		BNE		loc_11F46A
-		LDA		#$38
+		LDA		#_MAP_C_AREA_TWINB1
 		JSR		_map_tile_write
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
-		LDA		#$37
+		SUBB	_tmp_map_pos._COL,#$02
+		LDA		#_MAP_C_AREA_TWINB0
 		JMP		_map_tile_write
-
 loc_11F46A:
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		#$02
-		STA		_tmp_map_pos._COL
+		SUBB	_tmp_map_pos._COL,#$02
 		RTS
 loc_11F474:
-		JSR		_read_land_val_map_nibble
-		LSR
-		CMP		_cur_area_develop_state
-		BCC		locret_11F48C
-		LDA		_cur_area_develop_state
-		CMP		#$05
+		JSR		_read_land_val_map_nibble		; C grow up depends on land value
+		LSR										; divided by two 0-7
+		CMP		_cur_area_develop_state			; if area dev state higher
+		BCC		locret_11F48C					; there is no growth
+		LDA		_cur_area_develop_state			; also no grow for more than 5 dev state
+		CMP		#$05							; this is max value here
 		BCS		locret_11F48C
 		JSR		_C_area_new_state_set
 		LDA		#$01
@@ -1248,82 +1177,76 @@ locret_11F48C:
 _C_area_new_state_set:
 		STA		_tmpE6
 		LDA		_life_ratio_idx					; state = _MAP_C_AREA01 +life_idx*5 + new_state
-		ASL
-		ASL
+		ASL										; no CLC here because _life_ratio_idx is small
+		ASL										; ASL will clear C for sure here
 		ADC		_life_ratio_idx
 		ADC		_tmpE6
 		ADC		#_MAP_C_AREA01
 		JMP		_map_tile_write
 
-_twin_area_col_list:
-		.BYTE	$00,$00,$02,$FE
-_twin_area_row_list:
-		.BYTE	$02,$FE,$00,$00
-_C_twin_idx_test_list:
-		.BYTE	_MAP_C_AREA_TWINA1,_MAP_C_AREA_TWINA0,_MAP_C_AREA_TWINB1,_MAP_C_AREA_TWINB0
-_R_twin_idx_test_list:
-		.BYTE	_MAP_R_AREA_TWINA1,_MAP_R_AREA_TWINA0,_MAP_R_AREA_TWINB1,_MAP_R_AREA_TWINB0
-
 ; =============== S U B	R O U T	I N E =======================================
 _I_areas_develop:
-		LDX		#I_AREA_WIDX
-		JSR		_inc_RCI_counts
+		LDX		#I_AREA_WIDX					; as usual for other areas, calculate growth state
+		JSR		_inc_RCI_counts					; update counters
 		LDA		_last_map_tile_read
 		SEC
-		SBC		#$40
+		SBC		#_MAP_I_AREA_DEF
 		TAY
 		LDA		_I_area_develop_levels_list,Y
 		STA		_cur_area_develop_state
 		JSR		_adc_RCI_level
 		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
-		CMP		#$40
+		CMP		#_MAP_I_AREA_DEF
 		BNE		loc_11E75C
 		LDX		#UNDEVELOPED_WIDX
 ;		INX
 ;		INX
 loc_11E75C:
-		JSR		_inc_areas_stats
-		LDA		#$06
+		JSR		_inc_areas_stats				; the common part is over, now let's grow
+		LDA		#$06							; _cur_area_develop_state/6 chance to make traffic
 		JSR		_rand_clamp_A
 		CMP		_cur_area_develop_state
 		BCS		loc_11E776
-		LDA		#I_AREA_BIDX
+		LDA		#I_AREA_BIDX					; if passed, do traffic to R areas
 		JSR		_traffic_calc
 		BCS		loc_11E776
-		JSR		_get_life_ratio
+		JSR		_get_life_ratio					; decrease if can't reach any Rs
 		JMP		_I_develop_down
 loc_11E776:
-		JSR		_rand
+		JSR		_rand							; 1/3 chance to skip growth
 		AND		#$03
 		BNE		locret_11E7B7
 		JSR		_rand
 		STA		_tmpE9
-		JSR		sub_11F362
-		CLC
-		ADC		_city._delta._I
-		CLC
+; REDUNDANT, once again, some debug or adjusting leftover to increase
+; manually I delta lever, however this function returns only 0 currently
+;		JSR		_debug_I_delta
+;		CLC
+;		ADC		_city._delta._I
+		LDA		_city._delta._I					; FIX, get actual value
+		CLC										; shift to 0-255 range... etc
 		ADC		#$80
 		LDY		_tmp_last_read_map_tile_power_state
-		BNE		loc_11E793
+		BNE		loc_11E793						; if not powered, drop down growth
 		LDA		#$48
 loc_11E793:
 		STA		_tmpE8
 		CMP		#$7F
-		BCC		loc_11E7A5
-		SBC		#$67
-		CMP		_tmpE9
+		BCC		loc_11E7A5						; all the same as for C, negative deltas
+		SBC		#$67							; goes down
+		CMP		_tmpE9							; positive has a chance delta-106/256
 		BCC		loc_11E7A5
 		JSR		_get_life_ratio
 		JMP		_I_develop_up
 loc_11E7A5:
-		LDA		_tmpE8
-		CMP		#$81
-		BCS		locret_11E7B7
-		ADC		#$67
+		LDA		_tmpE8							; for positive levers do nothing if
+		CMP		#$81							; first test fails
+		BCS		locret_11E7B7					; for the rest do random test
+		ADC		#$67							; with probability delta+106/256
 		CMP		_tmpE9
 		BCS		locret_11E7B7
-		JSR		_get_life_ratio
+		JSR		_get_life_ratio					; and go down
 		JMP		_I_develop_down
 locret_11E7B7:
 		RTS
@@ -1332,7 +1255,7 @@ locret_11E7B7:
 _I_develop_down:
 		LDA		#$02							; the only area with no twins
 		JSR		_rand_clamp_A					; the only area with pure random life ratio
-		STA		_life_ratio_idx
+		STA		_life_ratio_idx					; 50/50 chance, does not depends on anything else
 		LDA		_cur_area_develop_state			; so it will grow or raize randomly
 		SEC
 		SBC		#$02
@@ -1351,10 +1274,10 @@ locret_11F619:
 
 ; =============== S U B	R O U T	I N E =======================================
 _I_develop_up:
-		LDA		#$02
+		LDA		#$02							; dev up random too with 50/50 chance
 		JSR		_rand_clamp_A
 		STA		_life_ratio_idx
-		LDA		_cur_area_develop_state
+		LDA		_cur_area_develop_state			; max grow here, stop it
 		CMP		#$04
 		BCS		locret_11F4A4
 		JSR		_I_area_new_state_set
@@ -1419,7 +1342,7 @@ loc_11E803:
 loc_11E80E:
 		CMP		#_MAP_FIRE_STATION				; same for fire stations
 		BNE		loc_11E831
-		LDA		_fire_stations_count
+		LDA		_fire_stations_count			; max 100 fire stations
 		CMP		#$63
 		BCS		loc_11E81C
 		INC		_fire_stations_count
@@ -1452,7 +1375,7 @@ loc_11E848:
 		BMI		loc_11E850						; additional bonus flag
 		INY
 loc_11E850:
-		STY		_stadium_R_delta_positive_bonus_flag
+		STY		_stadium_anim_enable_flag		; enable stadium animation if R grow
 		RTS
 loc_11E854:
 		CMP		#_MAP_AIR_PORT
@@ -1461,11 +1384,8 @@ loc_11E854:
 		BMI		loc_11E860
 		INC		_airports_count
 loc_11E860:
-		LDA		_tmp_map_pos._COL				; here we remember las airport position
-		STA		_last_airport_pos._COL			; for plane and heli object deploy routines
-		LDA		_tmp_map_pos._ROW
-		STA		_last_airport_pos._ROW
-		RTS
+		MOVW	_last_airport_pos,_tmp_map_pos	; here we remember last airport position
+		RTS										; for plane and heli object deploy routines
 loc_11E86D:
 		CMP		#_MAP_SEA_PORT
 		BNE		loc_11E8AD
@@ -1567,15 +1487,15 @@ _test_power_grid_map_bit:
 ;		ADC		#$00
 ; -
 ; OPTIMIZED
-		LDA		_tmp_map_pos._ROW				; calculate map buf offset
-		MULAI	#$4C
-		LDA		_MMC5_MUL0
+		LDX		_tmp_map_pos._ROW				; copy of BUFPOS for _map_buf
+		LDA		_city_map_row_pos_list_lo,X		; but with some modifications
 		CLC
 		ADC		_tmp_map_pos._COL
-		STA		_tmpE6							; store low nibble
-		TAY										; backup it for now
-		LDA		_MMC5_MUL1						; adjust high nibble in A
+		STA		_tmpE6
+		TAY										; not forget this
+		LDA		_city_map_row_pos_list_hi,X
 		ADC		#$00
+		AND		#$1F							; remove higher bits of buf ofset
 ; -
 		LSR
 		ROR		_tmpE6
@@ -1725,8 +1645,8 @@ _get_near_building_tile:
 		JSR		_tmp_map_pos_backup
 		PLA
 		TAX
-		CPX		#$04							; assert check
-		BCS		loc_11E9E8						; only 4 near tiles allowed
+;		CPX		#$04							; REDUNDANT debug assert
+;		BCS		loc_11E9E8						; only 4 near tiles allowed
 		JSR		_jump_to_near_to_tmp_map_pos_tile	; jump to near tile, read
 		BCS		loc_11E9E8						; near tile index, return
 		JSR		_get_cur_building_tile			; store near tile
@@ -1799,7 +1719,7 @@ loc_11EA1E:										; touched any useful destination point
 loc_11EA37:
 		DEX
 		BNE		loc_11EA40
-; FIX, let's prevent C to C destinations also
+; FIX, let's prevent C to C traffic also
 		CMP		#_MAP_C_AREA_DEF				; drive to R
 		BCC		.reached_destination
 		CMP		#_MAP_I_AREA_DEF				; skip C areas
@@ -1900,23 +1820,23 @@ _small_building_surrond_tiles_row_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _land_value_recalc:
-		JSR		_clear_tmp_map_B5
-		LDA		#$00
+		JSR		_clear_tmp_map_buf				; prepare tmp map buffer
+		LDA		#$00							; 19x19 4-bit nibbles
 		STA		_tmp6CC
 		STA		_tmp6CC+1
 		STA		_tmp6CE
 		STA		_tmp6CE+1
-		STA		_tmp_area_pos._ROW
-loc_11EAEC:
+		STA		_tmp_area_pos._ROW				; area counter in area idx units
+.pollution_scan_row:
 		LDA		#$00
-		STA		_tmp_area_pos._COL
-loc_11EAF1:
-		JSR		_pollution_recalc
-		LDA		_tmpE6
-		BEQ		loc_11EB70
-		JSR		_tmp_area_pos_to_tmp_map_pos_convert
+		STA		_tmp_area_pos._COL				; start new row scan
+.pollution_scan_col:
+		JSR		_get_area_pollution				; calculate pollution for selected
+		LDA		_tmpE6							; 4x4 area
+		BEQ		.pollution_scan_next
+		JSR		_get_area_map_pos				; convert area pos to map pos
 		LDA		_tmpE7
-		JSR		_write_tmp_map_div4_mul13_nibble
+		JSR		_write_tmp_map_19_19			; store value, 255 always clamped to 15 here
 		JSR		sub_11F10B
 		STA		_tmpE6
 		LDA		#$0F
@@ -1927,8 +1847,8 @@ loc_11EAF1:
 		ASL
 		ASL
 		STA		_tmpE8
-		JSR		_surronding_map_are_non_destructable_tile_sum
-		JSR		_tmp_area_pos_to_tmp_map_pos_convert
+		JSR		_surronding_map_are_protected_tile_sum
+		JSR		_get_area_map_pos
 		JSR		_read_pollution_map_nibble
 		ASL
 		ASL
@@ -1942,7 +1862,7 @@ loc_11EAF1:
 		LDA		#$00
 loc_11EB28:
 		STA		_tmpE8
-		JSR		_tmp_area_pos_to_tmp_map_pos_convert
+		JSR		_get_area_map_pos
 		JSR		_read_crime_map_nibble
 		CMP		#$0B
 		BCC		loc_11EB3E
@@ -1981,18 +1901,18 @@ loc_11EB64:
 		INCW	_tmp6CE
 		PLA
 		JSR		_write_land_val_map_nibble
-loc_11EB70:
+.pollution_scan_next:
 		INC		_tmp_area_pos._COL
 		LDA		_tmp_area_pos._COL
 		CMP		#$13
 		BEQ		loc_11EB7D
-		JMP		loc_11EAF1
+		JMP		.pollution_scan_col
 loc_11EB7D:
 		INC		_tmp_area_pos._ROW
 		LDA		_tmp_area_pos._ROW
 		CMP		#$13
 		BEQ		loc_11EB8A
-		JMP		loc_11EAEC
+		JMP		.pollution_scan_row
 loc_11EB8A:
 		LDA		_tmp6CE
 		ORA		_tmp6CE+1
@@ -2085,16 +2005,16 @@ loc_11EC3B:
 		JMP		_critical_section_leave
 
 ; =============== S U B	R O U T	I N E =======================================
-_pollution_recalc:
+_get_area_pollution:
 		LDA		#$00							; calculate pollution level
 		STA		_tmpE6							; for currently selected area 4x4 tile
 		STA		_tmpE7
-		LDA		_tmp_area_pos._ROW
+		LDA		_tmp_area_pos._ROW				; recalc area map tiles pos
 		ASL
 		ASL
 		STA		_tmp_map_pos._ROW
 loc_11EC58:
-		LDA		_tmp_area_pos._COL
+		LDA		_tmp_area_pos._COL				; reload col pos for next line scan
 		ASL
 		ASL
 		STA		_tmp_map_pos._COL
@@ -2107,14 +2027,14 @@ loc_11EC60:
 		LDA		#$01
 		STA		_tmpE6							; when any of these are present, set flag
 loc_11EC71:
-		JSR		_get_pollution_ratio			; increment pollution ratio
+		JSR		_get_pollution_ratio			; increment pollution sum for current area
 		TYA
 		CLC
 		ADC		_tmpE7
-		BCC		loc_11EC7C						; clamp to 255
-		LDA		#$FF
-loc_11EC7C:
-		STA		_tmpE7
+;		BCC		loc_11EC7C						; REDUNDANT, clamp to 255 not needed
+;		LDA		#$FF							; 4x4 = 16 max 15 16*15=240 max
+;loc_11EC7C:
+		STA		_tmpE7							; scan next
 		INC		_tmp_map_pos._COL
 		LDA		_tmp_map_pos._COL
 		AND		#$03
@@ -2126,8 +2046,8 @@ loc_11EC7C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_population_dencity_recalc:
-		JSR		_clear_tmp_map_B5
+_popul_dencity_recalc:
+		JSR		_clear_tmp_map_buf
 		LDY		#$00
 		STY		_tmp6CC
 		STY		_tmp6CC+1
@@ -2144,14 +2064,14 @@ loc_11ECAF:
 		STA		_last_map_tile_read
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#$08
+		AND		#_FL_BUILDING
 		BEQ		loc_11ECF4
 		JSR		_get_RCI_area_develop_state
 		STA		_tmpE7
 		JSR		_read_tmp_map_div4_mul13_nibble
 		CLC
 		ADC		_tmpE7
-		JSR		_write_tmp_map_div4_mul13_nibble
+		JSR		_write_tmp_map_19_19
 		ADDWB	_tmp6CC,_tmp_map_pos._COL
 		ADDWB	_tmp6CE,_tmp_map_pos._ROW
 		INCW	_tmp6D0
@@ -2181,7 +2101,7 @@ loc_11ECF4:
 		STA		_tmpE9
 		JSR		_div_32to16
 		LDA		_tmpE7
-		STA		_max_population_dencity_pos._COL
+		STA		_max_popul_dencity_pos._COL
 		MOVW	_tmpE7,_tmp6CE
 		MOVW	_tmpEA,_tmp6D0
 		LDA		#$00
@@ -2189,12 +2109,12 @@ loc_11ECF4:
 		STA		_tmpE9
 		JSR		_div_32to16
 		LDA		_tmpE7
-		STA		_max_population_dencity_pos._ROW
+		STA		_max_popul_dencity_pos._ROW
 		RTS
 loc_11ED64:
 		LDA		#$26
-		STA		_max_population_dencity_pos._COL
-		STA		_max_population_dencity_pos._ROW
+		STA		_max_popul_dencity_pos._COL
+		STA		_max_popul_dencity_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2435,7 +2355,7 @@ loc_11EEF2:
 		BCC		loc_11EF0A
 		LDA		#$0F
 loc_11EF0A:
-		JSR		_write_tmp_map_div4_mul13_nibble
+		JSR		_write_tmp_map_19_19
 		LDA		_tmp_map_pos._COL
 		CLC
 		ADC		#$04
@@ -2682,14 +2602,14 @@ _add_select_police_fire_recalc:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_clear_tmp_map_B5:
+_clear_tmp_map_buf:
 		JSR		_sram_write_enable
 		LDY		#$00
 		TYA
 loc_11F0D3:
 		STA		_tmp_map,Y
 		INY
-		CPY		#$B5
+		CPY		#[[[19*19]/2]+1]
 		BNE		loc_11F0D3
 		JMP		_sram_write_disable
 
@@ -2741,8 +2661,8 @@ locret_11F10A:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11F10B:
-		LDA		_max_population_dencity_pos._COL
-		LSR
+		LDA		_max_popul_dencity_pos._COL		; calculate rough approximation of
+		LSR										; distance to maximum population area
 		LSR
 		SEC
 		SBC		_tmp_area_pos._COL
@@ -2751,8 +2671,8 @@ sub_11F10B:
 		CLC
 		ADC		#$01
 loc_11F11B:
-		STA		_tmpE6
-		LDA		_max_population_dencity_pos._ROW
+		STA		_tmpE6							; E6 = abs(pop_den_col-area_col)+
+		LDA		_max_popul_dencity_pos._ROW		; 	   abc(pop_den_row-area_row)
 		LSR
 		LSR
 		SEC
@@ -2774,6 +2694,10 @@ locret_11F136:
 ; get the actual index of the area if the area is a large building
 ; or get the individual tile number for single tiles
 ;
+; OPTIMIZED, for mini-map drawing we have here better optimized routine
+; _map_get_building_type with the same functionality
+; as a bonus, now it is X-safe!
+;
 _get_cur_building_tile:
 		JSR		_map_tile_read					; read currently selected tile
 		STA		_last_map_tile_read				; store read value for further usage
@@ -2782,8 +2706,8 @@ _get_cur_building_tile:
 		AND		#$F0
 		CMP		#$80
 		BNE		locret_11F177					; skip if a sigle-tile index
-		LDX		#$00
-		JSR		_tmp_map_pos_backup				; backup current tile position in slot 0
+;		LDX		#$00							; REDUNDANT, optimized
+;		JSR		_tmp_map_pos_backup				; backup current tile position in slot 0
 		LDA		_last_map_tile_read
 		AND		#$0F							; calculate position of an actual
 		TAY										; index tile of the building
@@ -2802,28 +2726,32 @@ _get_cur_building_tile:
 ;		DEX
 ;		BNE		loc_11F163
 ;loc_11F169:
-; OPTIMIZED, they used the same code in other places but with X indexing
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		_internal_building_tile_deltaX_list,Y
-		STA		_tmp_map_pos._COL
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		_internal_building_tile_deltaY_list,Y
-		STA		_tmp_map_pos._ROW
+;		JSR		_map_tile_read					; read the actual index tile
 ; -
-		JSR		_map_tile_read					; read the actual index tile
+; OPTIMIZED,
+		LDA		_ptrEC							; reuse already calculated offset
+		SEC										; to the map tile
+		SBC		_special_tiles_ofs_list,Y		; also we know relative offset of
+		STA		_ptrEE							; internal tiles
+		LDA		_ptrEC+1						; no need to recalc this a lot more times
+		SBC		#$00
+		STA		_ptrEE+1						; store ptr to temp var
+		LDY		#$00
+		LDA		(_ptrEE),Y						; and now we could read the tile
+; -
 		STA		_last_map_tile_read				; store it instead
 		INC		_cur_map_tile_is_inside_a_building_flag	; set the special flag
-		LDX		#$00
-		JMP		_tmp_map_pos_restore			; restore current map position
+; REDUNDANT
+;		LDX		#$00
+;		JMP		_tmp_map_pos_restore			; restore current map position
 locret_11F177:
 		RTS
 
-_internal_building_tile_deltaX_list:
-		.BYTE	$00,$01,$01,$00,$01,$02,$02,$02,$00,$01,$02,$03,$03,$03,$03
-_internal_building_tile_deltaY_list:
-		.BYTE	$01,$01,$00,$02,$02,$02,$01,$00,$03,$03,$03,$03,$02,$01,$00
+; REDUNDANT, no need anymore
+;_internal_building_tile_deltaX_list:
+;		.BYTE	$00,$01,$01,$00,$01,$02,$02,$02,$00,$01,$02,$03,$03,$03,$03
+;_internal_building_tile_deltaY_list:
+;		.BYTE	$01,$01,$00,$02,$02,$02,$01,$00,$03,$03,$03,$03,$02,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_write:
@@ -2835,19 +2763,19 @@ _map_tile_write:
 ;		PLA
 ;		CLC
 ;		ADC		#<[_city_map]
-;		STA		word_EC
+;		STA		_ptrEC
 ;		PLA
 ;		ADC		#>[_city_map]
-;		STA		word_EC+1
+;		STA		_ptrEC+1
 ;		LDY		_tmp_map_pos._COL
 ; -
 ; OPTIMIZED, FASTER!
-		BUFPOS	word_EC,_tmp_map_pos._COL,_tmp_map_pos._ROW,#$4C,#>[_city_map]
+		BUFPOS	_ptrEC,_tmp_map_pos._COL,_tmp_map_pos._ROW,#$4C,#>[_city_map]
 ; -
 		JSR		_sram_write_enable
 		PLA
 		LDY		#$00
-		STA		(word_EC),Y
+		STA		(_ptrEC),Y
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2873,7 +2801,7 @@ _overall_stats_clear:
 loc_11F242:
 		STA		_total_RCI_counts,X				; TODO: make sure when RAM vars are
 		INX										; moved, all these vars whould be here
-		CPX		#$2C							; maybe we should make a structure here
+		CPX		#_counters_area_size			; maybe we should make a structure here
 		BNE		loc_11F242
 		STA		_city._level._R.FRAC
 		STA		_city._level._R.INT
@@ -2891,7 +2819,7 @@ loc_11F26A:
 		STA		_fire_map,Y
 		STA		_police_map,Y
 		INY
-		CPY		#$32
+		CPY		#_fire_map_size
 		BNE		loc_11F26A
 		JMP		_sram_write_disable
 
@@ -3035,14 +2963,16 @@ loc_11F350:
 		SBC		#$34
 		RTS
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
 ;_unref_6:
 ;		JMP		_unused_11
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-sub_11F362:
-		LDA		#$00
-		RTS
+;_debug_I_delta:
+;		LDA		#$00
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _pop_growth_map_update:
@@ -3192,22 +3122,22 @@ _read_buf_pos_div8_mulA_4bit_nibble:
 _read_buf_pos_4bit_nibble_ex:
 		CLC
 		ADC		_MMC5_MUL0
-		STA		word_EE
+		STA		_ptrEE
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		word_EE+1
-		LSR		word_EE+1
-		ROR		word_EE
+		STA		_ptrEE+1
+		LSR		_ptrEE+1
+		ROR		_ptrEE
 		ROR		_tmpE6
 		PLA
 		CLC
-		ADC		word_EE
-		STA		word_EE
+		ADC		_ptrEE
+		STA		_ptrEE
 		PLA
-		ADC		word_EE+1
-		STA		word_EE+1
+		ADC		_ptrEE+1
+		STA		_ptrEE+1
 		LDY		#$00
-		LDA		(word_EE),Y
+		LDA		(_ptrEE),Y
 		BIT		_tmpE6
 		BMI		loc_11F748
 		LSR
@@ -3220,41 +3150,41 @@ loc_11F748:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_surronding_map_are_non_destructable_tile_sum:
+_surronding_map_are_protected_tile_sum:
 		LDA		#$00
 		STA		_tmp6D3
-		JSR		_map_area_non_destructable_tiles_count
+		JSR		_map_area_protected_tiles_count
 		ASL		_tmp6D3
 		ASL		_tmp6D3
 		DEC		_tmp_area_pos._ROW
 		BMI		loc_11F761
-		JSR		_map_area_non_destructable_tiles_count
+		JSR		_map_area_protected_tiles_count
 loc_11F761:
 		INC		_tmp_area_pos._ROW
 		INC		_tmp_area_pos._ROW
 		LDA		_tmp_area_pos._ROW
 		CMP		#$13
 		BCS		loc_11F771
-		JSR		_map_area_non_destructable_tiles_count
+		JSR		_map_area_protected_tiles_count
 loc_11F771:
 		DEC		_tmp_area_pos._ROW
 		DEC		_tmp_area_pos._COL
 		BMI		loc_11F77C
-		JSR		_map_area_non_destructable_tiles_count
+		JSR		_map_area_protected_tiles_count
 loc_11F77C:
 		INC		_tmp_area_pos._COL
 		INC		_tmp_area_pos._COL
 		LDA		_tmp_area_pos._COL
 		CMP		#$13
 		BCS		loc_11F78C
-		JSR		_map_area_non_destructable_tiles_count
+		JSR		_map_area_protected_tiles_count
 loc_11F78C:
 		DEC		_tmp_area_pos._COL
 		ASL		_tmp6D3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_area_non_destructable_tiles_count:
+_map_area_protected_tiles_count:
 		LDA		_tmp_area_pos._ROW
 		ASL
 		ASL
@@ -3268,7 +3198,7 @@ loc_11F7A3:
 		JSR		_map_tile_read
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#$04
+		AND		#_FL_PROTECTED
 		BEQ		loc_11F7B1
 		INC		_tmp6D3
 loc_11F7B1:
@@ -3294,7 +3224,7 @@ _write_select_poll_popg_popd_crime_land_tmp_maps_nibble:
 		BEQ		_write_crime_map_nibble
 		DEY
 		BEQ		_write_land_val_map_nibble
-		BNE		_write_tmp_map_div4_mul13_nibble
+		BNE		_write_tmp_map_19_19
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pollution_map_nibble:
@@ -3322,7 +3252,7 @@ _write_land_val_map_nibble:
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-_write_tmp_map_div4_mul13_nibble:
+_write_tmp_map_19_19:
 		LDXY	_tmp_map
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3415,20 +3345,20 @@ loc_11F869:
 _write_buf_pos_4bit_nibble_ex:
 		CLC
 		ADC		_MMC5_MUL0
-		STA		word_EE
+		STA		_ptrEE
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		word_EE+1
-		LSR		word_EE+1
-		ROR		word_EE
+		STA		_ptrEE+1
+		LSR		_ptrEE+1
+		ROR		_ptrEE
 		ROR		_tmpE6
 		PLA
 		CLC
-		ADC		word_EE
-		STA		word_EE
+		ADC		_ptrEE
+		STA		_ptrEE
 		PLA
-		ADC		word_EE+1
-		STA		word_EE+1
+		ADC		_ptrEE+1
+		STA		_ptrEE+1
 		LDY		#$00
 		LDA		#$F0
 		BIT		_tmpE6
@@ -3442,15 +3372,15 @@ _write_buf_pos_4bit_nibble_ex:
 		LSR
 		LSR
 loc_11F8BB:
-		AND		(word_EE),Y
+		AND		(_ptrEE),Y
 		ORA		byte_E5
 		JSR		_sram_write_enable
-		STA		(word_EE),Y
+		STA		(_ptrEE),Y
 		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_unused_11:
-;		LDA		_max_population_dencity_pos._COL
+;		LDA		_max_popul_dencity_pos._COL
 ;		SEC
 ;		SBC		_tmp_map_pos._COL
 ;		BCS		loc_11F8D5
@@ -3462,7 +3392,7 @@ loc_11F8BB:
 ;		LSR
 ;		LSR
 ;		STA		_tmpE6
-;		LDA		_max_population_dencity_pos._ROW
+;		LDA		_max_popul_dencity_pos._ROW
 ;		SEC
 ;		SBC		_tmp_map_pos._ROW
 ;		BCS		loc_11F8E8
@@ -3482,7 +3412,7 @@ loc_11F8BB:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tmp_area_pos_to_tmp_map_pos_convert:
+_get_area_map_pos:
 		LDA		_tmp_area_pos._COL
 		ASL
 		ASL
@@ -3496,7 +3426,7 @@ _tmp_area_pos_to_tmp_map_pos_convert:
 ; =============== S U B	R O U T	I N E =======================================
 _heavy_traffic_report_test:
 		PUSHW	_tmp_map_pos
-		PUSHW	word_EE
+		PUSHW	_ptrEE
 		PUSHB	_tmpE6
 		PUSHB	_mmc5_mul1_shadow
 		PUSHB	_mmc5_mul0_shadow
@@ -3516,7 +3446,7 @@ loc_11F93E:
 		POPB	_mmc5_mul0_shadow
 		POPB	_mmc5_mul1_shadow
 		POPB	_tmpE6
-		POPW	word_EE
+		POPW	_ptrEE
 		POPW	_tmp_map_pos
 		RTS
 
@@ -3572,6 +3502,8 @@ locret_11FB47:
 _fire_disaster_start:
 		LDY		#$28							; how much tiles we will damage
 
+; NOTE, fire disaster can burn only buildings!
+;
 ; =============== S U B	R O U T	I N E =======================================
 _fire_disaster_start_common:
 		TYA
@@ -3585,9 +3517,9 @@ _fire_disaster_start_common:
 		JSR		_map_tile_read					; read cur tile under the selection
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#$48
-		CMP		#$48
-		BNE		loc_11FB73						; check for non-destructable tiles
+		AND		#_FL_FLAMMABLE|_FL_BUILDING
+		CMP		#_FL_FLAMMABLE|_FL_BUILDING
+		BNE		loc_11FB73						; check for flammable tiles
 		JSR		_fire_cur_map_tile				; destroy the rest
 		JSR		_goto_alert_start				; points to very last burnt tile only
 loc_11FB73:
@@ -3642,7 +3574,7 @@ loc_11FBB9:
 		JSR		_map_tile_read
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#$02
+		AND		#_FL_FLOODABLE
 		BEQ		loc_11FBF2
 		JSR		_flood_cur_map_tile
 		LDA		_disasters_flags
@@ -3701,7 +3633,7 @@ loc_11FC3E:
 		JSR		_get_cur_building_tile
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#$08
+		AND		#_FL_BUILDING
 		BEQ		loc_11FC69
 		LDA		_tmp6CE
 		AND		#$03
@@ -3852,7 +3784,7 @@ locret_11FD73:
 ; =============== S U B	R O U T	I N E =======================================
 _disaster_destroy_tile:
 		PUSHW	_tmp_map_pos					; additional backup for critical vars
-		PUSHW	word_EC							; note, we call this from NMI
+		PUSHW	_ptrEC							; note, we call this from NMI
 		PUSHB	_backup_var
 		PUSHB	_mmc5_mul1_shadow
 		PUSHB	_mmc5_mul0_shadow
@@ -3876,7 +3808,7 @@ loc_11FDAC:
 		POPB	_mmc5_mul0_shadow
 		POPB	_mmc5_mul1_shadow				; restore and return
 		POPB	_backup_var
-		POPW	word_EC
+		POPW	_ptrEC
 		POPW	_tmp_map_pos
 		RTS
 
@@ -3903,14 +3835,14 @@ _corrupt_cur_map_tile:
 		AND		#_FL_WATER						; exit with C=1
 		BNE		.corrupt_water
 		LDA		_map_tiles_flags_tbl,Y
-		AND		#_FL_DESTRUCTIBLE
-		BEQ		.corrupt_non_destructible
+		AND		#_FL_FLAMMABLE
+		BEQ		.cant_corrupt
 		LDA		_tmp6CD							; reload tile we want to put
 		CMP		#_MAP_FLOOD						; flood is a special case, will pollute
 		BEQ		.do_corrupt						; even the raw grounds
 		CPY		#_MAP_GROUND					; the rest of disasters can't harm grounds
 		BNE		.do_corrupt						; TODO, why not? especially for pollution
-.corrupt_non_destructible:
+.cant_corrupt:
 		CLC
 		RTS
 .corrupt_water:
@@ -3924,16 +3856,32 @@ _corrupt_cur_map_tile:
 		TYA
 		AND		#$0F
 		TAY
-		LDA		_tmp_map_pos._COL
-		SEC
-		SBC		_internal_building_tile_deltaX_list,Y
-		STA		_tmp_map_pos._COL
-		LDA		_tmp_map_pos._ROW
-		SEC
-		SBC		_internal_building_tile_deltaY_list,Y
-		STA		_tmp_map_pos._ROW
+; REDUNDANT
+;		LDA		_tmp_map_pos._COL
+;		SEC
+;		SBC		_internal_building_tile_deltaX_list,Y
+;		STA		_tmp_map_pos._COL
+;		LDA		_tmp_map_pos._ROW
+;		SEC
+;		SBC		_internal_building_tile_deltaY_list,Y
+;		STA		_tmp_map_pos._ROW
+; -
+; OPTIMIZED
+		LDA		_ptrEC							; reuse already calculated offset
+		SEC										; to the map tile
+		SBC		_special_tiles_ofs_list,Y		; also we know relative offset of
+		STA		_ptrEC							; internal tiles
+		LDA		_ptrEC+1						; no need to recalc this a lot more times
+		SBC		#$00
+		STA		_ptrEC+1						; store ptr to temp var
 .skip_build_tile_adjust:
-		JSR		_map_tile_read					; read it
+; REDUNDANT
+;		JSR		_map_tile_read					; read it
+; -
+; OPTIMIZED
+		LDY		#$00
+		LDA		(_ptrEC),Y						; and now we could read the tile
+; -
 		TAY
 		LDA		_map_tiles_flags_tbl,Y			; if not a building, burn it raw
 		AND		#_FL_BUILDING
@@ -3955,31 +3903,49 @@ loc_11FE3A:
 ; better optimized. here we have very briefly nailed unoptimal
 ; copy of the high-level language routines.
 ;
+		JSR		_sram_write_enable				; OPTIMIZED
 .destroy_building_loop:
-		TXA										; now we will destroy all tiles one by one
-		PHA										; X is a counter, count backwards
-		PUSHB	_tmp_map_pos._COL				; start to destroy from farthest tile
-		CLC										; finish the actual building tile
-		ADC		_internal_building_tile_deltaX_list,X
-		STA		_tmp_map_pos._COL
-		PUSHB	_tmp_map_pos._ROW
-		CLC
-		ADC		_internal_building_tile_deltaY_list,X
-		STA		_tmp_map_pos._ROW
+;		TXA										; now we will destroy all tiles one by one
+;		PHA										; X is a counter, count backwards
+; REDUNDANT
+;		PUSHB	_tmp_map_pos._COL				; start to destroy from farthest tile
+;		CLC										; finish the actual building tile
+;		ADC		_internal_building_tile_deltaX_list,X
+;		STA		_tmp_map_pos._COL
+;		PUSHB	_tmp_map_pos._ROW
+;		CLC
+;		ADC		_internal_building_tile_deltaY_list,X
+;		STA		_tmp_map_pos._ROW
+;		LDA		_tmp6CD
+;		JSR		_map_tile_write					; NOTE, every time we get here we recalc buf offset!
+;		POPB	_tmp_map_pos._ROW				; restore base tile pos to start from the
+;		POPB	_tmp_map_pos._COL				; beginning
+;		PLA
+;		TAX
+; -
+; OPTIMIZED
+		LDA		_ptrEC							; reuse already calculated offset
+		CLC										; to the map tile
+		ADC		_special_tiles_ofs_list,X		; also we know relative offset of
+		STA		_ptrEE							; internal tiles
+		LDA		_ptrEC+1						; no need to recalc this a lot more times
+		ADC		#$00
+		STA		_ptrEE+1						; store ptr to temp var
+		LDY		#$00
 		LDA		_tmp6CD
-		JSR		_map_tile_write					; NOTE, every time we get here we recalc buf offset!
-		POPB	_tmp_map_pos._ROW				; restore base tile pos to start from the
-		POPB	_tmp_map_pos._COL				; beginning
-		PLA
-		TAX
+		STA		(_ptrEE),Y
+; -
 		DEX
 		BPL		.destroy_building_loop
+		JSR		_sram_write_disable				; OPTIMIZED
 		APUA_SE	_SE_IDX_DESTROY					; when done, set alert position and enable button
 		JSR		_goto_alert_start				; also play sound for destroying building
-		LDA		_tmp6CD
-		JSR		_map_tile_write					; also don't need to check for water, because
-		CLC										; building can't be on water anyway
-		RTS
+		LDA		_tmp6CD							; destroy the last base tile
+		LDY		#$00
+		STA		(_ptrEC),Y						; OPTIMIZED, already has ptr calculated
+;		JSR		_map_tile_write					; REDUNDANT,
+		CLC										; also don't need to check for water, because
+		RTS										; building can't be on water anyway
 .do_destroy:
 		LDA		_tmp6CD							; get the destroy tile in left hand
 		CPY		#_MAP_WATER_ROAD_LR				; compare ground tile type in right hand
