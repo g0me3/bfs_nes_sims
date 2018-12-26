@@ -616,7 +616,7 @@ _state04_game_field_redraw:
 ; =============== S U B	R O U T	I N E =======================================
 _state05_constr_palette_update:
 		JSR		_constr_palette_update			; update button state for constr palette
-		JMP		_state17_common			; drawn previously as a static bitmap
+		JMP		_state17_common					; drawn previously as a static bitmap
 
 ; =============== S U B	R O U T	I N E =======================================
 _state06_hud_and_game_field_update:
@@ -1297,7 +1297,7 @@ _constr_palette_map_vert_draw:
 		STA		_tmp83
 loc_136B98:
 		SEC
-		JSR		_map_get_ppu_tile
+		JSR		_get_map_ppu_tile
 		LDX		_tmp80
 		PPUQMOVB	word_6C,OP_NOP,0
 		STX		_tmp80
@@ -1533,7 +1533,7 @@ _hud_map_hor_draw:
 		STA		_tmp547
 		SEC
 loc_136823:
-		JSR		_map_get_ppu_tile
+		JSR		_get_map_ppu_tile
 		LDX		_tmp544
 		PPUQMOVB	word_6C,OP_NOP,0
 		STX		_tmp544
@@ -3720,7 +3720,7 @@ _constr_palette_update:
 ;		BCS		locret_137B5D
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_137B5D
-		LDA		_constr_palette_flags
+		LDA		_constr_palette_flags			; get buttons active flags
 		STA		_tmp4
 		LDA		_constr_palette_flags+1
 		STA		_tmp5
@@ -3729,19 +3729,19 @@ _constr_palette_update:
 		LDA		_constr_palette_flags+3
 		STA		_tmp6+1
 		LDA		#$0D
-		STA		_tmp3
+		STA		_tmp3							; counter of 0 to D (14 total)
 loc_137B3D:
-		JSR		sub_137B5E
-		BCC		loc_137B48
-		JSR		sub_137B9C
+		JSR		_extract_active_flags_bit
+		BCC		.enabled_constr_button			; in C activity flag, C=1 inactive
+		JSR		_constr_inactive_button_draw
 		JMP		loc_137B55
-loc_137B48:
-		AND		#$FF
+.enabled_constr_button:
+		AND		#$FF							; in A pushed state, A=80 pushed
 		BPL		loc_137B52
-		JSR		sub_137B86
+		JSR		_constr_pushed_button_draw
 		JMP		loc_137B55
 loc_137B52:
-		JSR		sub_137B70
+		JSR		_constr_released_button_draw
 loc_137B55:
 		DEC		_tmp3
 		BPL		loc_137B3D
@@ -3751,9 +3751,9 @@ locret_137B5D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137B5E:
-		LSR		_tmp6+1
-		ROR		_tmp6
+_extract_active_flags_bit:
+		LSR		_tmp6+1							; lower of two bits for push status
+		ROR		_tmp6							; higher of two if set button is blocked
 		ROR		_tmp5
 		ROR		_tmp4
 		ROR
@@ -3764,37 +3764,43 @@ sub_137B5E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137B70:
-		LDA		_tmp3
-		JSR		sub_137BB2
-		LDA		_tmp3
-		JSR		sub_137C04
-		MOVWO	word_B2,byte_151698
-		JMP		sub_137C08
+_constr_released_button_draw:
+		MOVWO	word_B2,_tlm_extnt_released_buttons_lib
+		BNE		_constr_button_draw_common		; OPTIMIZED, merger
+;		LDA		_tmp3							; REDUNDANT, merged
+;		JSR		_calc_constr_button_extnt_pos
+;		LDA		_tmp3
+;		JSR		_get_extnt_button_data_idx
+;		JMP		_constr_button_draw
 
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137B86:
-		LDA		_tmp3
-		JSR		sub_137BB2
-		LDA		_tmp3
-		JSR		sub_137C04
-		MOVWO	word_B2,byte_1516D0
-		JMP		sub_137C08
+_constr_pushed_button_draw:
+		MOVWO	word_B2,_tlm_extnt_pushed_buttons_lib
+		BNE		_constr_button_draw_common		; OPTIMIZED, merger
+;		LDA		_tmp3							; REDUNDANT, merged
+;		JSR		_calc_constr_button_extnt_pos
+;		LDA		_tmp3
+;		JSR		_get_extnt_button_data_idx
+;		JMP		_constr_button_draw
 
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137B9C:
-		LDA		_tmp3
-		JSR		sub_137BB2
-		LDA		_tmp3
-		JSR		sub_137C04
-		MOVWO	word_B2,byte_151708
-		JMP		sub_137C08
+_constr_inactive_button_draw:
+		MOVWO	word_B2,_tlm_extnt_inactive_buttons_lib
 
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137BB2:
+_constr_button_draw_common:
+		LDA		_tmp3
+		JSR		_calc_constr_button_extnt_pos
+		LDA		_tmp3
+		JSR		_get_extnt_button_data_idx
+		JMP		_constr_button_draw
+
+; =============== S U B	R O U T	I N E =======================================
+_calc_constr_button_extnt_pos:
 		LDY		#$00
 		PHA
 		AND		#$FE
@@ -3843,14 +3849,19 @@ loc_137C01:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137C04:
+_get_extnt_button_data_idx:
 		ASL
 		ASL
 		TAY
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137C08:
+; NOTE, the main problem here is we need to put 2x2 tilemap on the screen
+; with any possible wrap orientation. it may be wrapped horizontally or vertically
+; so we need to check all cases and do proper wraps and offset corrections
+; so that silly 2x2 bitmap need so much code.
+;
+_constr_button_draw:
 		EXTQSTART
 		EXTQMOVB	_tmp_extnt_dst_ofs,OP_NOP,0
 		EXTQMOVB	_tmp_extnt_dst_ofs+1,OP_NOP,0
@@ -3917,6 +3928,8 @@ _ppu_extnt_word_queue:
 		INY
 		EXTQMOVA
 
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_extnt_byte_queue:
 		LDA		(word_B2),Y
@@ -3926,44 +3939,45 @@ _ppu_extnt_byte_queue:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_field_redraw:
-;		JSR		_buffers_test_flush
+;		JSR		_buffers_test_flush				; wait if queue buffers are empty
 ;		BCS		locret_137D0A
 		JSR		_buffers_test_flush				; OPTIMIZED, merged
 		BNE		locret_137D0A
-		LDA		_game_field_redraw_req
-		BEQ		locret_137D0A
-		JSR		sub_137D20
-		LDA		_ppu_queue_pos_head
+		LDA		_game_field_redraw_req			; also if we in this mode but
+		BEQ		locret_137D0A					; already done, just skip
+		JSR		_calc_update_rect_screen_area	; calc rect area and wraps
+		LDA		_ppu_queue_pos_head				; get current queue pos
 		STA		byte_62
 		LDA		_extnt_queue_pos_head
 		STA		byte_63
-loc_137CE8:
-		JSR		sub_137D82
-		JSR		sub_137DE8
+.game_field_redraw_loop:
+		JSR		_calc_update_rect_line_pos		; calculate current line ppu ofs
+		JSR		_update_rect_line_pos_queue		; send ofs and length to queue
 		SEC
-loc_137CEF:
-		JSR		_map_get_ppu_tile
-		JSR		sub_137E15
-		JSR		sub_137E2A
-		BCC		loc_137CEF
-		JSR		sub_137F16
-		BCC		loc_137CE8
-		JSR		_restore_game_filed_update_params
-		LDA		byte_62
+.game_field_line_draw:
+		JSR		_get_map_ppu_tile				; convert map tile to ppu tile
+		JSR		_map_ppu_tile_queue				; send it to queue
+		JSR		_update_rect_line_wrap			; do wraps if needed
+		BCC		.game_field_line_draw
+		JSR		_get_next_update_rect_line		; increment to the next line
+		BCC		.game_field_redraw_loop
+		JSR		_restore_game_filed_update_params	; swap cur used params with saved ones
+		LDA		byte_62							; update queue pos heads
 		STA		_ppu_queue_pos_head
 		LDA		byte_63
 		STA		_extnt_queue_pos_head
 locret_137D0A:
 		RTS
 
+; REDUNDANT, unref routine
 ; =============== S U B	R O U T	I N E =======================================
-sub_137D0B:
-		LDA		#$00
-		STA		_game_field_redraw_req
-		RTS
+;unused_12:
+;		LDA		#$00
+;		STA		_game_field_redraw_req
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137D20:
+_calc_update_rect_screen_area:
 		LDA		_update_rect_top
 		BPL		loc_137D26
 		LDA		#$00
@@ -4025,17 +4039,18 @@ loc_137D7A:
 		CLC
 		RTS
 
+; REDUNDANT, also unused unreferenced routine
 ; =============== S U B	R O U T	I N E =======================================
-sub_137D80:
-		SEC
-		RTS
+;unref_22:
+;		SEC
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137D82:
-		LDA		_cur_screen_tile._ROW
-		LSR
+_calc_update_rect_line_pos:
+		LDA		_cur_screen_tile._ROW			; calc warps
+		LSR										; and length for draw area
 		CLC
-		ADC		byte_59
+		ADC		byte_59							; use already calculated values
 		CMP		#$1E
 		BCC		loc_137D8E
 		SBC		#$1E
@@ -4082,14 +4097,14 @@ loc_137DD9:
 		LDA		#$00
 		STA		byte_6B
 loc_137DDF:
-		LDA		_update_rect_left
+		LDA		_update_rect_left				; calc starting pos
 		STA		_tmp_tile_pos._COL
 		LDA		_update_rect_top
 		STA		_tmp_tile_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137DE8:
+_update_rect_line_pos_queue:
 		LDX		byte_62
 		PPUQMOVB	byte_66,OP_NOP,0
 		PPUQMOVB	byte_67,OP_NOP,0
@@ -4103,7 +4118,7 @@ sub_137DE8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137E15:
+_map_ppu_tile_queue:
 		LDX		byte_62
 		PPUQMOVB	word_6C,OP_NOP,0
 		STX		byte_62
@@ -4113,7 +4128,7 @@ sub_137E15:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137E2A:
+_update_rect_line_wrap:
 		INC		_tmp_tile_pos._COL
 		DEC		byte_6A
 		BNE		loc_137E6A
@@ -4136,7 +4151,7 @@ loc_137E6C:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_get_ppu_tile:
+_get_map_ppu_tile:
 		LDA		_tmp6E+1						; test if we already calculated buffer ofs
 		BEQ		loc_137E7C						; if not, test out of the map cases
 		BCS		loc_137E7C
@@ -4219,7 +4234,7 @@ _map_get_still_single_tiles:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_137F16:
+_get_next_update_rect_line:
 		INC		_update_rect_top
 		INC		byte_59
 		DEC		byte_64
