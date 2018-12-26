@@ -881,6 +881,8 @@ _city_taxes_collected:
 ; and in THREAD0 when adjusting the budget, has a default values
 ; at the beginning of the game
 ;
+; ALERT! keep order the same for all these vars, it's important!
+;
 _fund_rate_fire:
 		.BYTE	0
 _fund_rate_police:
@@ -944,7 +946,7 @@ _total_RCI_counts:
 
 		_trciw	_RCI_counts
 
-_wrong_var:
+_unknown_var:
 		.BYTE	0,0
 
 ; these vars are accessed individually in the statistic
@@ -1034,10 +1036,10 @@ _tmp_map_pos_backup_buf_Y:
 		.BYTE	0,0,0
 _tmp_map_pos_backup_buf_X:
 		.BYTE	0,0,0
-_cur_population_dencity:
-		.BYTE	0,0
 
-		_tpos _tmp_area_pos
+		_tpos	_max_population_dencity_pos
+
+		_tpos	_tmp_area_pos
 
 byte_6C3:
 		.BYTE	0
@@ -1057,6 +1059,9 @@ byte_6CB:
 		.BYTE	0
 _tmp6CC:
 		.BYTE	0,0
+
+_problem_data	SET	.
+
 _tmp6CE:
 		.BYTE	0,0
 _tmp6D0:
@@ -1081,11 +1086,13 @@ _tmp6DA:
 		.BYTE	0
 _tmp6DB:
 		.BYTE	0
-byte_6DC:
+
+_tmp6DC		EQU .
+_problem_accepted:
 		.BYTE	0,0,0,0,0,0,0
 					; one of these vars used as tmp	value _tmp_name_input_mode_idx
 					; in name input	system
-byte_6E3:
+_problem_weight:
 		.BYTE	0,0,0,0,0,0,0
 
 		ORG	$700

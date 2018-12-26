@@ -1590,7 +1590,7 @@ loc_11EBFE:
 		BCC		loc_11EC3B
 		MOVWI	_tmpE6,$0000
 loc_11EC3B:
-		MOVW	_city._var_5FC,_tmpE6
+		MOVW	_city._pollution_level,_tmpE6
 		LDA		#$A0
 		JMP		_critical_section_leave
 
@@ -1674,49 +1674,37 @@ loc_11ECF4:
 		INY
 		CPY		#$4C
 		BNE		loc_11ECAA
-		LDY		#$02
+		LDY		#$02							; population dencity select
 		STY		_tmp6C4
 		JSR		_interpolate_recalc_to_select_poll_popg_popd_crime_land_maps
 		JSR		_interpolate_recalc_with_select_poll_popg_popd_crime_land_to_recalc_map
 		JSR		_interpolate_recalc_to_select_poll_popg_popd_crime_land_maps
 		LDA		#$04
-		JSR		_critical_section_leave			; BUG! this section set and leave outside of this proc
+		JSR		_critical_section_leave			; FIXME, this section set and leave outside of this proc
 		LDA		_tmp6D0
 		ORA		_tmp6D0+1
 		BEQ		loc_11ED64
-		LDA		_tmp6CC
-		STA		_tmpE7
-		LDA		_tmp6CC+1
-		STA		_tmpE8
-		LDA		_tmp6D0
-		STA		_tmpEA
-		LDA		_tmp6D0+1
-		STA		_tmpEB
+		MOVW	_tmpE7,_tmp6CC
+		MOVW	_tmpEA,_tmp6D0
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
 		JSR		_div_32to16
 		LDA		_tmpE7
-		STA		_cur_population_dencity
-		LDA		_tmp6CE
-		STA		_tmpE7
-		LDA		_tmp6CE+1
-		STA		_tmpE8
-		LDA		_tmp6D0
-		STA		_tmpEA
-		LDA		_tmp6D0+1
-		STA		_tmpEB
+		STA		_max_population_dencity_pos._COL
+		MOVW	_tmpE7,_tmp6CE
+		MOVW	_tmpEA,_tmp6D0
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
 		JSR		_div_32to16
 		LDA		_tmpE7
-		STA		_cur_population_dencity+1
+		STA		_max_population_dencity_pos._ROW
 		RTS
 loc_11ED64:
 		LDA		#$26
-		STA		_cur_population_dencity
-		STA		_cur_population_dencity+1
+		STA		_max_population_dencity_pos._COL
+		STA		_max_population_dencity_pos._ROW
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2236,7 +2224,7 @@ locret_11F10A:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11F10B:
-		LDA		_cur_population_dencity
+		LDA		_max_population_dencity_pos._COL
 		LSR
 		LSR
 		SEC
@@ -2247,7 +2235,7 @@ sub_11F10B:
 		ADC		#$01
 loc_11F11B:
 		STA		_tmpE6
-		LDA		_cur_population_dencity+1
+		LDA		_max_population_dencity_pos._ROW
 		LSR
 		LSR
 		SEC
@@ -3354,7 +3342,7 @@ loc_11F8BB:
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_unused_11:
-;		LDA		_cur_population_dencity
+;		LDA		_max_population_dencity_pos._COL
 ;		SEC
 ;		SBC		_tmp_map_pos._COL
 ;		BCS		loc_11F8D5
@@ -3366,7 +3354,7 @@ loc_11F8BB:
 ;		LSR
 ;		LSR
 ;		STA		_tmpE6
-;		LDA		_cur_population_dencity+1
+;		LDA		_max_population_dencity_pos._ROW
 ;		SEC
 ;		SBC		_tmp_map_pos._ROW
 ;		BCS		loc_11F8E8
@@ -4032,34 +4020,36 @@ locret_11FF87:
 		RTS										; the rest of scenarios does not need a special disasters
 
 ; =============== S U B	R O U T	I N E =======================================
-_traffic_jam_recalc:
+; called once at the end of the year when city RCI levels not zero from PRGA
+;
+_traffic_level_recalc:
 		LDY		#$00
-		STY		_tmp6CC
-		STY		_tmp6CC+1
-		STY		_tmpEA
-		INY
+		STY		_tmp6CC							; sum of traffic dencity values for
+		STY		_tmp6CC+1						; valuable only map areas
+		STY		_tmpEA							; counter of traffic areas summed
+		INY										; default is 1.0 for simplify following calculations
 		STY		_tmpEB
 		LDA		#$00
 loc_11FF97:
-		STA		_tmp_map_pos._ROW
+		STA		_tmp_map_pos._ROW				; rows first
 		LDA		#$00
 loc_11FF9C:
-		STA		_tmp_map_pos._COL
-		JSR		_read_land_value_map_nibble
+		STA		_tmp_map_pos._COL				; columns
+		JSR		_read_land_value_map_nibble		; read land value nibble here (4x4 blocks)
 		CMP		#$00
 		BEQ		loc_11FFBB
-		JSR		_read_traffic_dencity_map_nibble
+		JSR		_read_traffic_dencity_map_nibble; read traffic dencity value for area (2x2 blocks)
 		CLC
-		ADC		_tmp6CC
+		ADC		_tmp6CC							; sum traffic map values
 		STA		_tmp6CC
 		BCC		loc_11FFB5
 		INC		_tmp6CC+1
 loc_11FFB5:
-		INC		_tmpEA
+		INC		_tmpEA							; also increas 2x2 tiles counter (1.00+0.01)
 		BNE		loc_11FFBB
 		INC		_tmpEB
 loc_11FFBB:
-		LDA		_tmp_map_pos._COL
+		LDA		_tmp_map_pos._COL				; for all blocks 2x2
 		CLC
 		ADC		#$02
 		CMP		#$4C
@@ -4072,13 +4062,13 @@ loc_11FFBB:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		MOVW	_tmpE7,_tmp6CC
-		JSR		_div_32to16
-		PUSHWI	$0266
-		PUSHW	_tmpE6
-		JSR		_mmc5_mul16to16
-		PLA
-		POPW	_traffic_level
+		MOVW	_tmpE7,_tmp6CC					; divide integer value to fp8_8, result is integer
+		JSR		_div_32to16						; traffic_value = [traffic_sum/(1.0+(tiles_count/256))]
+		PUSHWI	$0266							; coeff = 2.4
+		PUSHW	_tmpE6							; multiply integer result to fp8_8, result integer
+		JSR		_mmc5_mul16to16					; result traffic_level = [traffic_value * 2.4]
+		PLA										; or may be treated as fp8_8 with lower nibble of integer
+		POPW	_traffic_level					;  value as FRAC part and higher nibble as INT part
 		PLA
 		RTS
 

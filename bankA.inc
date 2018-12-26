@@ -7,8 +7,7 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 ; this routine called every year and calc last decimal digit of the year
-; number
-; used to determide wether the 100year range graphs need to be updated
+; number. used to determide wether the 100year range graphs need to be updated
 ;
 _test_for_new_decade:
 		MOVW	_tmpE6,_city._cur_year
@@ -44,7 +43,7 @@ loc_104028:
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_recalc:
 		RSMOVW	_tmp6AA,_city._level._R,3					; 6AA = L_R/8
-		MOVW	_prev_RCI_levels_sum,_cur_RCI_levels_sum	; backup sum
+;		MOVW	_prev_RCI_levels_sum,_cur_RCI_levels_sum	; REDUNDANT, never used
 		MADDW	_tmp6AC,_city._level._I,_city._level._C		; 6AC = L_I+L_C
 		MADDW	_cur_RCI_levels_sum,_tmp6AA,_tmp6AC			; RCI_S = L_I+L_C+(L_R/8)
 		MOVW	_tmpE7,_tmp6AC					; dividend = L_I+L_C
@@ -52,12 +51,12 @@ _RCI_meters_recalc:
 		LDA		#$00
 		STA		_tmpE9
 		STA		_tmpE6
-		JSR		_div_32to16						; E6 = (L_I+L_C) / (L_R/8) (two 8.8 fixed points)
+		JSR		_div_32to16						; E6 = (L_I+L_C)/(L_R/8) (two fp8_8)
 		BCC		loc_10409D
 		MOVWI	_tmpE6,$014D					; if divider = 0, then result 1.3, so with R=0
 		MOVWI	_tmpE8,0						; we will always grow!
 loc_10409D:
-		ADDWB	_tmpE6,#$05						; add 0.02 to result, FIXME! may be overflow!!
+		ADDWB	_tmpE6,#$05						; add 0.02 to result, FIXME! may cause overflow!!
 		LDX		#R_AREA_BIDX
 		JSR		_RCI_meter_recalc				; R recalc
 		MOVW	_tmpE7,_tmp6AA					; dividend = L_R/8
@@ -65,7 +64,7 @@ loc_10409D:
 		LDA		#$00
 		STA		_tmpE9
 		STA		_tmpE6
-		JSR		_div_32to16						; E6 = (L_R/8) / (L_I+L_C)
+		JSR		_div_32to16						; E6 = (L_R/8)/(L_I+L_C)
 		BCC		loc_1040D8
 		MOVWI	_tmpE6,$0100					; if divider = 0, then result 1.0, so with L+C=0 no changes
 		MOVWI	_tmpE8,0
@@ -78,23 +77,23 @@ loc_1040EA:
 		PUSHWI	$0133							; arg 1.2
 		PUSHW	_tmpE6							; arg E6
 		JSR		_mmc5_mul16to16					; weightnig I growth with E6 * 1.2
-		PLA										; skip unnecessary results of 16.16fp value
+		PLA										; skip unnecessary results of fp16_16 value
 		POPW	_tmpE6							; got proportion for I aread meters, recalc
 		PLA
 		LDX		#I_AREA_BIDX
 		JSR		_RCI_meter_recalc				; I recalc
-; REDUNDANT, no need to retrive it from stack if we need to push it
+; REDUNDANT, no need to retrive it from stack if we need to push it again
 ; to stack again.
 ;		POPW	_tmpE6							; restore C/I base proportion already calculated
 		PUSHW	_cur_RCI_levels_sum				; arg RCI levels sum * 256 (as integer)
 ;		PUSHW	_tmpE6							; arg R6 (already in stack)
-		JSR		_mmc5_mul16to16					; int16*fp8.8
+		JSR		_mmc5_mul16to16					; int16*fp8_8
 		PUSHB	#$45
-		JSR		_mmc5_mul32to8					; fp8.8*fp0.8 (* 0.27)
+		JSR		_mmc5_mul32to8					; fp8_8*fp0_8 (* 0.27)
 		PLA
-		POPW	_tmpE6							; result fp8.8
+		POPW	_tmpE6							; result fp8_8
 		POPW	_tmpE8
-		MOVW	_tmpEA,_city._level._C			; fp8.8/int16
+		MOVW	_tmpEA,_city._level._C			; fp8_8/int16
 loc_104150:
 		JSR		_div_32to16						; here if L_C=0 we won't set a default result value
 ;		BCC		loc_10415F						; instead we set the default minimum L_C to 1
@@ -102,7 +101,7 @@ loc_104150:
 ;		STA		_tmpEB							; however, the default value to div here is 1
 ;		LDA		#$01							; so we will get the same result as divident loaded
 ;		STA		_tmpEA							; we may assume that division already done here then!
-;		BEQ		loc_104150						; and does not repeat redundant division at all.
+;		BEQ		loc_104150						; and does not require to divide twice
 loc_10415F:
 		LDX		#C_AREA_BIDX					; C recalc
 
@@ -198,36 +197,57 @@ loc_1041E4:
 		RTS
 
 _rci_meters_accel_tax_list:
-		.BYTE	$0D,$0A,$08,$06,$05,$03,$02,$00,$FF,$FD,$FA,$F6,$F3,$F0,$ED,$EA
-		.BYTE	$E6,$E3,$E0,$DD,$DA
+;				0%  1%  2%  3%  4%  5%  6%  7%  8%  9%  10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20%
+		.BYTE	$0D,$0A,$08,$06,$05,$03,$02,$00,$FF,$FD,$FA,$F6,$F3,$F0,$ED,$EA,$E6,$E3,$E0,$DD,$DA
 
 ; =============== S U B	R O U T	I N E =======================================
 ; consumption calculated on the tile-basis. every building (includnig the power
 ; station itself and all power lines) consume 1 point for one tile used plus
-; additional value depending on how much conjunctions it has with other powerable
+; additional value depending on how many conjunctions it has with other powerable
 ; tiles details are below.
 ;
 ; at the beginning the power nodes list consists only of power station coordinates
 ;
 ; 1. fetch current power node, until there are no more, else exit
-; 2. enable power grid for current node, increment power consumption
+; 2. enable power grid for current node, increment power consumption value
 ; 3. search if nearest tiles from 0 to 3 clockwise are need power
 ;	(if tile powerable and not powered yet and not the power station itself)
 ; 4. jump 3. unless there are no more or there are more than one
 ; 5. if there are more than one, then
-;		put current node to the nodes list again, jump 6.
+;		put current node to the nodes list, jump 6.
+;	 if there is only one tile, then
+;		jump 6.
 ;	 if there are no more, then
 ;		jump 1.
 ; 6. set the last tile need to be powered we found as a current node, jump 2.
-;	(even if this tile already added in the nodes list again
 ;
-; As we can see, there is more overpowering exist for those tiles which has more
-; than one conjuncted tiles need to be powered. it can be readded to the power
-; nodes list up to three times and thus one simgle tile may consume 3 times more
-; still being the same tile already powered.
+; NOTE, as we can see, this algo recursively put any tested tile in the power nodes
+; list as much times, as many powerable tiles need to be powered up are connected
+; with it. so, this particular tile will consume the power every time it fetched
+; from the nodes list again.
+; NOTE, also we can see, the very time-cost operation of test the tile if need power
+; can be performed a couple of times, which is not so much optimal too.
 ;
-; also, due to calling methods and routines arrangements in ROM, there a lot of
-; time spent to lookup tiles than set the power grid, and this is highly unoptimal
+; for example: when put one power station to the map, the algo will go following way
+; inside the power station tiles. numbers are represent order, * represent insertion
+; into the power nodes list:
+;    0    1    2		0  fetch power node 0,0
+;   +----+----+----+	1  0,0 powered, 1,0 and 0,1 are need power, put 0,0 as new power node, jump to 0,1
+; 0 |1*13|8   |7   |	2  0,1 powered, 1,1 and 0,2 are need power, put 0,1 as new power node, jump to 0,2
+;   +----+----+----+	3  0,2 powered, 1,2 need power, jump 1,2
+; 1 |2*12|9   |6*10|	4  1,2 powered, 1,1 and 2,2 are need power, put 1,2 as new power node, jump to 2,2
+;   +----+----+----+	5  2,2 powered, 2,1 need power, jump 2,1
+; 2 |3   |4*11|5   |	6  2,1 powered, 2,0 and 1,1 are need power, put 2,1 as new power node, jump to 2,0
+;   +----+----+----+	7  2,0 powered, 1,0 need power, jump 1,0
+;						8  1,0 powered, 1,1 need power, jump 1,1
+;						9  1,1 powered, no more tiles, fetch power node 2,1
+;						10 2,1 repowered, no more tiles, fetch power node 1,2
+;						11 1,2 repowered, no more tiles, fetch power node 0,1
+;						12 0,1 repowered, no more tiles, fetch power node 0,0
+;						13 0,0 repowered, no more tiles, end of power nodes list, exit
+;
+; if we put additional connection wires near the points like 0,0 or 2,1 we will see they put in the
+; node list twice or three times.
 ;
 _power_grid_recalc:
 		JSR		_sram_write_enable						; set game buffers to read
@@ -270,8 +290,8 @@ _power_grid_recalc:
 		STA		_tmpE7
 		PLA
 		ADC		_tmpE8
-		BEQ		loc_104253						; if result > $FFFF
-		LDA		#$FF							; then clamp to $FFFF
+		BEQ		loc_104253						; if result > 65535
+		LDA		#$FF							; then clamp to 65535
 		STA		_tmpE6
 		STA		_tmpE7
 loc_104253:
@@ -320,8 +340,8 @@ loc_104296:
 		LDA		_tmp6D2
 		CMP		#$02
 		BCS		.power_next_loop0				; FIXME, redundant double check jump here
-;		FJSR	_power_tile_test,SRAM,PRGB		; test if nearest tile powerable but not powered
-		JSR		_power_tile_test
+;		FJSR	_power_tile_test,SRAM,PRGB		; REDUNDANT, test if nearest tile powerable but not powered
+		JSR		_power_tile_test				; OPTIMIZED, now local, speed-up up to two times
 		BCS		.power_no_need					; skip if already powerable or not need to power
 		INC		_tmp6D2							; increment counter of tiles found
 		LDA		_tmp6D1							; current tile need to power idx goes to main near tile selector
@@ -382,6 +402,8 @@ locret_1042F9:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; used here locally as well as external routine for PRGB
+;
 _power_node_insert:
 		JSR		_sram_write_enable
 ; REDUNDANT
@@ -420,7 +442,7 @@ _power_node_insert:
 loc_104368:
 		JMP		_sram_write_disable
 
-; OPTIMIZED, moved here from PRGB to be lockal
+; OPTIMIZED, moved here from PRGB to be local
 ; =============== S U B	R O U T	I N E =======================================
 _power_tile_test:
 		PUSHW	_tmp_map_pos					; backup current _tmp_map_pos
@@ -817,10 +839,10 @@ loc_1046EB:
 		STA		_tmpE7
 		PUSHW	_tmpE6							; multiplier 1 E6 = (rails_count*2)+_roads_count
 		LDY		_city._difficult
-		LDA		_trans_fund_coefs_hi,Y			; multiplier 2 coeff = diff[1,2/0.9/0.7]
+		LDA		_trans_fund_coefs_int,Y			; multiplier 2 coeff = diff[1,2/0.9/0.7]
 		PHA
 ;		LDY		_city._difficult				; REDUNDANT, Y already loaded with difficult here
-		LDA		_trans_fund_coefs_lo,Y
+		LDA		_trans_fund_coefs_frac,Y
 		PHA
 		JSR		_mmc5_mul16to16					; E6 * coeff
 		PLA
@@ -832,7 +854,7 @@ loc_1046EB:
 ;
 ; NOTE, see, there is no hospitals because this is CAPITALISM and medicine uses insurance systemfor funding itself
 ;
-		PUSHW	_cur_RCI_levels_sum				; two fixed point 8.8 values multiply
+		PUSHW	_cur_RCI_levels_sum				; two fp8_8 values multiply
 		PUSHW	_city._land_value
 		JSR		_mmc5_mul16to16					; (L_R+L_C+L_I)*_land_value
 		PLA										; skip lower FRAC nibbles
@@ -862,7 +884,7 @@ loc_1046EB:
 		TXA
 		PHA
 		PUSHB	#$B6							; final scale coeff common for all difficulties = 0.71
-		JSR		_mmc5_mul16to8					; multiply fp 8.8 to 0.8 fraction
+		JSR		_mmc5_mul16to8					; multiply fp8_8 to fp0_8
 		PLA
 		PUSHW	_tmp6CC							; result already in stack, just push _tax_year_rate
 		JSR		_mmc5_mul16to16					; full equation is
@@ -932,100 +954,107 @@ loc_10486C:
 ; FIX, OPTIMIZED
 		MSUBD	_taxes_income,_city_taxes_collected,_budget_funds_alloc_sum_loan
 ; -
-; NOTE, also ingame rates values are not in percents, but in fixed point fraction only
-; form: 0.xx and in range [0.00 to 0.129] for transport funds and [0.00 to 0.062] for the rest
+; REDUNDANT, also ingame rates values are not in percents, but in fixed point fraction only
+; form: 0.xx and in range [0.00 to 0.129] for transport funds and [0.00 to 0.062] for
+; the rest. or in integer form: [0 to 21] and [0 to F] correspondingly.
 ;
 ; also, for some odd reason, rates other than transport are clamped to max 0.99, and
 ; only transport funds may be 1.00 when fully funded...
 ;
-		LDA		_fund_request_trans
-		ORA		_fund_request_trans+1
-		BNE		loc_1048A9
-		LDA		#$20							; default 0.125
-		BNE		loc_1048D7
-loc_1048A9:
-		MOVW	_tmpE7,_fund_alloc_trans
-		MOVW	_tmpEA,_fund_request_trans
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE9
-		JSR		_div_32to16
-		PUSHW	_tmpE6
-		PUSHB	#$21
-		JSR		_mmc5_mul16to8
-		PLA
-		PLA
-		TAX
-		PLA
-		TXA
-loc_1048D7:
-		STA		_fund_rate_trans
-		LDA		_fund_request_police
-		ORA		_fund_request_police+1
-		BNE		loc_1048E6
-		LDA		#$0F							; default 0.059
-		BNE		loc_104914
-loc_1048E6:
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE9
-		LDA		_fund_alloc_police
-		STA		_tmpE7
-		LDA		_fund_alloc_police+1
-		STA		_tmpE8
-		LDA		_fund_request_police
-		STA		_tmpEA
-		LDA		_fund_request_police+1
-		STA		_tmpEB
-		JSR		_div_32to16
-		LDA		_tmpE6
-		LDY		_tmpE7
-		BEQ		loc_10490B
-		LDA		#$FF
-loc_10490B:
-		PHA
-		PUSHB	#$10
-		JSR		_mmc5_mul8to8
-		PLA
-		PLA
-loc_104914:
-		STA		_fund_rate_police
-		LDA		_fund_request_fire
-		ORA		_fund_request_fire+1
-		BNE		loc_104923
-		LDA		#$0F
-		BNE		loc_104951
-loc_104923:
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE9
-		LDA		_fund_alloc_fire
-		STA		_tmpE7
-		LDA		_fund_alloc_fire+1
-		STA		_tmpE8
-		LDA		_fund_request_fire
-		STA		_tmpEA
-		LDA		_fund_request_fire+1
-		STA		_tmpEB
-		JSR		_div_32to16
-		LDA		_tmpE6
-		LDY		_tmpE7
-		BEQ		loc_104948
-		LDA		#$FF
-loc_104948:
-		PHA
-		PUSHB	#$10
-		JSR		_mmc5_mul8to8
-		PLA
-		PLA
-loc_104951:
-		STA		_fund_rate_fire
-		RTS
+;		LDA		_fund_request_trans				; test if divider is zero
+;		ORA		_fund_request_trans+1
+;		BNE		loc_1048A9
+;		LDA		#$20							; max default value here is $20 (0.125) but
+;		BNE		loc_1048D7						; next code does not clamp 1.0 to 0.99
+;loc_1048A9:										; and thus this value may be $21 instead
+;		MOVW	_tmpE7,_fund_alloc_trans
+;		MOVW	_tmpEA,_fund_request_trans
+;		LDA		#$00
+;		STA		_tmpE6
+;		STA		_tmpE9
+;		JSR		_div_32to16						; alloc/request proportion
+; BUG, for some reason, this value not clamped to 0.99 as the rest ones, but
+; normalized the same way with value +1 greater than max default rate ($20 -> $21)
+; so at some point of the game, calculated value will be greater than max $20
+; and tested at some point incorrectly to be exactly 20. there are two ways to
+; fix this. make similar clamp to 0.99 here. or remove strict comparison
+; there... better here, because we may optimize the whole block slightly then
+;
+;		PUSHW	_tmpE6
+;		PUSHB	#$21
+;		JSR		_mmc5_mul16to8					; normalized to $00-$21 range as int8
+;		PLA
+;		PLA										; we need only FRAC part of result
+;		TAX										; keep it in X for now
+;		PLA										; drop INT part, then
+;		TXA										; put FRAC in A again
+; -
+;loc_1048D7:
+;		STA		_fund_rate_trans				; store normalized value
+; REDUNDANT, two more identical code portions which may be merged to one routine
+;
+;		LDA		_fund_request_police
+;		ORA		_fund_request_police+1
+;		BNE		loc_1048E6
+;		LDA		#$0F							; default $0F (0.059)
+;		BNE		loc_104914
+;loc_1048E6:
+;		MOVW	_tmpE7,_fund_alloc_police
+;		MOVW	_tmpEA,_fund_request_police
+;		LDA		#$00
+;		STA		_tmpE6
+;		STA		_tmpE9
+;		JSR		_div_32to16						; alloc/request proportion
+;		LDA		_tmpE6							; get FRAC part
+;		LDY		_tmpE7							; if INT part not zero,
+;		BEQ		loc_10490B						; clamp FRAC part to 0.999
+;		LDA		#$FF
+;loc_10490B:
+;		PHA
+;		PUSHB	#$10							; and then normalize 0.0-0.999 range to
+;		JSR		_mmc5_mul8to8					; int [0-F]
+;		PLA
+;		PLA
+;loc_104914:
+;		STA		_fund_rate_police				; store value
+;		LDA		_fund_request_fire				; the last calc for fire stations
+;		ORA		_fund_request_fire+1
+;		BNE		loc_104923						; the same default value as for police
+;		LDA		#$0F
+;		BNE		loc_104951
+;loc_104923:
+;		MOVW	_tmpE7,_fund_alloc_fire
+;		MOVW	_tmpEA,_fund_request_fire
+;		LDA		#$00
+;		STA		_tmpE6
+;		STA		_tmpE9
+;		JSR		_div_32to16
+;		LDA		_tmpE6
+;		LDY		_tmpE7
+;		BEQ		loc_104948
+;		LDA		#$FF
+;loc_104948:
+;		PHA
+;		PUSHB	#$10
+;		JSR		_mmc5_mul8to8					; the same normalization
+;		PLA
+;		PLA
+;loc_104951:
+;		STA		_fund_rate_fire
+;		RTS
+; -
+; OPTIMIZED
+		LDX		#$00
+		JSR		_city_fund_rate_recalc
+		LDX		#$02
+		JSR		_city_fund_rate_recalc
+		LDX		#$04
+		JMP		_city_fund_rate_recalc
 ; -
 
-_trans_fund_coefs_lo:
+_trans_fund_coefs_frac:
 		.BYTE	$B3,$E6,$33
-_trans_fund_coefs_hi:
+_trans_fund_coefs_int:
 		.BYTE	$00,$00,$01
 _tax_coefs_frac:
 		.BYTE	$66,$33,$CC
@@ -1033,34 +1062,80 @@ _tax_coefs_int:
 		.BYTE	$01,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
+; var order, fire, police, trans in ram.
+;
+_city_fund_rate_recalc:
+		LDA		_fund_request_fire,X			; test if divider is zero
+		ORA		_fund_request_fire+1,X
+		BNE		loc_1048A9
+		LDA		_default_city_fund_rate_list,X	; load default values
+		PHA										; stack store trick
+		BNE		loc_1048D7
+loc_1048A9:
+		LDA		_fund_alloc_fire,X
+		STA		_tmpE7
+		LDA		_fund_alloc_fire+1,X
+		STA		_tmpE7+1
+		LDA		_fund_request_fire,X
+		STA		_tmpEA
+		LDA		_fund_request_fire+1,X
+		STA		_tmpEA+1
+		LDA		#$00
+		STA		_tmpE6
+		STA		_tmpE9
+		JSR		_div_32to16						; alloc/request proportion
+		LDA		_tmpE6							; get FRAC part
+		LDY		_tmpE7							; if INT part not zero,
+		BEQ		loc_1048D6						; clamp FRAC part to 0.999
+		LDA		#$FF
+loc_1048D6:
+		PHA
+		LDA		_default_city_fund_rate_list+1,X; and then normalize 0.0-0.99 range to
+		PHA										; int [0-20] for trans, [0-F] for fire/police
+		JSR		_mmc5_mul8to8
+		PLA										; result here still in stack! keep it
+loc_1048D7:
+		TXA										; recalc X*2 to X
+		LSR
+		TAX
+		PLA										; retrive result from stack
+		STA		_fund_rate_fire,X				; store normalized value
+		RTS
+
+_default_city_fund_rate_list:
+		.BYTE	$0F,$10							; default value + normalization value
+		.BYTE	$0F,$10
+		.BYTE	$20,$21
+
+; =============== S U B	R O U T	I N E =======================================
 _city_stats_recalc:
-		LDA		_cur_RCI_levels_sum.FRAC
+		LDA		_cur_RCI_levels_sum.FRAC		; calculated previously
 		ORA		_cur_RCI_levels_sum.INT
 		BEQ		loc_10497B
 		JSR		_city_assessed_value_recalc
 		JSR		_city_popul_relalc
 		JSR		_city_problems_list_recalc
 		JSR		_city_score_recalc
-		JSR		_city_votes_recalc
-		JMP		loc_10497E
+		JMP		_city_votes_recalc				; OPTIMIZED
+;		JMP		loc_10497E						; REDUNDANT
 loc_10497B:
 		JSR		_city_stats_reset				; moved to PRGF system bank
 loc_10497E:
-		LDA		#$01
+;		LDA		#$01							; REDUNDANT, never used
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_assessed_value_recalc:
-		PUSHW	_roads_count
+		PUSHW	_roads_count				; E6 = roads*5
 		PUSHB	#$05
 		JSR		_mmc5_mul16to8
 		POPD	_tmpE6
-		PUSHW	_rails_count
+		PUSHW	_rails_count				; TMP = rails*10
 		PUSHB	#$0A
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
-		ADC		_tmpE6
+		ADC		_tmpE6						; E6 = E6 + TMP
 		STA		_tmpE6
 		PLA
 		ADC		_tmpE7
@@ -1071,7 +1146,7 @@ _city_assessed_value_recalc:
 		PUSHWI	$03E8
 		LDA		_police_stations_count
 		CLC
-		ADC		_wrong_var					; BUG! unknown unused var
+		ADC		_unknown_var				; BUG! unknown unused var
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1201,77 +1276,94 @@ byte_104B17:
 		.BYTE	$00,$D0,$10,$50,$A0,$20
 
 ; =============== S U B	R O U T	I N E =======================================
+; this routine calculates the list of city wors problems,
+; there are three tmp buffers 2*7-bytes each:
+; 6CE-6DB (_problem_data) 		- set initial parameters
+; 6DC-6E2 (_problem_accepted)	- flags when problem is selected to sorting list
+; 6E3-6E9 (_problem_weight)		- a number of problem occurance during the random test
+;
+; the overall problem of comparing all these values is they are a different
+; types of measurement units. they just can't be compared directly.
+; there is no formula to merge all these values to the same value unit and
+; then compare...
+; so they decided to made it randomly selected. they compared all overall
+; basic values against the randomly generated value. the higher currently
+; selected problem, the higher probability they will fit inside the random
+; generated value. however, even the value ranges are different, but the
+; random test value is the same for all of them... so some problems
+; would be higher than others always...
+;
 _city_problems_list_recalc:
-		LDA		_city._crime_level.FRAC
-		STA		_tmp6CE
-		LDA		_city._crime_level.INT
+		LDA		_city._crime_level.FRAC			; crime level uses high bit as special flag
+		STA		_problem_data					; remove it first
+		LDA		_city._crime_level.INT			; 6CE/6CF = crime_level & 0x7F00
 		AND		#$7F
-		STA		_tmp6CE+1
-		LDA		_city._var_5FC
-		STA		_tmp6D0
-		LDA		_city._var_5FD
+		STA		_problem_data+1
+		LDA		_city._pollution_level.FRAC		; 6D0/6D1 = pollution_level & 0x7F00
+		STA		_problem_data+2
+		LDA		_city._pollution_level.INT
 		AND		#$7F
-		STA		_tmp6D1
-		PUSHW	_city._land_value
+		STA		_problem_data+3
+		PUSHW	_city._land_value				; 6D2/6D3 = land_value * 0.625
 		PUSHB	#$A0
 		JSR		_mmc5_mul16to8
 		PLA
-		POPW	_tmp6D2
-		MMULB8	_tmp6D4,_city._tax_rate,#$0A
-		FJSR	_traffic_jam_recalc,SRAM,PRGB
-		MOVW	_tmp6D6,_traffic_level
-		JSR		sub_104C2B
-		STA		_tmp6D8
-		JSR		_wrong_var_mul5
-		STA		_tmp6DA
+		POPW	_problem_data+4
+		MMULB8	_problem_data+6,_city._tax_rate,#$0A	; 6D4/6D5 = tax_rate * 10
+		FJSR	_traffic_level_recalc,SRAM,PRGB
+		MOVW	_problem_data+8,_traffic_level	; 6D6/6D7 = traffic level
+		JSR		_get_RCI_proportion
+		STA		_problem_data+10				; 6D8 = R/CI proportion
+		JSR		_unknown_var_mul5				; 6DA = _unknown_var * 5
+		STA		_problem_data+12
 		LDA		#$00
-		STA		_tmp6D9
-		STA		_tmp6DB
-		JSR		sub_104BCE
+		STA		_problem_data+11				; 6D9 = 0
+		STA		_problem_data+13				; 6DB = 0
+		JSR		_city_problem_select			; random selection of the problems weights
 		LDY		#$00
 		TYA
 loc_104B8F:
-		STA		byte_6DC,Y
+		STA		_problem_accepted,Y				; reset problems order list
 		INY
 		CPY		#$07
 		BNE		loc_104B8F
-		LDX		#$00
+		LDX		#$00							; init the problems counter (out of 4)
 loc_104B99:
-		LDY		#$00
+		LDY		#$00							; start to sort out the problems
 		STY		_tmpE6
 loc_104B9D:
-		LDA		byte_6DC,Y
+		LDA		_problem_accepted,Y				; test if accepted already
 		BNE		loc_104BB7
-		LDA		byte_6E3,Y
+		LDA		_problem_weight,Y				; compare with max weight
 		CMP		_tmpE6
 		BCC		loc_104BB7
 		STA		_tmpE6
-		STA		_worst_problem_percents,X
+		STA		_worst_problem_percents,X		; if greather or equal, then update percent and list idx
 		TYA
 		STA		_worst_problem_list,X
 		LDA		#$01
-		STA		byte_6DC,Y
+		STA		_problem_accepted,Y				; mark problem as assepted
 loc_104BB7:
 		INY
 		CPY		#$07
-		BNE		loc_104B9D
+		BNE		loc_104B9D						; compare all 7 problems to find the max one
 		LDA		_tmpE6
-		BNE		loc_104BC8
+		BNE		loc_104BC8						; if there is no one, set default values
 		LDA		#$FF
 		STA		_worst_problem_percents,X
 		STA		_worst_problem_list,X
 loc_104BC8:
 		INX
 		CPX		#$04
-		BNE		loc_104B99
+		BNE		loc_104B99						; repeat for 4 problems
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_104BCE:
+_city_problem_select:
 		LDY		#$00
 		TYA
 loc_104BD1:
-		STA		byte_6E3,Y
+		STA		_problem_weight,Y				; problems cumulative counter
 		INY
 		CPY		#$07
 		BNE		loc_104BD1
@@ -1285,81 +1377,70 @@ loc_104BE1:
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
-		POPW	_tmpE6
-		LDA		_tmpE8
+		POPW	_tmpE6							; E6/E7 = 400 * rand(256)
+		LDA		_tmpE8							; load current problem parameter idx
 		ASL
 		TAX
-		LDA		_tmpE6
-		CMP		_tmp6CE,X
+		LDA		_tmpE6							; random compared with selected problem parameter
+		CMP		_problem_data,X
 		LDA		_tmpE7
-		SBC		_tmp6CE+1,X
-		BCS		loc_104C0C
-		LDX		_tmpE8
-		INC		byte_6E3,X
+		SBC		_problem_data+1,X
+		BCS		loc_104C0C						; if problem lower than random value,
+		LDX		_tmpE8							; then increase problem weight
+		INC		_problem_weight,X				; as well the overall problem trigger counter
 		INC		_tmpE9
 loc_104C0C:
-		INC		_tmpE8
+		INC		_tmpE8							; or else skip this value and choose the next one
 		LDA		_tmpE8
 		CMP		#$07
-		BCC		loc_104C18
+		BCC		loc_104C18						; wrap to the first problem value again
 		LDA		#$00
 		STA		_tmpE8
 loc_104C18:
-		INC		_tmpEA
+		INC		_tmpEA							; increase overall attempts counter
 		BNE		loc_104C1E
 		INC		_tmpEB
 loc_104C1E:
 		LDA		_tmpEB
 		CMP		#$02
-		BCS		locret_104C2A
-		LDA		_tmpE9
+		BCS		locret_104C2A					; repeat until overall attempts >512
+		LDA		_tmpE9							; or overal problems trigger > 100
 		CMP		#$64
 		BCC		loc_104BE1
 locret_104C2A:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_104C2B:
-		LDA		_city._level._C.FRAC
-		CLC
-		ADC		_city._level._I.FRAC
-		STA		_tmpE6
-		LDA		_city._level._C.INT
-		ADC		_city._level._I.INT
-		ASL		_tmpE6
-		ROL
-		ASL		_tmpE6
-		ROL
-		ASL		_tmpE6
-		ROL
-		STA		_tmpE7
-		ORA		_tmpE6
-		BNE		loc_104C4C
+; BUG! calculations looks like for divider and divident, but
+; divider uses wrong tmp var! E6 instead EA. so division here performed
+; on right divident and random divider. result is random as well
+;
+_get_RCI_proportion:
+		LSADDW	_tmpE6,_city._level._C,_city._level._I,3	; E6 =(L_C+L_I)*8
+		ORA		_tmpE6							; test if result 0
+		BNE		loc_104C4C						; if yes, then result 0
 		LDA		#$00
 		RTS
 loc_104C4C:
+		MOVW	_tmpE7,_city._level._R			; divident = L_R
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_city._level._R.FRAC
-		STA		_tmpE7
-		LDA		_city._level._R.INT
-		STA		_tmpE8
 		JSR		_div_32to16
 		LDA		_tmpE6
 		LDY		_tmpE7
-		BEQ		locret_104C67
+		BEQ		locret_104C67					; clamp result to 0.999
 		LDA		#$FF
 locret_104C67:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_wrong_var_mul5:
-		LDA		_wrong_var
+_unknown_var_mul5:
+		LDA		_unknown_var
 		ASL
 		ASL
 		CLC
-		ADC		_wrong_var
+		ADC		_unknown_var
 		BCC		locret_104C75
 		LDA		#$FF
 locret_104C75:
@@ -1375,11 +1456,11 @@ _city_score_recalc:
 		STY		_tmpE9
 		STY		_tmpEA
 loc_104C8E:
-		LDA		_tmp6CE,Y
+		LDA		_problem_data,Y
 		CLC
 		ADC		_tmpE6
 		STA		_tmpE6
-		LDA		_tmp6CE+1,Y
+		LDA		_problem_data+1,Y
 		ADC		_tmpE7
 		STA		_tmpE7
 		INY
@@ -1443,12 +1524,12 @@ loc_104D0A:
 		LDA		_fund_rate_police
 		CMP		#$0F
 		BCS		loc_104D14
-		JSR		sub_104E54
+		JSR		_city_problem_calc1
 loc_104D14:
 		LDA		_fund_rate_fire
 		CMP		#$0F
 		BCS		loc_104D1E
-		JSR		sub_104E54
+		JSR		_city_problem_calc1
 loc_104D1E:
 		LDA		_city._delta._R
 		CMP		#$40
@@ -1576,6 +1657,8 @@ loc_104E17:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; mul 0.85
+;
 _tmpE6_multiply_217:
 		PUSHW	_tmpE6
 		PUSHB	#$D9
@@ -1585,7 +1668,7 @@ _tmpE6_multiply_217:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_104E54:
+_city_problem_calc1:
 		CLC
 		ADC		#$F1
 		TAX

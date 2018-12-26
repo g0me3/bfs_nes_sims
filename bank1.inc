@@ -811,7 +811,7 @@ _game_setup01_name_input_init:
 ; -
 		JSRXY	_res_ppu_lz_unpack,_tlm_res_lz_name_init	; OPTIMIZED, now lockal
 		LDA		#$00
-		STA		byte_6DC+2
+		STA		_tmp6DC+2
 		LDA		#$02
 		STA		_MMC5_CHR_MODE					; unpack upper part of the input screen
 ;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
@@ -870,9 +870,9 @@ locret_245A9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_next_scr:
-		LDA		byte_6DC+2						; current input screen type
+		LDA		_tmp6DC+2						; current input screen type
 		BNE		loc_245C9						; if 0, then name input, jump next
-		INC		byte_6DC+2
+		INC		_tmp6DC+2
 		JSR		_ppu_queues_reset
 		JSR		_name_input_clear_header_area	; redraw only upper portion of the screen
 ;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_word
@@ -887,9 +887,9 @@ loc_245C9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_previous_scr:
-		LDA		byte_6DC+2						; if we at name input screen
+		LDA		_tmp6DC+2						; if we at name input screen
 		BEQ		loc_245EE						; then jump to the city gen screen
-		DEC		byte_6DC+2
+		DEC		_tmp6DC+2
 		JSR		_ppu_queues_reset				; or return from fav word screen back
 		JSR		_name_input_clear_header_area	; redraw upper part with name input again
 ;		JSRXY	_rle_nt_res_queue,_rle_tlm_nt_input_name
@@ -952,10 +952,10 @@ loc_2464A:
 ; (use turbo button for example), to fix it just add some flush wait.
 ;
 _name_input_button_push_draw:
-		LDA		byte_6DC+3						; push anim counter
+		LDA		_tmp6DC+3						; push anim counter
 		BEQ		locret_246DB					; draw if non-zero
-		DEC		byte_6DC+3						; decrease
-		LDY		byte_6DC+6						; get pressed button type
+		DEC		_tmp6DC+3						; decrease
+		LDY		_tmp6DC+6						; get pressed button type
 		CPY		#$21
 		BCS		.draw_simple_button_press		; all above TAB is simple letters
 		CPY		#$08
@@ -988,20 +988,20 @@ loc_24676:
 loc_246AC:
 		LDA		#$A0							; this is a sprite effect
 		STA		_spr_insert_args._idx
-		LDA		byte_6DC+4
+		LDA		_tmp6DC+4
 		STA		_spr_insert_args._pos._COL
-		LDA		byte_6DC+5
+		LDA		_tmp6DC+5
 		STA		_spr_insert_args._pos._ROW
 		JSR		_spr_lib_attr_insert			; draw common button frame sprite
 		LDX		#$FD							; then manually hack its
-		LDA		byte_6DC+6						; middle tile to display a corresponding
+		LDA		_tmp6DC+6						; middle tile to display a corresponding
 		CMP		#$08							; letter in it
 		BEQ		loc_246C9						; test for BACK button tile
 		ORA		#$80							; regular tiles in ascii+80
 		TAX
 loc_246C9:
 		STX		_spr_buf+$19					; hacky hacky. they know that sprite here
-		LDA		byte_6DC+6						; always at fixed position
+		LDA		_tmp6DC+6						; always at fixed position
 		SEC										; extract number buttons with another attr
 		SBC		#$30
 		CMP		#$0A
@@ -1124,16 +1124,16 @@ _name_input_char_select:
 		ADC		_tmp6D2
 		TAY
 		LDA		_input_chars_tbl,Y				; get keyboard char idx
-		STA		byte_6DC+1						; char display tmp var init
-		STA		byte_6DC+6						; copy for extnt
+		STA		_tmp6DC+1						; char display tmp var init
+		STA		_tmp6DC+6						; copy for extnt
 		BPL		.no_enter_pushed				; enter has code $FF
 		LDY		#$00
-		STY		byte_6DC+1						; so reset previous chars
+		STY		_tmp6DC+1						; so reset previous chars
 		INY
-		STY		byte_6DC+6
+		STY		_tmp6DC+6
 ;		APUA_SE	_SE_IDX_CLICK					; REDUNDANT, make sound (why twice?)
 		LDA		#$08
-		STA		byte_6DC+3						; delay counter load
+		STA		_tmp6DC+3						; delay counter load
 ;		JSRXY	_rle_nt_res_queue,_tlm_nt_end_press	; queue enter button push animation
 ;		JSRXY	_rle_extnt_res_queue,_tlm_extnt_end_press
 		LDX		#$34
@@ -1144,18 +1144,18 @@ _name_input_char_select:
 		LDA		_tmp6CC							; prepare button push parameters
 		SEC
 		SBC		#$04
-		STA		byte_6DC+4
+		STA		_tmp6DC+4
 		LDA		_tmp6CE
 		SEC
 		SBC		#$04
-		STA		byte_6DC+5
+		STA		_tmp6DC+5
 		LDA		#$10
-		STA		byte_6DC+3
+		STA		_tmp6DC+3
 ;		APUA_SE	_SE_IDX_CLICK					; REDUNDANT
 		RTS
 .no_a_pushed:
 		LDA		#$00
-		STA		byte_6DC+1
+		STA		_tmp6DC+1
 		RTS
 
 _input_chars_tbl:
@@ -1166,9 +1166,9 @@ _input_chars_tbl:
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_char_store:
-		LDA		byte_6DC+1
+		LDA		_tmp6DC+1
 		BEQ		locret_24842					; if not zero, we have char to store
-		LDX		byte_6DC+2						; get the name buffer idx
+		LDX		_tmp6DC+2						; get the name buffer idx
 		LDA		_name_store_buf_lo,X
 		STA		_ptr0
 		LDA		#>[_city]
@@ -1176,7 +1176,7 @@ _name_input_char_store:
 		LDY		#$00
 		LDA		(_ptr0),Y
 		STA		_tmp2							; store current length of name
-		LDA		byte_6DC+1
+		LDA		_tmp6DC+1
 		CMP		#$08
 		BNE		loc_24821						; code = 08?
 		LDY		_tmp2							; yes, do erase char
@@ -1217,13 +1217,13 @@ locret_24842:
 ; =============== S U B	R O U T	I N E =======================================
 ;_name_input_char_nt_queue:						; REDUNDANT
 _name_input_name_buf_queue:
-		LDX		byte_6DC+2						; get the name idx we entering
+		LDX		_tmp6DC+2						; get the name idx we entering
 		LDA		_name_store_buf_lo,X			; get the corresponding ram ofs
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
 		PPUQSTART
-;		LDY		byte_6DC+2
+;		LDY		_tmp6DC+2
 ;		LDA		byte_248BF,Y					; REDUNDANT
 ;		PPUQMOVA
 		PPUQMOVB	#$0B,OP_NOP,0				; OPTIMIZED, fixed
@@ -1243,13 +1243,13 @@ loc_2486A:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_name_input_char_extnt_queue:
-;		LDX		byte_6DC+2						; already in _ptr0 here
+;		LDX		_tmp6DC+2						; already in _ptr0 here
 ;		LDA		_name_store_buf_lo,X
 ;		STA		_ptr0
 ;		LDA		#>[_city]
 ;		STA		_ptr0+1
 		EXTQSTART
-;		LDY		byte_6DC+2						; REDUNDANT
+;		LDY		_tmp6DC+2						; REDUNDANT
 ;		LDA		byte_248BF,Y
 ;		EXTQMOVA
 		EXTQMOVB	#$0B,OP_NOP,0				; OPTIMIZED
@@ -1840,8 +1840,8 @@ loc_1044A3:
 		LDA		#$20
 		STA		_fund_rate_trans
 		LDA		#$26
-		STA		_cur_population_dencity
-		STA		_cur_population_dencity+1
+		STA		_max_population_dencity_pos._COL
+		STA		_max_population_dencity_pos._ROW
 		JSR		_sram_write_enable
 		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
 ; REDUNDANT, for some reason they clear $570 instead of full $5A4
