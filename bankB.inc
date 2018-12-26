@@ -293,7 +293,9 @@ loc_11E24F:
 		PUSHB	_tmpE6
 		PUSHB	#$14
 		JSR		_mmc5_mul16to8
-		POPD	_popul_cur
+		POPB	_popul_cur
+		POPB	_popul_cur+1
+		POPB	_popul_cur+2
 		LDA		_stats._developed
 		CLC
 		ADC		_stats._undeveloped
@@ -1088,6 +1090,8 @@ locret_11E8D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; BUGBUGBUG
+;$0A3B6	is a inv_bitflags array	at BANKA
 _test_power_grid_map_bit:
 		PUSHB	_tmp_map_pos._Y
 		PUSHB	#$4C
@@ -1118,9 +1122,7 @@ _test_power_grid_map_bit:
 		TAX
 		LDY		#$00
 		LDA		(_tmpE6),Y
-; BUG!
-; here $0A3B6 is a inv_bitmasks array at BANKA
-		AND		_inv_bitmasks,X					; FIXED: all bitmasks now in system bank
+		AND		_inv_bitmasks,X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1487,8 +1489,14 @@ loc_11EB9A:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		MOVW	_tmp6CC,_tmpE7
-		MOVW	_tmp6CE,_tmpEA
+		LDA		_tmp6CC
+		STA		_tmpE7
+		LDA		_tmp6CC+1
+		STA		_tmpE8
+		LDA		_tmp6CE
+		STA		_tmpEA
+		LDA		_tmp6CE+1
+		STA		_tmpEB
 		JSR		_div_32to16
 loc_11EBB7:
 		LDA		_tmpE6
@@ -1642,7 +1650,7 @@ loc_11ECF4:
 		JSR		_interpolate_recalc_with_select_poll_popg_popd_crime_land_to_recalc_map
 		JSR		_interpolate_recalc_to_select_poll_popg_popd_crime_land_maps
 		LDA		#$04
-		JSR		_critical_section_leave			; BUG! this section set and leave outside of this proc
+		JSR		_critical_section_leave
 		LDA		_tmp6D0
 		ORA		_tmp6D0+1
 		BEQ		loc_11ED64
@@ -2969,11 +2977,11 @@ sub_11F647:
 		JMP		_write_pop_growth_map_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-; a = POLLUTION - LAND_VALUE
-;  if a < 2    ratio 0
-;  if a 2 to 4 ratio 1
-;  if a 5 to 8 ratio 2
-;  if a > 8    ratio 3
+; POLLUTION-LAND_VALUE
+;  if <	2      ratio 0
+;  if 2	to 4   ratio 1
+;  if 5	to 8   ratio 2
+;  if >	8      ratio 3
 ;
 _get_area_pollution_to_land_value_ratio:
 		JSR		_read_pollution_map_nibble
@@ -4200,8 +4208,10 @@ loc_11FFBB:
 		LDA		_tmp6CC+1
 		STA		_tmpE8
 		JSR		_div_32to16
-		PUSHWI	$0266
-		PUSHW	_tmpE6
+		PUSHB	#$02
+		PUSHB	#$66
+		PUSHB	_tmpE7
+		PUSHB	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
 		POPB	_traffic_level_value

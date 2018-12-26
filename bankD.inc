@@ -801,7 +801,7 @@ _special_buildings_cost_idx_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1504FD:
-		JSR		_get_cur_constr_cursor_map_ofs
+		JSR		sub_150A20
 		JSR		sub_150BB3
 		LDY		#$00
 		LDA		(word_C1),Y
@@ -916,13 +916,13 @@ byte_1505C2:
 sub_1505E3:
 		INY
 		CLC
-		ADC		_cur_constr_cursor_map_pos._X
+		ADC		byte_50F
 		STA		byte_511
 		CMP		#$4C
 		BCS		loc_150634
 		LDA		(word_D0),Y
 		CLC
-		ADC		_cur_constr_cursor_map_pos._Y
+		ADC		byte_510
 		STA		byte_512
 		CMP		#$4C
 		BCS		loc_150634
@@ -1353,7 +1353,7 @@ loc_1508BA:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_1508BC:
-		JSR		_get_cur_constr_cursor_map_ofs
+		JSR		sub_150A20
 		JSR		sub_1508E6
 		JSR		sub_15096E
 		BCS		locret_1508E5
@@ -1549,25 +1549,25 @@ loc_150A15:
 		JMP		sub_1500F1
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_cur_constr_cursor_map_ofs:
+sub_150A20:
 		LDA		_cur_map_wnd_pos._X
 		CLC
 		ADC		_constr_cursor_tile._X
-		STA		_cur_constr_cursor_map_pos._X
+		STA		byte_50F
 		LDA		_cur_map_wnd_pos._Y
 		CLC
 		ADC		_constr_cursor_tile._Y
-		STA		_cur_constr_cursor_map_pos._Y
+		STA		byte_510
 		LDX		#$4C
 		STX		_MMC5_MUL1
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		LDX		_MMC5_MUL1
 		CLC
-		ADC		_cur_constr_cursor_map_pos._X
+		ADC		byte_50F
 		STA		word_C1
 		TXA
-		ADC		#>[_wram_map_buf]
+		ADC		#$60
 		STA		word_C1+1
 		RTS
 

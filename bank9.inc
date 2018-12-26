@@ -3298,7 +3298,6 @@ byte_EBA77:
 ; =============== S U B	R O U T	I N E =======================================
 ; unsafe with no stack version of mul16to8 on MMC5 hw
 ; input args: 16bit _ptr0 * reg X, store 24bit _ptr0/tmp2
-;
 _mmc5_mul16to8_unsafe:
 		LDA		_ptr0+1
 		STA		_MMC5_MUL0

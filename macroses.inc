@@ -4,19 +4,6 @@ DEBUG	EQU		1
 
 ;------------S-T-R-U-C-T-U-R-E-S----------------
 
-	MAC	_tfix16_16
-{1}		SET	.
-{1}.FRAC	.WORD	0
-{1}.INT		.WORD	0
-	ENDM
-
-	MAC	_tfix8_8
-{1}		SET	.
-{1}.FRAC	.BYTE	0
-{1}.INT		.BYTE	0
-	ENDM
-
-
 	MAC	_tpos
 {1}		SET	.
 {1}._X:		.BYTE	0
@@ -47,6 +34,12 @@ DEBUG	EQU		1
 {1}._var3:	.BYTE	{7}
 	ENDM
 
+; _game_flags
+; bit0 - auto buldozer
+; bit1 - auto budget
+; bit2 - auto goto
+; bit3 - music on
+
 	MAC	_tcity
 {1}		SET	.
 {1}._name:								.BYTE	0,0,0,0,0,0,0,0,0,0,0
@@ -73,10 +66,6 @@ DEBUG	EQU		1
 {1}._cur_week:							.BYTE	0
 {1}._tax_rate:							.BYTE	0
 {1}._game_flags:						.BYTE	0
-	; bit0 - auto buldozer
-	; bit1 - auto budget
-	; bit2 - auto goto
-	; bit3 - music on
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
 {1}._year_to_build_bank:				.WORD	0
@@ -199,7 +188,7 @@ DEBUG	EQU		1
 	; \t\tPUSHB\t(.*)\n\t\tPUSHB\t(.*)\n\t\tJSR\t\t_mmc5_mul8to8\n\t\tPOPB\t(.*)\n\t\tPOPB\t\3\+1\n
 	; \t\tMMULB8\t\3,\1,\2\n
 	;
-	; store-multiply, input args are 8bit, result is 16bit
+	; multyply 8bit arguments, store result in 16bit buffer
 	;
 	MAC	MMULB8
 		PUSHB	{2}
@@ -214,7 +203,7 @@ DEBUG	EQU		1
 	MAC BANK_START
 CUR_PRG_BANK	SET {1}
 CUR_BANK_START	SET .
-;		ECHO	"bank",{1},"start ["
+		ECHO	"bank",{1},"start ["
 	ENDM
 
 	MAC	BANK_END
@@ -225,9 +214,9 @@ _total_free	SET	_bank{1}_free
 _total_free	SET _total_free+_bank{1}_free
 	#endif
 	#if .>{2}
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
+		ECHO	"]","exceeded by=",[0-_bank{1}_free]
 	#else
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
+		ECHO	"]","free =",_bank{1}_free
 	#endif
 	#if .<{2}-1
 		ORG		{2}-1
@@ -247,11 +236,7 @@ _{1}_end	SET .
 	MAC	LAST_BANK_END
 _bank{1}_free	SET	[{2}-.-6]
 _total_free	SET _total_free+_bank{1}_free
-	#if .>[{2}-6]
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
-	#else
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
-	#endif
+		ECHO	"]","free =",_bank{1}_free
 		ECHO	"-------------";
 		ECHO	"total free =",_total_free
 		ECHO	""
@@ -290,7 +275,7 @@ _total_free	SET _total_free+_bank{1}_free
 		PUSHB	#[[{1}>>0]&$FF]
 	ENDM
 
-	MAC PUSHW
+	MAC PUSHWM
 		PUSHB	{1}+1
 		PUSHB	{1}
 	ENDM
@@ -301,17 +286,6 @@ _total_free	SET _total_free+_bank{1}_free
 	MAC	POPB
 		PLA
 		STA		{1}
-	ENDM
-
-	MAC	POPW
-		POPB	{1}
-		POPB	{1}+1
-	ENDM
-
-	MAC	POPD
-		POPB	{1}
-		POPB	{1}+1
-		POPB	{1}+2
 	ENDM
 
 	; \t\tLDA\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\1\+1\n\t\tSTA\t\t\2\+1\n
@@ -343,9 +317,9 @@ _total_free	SET _total_free+_bank{1}_free
 		STA		{1}
 		STA		{1}+1
 	#else
-		LDA		#[[{2}>>0]&$FF]
+		LDA		#[[{2}>>0 ]&$FF]
 		STA		{1}
-		LDA		#[[{2}>>8]&$FF]
+		LDA		#[[{2}>>8 ]&$FF]
 		STA		{1}+1
 	#endif
 	ENDM
@@ -383,18 +357,4 @@ _total_free	SET _total_free+_bank{1}_free
 		BCC		.1
 		INC		{1}+1
 .1:
-	ENDM
-
-	MAC CMPW
-		LDA		{1}
-		CMP		{2}
-		LDA		{1}+1
-		SBC		{2}+1
-	ENDM
-
-	MAC CMPWI
-		LDA		{1}
-		CMP		#[[{2}>>0]&$FF]
-		LDA		{1}+1
-		SBC		#[[{2}>>8]&$FF]
 	ENDM

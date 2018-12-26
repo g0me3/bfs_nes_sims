@@ -3362,11 +3362,8 @@ _rand_clamp:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; input:
-; dividend fixed point 16.16 (integer E8/E9, fraction E6/E7)
-; divider  fixed point 8.8   (integer EB, fraction EA)
-; result:
-; fixed point 8.8 (integer E7, fraction E6)
+; input  32bit tmpE6/E7/E8/E9, divider 16bittmpEA/EB
+; result 16bit tmpE6/E7
 ;
 _div_32to16:
 		LDA		_tmpEB
@@ -3406,8 +3403,6 @@ loc_18BE32:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; integer multiply 8bit args, result 16 bit
-;
 _mmc5_mul8to8:
 		STX		_backup_var
 		TSX
@@ -3437,13 +3432,13 @@ _mmc5_mul16to8:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_tmp_mul_result
+		STA		_mmc5_mtmp_mul_result
 		LDA		$105,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_result
+		ADC		_mmc5_mtmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
@@ -3464,33 +3459,33 @@ _mmc5_mul32to8:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_tmp_mul_result
+		STA		_mmc5_mtmp_mul_result
 		LDA		$105,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_result
+		ADC		_mmc5_mtmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_tmp_mul_result
+		STA		_mmc5_mtmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_result
+		ADC		_mmc5_mtmp_mul_result
 		STA		$105,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_tmp_mul_result
+		STA		_mmc5_mtmp_mul_result
 		LDA		$107,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_result
+		ADC		_mmc5_mtmp_mul_result
 		STA		$106,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
@@ -3511,17 +3506,17 @@ _mmc5_mul16to16:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_tmp_mul_result
+		STA		_mmc5_mtmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_result
-		STA		_mmc5_tmp_mul_result
+		ADC		_mmc5_mtmp_mul_result
+		STA		_mmc5_mtmp_mul_result
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_tmp_mul_data
+		STA		byte_5A6
 		LDA		$104,X
 		STA		_mmc5_mul1_shadow
 		STA		_MMC5_MUL1
@@ -3530,23 +3525,23 @@ _mmc5_mul16to16:
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_result
+		ADC		_mmc5_mtmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
-		ADC		_mmc5_tmp_mul_data
-		STA		_mmc5_tmp_mul_data
+		ADC		byte_5A6
+		STA		byte_5A6
 		LDA		#$00
 		ADC		#$00
-		STA		_mmc5_tmp_mul_data+1
+		STA		byte_5A7
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_tmp_mul_data
+		ADC		byte_5A6
 		STA		$105,X
 		LDA		_MMC5_MUL1
-		ADC		_mmc5_tmp_mul_data+1
+		ADC		byte_5A7
 		STA		$106,X
 		LDX		_backup_var
 		RTS

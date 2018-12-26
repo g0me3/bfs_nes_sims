@@ -613,8 +613,10 @@ _screen_pal_cur_bg_idx:
 
 		_tpos _prev_constr_cursor_tile
 
-		_tpos	_cur_constr_cursor_map_pos
-
+byte_50F:
+		.BYTE	0
+byte_510:
+		.BYTE	0
 byte_511:
 		.BYTE	0
 byte_512:
@@ -803,10 +805,12 @@ _mmc5_mul0_shadow:
 		.BYTE	0
 _backup_var:
 		.BYTE	0
-_mmc5_tmp_mul_result:
+_mmc5_mtmp_mul_result:
 		.BYTE	0
-_mmc5_tmp_mul_data:
-		.WORD	0
+byte_5A6:
+		.BYTE	0
+byte_5A7:
+		.BYTE	0
 _has_saved_city_data_flag:
 		.BYTE	0
 word_5A9:

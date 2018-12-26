@@ -1969,7 +1969,7 @@ _practice_msg0:
 		.BYTE	"adjust ",_the," budget,",$A
 		.BYTE	"lower skyrocket",_in,"g  crime",$A
 		.BYTE	"rates, iron out traffic",$A
-		.BYTE	"snarls",_con,"trol enviro-",$A					; BUG! snarls[, ]control
+		.BYTE	"snarls",_con,"trol enviro-",$A
 		.BYTE	"nmental pollution, ",_and,$A
 		.BYTE	"many o",_the,"r elements that",$A
 		.BYTE	"require ",_your," attention.",$A
