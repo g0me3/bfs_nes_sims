@@ -3559,41 +3559,9 @@ loc_137A35:
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meters_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,#$0F,NONE,#$1E
-		CLC
-		ADC		#$04
-		CMP		#$1E
-		BCC		loc_137A64
-		SBC		#$1D
-		STA		_tmp3
-		LDA		#$05
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_137A6C
-loc_137A64:
-		LDA		#$05
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_137A6C:
+		WRAPA	_tmp2,_tmp3,#$05,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
-		CLC
-		ADC		#$02
-		CMP		#$20
-		BCC		loc_137A8E
-		SBC		#$1F
-		STA		_tmp5
-		LDA		#$03
-		SEC
-		SBC		_tmp5
-		STA		_tmp4
-		BNE		loc_137A96
-loc_137A8E:
-		LDA		#$03
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-loc_137A96:
+		WRAPA	_tmp4,_tmp5,#$03,#$20
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		RTS
 

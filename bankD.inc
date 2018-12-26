@@ -2821,39 +2821,16 @@ gui_ctrl_menu_icons_posY_list:
 		.BYTE	$02,$02,$02,$02,$02,$04
 
 ; =============== S U B	R O U T	I N E =======================================
+; NOTE: this is the only place, where WRAP code has both BEQ/BSC opcodes
+; so it avoid extra calculations, the rest of the code does not!
+;
+; FIX: when we switch to macroses, we put extra BEQ opcode in other such plces
+;
 gui_ctrl_menu_icon_pos_calc:
 		CIADDB	_tmp0,_cur_screen_tile._X,_tmp4,NONE,#$20
-		LDA		#$20
-		SEC
-		SBC		_tmp0
-		CMP		_tmp6
-		BEQ		loc_15139F
-		BCS		loc_15139F
-		STA		_tmp2
-		LDA		_tmp6
-		SEC
-		SBC		_tmp2
-		STA		_tmp3
-		BNE		loc_1513A7
-loc_15139F:
-		LDA		_tmp6
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_1513A7:
+		WRAPB	_tmp2,_tmp3,_tmp0,_tmp6,#$20
 		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp5,NONE,#$1E
-		CMP		#$1D
-		BNE		loc_1513C1
-		LDA		#$01
-		STA		_tmp4
-		STA		_tmp5
-		BNE		loc_1513C9
-loc_1513C1:
-		LDA		#$02
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-loc_1513C9:
+		WRAPA	_tmp4,_tmp5,#$02,#$1E
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#>[_MMC5_EXRAM]	; DST=(_ptr0+1*#$20+_ptr0)+#>[_MMC5_EXRAM]00
 		RTS
 

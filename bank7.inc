@@ -22,23 +22,7 @@ _get_city_name_str:
 _city_name_str_pos_set:
 		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
-		CLC
-		ADC		#$09
-		CMP		#$20
-		BCC		loc_B804A
-		SBC		#$1F
-		STA		_tmp3
-		LDA		#$0A
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_B8052
-loc_B804A:
-		LDA		#$0A
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_B8052:
+		WRAPA	_tmp2,_tmp3,#$0A,#$20
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		RTS
 
@@ -2366,17 +2350,17 @@ loc_B958B:
 		LDA		_tmp118+$A
 		CLC
 		ADC		#$06
-		FJSRA	_txt_lib_printf,PRG7,PRG9
-		FJSRA	_history_year_printf,PRG7,PRG9
+		FJSRA	_printf_txt_lib,PRG7,PRG9
+		FJSRA	_printf_history_year,PRG7,PRG9
 		JSR		_buffers_force_flush
 		PPUQSTART
 		LDY		_tmp118+9
 		LDA		word_B95ED,Y
-		PPUQMOVA
 		INY
+		PPUQMOVA
 		LDA		word_B95ED,Y
-		PPUQMOVA
 		INY
+		PPUQMOVA
 		PPUQMOVB	#$01,OP_NOP,0
 		PPUQMOVB	#$3A,OP_NOP,0
 		PPUQEND

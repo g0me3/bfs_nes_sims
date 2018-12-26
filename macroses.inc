@@ -405,6 +405,84 @@ OP_ADD	EQU	3
 		INX
 	ENDM
 
+	; \t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t(.*)\n\t\tCMP\t\t(.*)\n\t\tBCS\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\3\n\t\tSEC\n\t\tSBC\t\t\5\n\t\tSTA\t\t(.*)\n\t\tBNE\t\t(.*)\n\4\:\n\t\tLDA\t\t\3\n\t\tSTA\t\t\5\n\t\tLDA\t\t\#\$00\n\t\tSTA\t\t\6\n\7\:\n
+	; \t\tWRAPB\t\5\,\6\,\2\,\3\,\1\n
+	;
+	; usage: WRAPB LINELEN,WRAPLEN,POS,MAXLEN,BUFLEN
+	; 				 \5		 \6		\2	 \3     \1
+	;			     {1}     {2}    {3}  {4}    {5}
+	;
+	MAC	WRAPB
+		LDA		{5}		; \1
+		SEC
+		SBC		{3}		; \2
+		CMP		{4}		; \3
+		BCS		.1					; ORIGINAL: we check here if line is clamped, but
+		BEQ		.1					; we will get here also if the size is exactly eaqual
+		STA		{1}		; \5		; ant thus recalc values by hand... there is only one
+		LDA		{4}		; \3		; place in bank D, that does BEQ check
+		SEC							; FIX: let's get the same for all such places.
+		SBC		{1}		; \5
+		STA		{2}		; \6
+		BNE		.2
+.1:
+		LDA		{4}		; \3
+		STA		{1}		; \5
+		LDA		#$00
+		STA		{2}		; \6
+.2:
+	ENDM
+
+	; \t\tCLC\n\t\tADC\t\t(.*)\n\t\tCMP\t\t(.*)\n\t\tBCC\t\t(.*)\n\t\tSBC\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t\5\n\t\tSTA\t\t(.*)\n\t\tBNE\t\t(.*)\n\3\:\n\t\tLDA\t\t\6\n\t\tSTA\t\t\7\n\t\tLDA\t\t\#\$00\n\t\tSTA\t\t\5\n\8\:\n
+	; \t\tWRAPA\t\7\,\5\,\6\,\2\n
+	;
+	; usage: WRAPA LINELEN,WRAPLEN,MAXLEN,BUFLEN
+	;				\7		\5		\6		\2
+	;			    {1} 	{2}		{3}		{4}
+	;
+	; the same as WRAPA, but only for constant parameters,
+	; however, WRAPB can be used with constant parameters as well.
+	;
+	; TODO: check speed and size, decide wether to keep both methods, or use one
+	; for all cases
+	;
+	MAC WRAPA
+	#if {3}>2
+		CLC
+		ADC		{3}-1	; \6-1
+		CMP		{4}		; \2
+		BCC		.1
+		SBC		{4}-1	; \2-1
+		STA		{2}		; \5
+		LDA		{3}		; \6
+		SEC
+		SBC		{2}		; \5
+		STA		{1}		; \7
+		BNE		.2
+.1:
+		LDA		{3}		; \6
+		STA		{1}		; \7
+		LDA		#$00
+		STA		{2}		; \5
+.2:
+	#else
+		CMP		{4}-1
+		BNE		.1
+		LDA		{3}-1
+		STA		{1}
+		STA		{2}
+		BNE		.2
+.1:
+		LDA		{3}
+		STA		{1}
+		LDA		#$00
+		STA		{2}
+.2:
+	#endif
+	ENDM
+
+
+
 	; \t\tLDA\t\t(.*)\n\t\tLDX\t\t(.*)\n\t\tMULXA\n\t\tCLC\n\t\tADC\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tTXA\n\t\tADC\t\t(.*)\n\t\tSTA\t\t(.*)\n
 	; \t\tBUFPOS\t\4\,\3\,\1\,\2\,\5\t\; DST=\(\1*\2+\3\)+\500\n
 	;
@@ -430,7 +508,6 @@ OP_ADD	EQU	3
 		STX		{1}+1
 	#endif
 	ENDM
-
 
 ;-----------------C-O-M-M-O-N-------------------
 

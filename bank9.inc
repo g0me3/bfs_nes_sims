@@ -635,7 +635,7 @@ _scr_res_hndl0_B_info_maps_input:
 		JSR		_info_maps_date_draw
 		JSR		sub_EADB2
 		JSR		sub_EADC9
-		JSR		sub_EADD5
+		JSR		_info_maps_spr_arrows_hide
 		BIT		_scr_res_control_flags
 		BPL		loc_EA554
 		JMP		sub_EA617
@@ -1732,13 +1732,14 @@ _info_maps_date_draw:
 		LDA		#$00
 		STA		_hud_redraw_req
 
-; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
 _info_maps_date_draw_ex:
 		MOVW	_ptr0,_city._cur_year
 		JSR		_hex_to_dec9999
 		LDA		#$15
-		JSR		_printf
+		JSR		_printf_num_lib
 		PPUQSTART
 		PPUQMOVB	#$7B,OP_NOP,0
 		PPUQMOVB	#$24,OP_NOP,0
@@ -1748,7 +1749,7 @@ _info_maps_date_draw_ex:
 		ASL
 		TAY
 loc_EADA1:
-		LDA		_months_lib_0,Y
+		LDA		_months_lib,Y
 		CMP		#$80
 		BEQ		loc_EADAF
 		PPUQMOVA
@@ -1764,7 +1765,7 @@ sub_EADB2:
 		MOVD	_ptr0,_popul_cur
 		JSR		_hex_to_dec9999999
 		LDA		#$16
-		JMP		_printf
+		JMP		_printf_num_lib
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EADC9:
@@ -1774,10 +1775,11 @@ sub_EADC9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EADD5:
+_info_maps_spr_arrows_hide:
 		LDX		#$2F
 loc_EADD7:
-		LDA		#$00
+;		LDA		#$00						; ORIGINAL: hides sprites to upper left corner
+		LDA		#$FA						; FIX: hides sprites out of screen
 		STA		_spr_buf+$20,X
 		DEX
 		BPL		loc_EADD7
@@ -1924,27 +1926,27 @@ loc_EAEEC:
 		MOVD	_ptr0,_taxes_collected
 		JSR		_hex_to_dec99999
 		LDA		#$01
-		JSR		_printf
+		JSR		_printf_num_lib
 		MOVD	_ptr0,_city._money
 		JSR		_hex_to_dec9999999
 		LDA		#$12
-		JSR		_printf
+		JSR		_printf_num_lib
 		MOVW	_ptr0,_fund_request_fire
 		JSR		_hex_to_dec9999
 		LDA		#$02
-		JSR		_printf
+		JSR		_printf_num_lib
 		MOVW	_ptr0,_fund_request_police
 		JSR		_hex_to_dec9999
 		LDA		#$03
-		JSR		_printf
+		JSR		_printf_num_lib
 		MOVW	_ptr0,_fund_request_trans
 		JSR		_hex_to_dec9999
 		LDA		#$04
-		JSR		_printf
+		JSR		_printf_num_lib
 		MOVW	_ptr0,_fund_request_education
 		JSR		_hex_to_dec9999
 		LDA		#$05
-		JSR		_printf
+		JSR		_printf_num_lib
 		BIT		_city._bank_flags
 		BPL		loc_EAFD0
 		MOVWO	_ptr0,byte_EB7C3
@@ -2041,10 +2043,10 @@ loc_EB05B:
 		INC		_scr_res_idx
 		LDX		_city._city_type
 		LDA		#$04
-		JSR		_txt_lib_printf
+		JSR		_printf_txt_lib
 		LDX		_city._difficult
 		LDA		#$05
-		JSR		_txt_lib_printf
+		JSR		_printf_txt_lib
 loc_EB084:
 		LDA		#$00
 		STA		_ptr0+1
@@ -2093,7 +2095,7 @@ loc_EB0D4:
 		LDA		_tmp13D
 		CLC
 		ADC		#$17
-		JSR		_printf
+		JSR		_printf_num_lib
 		INC		_tmp13D
 		LDA		_tmp13D
 		CMP		#$0B
@@ -2105,13 +2107,13 @@ loc_EB0EF:
 		LDA		_tmp13D
 		SEC
 		SBC		#$0B
-		STA		_tmp6+1
+		STA		_tmp7
 		TAX
 		LDA		_worst_problem_list,X
 		BMI		loc_EB10D
 		TAX
-		LDA		_tmp6+1
-		JSR		_txt_lib_printf
+		LDA		_tmp7
+		JSR		_printf_txt_lib
 		INC		_tmp13D
 		LDA		_tmp13D
 		CMP		#$0F
@@ -2217,7 +2219,7 @@ loc_EB1B9:
 		JSR		_hex_to_dec9999
 		LDX		_tmp118+4
 		LDA		byte_EB539,X
-		JMP		_printf
+		JMP		_printf_num_lib
 loc_EB1C5:
 		LDA		_coal_power_station_count
 		CLC
@@ -2228,7 +2230,7 @@ loc_EB1C5:
 		STA		_ptr0+1
 		JSR		_hex_to_dec9999
 		LDA		#$36
-		JMP		_printf
+		JMP		_printf_num_lib
 loc_EB1DC:
 		LDA		_tmp118+4
 		JSR		_get_constr_count_by_idx
@@ -2244,7 +2246,7 @@ loc_EB1EC:
 		BNE		loc_EB1EC
 		LDX		_tmp118+4
 		LDA		byte_EB539,X
-		JSR		_printf
+		JSR		_printf_num_lib
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -2254,7 +2256,7 @@ loc_EB1EC:
 		LDA		byte_EB539,X
 		CLC
 		ADC		#$03
-		JMP		_printf
+		JMP		_printf_num_lib
 loc_EB214:
 		LDA		_tmp118+4
 		SEC
@@ -2333,7 +2335,7 @@ _far_scr_res_hndl5_A_history_draw:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_history_year_printf:
+_printf_history_year:
 		LDX		_tmp118+8
 		LDA		_city._history_list,X
 		INX
@@ -2344,7 +2346,7 @@ _history_year_printf:
 		STA		_ptr0+1
 		JSR		_hex_to_dec9999
 		LDA		_tmp118+7
-		JMP		_printf
+		JMP		_printf_num_lib
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl5_B_history_input:
@@ -2394,7 +2396,7 @@ _taxes_alloc_draw:
 		JSR		_hex_to_dec9999					; -
 		LDY		_tmp584
 		LDA		byte_EB76C,Y
-		JSR		_printf
+		JSR		_printf_num_lib
 		LDA		_tmp584
 		AND		#$FE
 		BEQ		loc_EB328
@@ -2410,7 +2412,7 @@ _taxes_alloc_draw:
 		JSR		_hex_to_dec9999
 		LDY		_tmp584
 		LDA		byte_EB778,Y
-		JSR		_printf
+		JSR		_printf_num_lib
 		JSR		_cash_flow_draw
 loc_EB328:
 		FJSRA	_save_taxes_data,PRG7,PRG9
@@ -2547,7 +2549,7 @@ _cash_flow_draw:
 		JSR		_cash_flow_calc
 		JSR		_hex_to_dec9999999
 		LDA		#$11
-		JSR		_printf
+		JSR		_printf_num_lib
 		LDX		#$03
 		LDY		#$00
 		SEC
@@ -2564,7 +2566,7 @@ loc_EB414:
 loc_EB428:
 		JSR		_hex_to_dec9999999
 		LDA		#$13
-		JMP		_printf
+		JMP		_printf_num_lib
 
 ; =============== S U B	R O U T	I N E =======================================
 _flush_wait_0:
@@ -2833,21 +2835,8 @@ byte_EB6B2:
 		.BYTE	$07,$04
 		.BYTE	$07,$0A
 		.BYTE	$07,$11
-_months_lib_0:
-		.BYTE	_J,_A,_N,$80
-		.BYTE	_F,_E,_B,$80
-		.BYTE	_M,_A,_R,$80
-		.BYTE	_A,_P,_R,$80
-		.BYTE	_M,_A,_Y,$80
-		.BYTE	_J,_U,_N,$80
-		.BYTE	_J,_U,_L,$80
-		.BYTE	_A,_U,_G,$80
-		.BYTE	_S,_E,_P,$80
-		.BYTE	_O,_C,_T,$80
-		.BYTE	_N,_O,_V,$80
-		.BYTE	_D,_E,_C,$80
 
-;_unused?:
+; unused
 ;		.BYTE	$00,$07,$0E
 ;		.BYTE	$26,$25,$06,$35,$DF,$58,$AC,$AD,$3A
 ;		.BYTE	$46,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF
@@ -2927,29 +2916,29 @@ word_EB84A:
 		.BYTE	$FF
 
 ; =============== S U B	R O U T	I N E =======================================
-_txt_lib_printf:
-		STA		_tmp6+1
+_printf_txt_lib:
+		STA		_tmp7
 		STX		_tmp6
 		PPUQSTART
-		ASL
+;		ASL										; REDUNDANT, optimized
 		TAY
-		LDA		_txt_ppu_ofs_lib,Y
+		LDA		_txt_ppu_ofs_lib_lo,Y
 		PPUQMOVA
-		LDA		_txt_ppu_ofs_lib+1,Y
+		LDA		_txt_ppu_ofs_lib_hi,Y
 		PPUQMOVA
-		LDY		_tmp6+1
+;		LDY		_tmp7							; REDUNDANT, optimized
 		LDA		byte_EBB49,Y
 		STA		_ppu_queue_buf,X
 		STA		_tmp5
 		INX
-		LDA		_tmp6+1
-		ASL
-		TAY
-		LDA		_txt_libs,Y
+;		LDA		_tmp7							; REDUNDANT, optimized
+;		ASL										; REDUNDANT, optimized
+;		TAY										; REDUNDANT, optimized
+		LDA		_txt_libs_lo,Y
 		STA		_ptr0
-		LDA		_txt_libs+1,Y
+		LDA		_txt_libs_hi,Y
 		STA		_ptr0+1
-		LDY		_tmp6+1
+;		LDY		_tmp7
 		LDA		_tmp6
 		BEQ		loc_EB896
 		STA		_tmp4
@@ -2969,28 +2958,28 @@ loc_EB897:
 		BNE		loc_EB897
 		PPUQEND
 		EXTQSTART
-		LDA		_tmp6+1
-		CMP		#$06
+		LDY		_tmp7
+		CPY		#$06
 		BCS		locret_EB8F3
-		ASL
-		TAY
-		LDA		_txt_ppu_ofs_lib,Y
+;		ASL									; REDUNDANT, optimized
+;		TAY									; REDUNDANT, optimized
+		LDA		_txt_ppu_ofs_lib_lo,Y
 		EXTQMOVA
-		LDA		_txt_ppu_ofs_lib+1,Y
+		LDA		_txt_ppu_ofs_lib_hi,Y
 		CLC
 		ADC		#$38
 		EXTQMOVA
-		LDY		_tmp6+1
+;		LDY		_tmp7						; REDUNDANT, optimized
 		LDA		byte_EBB49,Y
 		STA		_extnt_queue_buf,X
 		STA		_tmp5
 		INX
-		LDA		_tmp6+1
-		ASL
-		TAY
-		LDA		_txt_len_lib,Y
+;		LDA		_tmp7
+;		ASL
+;		TAY
+		LDA		_txt_len_lib_lo,Y
 		STA		_ptr0
-		LDA		_txt_len_lib+1,Y
+		LDA		_txt_len_lib_hi,Y
 		STA		_ptr0+1
 		LDY		_tmp6
 		LDA		_tmp13D
@@ -3010,38 +2999,38 @@ locret_EB8F3:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_printf:
+_printf_num_lib:
 		STA		_tmp118
-		CMP		#$06
-		BEQ		locret_EB903
-		CMP		#$0B
-		BEQ		locret_EB903
-		CMP		#$10
-		BNE		loc_EB904
-locret_EB903:
-		RTS
-loc_EB904:
+;		CMP		#$06					; REDUNDANT: never used, should disable
+;		BEQ		locret_EB903			; some screen positions in the table
+;		CMP		#$0B					; but why you need to call them if
+;		BEQ		locret_EB903			; they aren't displayed anyway?
+;		CMP		#$10
+;		BNE		loc_EB904
+;locret_EB903:
+;		RTS
+;loc_EB904:
 		TAY
-		LDX		byte_EBCEC,Y
-		JSR		sub_EB9BF
+		LDX		_printf_num_lib_spaces_list,Y
+		JSR		_printf_num_lib_number_trim
 		LDX		_tmp118
 loc_EB90E:
 		LDA		_ptr0,Y
 		CLC
-		ADC		byte_EBD3B,X
+		ADC		_printf_num_tile_ofs_list,X
 		STA		_ptr0,Y
 		DEY
 		BPL		loc_EB90E
 		PPUQSTART
-		LDA		_tmp118
-		ASL
-		TAY
-		LDA		byte_EBD8A,Y
+		LDY		_tmp118					; FIX: optimized
+;		ASL								; REDUNDANT, optimized
+;		TAY								; REDUNDANT, optimized
+		LDA		_printf_num_screen_pos_list_lo,Y
 		PPUQMOVA
-		LDA		byte_EBD8A+1,Y
+		LDA		_printf_num_screen_pos_list_hi,Y
 		PPUQMOVA
-		LDY		_tmp118
-		LDA		byte_EBE28,Y
+;		LDY		_tmp118					; REDUNDANT, optimized
+		LDA		_printf_num_len_list,Y
 		PPUQMOVA
 		TAY
 		DEY
@@ -3053,19 +3042,19 @@ loc_EB93C:
 		PPUQEND
 		JSR		sub_EB980
 		EXTQSTART
-		LDA		_tmp118
-		CMP		#$22
+		LDY		_tmp118
+		CPY		#$22
 		BCS		locret_EB97F
-		ASL
-		TAY
-		LDA		byte_EBD8A,Y
+;		ASL								; REDUNDANT, optimized
+;		TAY								; REDUNDANT, optimized
+		LDA		_printf_num_screen_pos_list_lo,Y
 		EXTQMOVA
-		LDA		byte_EBD8A+1,Y
+		LDA		_printf_num_screen_pos_list_hi,Y
 		CLC
 		ADC		#$38
 		EXTQMOVA
-		LDY		_tmp118
-		LDA		byte_EBE28,Y
+;		LDY		_tmp118					; REDUNDANT, optimized
+		LDA		_printf_num_len_list,Y
 		EXTQMOVA
 		TAY
 		DEY
@@ -3083,7 +3072,7 @@ sub_EB980:
 		LDA		#$00
 		STA		_tmp118+3
 		LDX		_tmp118
-		LDA		byte_EBE28,X
+		LDA		_printf_num_len_list,X
 		TAY
 		DEY
 loc_EB98D:
@@ -3114,11 +3103,11 @@ loc_EB9B8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EB9BF:
+_printf_num_lib_number_trim:
 		LDA		#$00
-		STA		_tmp6+1
+		STA		_tmp7
 		LDY		_tmp118
-		LDA		byte_EBE28,Y
+		LDA		_printf_num_len_list,Y
 		TAY
 		DEY
 loc_EB9CB:
@@ -3249,45 +3238,80 @@ loc_EBB19:
 		BCS		loc_EBB06
 locret_EBB2E:
 		RTS
-_txt_ppu_ofs_lib:
-		.BYTE	$87,$26
-		.BYTE	$C7,$26
-		.BYTE	$07,$27
-		.BYTE	$47,$27
-		.BYTE	$36,$26
-		.BYTE	$78,$26
-		.BYTE	$CA,$24
-		.BYTE	$2A,$25
-		.BYTE	$8A,$25
-		.BYTE	$EA,$25
-		.BYTE	$4A,$26
-		.BYTE	$AA,$26
-		.BYTE	$0A,$27
+_txt_ppu_ofs_lib_lo:
+		.BYTE	<[$2687]
+		.BYTE	<[$26C7]
+		.BYTE	<[$2707]
+		.BYTE	<[$2747]
+		.BYTE	<[$2636]
+		.BYTE	<[$2678]
+		.BYTE	<[$24CA]
+		.BYTE	<[$252A]
+		.BYTE	<[$258A]
+		.BYTE	<[$25EA]
+		.BYTE	<[$264A]
+		.BYTE	<[$26AA]
+		.BYTE	<[$270A]
+_txt_ppu_ofs_lib_hi:
+		.BYTE	>[$2687]
+		.BYTE	>[$26C7]
+		.BYTE	>[$2707]
+		.BYTE	>[$2747]
+		.BYTE	>[$2636]
+		.BYTE	>[$2678]
+		.BYTE	>[$24CA]
+		.BYTE	>[$252A]
+		.BYTE	>[$258A]
+		.BYTE	>[$25EA]
+		.BYTE	>[$264A]
+		.BYTE	>[$26AA]
+		.BYTE	>[$270A]
 byte_EBB49:
 		.BYTE	$09,$09,$09,$09,$08,$04,$12,$12,$12,$12,$12,$12,$12
 byte_EBB56:
 		.BYTE	$09,$09,$09,$09,$08,$04,$12,$12,$12,$12,$12,$12,$12
-_txt_libs:
-		.WORD	_txt_problems_lib
-		.WORD	_txt_problems_lib
-		.WORD	_txt_problems_lib
-		.WORD	_txt_problems_lib
-		.WORD	_txt_town_names_lib
-		.WORD	_txt_difficult_lib
-		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib
-		.WORD	_txt_history_lib
-_txt_len_lib:
-		.WORD	_txt_problems_lel_list
-		.WORD	_txt_problems_lel_list
-		.WORD	_txt_problems_lel_list
-		.WORD	_txt_problems_lel_list
-		.WORD	_txt_town_names_len_list
-		.WORD	_txt_difficult_len_list
+_txt_libs_lo:
+		.BYTE	<[_txt_problems_lib]
+		.BYTE	<[_txt_problems_lib]
+		.BYTE	<[_txt_problems_lib]
+		.BYTE	<[_txt_problems_lib]
+		.BYTE	<[_txt_town_names_lib]
+		.BYTE	<[_txt_difficult_lib]
+		.BYTE	<[_txt_history_lib]
+		.BYTE	<[_txt_history_lib]
+		.BYTE	<[_txt_history_lib]
+		.BYTE	<[_txt_history_lib]
+		.BYTE	<[_txt_history_lib]
+		.BYTE	<[_txt_history_lib]
+		.BYTE	<[_txt_history_lib]
+_txt_libs_hi:
+		.BYTE	>[_txt_problems_lib]
+		.BYTE	>[_txt_problems_lib]
+		.BYTE	>[_txt_problems_lib]
+		.BYTE	>[_txt_problems_lib]
+		.BYTE	>[_txt_town_names_lib]
+		.BYTE	>[_txt_difficult_lib]
+		.BYTE	>[_txt_history_lib]
+		.BYTE	>[_txt_history_lib]
+		.BYTE	>[_txt_history_lib]
+		.BYTE	>[_txt_history_lib]
+		.BYTE	>[_txt_history_lib]
+		.BYTE	>[_txt_history_lib]
+		.BYTE	>[_txt_history_lib]
+_txt_len_lib_lo:
+		.BYTE	<[_txt_problems_len_list]
+		.BYTE	<[_txt_problems_len_list]
+		.BYTE	<[_txt_problems_len_list]
+		.BYTE	<[_txt_problems_len_list]
+		.BYTE	<[_txt_town_names_len_list]
+		.BYTE	<[_txt_difficult_len_list]
+_txt_len_lib_hi:
+		.BYTE	>[_txt_problems_len_list]
+		.BYTE	>[_txt_problems_len_list]
+		.BYTE	>[_txt_problems_len_list]
+		.BYTE	>[_txt_problems_len_list]
+		.BYTE	>[_txt_town_names_len_list]
+		.BYTE	>[_txt_difficult_len_list]
 _txt_town_names_lib:
 		.BYTE	$1F,$12,$15,$15,$0A,$10,$0E,$DC
 		.BYTE	$1D,$18,$20,$17,$DC,$DC,$DC,$DC
@@ -3311,7 +3335,7 @@ _txt_problems_lib:
 		.BYTE	$1D,$1B,$0A,$0F,$0F,$12,$0C,$DC,$DC
 		.BYTE	$00,$01,$02,$03,$04,$05,$06,$07,$08
 		.BYTE	$0F,$12,$1B,$0E,$1C,$DC,$DC,$DC,$DC
-_txt_problems_lel_list:
+_txt_problems_len_list:
 		.BYTE	$05,$05,$04,$05,$05,$06,$05
 _txt_history_lib:
 		.BYTE	"Become Town       "
@@ -3326,99 +3350,182 @@ _txt_history_lib:
 		.BYTE	"Earthquake        "
 		.BYTE	"Monster Attack    "
 		.BYTE	"Melt Down         "
-byte_EBCEC:
+_printf_num_lib_spaces_list:
 		.BYTE	$DF,$DC,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF,$DF
 		.BYTE	$DF,$DC,$DC,$DC,$20,$DF,$DF,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC
 		.BYTE	$DC,$DC,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C
 		.BYTE	$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C
 		.BYTE	$7C,$7C,$7C,$7C,$7C,$7C,$7C,$7C,$20,$20,$20,$20,$20,$20,$20
-byte_EBD3B:
+_printf_num_tile_ofs_list:
 		.BYTE	$30,$00,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
 		.BYTE	$30,$00,$00,$00,$30,$00,$00,$00,$00,$30,$00,$00,$00,$00,$00,$00
 		.BYTE	$00,$00,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50
 		.BYTE	$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50,$50
 		.BYTE	$50,$50,$50,$50,$50,$50,$50,$50,$30,$30,$30,$30,$30,$30,$30
-byte_EBD8A:
-		.BYTE	$F1,$24
-		.BYTE	$35,$25
-		.BYTE	$AA,$25
-		.BYTE	$CA,$25
-		.BYTE	$EA,$25
-		.BYTE	$0A,$26
-		.BYTE	$00,$00
-		.BYTE	$B0,$25
-		.BYTE	$D0,$25
-		.BYTE	$F0,$25
-		.BYTE	$10,$26
-		.BYTE	$00,$00
-		.BYTE	$B8,$25
-		.BYTE	$D8,$25
-		.BYTE	$F8,$25
-		.BYTE	$18,$26
-		.BYTE	$00,$00
-		.BYTE	$B1,$26
-		.BYTE	$D1,$26
-		.BYTE	$11,$27
-		.BYTE	$98,$24
-		.BYTE	$76,$24
-		.BYTE	$6E,$24
-		.BYTE	$64,$25
-		.BYTE	$A4,$25
-		.BYTE	$38,$25
-		.BYTE	$78,$25
-		.BYTE	$F6,$25
-		.BYTE	$1A,$27
-		.BYTE	$5A,$27
-		.BYTE	$82,$26
-		.BYTE	$C2,$26
-		.BYTE	$02,$27
-		.BYTE	$42,$27
-		.BYTE	$09,$25
-		.BYTE	$0D,$25
-		.BYTE	$29,$25
-		.BYTE	$2D,$25
-		.BYTE	$49,$25
-		.BYTE	$4D,$25
-		.BYTE	$A9,$25
-		.BYTE	$AD,$25
-		.BYTE	$C9,$25
-		.BYTE	$CD,$25
-		.BYTE	$09,$26
-		.BYTE	$0D,$26
-		.BYTE	$49,$26
-		.BYTE	$FA,$24
-		.BYTE	$1A,$25
-		.BYTE	$3A,$25
-		.BYTE	$5A,$25
-		.BYTE	$7A,$25
-		.BYTE	$9A,$25
-		.BYTE	$BA,$25
-		.BYTE	$DA,$25
-		.BYTE	$5A,$26
-		.BYTE	$38,$26
-		.BYTE	$9A,$26
-		.BYTE	$78,$26
-		.BYTE	$DA,$26
-		.BYTE	$B8,$26
-		.BYTE	$1A,$27
-		.BYTE	$F8,$26
-		.BYTE	$38,$27
-		.BYTE	$A9,$26
-		.BYTE	$C9,$26
-		.BYTE	$E9,$26
-		.BYTE	$AD,$26
-		.BYTE	$CD,$26
-		.BYTE	$ED,$26
-		.BYTE	$CA,$26
-		.BYTE	$AD,$26
-		.BYTE	$C4,$24
-		.BYTE	$24,$25
-		.BYTE	$84,$25
-		.BYTE	$E4,$25
-		.BYTE	$44,$26
-		.BYTE	$A4,$26
-		.BYTE	$04,$27
-byte_EBE28:
+
+; FIX: optimized by split nibbles as any other arrays here.
+;
+_printf_num_screen_pos_list_lo:
+		.BYTE	<[$24F1]
+		.BYTE	<[$2535]
+		.BYTE	<[$25AA]
+		.BYTE	<[$25CA]
+		.BYTE	<[$25EA]
+		.BYTE	<[$260A]
+		.BYTE	<[$0000]
+		.BYTE	<[$25B0]
+		.BYTE	<[$25D0]
+		.BYTE	<[$25F0]
+		.BYTE	<[$2610]
+		.BYTE	<[$0000]
+		.BYTE	<[$25B8]
+		.BYTE	<[$25D8]
+		.BYTE	<[$25F8]
+		.BYTE	<[$2618]
+		.BYTE	<[$0000]
+		.BYTE	<[$26B1]
+		.BYTE	<[$26D1]
+		.BYTE	<[$2711]
+		.BYTE	<[$2498]
+		.BYTE	<[$2476]
+		.BYTE	<[$246E]
+		.BYTE	<[$2564]
+		.BYTE	<[$25A4]
+		.BYTE	<[$2538]
+		.BYTE	<[$2578]
+		.BYTE	<[$25F6]
+		.BYTE	<[$271A]
+		.BYTE	<[$275A]
+		.BYTE	<[$2682]
+		.BYTE	<[$26C2]
+		.BYTE	<[$2702]
+		.BYTE	<[$2742]
+		.BYTE	<[$2509]
+		.BYTE	<[$250D]
+		.BYTE	<[$2529]
+		.BYTE	<[$252D]
+		.BYTE	<[$2549]
+		.BYTE	<[$254D]
+		.BYTE	<[$25A9]
+		.BYTE	<[$25AD]
+		.BYTE	<[$25C9]
+		.BYTE	<[$25CD]
+		.BYTE	<[$2609]
+		.BYTE	<[$260D]
+		.BYTE	<[$2649]
+		.BYTE	<[$24FA]
+		.BYTE	<[$251A]
+		.BYTE	<[$253A]
+		.BYTE	<[$255A]
+		.BYTE	<[$257A]
+		.BYTE	<[$259A]
+		.BYTE	<[$25BA]
+		.BYTE	<[$25DA]
+		.BYTE	<[$265A]
+		.BYTE	<[$2638]
+		.BYTE	<[$269A]
+		.BYTE	<[$2678]
+		.BYTE	<[$26DA]
+		.BYTE	<[$26B8]
+		.BYTE	<[$271A]
+		.BYTE	<[$26F8]
+		.BYTE	<[$2738]
+		.BYTE	<[$26A9]
+		.BYTE	<[$26C9]
+		.BYTE	<[$26E9]
+		.BYTE	<[$26AD]
+		.BYTE	<[$26CD]
+		.BYTE	<[$26ED]
+		.BYTE	<[$26CA]
+		.BYTE	<[$26AD]
+		.BYTE	<[$24C4]
+		.BYTE	<[$2524]
+		.BYTE	<[$2584]
+		.BYTE	<[$25E4]
+		.BYTE	<[$2644]
+		.BYTE	<[$26A4]
+		.BYTE	<[$2704]
+_printf_num_screen_pos_list_hi:
+		.BYTE	>[$24F1]
+		.BYTE	>[$2535]
+		.BYTE	>[$25AA]
+		.BYTE	>[$25CA]
+		.BYTE	>[$25EA]
+		.BYTE	>[$260A]
+		.BYTE	>[$0000]
+		.BYTE	>[$25B0]
+		.BYTE	>[$25D0]
+		.BYTE	>[$25F0]
+		.BYTE	>[$2610]
+		.BYTE	>[$0000]
+		.BYTE	>[$25B8]
+		.BYTE	>[$25D8]
+		.BYTE	>[$25F8]
+		.BYTE	>[$2618]
+		.BYTE	>[$0000]
+		.BYTE	>[$26B1]
+		.BYTE	>[$26D1]
+		.BYTE	>[$2711]
+		.BYTE	>[$2498]
+		.BYTE	>[$2476]
+		.BYTE	>[$246E]
+		.BYTE	>[$2564]
+		.BYTE	>[$25A4]
+		.BYTE	>[$2538]
+		.BYTE	>[$2578]
+		.BYTE	>[$25F6]
+		.BYTE	>[$271A]
+		.BYTE	>[$275A]
+		.BYTE	>[$2682]
+		.BYTE	>[$26C2]
+		.BYTE	>[$2702]
+		.BYTE	>[$2742]
+		.BYTE	>[$2509]
+		.BYTE	>[$250D]
+		.BYTE	>[$2529]
+		.BYTE	>[$252D]
+		.BYTE	>[$2549]
+		.BYTE	>[$254D]
+		.BYTE	>[$25A9]
+		.BYTE	>[$25AD]
+		.BYTE	>[$25C9]
+		.BYTE	>[$25CD]
+		.BYTE	>[$2609]
+		.BYTE	>[$260D]
+		.BYTE	>[$2649]
+		.BYTE	>[$24FA]
+		.BYTE	>[$251A]
+		.BYTE	>[$253A]
+		.BYTE	>[$255A]
+		.BYTE	>[$257A]
+		.BYTE	>[$259A]
+		.BYTE	>[$25BA]
+		.BYTE	>[$25DA]
+		.BYTE	>[$265A]
+		.BYTE	>[$2638]
+		.BYTE	>[$269A]
+		.BYTE	>[$2678]
+		.BYTE	>[$26DA]
+		.BYTE	>[$26B8]
+		.BYTE	>[$271A]
+		.BYTE	>[$26F8]
+		.BYTE	>[$2738]
+		.BYTE	>[$26A9]
+		.BYTE	>[$26C9]
+		.BYTE	>[$26E9]
+		.BYTE	>[$26AD]
+		.BYTE	>[$26CD]
+		.BYTE	>[$26ED]
+		.BYTE	>[$26CA]
+		.BYTE	>[$26AD]
+		.BYTE	>[$24C4]
+		.BYTE	>[$2524]
+		.BYTE	>[$2584]
+		.BYTE	>[$25E4]
+		.BYTE	>[$2644]
+		.BYTE	>[$26A4]
+		.BYTE	>[$2704]
+_printf_num_len_list:
 		.BYTE	$02,$05,$04,$04,$04,$04,$04,$04,$04,$04,$04,$04,$03,$03,$03,$03
 		.BYTE	$03,$06,$06,$06,$03,$04,$06,$03,$03,$06,$06,$08,$04,$04,$03,$03
 		.BYTE	$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03,$03
@@ -3507,12 +3614,12 @@ _hex_to_dec_ex:
 		STY		_tmp4
 		STY		_tmp5
 		STY		_tmp6
-		STY		_tmp6+1
+		STY		_tmp7
 loc_EBA2D:
 		LDY		#$00
 loc_EBA2F:
 		LDA		_ptr0						; from 10m to 10 back count
-		CMP		_hex_to_dec_tbl2,X	; compare 24-bit value with table
+		CMP		_hex_to_dec_tbl2,X			; compare 24-bit value with table
 		LDA		_ptr0+1
 		SBC		_hex_to_dec_tbl1,X
 		LDA		_tmp2

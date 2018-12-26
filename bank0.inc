@@ -1409,23 +1409,7 @@ loc_BB84:
 _wnd_header_pos_calc:
 		CIADDB	_tmp4,_cur_screen_tile._Y,  #1,_tmp1,#30
 		CIADDB	_tmp5,_cur_screen_tile._X,NONE,_tmp2,#32
-		LDA		#32
-		SEC
-		SBC		_tmp5
-		CMP		_tmp3
-		BCS		loc_BBE0
-		STA		_tmp6
-		LDA		_tmp3
-		SEC
-		SBC		_tmp6
-		STA		_tmp7
-		BNE		loc_BBE8
-loc_BBE0:
-		LDA		_tmp3
-		STA		_tmp6
-		LDA		#$00
-		STA		_tmp7
-loc_BBE8:
+		WRAPB	_tmp6,_tmp7,_tmp5,_tmp3,#32
 		BUFPOS	_ptr4,_tmp5,_tmp4,#$20,#$00	; DST=(_tmp4*#$20+_tmp5)+#$0000
 		RTS
 

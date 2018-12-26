@@ -115,23 +115,7 @@ _game_msg_extra_icons_set_tmp3:
 _game_msg_extra_icons_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp1,NONE,#$1E
 		CIADDB	_tmp2,_cur_screen_tile._X,_tmp2,NONE,#$20
-		LDA		#$20
-		SEC
-		SBC		_tmp2
-		CMP		_tmp3
-		BCS		loc_700DD
-		STA		_tmp4
-		LDA		_tmp3
-		SEC
-		SBC		_tmp4
-		STA		_tmp5
-		BNE		loc_700E5
-loc_700DD:
-		LDA		_tmp3
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-loc_700E5:
+		WRAPB	_tmp4,_tmp5,_tmp2,_tmp3,#$20
 		BUFPOS	_tmp2,_tmp2,_tmp1,#$20,#$00	; DST=(_ptr0+1*#$20+_tmp2)+#$0000
 		RTS
 

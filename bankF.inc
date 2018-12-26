@@ -3666,6 +3666,20 @@ _mmc5_mul16to16:
 		LDX		_backup_var
 		RTS
 
+_months_lib:
+		.BYTE	_J,_A,_N,$80
+		.BYTE	_F,_E,_B,$80
+		.BYTE	_M,_A,_R,$80
+		.BYTE	_A,_P,_R,$80
+		.BYTE	_M,_A,_Y,$80
+		.BYTE	_J,_U,_N,$80
+		.BYTE	_J,_U,_L,$80
+		.BYTE	_A,_U,_G,$80
+		.BYTE	_S,_E,_P,$80
+		.BYTE	_O,_C,_T,$80
+		.BYTE	_N,_O,_V,$80
+		.BYTE	_D,_E,_C,$80
+
 _bg_music_list:
 		.BYTE	$08,$20,$41,$42,$44,$48
 

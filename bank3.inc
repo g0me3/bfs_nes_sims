@@ -63,35 +63,7 @@ loc_5804F:
 _cur_money_str_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-		CLC
-		ADC		#$07
-		CMP		#$20
-		BCC		loc_580D4
-		SBC		#$1F
-		STA		_tmp3
-		LDA		#$08
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_580DC
-loc_580D4:
-		LDA		#$08
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_580DC:
-;		LDA		_tmp1						; REDUNDANT
-;		LDX		#$20						; exactly the same as BUFPOS calcs
-;		MULXA								; but with different method of adding
-;		CLC
-;		ADC		_tmp0
-;		BCC		loc_580F2
-;		INX
-l;oc_580F2:
-;		STA		_ptr0
-;		TXA
-;		ORA		#$20
-;		STA		_ptr0+1
+		WRAPA	_tmp2,_tmp3,#$08,#$20
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; FIX: regular macros takes less bytes
 		RTS
 
@@ -198,8 +170,9 @@ _cur_month_str_queue:
 		LDA		_city._cur_month
 		STA		_ptr0
 		ASL
-		CLC
-		ADC		_ptr0
+		ASL
+;		CLC							; FIX: now entry size always 4
+;		ADC		_ptr0
 		TAY
 		LDA		#$03
 		STA		_ptr0
@@ -212,41 +185,26 @@ loc_58E2E:
 		BNE		loc_58E2E
 		RTS
 
-_months_lib:
-		.BYTE	_J,_A,_N
-		.BYTE	_F,_E,_B
-		.BYTE	_M,_A,_R
-		.BYTE	_A,_P,_R
-		.BYTE	_M,_A,_Y
-		.BYTE	_J,_U,_N
-		.BYTE	_J,_U,_L
-		.BYTE	_A,_U,_G
-		.BYTE	_S,_E,_P
-		.BYTE	_O,_C,_T
-		.BYTE	_N,_O,_V
-		.BYTE	_D,_E,_C
+; REDUNDANT, merger in system bank
+;_months_lib:
+;		.BYTE	_J,_A,_N
+;		.BYTE	_F,_E,_B
+;		.BYTE	_M,_A,_R
+;		.BYTE	_A,_P,_R
+;		.BYTE	_M,_A,_Y
+;		.BYTE	_J,_U,_N
+;		.BYTE	_J,_U,_L
+;		.BYTE	_A,_U,_G
+;		.BYTE	_S,_E,_P
+;		.BYTE	_O,_C,_T
+;		.BYTE	_N,_O,_V
+;		.BYTE	_D,_E,_C
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-		CLC
-		ADC		#$07
-		CMP		#$20
-		BCC		loc_58E97
-		SBC		#$1F
-		STA		_tmp3
-		LDA		#$08
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_58E9F
-loc_58E97:
-		LDA		#$08
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_58E9F:
+		WRAPA	_tmp2,_tmp3,#$08,#$20
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$0000
 		RTS
 
@@ -430,23 +388,7 @@ loc_58076:
 _cur_popul_str_pos_set:
 		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
 		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
-		CLC
-		ADC		#$05
-		CMP		#$20
-		BCC		loc_59B2A
-		SBC		#$1F
-		STA		_tmp3
-		LDA		#$06
-		SEC
-		SBC		_tmp3
-		STA		_tmp2
-		BNE		loc_59B32
-loc_59B2A:
-		LDA		#$06
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-loc_59B32:
+		WRAPA	_tmp2,_tmp3,#$06,#$20
 		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		RTS
 
@@ -704,25 +646,9 @@ loc_5829C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_line_pos_calc:
-		CIADDB	_tmp2,_cur_screen_tile._Y,#$04,_ptr0+1,#$1E
-		CIADDB	_tmp3,_cur_screen_tile._X,#$08,NONE,   #$20
-		LDA		#$20
-		SEC
-		SBC		_tmp3
-		CMP		#$17
-		BCS		loc_58308
-		STA		_tmp4
-		LDA		#$17
-		SEC
-		SBC		_tmp4
-		STA		_tmp5
-		BNE		loc_58310
-loc_58308:
-		LDA		#$17
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-loc_58310:
+		CIADDB	_tmp2,_cur_screen_tile._Y,#$04,_tmp1,#$1E
+		CIADDB	_tmp3,_cur_screen_tile._X,#$08, NONE,#$20
+		WRAPB	_tmp4,_tmp5,_tmp3,#$17,#$20
 		BUFPOS	_tmp2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
 
@@ -892,23 +818,7 @@ loc_5847A:
 _game_msg_presents_pos_calc:
 		CIADDB	_tmp2,_cur_screen_tile._Y,#$0C,_tmp1,#$1E
 		CIADDB	_tmp3,_cur_screen_tile._X,#$11, NONE,#$20
-		LDA		#$20
-		SEC
-		SBC		_tmp3
-		CMP		#$03
-		BCS		loc_584BA
-		STA		_tmp4
-		LDA		#$03
-		SEC
-		SBC		_tmp4
-		STA		_tmp5
-		BNE		loc_584C2
-loc_584BA:
-		LDA		#$03
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-loc_584C2:
+		WRAPB	_tmp4,_tmp5,_tmp3,#$03,#$20
 		BUFPOS	_tmp2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
 
@@ -1652,23 +1562,7 @@ loc_58AA8:
 _game_msg_wnd_line_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp0,NONE,#$1E
 		CIADDB	_tmp2,_cur_screen_tile._X, #$07,NONE,#$20
-		LDA		#$20
-		SEC
-		SBC		_tmp2
-		CMP		#$19
-		BCS		loc_58AF0
-		STA		_tmp3
-		LDA		#$19
-		SEC
-		SBC		_tmp3
-		STA		_tmp4
-		BNE		loc_58AF8
-loc_58AF0:
-		LDA		#$19
-		STA		_tmp3
-		LDA		#$00
-		STA		_tmp4
-loc_58AF8:
+		WRAPB	_tmp3,_tmp4,_tmp2,#$19,#$20
 		BUFPOS	_tmp1,_tmp2,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp2)+#$0000
 		RTS
 
@@ -2777,6 +2671,33 @@ _isle_map_tile_write:
 		STA		(_ptr0),Y
 		RTS
 
+; FIX: optimized function used more than once here
+;
+; =============== S U B	R O U T	I N E =======================================
+_isle_map_tile_read577_0:
+		BUFPOS	_ptr0,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
+		LDY		#$00
+		LDA		(_ptr0),Y
+		RTS
+
+; FIX: optimized function used more than once here
+;
+; =============== S U B	R O U T	I N E =======================================
+_isle_map_tile_read572_2:
+		BUFPOS	_tmp2,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
+		LDY		#$00
+		LDA		(_tmp2),Y
+		RTS
+
+; FIX: optimized function used more than once here
+;
+; =============== S U B	R O U T	I N E =======================================
+_isle_map_tile_read575:
+		BUFPOS	_ptr0,byte_575,byte_576,#$4C,#>[_wram_map_buf]	; DST=(byte_576*#$4C+byte_575)+#>[_wram_map_buf]00
+		LDY		#$00
+		LDA		(_ptr0),Y
+		RTS
+
 ; =============== S U B	R O U T	I N E =======================================
 _wram_map_clear:
 		MOVWO	_ptr0,_wram_map_buf
@@ -2926,9 +2847,7 @@ loc_5957F:
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_new_map_sub2
 		BCS		locret_595BA
-		BUFPOS	_ptr0,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
-		LDY		#$00
-		LDA		(_ptr0),Y
+		JSR		_isle_map_tile_read577_0				; FIX: optimize size
 		BNE		loc_595B5
 		LDA		#$05
 		STA		(_ptr0),Y
@@ -3121,9 +3040,7 @@ _generate_new_map_sub1:
 		PHA
 		JSR		_generate_new_map_sub2
 		BCS		loc_597C7
-		BUFPOS	_ptr0,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
-		LDY		#$00
-		LDA		(_ptr0),Y
+		JSR		_isle_map_tile_read577_0				; FIX: optimize size
 		BEQ		loc_597C9
 		CMP		#$04
 		BEQ		loc_597C7
@@ -3188,9 +3105,7 @@ _generate_new_map_sub5:
 		STA		byte_575
 		STA		byte_576
 loc_5980A:
-		BUFPOS	_ptr0,byte_575,byte_576,#$4C,#>[_wram_map_buf]	; DST=(byte_576*#$4C+byte_575)+#>[_wram_map_buf]00
-		LDY		#$00
-		LDA		(_ptr0),Y
+		JSR		_isle_map_tile_read575				; FIX, optimized by size
 		BMI		loc_5988D
 		BEQ		loc_5988D
 		LDA		#$00
@@ -3210,9 +3125,7 @@ loc_59835:
 		STA		byte_578
 		JSR		_generate_new_map_sub2
 		BCS		loc_5987B
-		BUFPOS	_tmp2,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
-		LDY		#$00
-		LDA		(_tmp2),Y
+		JSR		_isle_map_tile_read572_2			; FIX, optimized by size
 		BMI		loc_5987B
 		BEQ		loc_5987B
 		SEC
@@ -3256,9 +3169,7 @@ _generate_new_mapD:
 		STA		byte_575
 		STA		byte_576
 loc_598C5:
-		BUFPOS	_ptr0,byte_575,byte_576,#$4C,#>[_wram_map_buf]	; DST=(byte_576*#$4C+byte_575)+#>[_wram_map_buf]00
-		LDY		#$00
-		LDA		(_ptr0),Y
+		JSR		_isle_map_tile_read575				; FIX, optimized by size
 		CMP		#$03
 		BEQ		loc_598EC
 		JMP		loc_59991
@@ -3311,9 +3222,7 @@ loc_598FC:
 		SEC
 		BCS		loc_5997D
 loc_59957:
-		BUFPOS	_tmp2,byte_577,byte_578,#$4C,#>[_wram_map_buf]	; DST=(byte_578*#$4C+byte_577)+#>[_wram_map_buf]00
-		LDY		#$00
-		LDA		(_tmp2),Y
+		JSR		_isle_map_tile_read572_2			; FIX, optimized by size
 		BEQ		loc_5997C
 		SEC
 		BCS		loc_5997D
