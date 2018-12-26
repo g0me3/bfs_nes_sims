@@ -1,6 +1,6 @@
 @echo off
 
-start ..\..\..\tools\textpad\TextPad.exe doc\notes.txt ram.inc macroses.inc bankF.inc bankE.inc bankD.inc bankC.inc bankB.inc bankA.inc bankA_.inc bank9.inc bank8.inc bank7.inc bank6.inc bank5.inc bank4.inc bank3.inc bank2.inc bank1.inc bank0.inc
+start ..\..\..\tools\textpad\TextPad.exe doc\notes.txt ram.inc macroses.inc bankF.inc bankE.inc bankD.inc bankC.inc bankB.inc bankA.inc bank9.inc bank7.inc bank6.inc bank5.inc bank4.inc bank3.inc bank2.inc bank1.inc bank0.inc
 
 pause 0
 

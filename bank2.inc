@@ -475,8 +475,7 @@ loc_3E6BD:
 		STA		_cur_selected_buildings_size	; all buildings here 3x3
 		JMP		_spr_clear
 
-
-		SECTION_END	C0A
+		SECTION_ENDS	C0A, "PRGC EXT WND DYNAMIC DATA/CODE"
 
 		SECTION_START	C0B
 
@@ -521,7 +520,7 @@ _tlm_extnt_building_names_lib:
 		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$06,$06,$06
 ;		.BYTE	$02,$06,$06,$06,$06,$06,$06,$02,$02,$02,$02,$02	; REDUNDANT
 
-		SECTION_END	C0B
+		SECTION_ENDS	C0B, "PRGC EXT BUILDING NAMES DATA"
 
 		SECTION_START	C0C
 
@@ -1013,7 +1012,7 @@ _wnd_extnt0A:
 		.BYTE	$81,$0B,$0B,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
 
-		SECTION_END	C0C
+		SECTION_ENDS	C0C, "PRGC EXT INGAME WNDS DATA"
 
 ; ---------------------------------------------------------------------------
 ; ----E-X-T-E-R-N-A-L--C-O-M-M-O-N--C-O-N-T-R-O-L-S--S-P-R-I-T-E--D-A-T-A----
@@ -1232,6 +1231,6 @@ _sprA8:
 		.BYTE	$E4,$EF,$00,$E8
 		.BYTE	$80
 
-		SECTION_END F02
+		SECTION_ENDS F02, "PRG2 SPRITES DATA"
 
 		BANK_END F2,$C000

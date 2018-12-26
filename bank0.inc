@@ -12,6 +12,10 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_play:
+		LDA		_ptr0							; FIX, since we using common _switch
+		PHA										; here, need to save common ptr0 var
+		LDA		_ptr0+1							; which can be used by random code
+		PHA
 		LDA		#$C0
 		STA		_PAD1_REG
 		LDA		_apu_idx
@@ -25,8 +29,12 @@ loc_A014:
 		JSR		_apu_play_se1
 		LDA		#$00
 		STA		_apu_mus_idx_req
-		STA		_apu_se_flags
-		STA		_apu_se_flags+1
+		STA		_apu_se_idx_req
+		STA		_apu_se_idx_req+1
+		PLA
+		STA		_ptr0+1
+		PLA
+		STA		_ptr0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -65,13 +73,13 @@ _apu_subA050:
 _apu_play_mus:
 		LDA		_apu_mus_idx_req
 		BMI		_apu_stop
-		BNE		loc_A069
+		BNE		.mus_active
 		LDA		byte_F3
 		BNE		loc_A066
 		RTS
 loc_A066:
 		JMP		loc_A131
-loc_A069:
+.mus_active:
 		STA		_apu_mus_pulse2_shadow+2
 		CMP		#$01
 		BEQ		loc_A089
@@ -111,11 +119,11 @@ loc_A0A4:
 		INY
 		LSR
 		BCC		loc_A0A4
-		LDA		_apu_mus_res_ofs_list,Y
+		LDA		_apu_mus_seq_ofs_list,Y
 		STA		byte_F3
 		TAY
 loc_A0AE:
-		LDA		_apu_mus_res_ofs_list,Y
+		LDA		_apu_mus_seq_ofs_list,Y
 		BEQ		_apu_stop
 		CMP		#$FF
 		BNE		loc_A0BE
@@ -293,9 +301,9 @@ loc_A211:
 		INC		_apu_mus_v07
 		LDA		(_apu_ptr),Y
 loc_A226:
-		LDX		_apu_se_var0
+		LDX		_apu_se_loop_counters+1
 		BNE		loc_A23B
-		LDX		_apu_se_loop_flags
+		LDX		_apu_se_loop_idx
 		BNE		loc_A23B
 		LDX		#$97
 		STX		_APU_PULSE2_ENV
@@ -315,9 +323,9 @@ loc_A24C:
 		BEQ		loc_A257
 		DEC		_apu_mus_pulse1_shadow+1
 loc_A257:
-		LDA		_apu_se_var0
+		LDA		_apu_se_loop_counters+1
 		BNE		loc_A2B9
-		LDA		_apu_se_loop_flags
+		LDA		_apu_se_loop_idx
 		BNE		loc_A2B9
 		LDA		_apu_mus_pulse2_shadow+1
 		AND		#$07
@@ -392,9 +400,9 @@ loc_A2D0:
 		INC		_apu_mus_v08
 		LDA		(_apu_ptr),Y
 loc_A2F4:
-		LDX		_apu_se_loop_flags
+		LDX		_apu_se_loop_idx
 		BNE		loc_A318
-		LDX		_apu_se_loop_flags+1
+		LDX		_apu_se_loop_idx+1
 		BNE		loc_A318
 		STA		byte_F6
 		LDX		#$2F
@@ -428,9 +436,9 @@ loc_A31E:
 		TAY
 		LDA		byte_195F78,Y
 		STA		_apu_mus_pulse2_shadow+3
-		LDX		_apu_se_loop_flags+1
+		LDX		_apu_se_loop_idx+1
 		BNE		loc_A381
-		LDX		_apu_se_loop_flags
+		LDX		_apu_se_loop_idx
 		BNE		loc_A381
 		LDA		_APU_STATUS
 		AND		#$10
@@ -596,6 +604,8 @@ locret_A41E:
 _apu_pulse0_note_load:
 		LDX		#$00
 
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
 _apu_note_load:
 		TAY
@@ -604,6 +614,8 @@ _apu_note_load:
 		BEQ		_apu_def_note_load
 		STA		_APU_PULSE1_TIME,X
 		LDA		_apu_pulse_len_tbl,Y
+
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_chnl_len_load:
@@ -630,106 +642,223 @@ _apu_def_note_load:
 		BEQ		_apu_chnl_len_load
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_play_se0:
-		LDY		_apu_se_flags
-		LDA		_apu_se_loop_flags
-		LSR		_apu_se_flags
-		BCS		_apu_se1_start
-		LSR
-		BCS		_apu_se1_loop
-		LSR		_apu_se_flags
-		BCS		_j_apu_se2_start
-		LSR
-		BCS		_j_apu_se2_loop
-		LSR		_apu_se_flags
-		BCS		_j_apu_se4_start
-		LSR
-		BCS		_j_apu_se4_loop
-		LSR		_apu_se_flags
-		BCS		_j_apu_se8_start
-		LSR
-		BCS		_j_apu_se8_loop
-		LSR		_apu_se_flags
-		BCS		_j_apu_se10_start
-		LSR
-		BCS		_j_apu_se10_loop
-		LSR		_apu_se_flags
-		BCS		_j_apu_se20_start
-		LSR
-		BCS		_j_apu_se20_loop
-		LSR		_apu_se_flags
-		BCS		_j_apu_se40_start
-		LSR
-		BCS		_j_apu_se40_loop
-		LSR		_apu_se_flags				; re-enable unused sound effect
-		BCS		_j_apu_se80_start
-		LSR
-		BCS		_j_apu_se80_loop
+_apu_tri_chnl_with_dpcm:
+		LDA		_APU_STATUS
+		AND		#$19
+		STA		_APU_STATUS
+		ORA		#$0F
+		STA		_APU_STATUS
+		BNE		_apu_tri_load					; OPTIMIZED
+;		LDA		#$01							; REDUNDANT
+;		STA		_APU_TRI_COUNT
+;		LDA		#$FF
+;		STA		_APU_TRI_TIME
+;		LDA		#$0F
+;		STA		_APU_TRI_LEN
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_tri_chnl_no_dpcm:
+		LDA		_APU_STATUS
+		AND		#$0F
+		ORA		#$0F
+		STA		_APU_STATUS
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_tri_load:
+		LDA		#$01
+		STA		_APU_TRI_COUNT
+		LDA		#$FF
+		STA		_APU_TRI_TIME
+		LDA		#$0F
+		STA		_APU_TRI_LEN
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se2_start:
-		JMP		_apu_se2_start
+_apu_status_reset:
+		LDA		_APU_STATUS
+		AND		#$1D
+		STA		_APU_STATUS
+		ORA		#$0F
+		STA		_APU_STATUS
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se2_loop:
-		JMP		_apu_se2_loop
+_apu_play_se0:
+		LDY		_apu_se_idx_req
+		BEQ		.apu_loop_se0					; if request is zero, then either do loop or nothing
+		LDA		#$00							; and manually clear request flag now
+		STA		_apu_se_idx_req
+		STY		_apu_se_loop_idx				; store at once here, instead of in every single routine
+		DEY
+		TYA
+		JSR		_switch
+		.WORD	_apu_se1_start
+		.WORD	_apu_se2_start
+		.WORD	_apu_se4_start
+		.WORD	_apu_se8_start
+		.WORD	_apu_se10_start
+		.WORD	_apu_se20_start
+		.WORD	_apu_se40_start
+		.WORD	_apu_se80_start
+.apu_loop_se0:
+		LDY		_apu_se_loop_idx				; if zero, idle
+		BEQ		_apu_se0_done
+		DEY
+		TYA
+		JSR		_switch
+		.WORD	_apu_se1_loop
+		.WORD	_apu_se2_loop
+		.WORD	_apu_se4_loop
+		.WORD	_apu_se8_loop
+		.WORD	_apu_se10_loop
+		.WORD	_apu_se20_loop
+		.WORD	_apu_se40_loop
+		.WORD	_apu_se80_loop
+_apu_se0_done:
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se4_start:
-		JMP		_apu_se4_start
+_apu_play_se1:
+		LDY		_apu_se_idx_req+1
+		BEQ		.apu_loop_se1
+		LDA		#$00
+		STA		_apu_se_idx_req+1
+		STY		_apu_se_loop_idx+1
+		DEY
+		TYA
+		JSR		_switch
+		.WORD	_apu_se100_start
+		.WORD	_apu_se200_start
+		.WORD	_apu_se400_start
+		.WORD	_apu_se800_start
+		.WORD	_apu_se1000_start
+		.WORD	_apu_se2000_start
+		.WORD	_apu_se3000_start
+		.WORD	_apu_se4000_start
+		.WORD	_apu_se8000_start
+.apu_loop_se1:
+		LDY		_apu_se_loop_idx+1			; if zero, idle
+		BEQ		_apu_se1_done
+		DEY
+		TYA
+		JSR		_switch
+		.WORD	_apu_se100_loop
+		.WORD	_apu_se200_loop
+		.WORD	_apu_se400_loop
+		.WORD	_apu_se800_loop
+		.WORD	_apu_se1000_loop
+		.WORD	_apu_se2000_loop
+		.WORD	_apu_se3000_loop
+		.WORD	_apu_se4000_loop
+		.WORD	_apu_se8000_loop
+_apu_se1_done:
+		RTS
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se4_loop:
-		JMP		_apu_se4_loop
-
+;_apu_play_se0:
+;		LDY		_apu_se_idx_req					; load requested flags byte
+;		LDA		_apu_se_loop_idx				; load currently playing flags
+;		LSR		_apu_se_idx_req					; extract bit from requested flags
+;		BCS		_apu_se1_start					; non-zero on the first run, zero
+;		LSR										; on all following steps, so single exec here
+;		BCS		_apu_se1_loop					; while here still 0, so no loop exec
+;		LSR		_apu_se_idx_req					; and so on for all bits
+;		BCS		_j_apu_se2_start				; this system is good for old simple games
+;		LSR										; where it taken, but when your se
+;		BCS		_j_apu_se2_loop					; library grow, this may be a problem
+;		LSR		_apu_se_idx_req
+;		BCS		_j_apu_se4_start
+;		LSR
+;		BCS		_j_apu_se4_loop
+;		LSR		_apu_se_idx_req
+;		BCS		_j_apu_se8_start
+;		LSR
+;		BCS		_j_apu_se8_loop
+;		LSR		_apu_se_idx_req
+;		BCS		_j_apu_se10_start
+;		LSR
+;		BCS		_j_apu_se10_loop
+;		LSR		_apu_se_idx_req
+;		BCS		_j_apu_se20_start
+;		LSR
+;		BCS		_j_apu_se20_loop
+;		LSR		_apu_se_idx_req
+;		BCS		_j_apu_se40_start
+;		LSR
+;		BCS		_j_apu_se40_loop
+;		LSR		_apu_se_idx_req				; re-enable unused sound effect
+;		BCS		_j_apu_se80_start
+;		LSR
+;		BCS		_j_apu_se80_loop
+;		RTS
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se8_start:
-		JMP		_apu_se8_start
-
+;_j_apu_se2_start:
+;		JMP		_apu_se2_start
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se8_loop:
-		JMP		_apu_se8_loop
-
+;_j_apu_se2_loop:
+;		JMP		_apu_se2_loop
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se10_start:
-		JMP		_apu_se10_start
-
+;_j_apu_se4_start:
+;		JMP		_apu_se4_start
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se10_loop:
-		JMP		_apu_se10_loop
-
+;_j_apu_se4_loop:
+;		JMP		_apu_se4_loop
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se20_start:
-		JMP		_apu_se20_start
-
+;_j_apu_se8_start:
+;		JMP		_apu_se8_start
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se20_loop:
-		JMP		_apu_se20_loop
-
+;_j_apu_se8_loop:
+;		JMP		_apu_se8_loop
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se40_start:
-		JMP		_apu_se40_start
-
+;_j_apu_se10_start:
+;		JMP		_apu_se10_start
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se40_loop:
-		JMP		_apu_se40_loop
-
+;_j_apu_se10_loop:
+;		JMP		_apu_se10_loop
+;
+; =============== S U B	R O U T	I N E =======================================
+;_j_apu_se20_start:
+;		JMP		_apu_se20_start
+;
+; =============== S U B	R O U T	I N E =======================================
+;_j_apu_se20_loop:
+;		JMP		_apu_se20_loop
+;
+; =============== S U B	R O U T	I N E =======================================
+;_j_apu_se40_start:
+;		JMP		_apu_se40_start
+;
+; =============== S U B	R O U T	I N E =======================================
+;_j_apu_se40_loop:
+;		JMP		_apu_se40_loop
+;
 ; FIX: re-enabled, TODO: find where may be used
 ;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se80_start:
-		JMP		_apu_se80_start
-
+;_j_apu_se80_start:
+;		JMP		_apu_se80_start
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se80_loop:
-		JMP		_apu_se80_loop
+;_j_apu_se80_loop:
+;		JMP		_apu_se80_loop
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se1_start:
-		STY		_apu_se_loop_flags
+;		STY		_apu_se_loop_idx
 		LDA		#$02
-		STA		byte_F8
+		STA		_apu_se_loop_counters
 		JSR		_apu_tri_chnl_with_dpcm
 		LDA		#$01
 		STA		_APU_TRI_COUNT
@@ -744,19 +873,19 @@ _apu_se1_loop:
 		JSR		_apu_tri_note_load
 		LDA		#$6E
 		JSR		_apu_pulse1_note_load
-		DEC		byte_F8
+		DEC		_apu_se_loop_counters
 		BNE		locret_A4DC
 		JSR		_apu_status_reset
 		LDA		#$00
-		STA		_apu_se_loop_flags
+		STA		_apu_se_loop_idx
 locret_A4DC:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se2_start:
-		STY		_apu_se_loop_flags
+;		STY		_apu_se_loop_idx
 		LDA		#$18
-		STA		byte_F8
+		STA		_apu_se_loop_counters
 		JSR		_apu_tri_chnl_with_dpcm
 		LDA		#$01
 		STA		_APU_TRI_COUNT
@@ -767,7 +896,7 @@ _apu_se2_start:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se2_loop:
-		LDY		byte_F8
+		LDY		_apu_se_loop_counters
 		LDA		byte_A51C,Y
 		STA		_APU_TRI_TIME
 		BEQ		loc_A505
@@ -780,10 +909,10 @@ loc_A507:
 		STA		_APU_PULSE2_TIME
 		STX		_APU_PULSE2_LEN
 		STX		_APU_TRI_LEN
-		DEC		byte_F8
+		DEC		_apu_se_loop_counters
 		BNE		locret_A51B
 		LDA		#$00
-		STA		_apu_se_loop_flags
+		STA		_apu_se_loop_idx
 		JMP		_apu_status_reset
 locret_A51B:
 		RTS
@@ -793,9 +922,9 @@ byte_A51C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se4_start:
-		STY		_apu_se_loop_flags
+;		STY		_apu_se_loop_idx
 		LDA		#$03
-		STA		byte_F8
+		STA		_apu_se_loop_counters
 		JSR		_apu_tri_chnl_with_dpcm
 		LDA		#$01
 		STA		_APU_TRI_COUNT
@@ -804,25 +933,25 @@ _apu_se4_start:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se4_loop:
-		LDY		byte_F8
+		LDY		_apu_se_loop_counters
 		LDA		byte_A5A3-1,Y
 		JSR		_apu_tri_note_load
-		LDY		byte_F8
+		LDY		_apu_se_loop_counters
 		LDA		byte_A5A3,Y
 		JSR		_apu_pulse1_note_load
-		DEC		byte_F8
+		DEC		_apu_se_loop_counters
 		BNE		locret_A5A2
 		LDA		#$00
-		STA		_apu_se_loop_flags
+		STA		_apu_se_loop_idx
 		JMP		_apu_status_reset
 locret_A5A2:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se8_start:
-		STY		_apu_se_loop_flags
+;		STY		_apu_se_loop_idx
 		LDA		#$0A
-		STA		byte_F8
+		STA		_apu_se_loop_counters
 		JSR		_apu_tri_chnl_with_dpcm
 		LDA		#$01
 		STA		_APU_TRI_COUNT
@@ -833,16 +962,16 @@ _apu_se8_start:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se8_loop:
-		LDY		byte_F8
+		LDY		_apu_se_loop_counters
 		LDA		byte_195834-1,Y
 		JSR		_apu_tri_note_load
-		LDY		byte_F8
+		LDY		_apu_se_loop_counters
 		LDA		byte_195834,Y
 		JSR		_apu_pulse1_note_load
-		DEC		byte_F8
+		DEC		_apu_se_loop_counters
 		BNE		locret_195833
 		LDA		#$00
-		STA		_apu_se_loop_flags
+		STA		_apu_se_loop_idx
 		JMP		_apu_status_reset
 locret_195833:
 		RTS
@@ -852,9 +981,9 @@ byte_195834:
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se10_start:
 		JSR		_apu_tri_chnl_with_dpcm
-		STY		_apu_se_loop_flags
+;		STY		_apu_se_loop_idx
 		LDA		#$7E
-		STA		byte_F8
+		STA		_apu_se_loop_counters
 		LDA		#$82
 		STA		_APU_PULSE2_ENV
 		LDA		#$7F
@@ -864,7 +993,7 @@ _apu_se10_start:
 _apu_se10_loop:
 		LDA		#$01
 		STA		_APU_TRI_COUNT
-		LDA		byte_F8
+		LDA		_apu_se_loop_counters
 		ASL
 		ASL
 		ASL
@@ -878,13 +1007,103 @@ loc_A556:
 		STA		_APU_TRI_LEN
 		LDA		#$09
 		STA		_APU_PULSE2_LEN
-		DEC		byte_F8
-		DEC		byte_F8
+		DEC		_apu_se_loop_counters
+		DEC		_apu_se_loop_counters
 		BNE		locret_A573
 		LDA		#$00
-		STA		_apu_se_loop_flags
+		STA		_apu_se_loop_idx
 		JMP		_apu_status_reset
 locret_A573:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se20_start:
+		JSR		_apu_tri_chnl_with_dpcm
+;		STY		_apu_se_loop_idx
+		LDA		#$14
+		STA		_apu_se_loop_counters
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se20_loop:
+		LDA		#$07
+		STA		_APU_TRI_COUNT
+		LDY		_apu_se_loop_counters
+		LDA		byte_195899-1,Y
+		JSR		_apu_tri_note_load
+		DEC		_apu_se_loop_counters
+		BNE		locret_195898
+		LDA		#$00
+		STA		_apu_se_loop_idx
+		JMP		_apu_status_reset
+locret_195898:
+		RTS
+byte_195899:
+		.BYTE	$02,$68,$68,$68,$02,$18,$18,$18,$02,$0E,$0E,$0E,$02,$08,$08,$08
+		.BYTE	$02,$04,$04,$04
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se40_start:
+		JSR		_apu_tri_chnl_with_dpcm
+;		STY		_apu_se_loop_idx
+		LDA		#$14
+		STA		_apu_se_loop_counters
+		LDA		#$07
+		STA		_APU_TRI_COUNT
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se40_loop:
+		LDY		_apu_se_loop_counters
+		LDA		byte_1958CF-1,Y
+		JSR		_apu_tri_note_load
+		DEC		_apu_se_loop_counters
+		BNE		locret_1958CE
+		LDA		#$00
+		STA		_apu_se_loop_idx
+		JMP		_apu_status_reset
+locret_1958CE:
+		RTS
+byte_1958CF:
+		.BYTE	$02,$16,$16,$16,$02,$1A,$1A,$1A,$02,$6C,$6C,$6C,$02,$74,$74,$74
+		.BYTE	$02,$76,$76,$76
+
+; =============== S U B	R O U T	I N E =======================================
+; as against two other unused SE here (1000, 8000), this one were completely
+; unreferenced here. there is unknown what for it intended to be used, but
+; even loop counter here is different from those used in other SE routines
+;
+_apu_se80_start:
+		JSR		_apu_status_reset
+;		STY		_apu_se_loop_idx
+		LDA		_apu_se80_loop_counter
+		BNE		loc_19584D
+		LDA		#$14
+		STA		_apu_se80_loop_counter
+loc_19584D:
+		LDA		#$C6
+		STA		_APU_PULSE2_ENV
+		LDA		#$7F
+		STA		_APU_PULSE2_SWEEP
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se80_loop:
+		LDA		_apu_se80_loop_counter
+		ASL
+		ASL
+		ASL
+		ASL
+		BCS		loc_195861
+		EOR		#$F0
+loc_195861:
+		STA		_APU_PULSE2_TIME
+		LDA		#$08
+		STA		_APU_PULSE2_LEN
+		DEC		_apu_se80_loop_counter
+		DEC		_apu_se80_loop_counter
+		BNE		locret_195876
+		LDA		#$00
+		STA		_apu_se_loop_idx
+		JMP		_apu_status_reset
+locret_195876:
 		RTS
 
 byte_A5A3:
@@ -951,7 +1170,7 @@ byte_195DA8:
 		.BYTE	$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$91,$90,$90
 
 	MAC	_TMUS
-		.BYTE	[{1}-_apu_mus_res_ofs_list]
+		.BYTE	[{1}-_apu_mus_seq_ofs_list]
 	ENDM
 
 	MAC	_SEQ
@@ -966,7 +1185,7 @@ byte_195DA8:
 		.BYTE	$FF
 	ENDM
 
-_apu_mus_res_ofs_list:
+_apu_mus_seq_ofs_list:
 		_TMUS	_mus0	;	$0F
 		_TMUS	_mus1	;	$12
 		_TMUS	_mus2	;	$16

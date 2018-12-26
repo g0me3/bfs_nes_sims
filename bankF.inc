@@ -455,13 +455,13 @@ loc_18A356:
 .nmi_finish:
 		DEC		_nmi_busy_flag
 .nmi_busy:
-		LDA		#$FA
-		STA		_MMC5_PRG_PAGES+1
+;		LDA		#$FA							; REDUNDANT, the rest of the SE code moved
+;		STA		_MMC5_PRG_PAGES+1				; to C000 to DPCM samples
 		LDA		#$F0
 		STA		_MMC5_PRG_PAGES+2
 		JSR		_apu_play
-		LDA		_prg_prg8000_shadow
-		STA		_MMC5_PRG_PAGES+1
+;		LDA		_prg_prg8000_shadow				; REDUNDANT, may be used in future to link
+;		STA		_MMC5_PRG_PAGES+1				; 16K sound code/data instead of current 8K, if any
 		LDA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		LDA		_cur_thread_idx					; reload MULs only when switch to THREAD1
@@ -2127,7 +2127,7 @@ _tlm_lib:
 		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def		; 10 PRG7
 		.WORD	_tlm_nt_new_game_push,_tlm_extnt_new_game_push		; 14 PRG9
 		.WORD	_tlm_nt_next_map_push,_tlm_extnt_next_map_push		; 18 PRG9
-		.WORD	_tlm_nt_netx_map_release,_tlm_extnt_netx_map_release; 1C PRG9
+		.WORD	_tlm_nt_next_map_release,_tlm_extnt_netx_map_release; 1C PRG9
 		.WORD	_tlm_nt_bank_icon,_tlm_extnt_bank_icon				; 20 PRG9
 		.WORD	_tlm_nt_bank_loan,_tlm_extnt_bank_loan				; 24 PRG9
 		.WORD	_tlm_nt_bank_no_loan,_tlm_extnt_bank_no_loan		; 28 PRG9

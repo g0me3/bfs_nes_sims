@@ -407,28 +407,24 @@ word_EE:
 		.BYTE	0,0
 _apu_mus_idx_req:
 		.BYTE	0
-_apu_se_flags:
+_apu_se_idx_req:
 		.BYTE	0,0
 byte_F3:
 		.BYTE	0
-_apu_se_loop_flags:
+_apu_se_loop_idx:
 		.BYTE	0,0
 byte_F6:
 		.BYTE	0
 byte_F7:
 		.BYTE	0
-byte_F8:
-		.BYTE	0
-_apu_se_var0:
-		.BYTE	0
+_apu_se_loop_counters:
+		.BYTE	0,0
 _apu_ptr:
 		.BYTE	0,0
 _apu_idx:
 		.BYTE	0
-byte_FD:
+_apu_se80_loop_counter:
 		.BYTE	0
-_unref_12:
-		.BYTE	0,0
 
 		ECHO "-------------"
 		ECHO "zero ram free:",[$100-.]
@@ -1108,8 +1104,6 @@ _apu_mus_pulse1_shadow:
 _apu_mus_pulse2_shadow:
 		.BYTE	0,0,0,0
 _apu_mus_tri_shadow:
-		.BYTE	0,0,0,0
-_unused_9:
 		.BYTE	0,0,0,0
 
 ;--------------------P-P-U----------------------

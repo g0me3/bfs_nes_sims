@@ -3,11 +3,11 @@
 
 		BANK_START $F3
 
+		SECTION_START C01
+
 ; ---------------------------------------------------------------------------
 ; --G-A-M-E--M-E-S-S-A-G-E--W-I-N-D-O-W-S--E-X-T-E-R-N-A-L--H-A-N-D-L-E-R-S--
 ; ---------------------------------------------------------------------------
-
-		SECTION_START C01
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_handler:
@@ -1659,6 +1659,14 @@ _debug_flag_toggle_test:
 locret_59BCF:
 		RTS
 
+		SECTION_ENDS C01, "PRGC EXT GAME MSG HANDLERS"
+
+		SECTION_START 301
+
+; ---------------------------------------------------------------------------
+; ---------------------S-R-A-M--I-N-I-T--R-O-U-T-I-N-E-S---------------------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
 _sram_reset:
 		JSR		_sram_on
@@ -1761,7 +1769,89 @@ loc_59C76:
 		STA		_tmp3
 		RTS
 
-		SECTION_END C01
+; =============== S U B	R O U T	I N E =======================================
+_sram_data_load:
+		DEC		_mmc5_operation_in_progress_flag
+		JSR		_sram_on
+		MOVWO	_ptr0,_sram_map_buf
+		MOVWO	_tmp2,_wram_map_buf
+		LDY		#$00
+loc_5915A:
+		LDA		(_ptr0),Y
+		STA		(_tmp2),Y
+		INCW	_ptr0
+		INC		_tmp2
+		BNE		loc_5916A
+		INC		_tmp3
+loc_5916A:
+		LDA		_tmp2
+		CMP		#<[_power_grid_map_buf]
+		BNE		loc_5915A
+		LDA		_tmp3
+		CMP		#>[_power_grid_map_buf]
+		BNE		loc_5915A
+		LDX		#$00
+loc_59178:
+		LDA		_sram_graphs,X
+		STA		_wram_graphs,X
+		INX
+		CPX		#$78
+		BNE		loc_59178
+		LDX		#$00
+loc_59185:
+		LDA		_sram_vars,X
+		STA		_city,X
+		INX
+		CPX		#$80
+		BNE		loc_59185
+		JSR		_sram_off
+		INC		_mmc5_operation_in_progress_flag
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_sram_data_save:
+		DEC		_mmc5_operation_in_progress_flag
+		JSR		_sram_on
+		MOVWO	_ptr0,_wram_map_buf
+		MOVWO	_tmp2,_sram_map_buf
+		LDY		#$00
+loc_58FD3:
+		LDA		(_ptr0),Y
+		STA		(_tmp2),Y
+		INCW	_ptr0
+		INC		_tmp2
+		BNE		loc_58FE3
+		INC		_tmp3
+loc_58FE3:
+		LDA		_ptr0
+		CMP		#<[_power_grid_map_buf]
+		BNE		loc_58FD3
+		LDA		_ptr0+1
+		CMP		#>[_power_grid_map_buf]
+		BNE		loc_58FD3
+		LDX		#$00
+loc_58FF1:
+		LDA		_wram_graphs,X
+		STA		_sram_graphs,X
+		INX
+		CPX		#$78
+		BNE		loc_58FF1
+		LDX		#$00
+loc_58FFE:
+		LDA		_city,X
+		STA		_sram_vars,X
+		INX
+		CPX		#$80
+		BNE		loc_58FFE
+		LDA		#$01
+		STA		_has_saved_city_data_flag
+		STA		_sram_has_saved_city_data_flag
+		JSR		_sram_sum_reinit
+		JSR		_sram_off
+		INC		_mmc5_operation_in_progress_flag
+		RTS
+
+		SECTION_ENDS	301, "SRAM LIBRARY ROUTINES"
 
 ; ---------------------------------------------------------------------------
 ; -----------------H-U-D--S-C-R-O-L-L-E-R--H-A-N-D-L-E-R-S-------------------
@@ -1992,7 +2082,7 @@ _scroll_txt_i_am_god:
 _scroll_txt_debug_off:
 		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_D,_E,_B,_U,_G,__,_O,_F,_F,$FF
 
-		SECTION_END F03
+		SECTION_ENDS F03, "PRGF EXT HUD SCROLLER"
 
 ; ---------------------------------------------------------------------------
 ; -----------------G-A-M-E--M-E-N-U-S--H-A-N-D-L-E-R-S-----------------------
@@ -2052,49 +2142,6 @@ _game_save_menu:
 		RTS
 loc_58FBA:
 		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_sram_data_save:
-		DEC		_mmc5_operation_in_progress_flag
-		JSR		_sram_on
-		MOVWO	_ptr0,_wram_map_buf
-		MOVWO	_tmp2,_sram_map_buf
-		LDY		#$00
-loc_58FD3:
-		LDA		(_ptr0),Y
-		STA		(_tmp2),Y
-		INCW	_ptr0
-		INC		_tmp2
-		BNE		loc_58FE3
-		INC		_tmp3
-loc_58FE3:
-		LDA		_ptr0
-		CMP		#<[_power_grid_map_buf]
-		BNE		loc_58FD3
-		LDA		_ptr0+1
-		CMP		#>[_power_grid_map_buf]
-		BNE		loc_58FD3
-		LDX		#$00
-loc_58FF1:
-		LDA		_wram_graphs,X
-		STA		_sram_graphs,X
-		INX
-		CPX		#$78
-		BNE		loc_58FF1
-		LDX		#$00
-loc_58FFE:
-		LDA		_city,X
-		STA		_sram_vars,X
-		INX
-		CPX		#$80
-		BNE		loc_58FFE
-		LDA		#$01
-		STA		_has_saved_city_data_flag
-		STA		_sram_has_saved_city_data_flag
-		JSR		_sram_sum_reinit
-		JSR		_sram_off
-		INC		_mmc5_operation_in_progress_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2250,45 +2297,6 @@ loc_59103:
 		TXS
 loc_5912E:
 		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_sram_data_load:
-		DEC		_mmc5_operation_in_progress_flag
-		JSR		_sram_on
-		MOVWO	_ptr0,_sram_map_buf
-		MOVWO	_tmp2,_wram_map_buf
-		LDY		#$00
-loc_5915A:
-		LDA		(_ptr0),Y
-		STA		(_tmp2),Y
-		INCW	_ptr0
-		INC		_tmp2
-		BNE		loc_5916A
-		INC		_tmp3
-loc_5916A:
-		LDA		_tmp2
-		CMP		#<[_power_grid_map_buf]
-		BNE		loc_5915A
-		LDA		_tmp3
-		CMP		#>[_power_grid_map_buf]
-		BNE		loc_5915A
-		LDX		#$00
-loc_59178:
-		LDA		_sram_graphs,X
-		STA		_wram_graphs,X
-		INX
-		CPX		#$78
-		BNE		loc_59178
-		LDX		#$00
-loc_59185:
-		LDA		_sram_vars,X
-		STA		_city,X
-		INX
-		CPX		#$80
-		BNE		loc_59185
-		JSR		_sram_off
-		INC		_mmc5_operation_in_progress_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2491,7 +2499,7 @@ _off_power_anim_data:
 		.BYTE	$42,$A8
 		.BYTE	$52,$FF
 
-		SECTION_END C02
+		SECTION_ENDS C02, "PRGC EXT GAME MENU ROUTINES"
 
 ; ---------------------------------------------------------------------------
 ; ------N-E-W--C-I-T-Y--M-A-P--A-U-T-O-G-E-N-E-R-A-T-E--R-O-U-T-I-N-E-S------
@@ -3322,6 +3330,6 @@ _mul_rand:
 		MULAX
 		RTS
 
-		SECTION_END 901
+		SECTION_ENDS 901, "PRG9 EXT MAP GENERATOR"
 
 		BANK_END F3,$C000

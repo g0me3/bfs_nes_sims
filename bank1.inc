@@ -1213,7 +1213,7 @@ loc_248AE:
 		RTS
 
 _name_store_buf_lo:
-		.BYTE	<[_city]
+		.BYTE	<[_city._name]
 		.BYTE	<[_city._sister_name]
 ; REDUNDANT, always the same
 ;byte_248BF:

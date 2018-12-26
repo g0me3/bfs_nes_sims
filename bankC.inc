@@ -4378,7 +4378,7 @@ loc_150084:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_apu_se0_load:
-;		STA		_apu_se_flags
+;		STA		_apu_se_idx_req
 ;		RTS
 ;
 ; =============== S U B	R O U T	I N E =======================================
@@ -4409,7 +4409,7 @@ loc_150084:
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_apu_se1_load:
-;		STA		_apu_se_flags+1
+;		STA		_apu_se_idx_req+1
 ;		RTS
 
 		BANK_END FC,$A000

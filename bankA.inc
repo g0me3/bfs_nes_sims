@@ -2529,25 +2529,4 @@ _pak_tlm_name_init0:
 		.BYTE	$06,$06,$F0,$23,$05,$DE,$E4,$7D,$86,$27,$00,$07,$FF,$FF,$FF,$FF
 		.BYTE	$00,$00,$00,$00,$8F,$07,$C0,$93,$07,$CC,$8B,$07,$C0,$FF
 
-		BANK_END FA,$B800
-
-		ORG		$B800
-		RORG	$9800
-
-		BANK_START $AA
-
-		INCLUDE "..\bankA_.inc"
-
-_bankAA_free	SET	[$A000-.]
-_total_free SET _total_free+_bankAA_free
-		#if .>$A000
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bankAA_free]
-		#else
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bankAA_free
-		#endif
-		#if .<$A000-1
-		RORG	$A000-1
-		ORG		$C000-1
-		.BYTE	$FF
-		#endif
-
+		BANK_END FA,$C000

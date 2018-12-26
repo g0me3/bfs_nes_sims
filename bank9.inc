@@ -584,7 +584,7 @@ loc_EA342:
 		JSR		_new_city_map_num_spr_insert
 		JSR		_new_city_map_num_roll_anim		; animate change
 		JSR		_new_city_map_generate
-;		MOVWO	_ptr0,_tlm_nt_netx_map_release	; REDUNDANT, merged
+;		MOVWO	_ptr0,_tlm_nt_next_map_release	; REDUNDANT, merged
 ;		MOVWO	_tmp2,_tlm_extnt_netx_map_release
 ;		LDA		#$FF
 ;		JMP		_tlm_queue
@@ -602,7 +602,7 @@ _tlm_extnt_next_map_push:
 		.BYTE	$19,$5D,$04,$0A,$0A,$0A,$0A
 		.BYTE	$39,$5D,$03,$0A,$0A,$0A
 		.BYTE	$FF
-_tlm_nt_netx_map_release:
+_tlm_nt_next_map_release:
 		.BYTE	$F9,$24,$04,$A9,$A9,$A9,$A9
 		.BYTE	$19,$25,$04,$4E,$45,$58,$54
 		.BYTE	$39,$25,$03,$4D,$41,$50
@@ -721,7 +721,7 @@ _new_city_map_num_roll_anim:
 		LDA		_new_city_digit_spr_y_pos		; if masked, just draw at the same position
 		JSR		_new_city_map_num_digit_spr_draw; draw dummy sprite for not moved digits
 		LDA		_new_city_digit_spr_y_pos		; to have two sprites for every digit all the time
-		BNE		.num_draw_next
+		BNE		.num_draw_next					; non-zero value, unconditional jump here
 .num_to_animate:
 		LDA		_ptr0,Y							; read digit
 		PHA										; save current value
