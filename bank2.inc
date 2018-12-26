@@ -43,7 +43,7 @@ loc_3E0B0:
 		STA		_extnt_backup0+$F0-1,X
 		DEX
 		BNE		loc_3E0B0
-		LDX		#3
+		LDX		#$03
 loc_3E0C1:
 		LDA		_city._special_buildings_list,X
 		BEQ		loc_3E0CD
@@ -78,9 +78,9 @@ _special_item_icon_draw:
 		STA		_tmp6
 		LDA		_special_item_icon_extnt_dst_hi,X
 		STA		_tmp6+1
-		LDX		#5
+		LDX		#$05
 loc_3E102:
-		LDY		#4
+		LDY		#$04
 loc_3E104:
 		LDA		(_ptr0),Y
 		STA		(_tmp2),Y
@@ -95,34 +95,22 @@ loc_3E104:
 
 ; =============== S U B	R O U T	I N E =======================================
 _special_item_icon_pos_adjust:
-		LDA		_ptr0
-		CLC
-		ADC		#5
-		STA		_ptr0
-		BCC		loc_3E121
-		INC		_ptr0+1
-loc_3E121:
+		ADDW8	_ptr0,#$05
 		LDA		_tmp4
 		CLC
-		ADC		#5
+		ADC		#$05
 		STA		_tmp4
 		BCC		loc_3E12C
 		INC		_tmp5
 loc_3E12C:
 		LDA		_tmp2
 		CLC
-		ADC		#$F
+		ADC		#$0F
 		STA		_tmp2
 		BCC		loc_3E137
 		INC		_tmp3
 loc_3E137:
-		LDA		_tmp6
-		CLC
-		ADC		#$F
-		STA		_tmp6
-		BCC		locret_3E142
-		INC		_tmp6+1
-locret_3E142:
+		ADDW8	_tmp6,#$0F
 		RTS
 byte_3E143:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
@@ -425,14 +413,14 @@ _special_item_icon_extnt_tlmE:
 _special_build_menu:
 		LDA		#$FF
 		STA		byte_37
-		LDA		#0
+		LDA		#$00
 		STA		_cur_special_building_select_idx
 		JSR		_special_constr_palette_draw
 loc_3E64B:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
 		LDA		_cur_special_building_select_idx
-		AND		#1
+		AND		#$01
 		ASL
 		ASL
 		ASL
@@ -444,7 +432,7 @@ loc_3E64B:
 		ADC		#$5B
 		STA		_spr_insert_args._pos._X
 		LDA		_cur_special_building_select_idx
-		AND		#2
+		AND		#$02
 		ASL
 		ASL
 		STA		_ptr0
@@ -454,45 +442,45 @@ loc_3E64B:
 		ADC		_ptr0
 		ADC		#$A4
 		STA		_spr_insert_args._pos._Y
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_prg2_insert
 		LDA		_pad0_autorep_press
-		AND		#$F
+		AND		#$0F
 		BNE		loc_3E68B
 		LDA		_pad0_autorep_press
 		AND		#$C0
 		BEQ		loc_3E64B
 		BNE		loc_3E6C7
 loc_3E68B:
-		AND		#3
+		AND		#$03
 		BEQ		loc_3E6A3
 		LSR
 		LDA		_cur_special_building_select_idx
 		BCS		loc_3E69E
 		SEC
-		SBC		#1
+		SBC		#$01
 		BCS		loc_3E6AF
-		ADC		#4
+		ADC		#$04
 		BNE		loc_3E6AF
 loc_3E69E:
 		CLC
-		ADC		#1
+		ADC		#$01
 		BNE		loc_3E6A9
 loc_3E6A3:
 		LDA		_cur_special_building_select_idx
 		CLC
-		ADC		#2
+		ADC		#$02
 loc_3E6A9:
-		CMP		#4
+		CMP		#$04
 		BCC		loc_3E6AF
-		SBC		#4
+		SBC		#$04
 loc_3E6AF:
 		STA		_cur_special_building_select_idx
 		TAX
 		LDA		_city._special_buildings_list,X
 		BNE		loc_3E6BD
-		LDA		#0
+		LDA		#$00
 		STA		_cur_special_building_select_idx
 loc_3E6BD:
 		LDA		#$40
@@ -500,7 +488,7 @@ loc_3E6BD:
 		JSR		_special_constr_palette_draw
 		JMP		loc_3E64B
 loc_3E6C7:
-		LDA		#3
+		LDA		#$03
 		STA		byte_C0
 		JSR		_spr_clear
 		RTS

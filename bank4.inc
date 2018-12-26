@@ -6,9 +6,9 @@
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_pal_select:
 		LDA		_game_msg_idx
-		CMP		#8
+		CMP		#$08
 		BEQ		loc_7000E
-		CMP		#9
+		CMP		#$09
 		BEQ		loc_70012
 		LDA		#$81
 		BNE		loc_70014
@@ -42,51 +42,51 @@ loc_7002F:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon5_draw:
 		JSR		_game_msg_extra_icons_set_tmp3
-		LDA		#6
+		LDA		#$06
 		STA		_ptr0+1
 		LDA		#$11
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
-		LDY		#0
+		LDY		#$00
 		JMP		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon4_draw:
 		JSR		_game_msg_extra_icons_set_tmp3
-		LDA		#7
+		LDA		#$07
 		STA		_ptr0+1
 		LDA		#$11
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
-		LDY		#4
+		LDY		#$04
 		JMP		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon3_draw:
 		JSR		_game_msg_extra_icons_set_tmp3
-		LDA		#9
+		LDA		#$09
 		STA		_ptr0+1
 		LDA		#$1A
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
-		LDY		#8
+		LDY		#$08
 		JMP		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon2_draw:
 		JSR		_game_msg_extra_icons_set_tmp3
-		LDA		#$A
+		LDA		#$0A
 		STA		_ptr0+1
 		LDA		#$1A
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
-		LDY		#$C
+		LDY		#$0C
 		JMP		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon0_draw:
 		JSR		_game_msg_extra_icons_set_tmp3
-		LDA		#6
+		LDA		#$06
 		STA		_ptr0+1
 		LDA		#$16
 		STA		_tmp2
@@ -97,7 +97,7 @@ _game_msg_extra_icon0_draw:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon1_draw:
 		JSR		_game_msg_extra_icons_set_tmp3
-		LDA		#7
+		LDA		#$07
 		STA		_ptr0+1
 		LDA		#$16
 		STA		_tmp2
@@ -107,7 +107,7 @@ _game_msg_extra_icon1_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_set_tmp3:
-		LDA		#4
+		LDA		#$04
 		STA		_tmp3
 		RTS
 
@@ -145,7 +145,7 @@ loc_700C7:
 loc_700DD:
 		LDA		_tmp3
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 loc_700E5:
 		LDA		_ptr0+1
@@ -158,7 +158,7 @@ loc_700E5:
 		ADC		_tmp2
 		STA		_tmp2
 		TXA
-		ADC		#0
+		ADC		#$00
 		STA		_tmp3
 		RTS
 
@@ -189,7 +189,7 @@ loc_7011E:
 		LDA		_tmp6+1
 		BEQ		loc_7014D
 		STA		_tmp6
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6+1
 		LDA		_tmp2
 		AND		#$E0
@@ -227,7 +227,7 @@ loc_70167:
 		LDA		_tmp5
 		BEQ		loc_70196
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0
@@ -260,11 +260,11 @@ _game_msg_bonus_item_icon_draw:
 		BPL		loc_701D1
 		RTS
 loc_701D1:
-		LDX		#2
+		LDX		#$02
 		STX		_ptr0+1
 loc_701D5:
 		PHA
-		LDX		#9
+		LDX		#$09
 		STX		_MMC5_MUL1
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
@@ -326,7 +326,7 @@ loc_70252:
 		LDA		_tmp6+1
 		BEQ		loc_70280
 		STA		_tmp6
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6+1
 		LDA		_tmp2
 		AND		#$E0
@@ -365,7 +365,7 @@ loc_7029A:
 		LDA		_tmp5
 		BEQ		loc_702C8
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0

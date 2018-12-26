@@ -9,17 +9,11 @@ _scr_res_common:
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_chr_vars_init
+		FJSR	_scr_chr_vars_init,$F6,$F9
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_pal_bg_load
+		FJSR	_scr_pal_bg_load,$F6,$F9
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_common_draw
+		FJSR	_scr_common_draw,$F6,$F9
 		JSR		_scr_res_hndl2_A_budget_draw
 		JSR		_scr_res_hndl3_A_city_eval_draw
 		JSR		_far_scr_res_hndl5_A_history_draw
@@ -33,29 +27,21 @@ _scr_res_common:
 		JSR		_wait_for_nmi
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
-		LDA		#1
+		LDA		#$01
 		STA		_scr_res_window_opened_flag
 		JSR		_pal_fade_in
 loc_EA050:
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_wnd_common_cursor_spr_clear
+		FJSR	_wnd_common_cursor_spr_clear,$F7,$F9
 		JSR		_spr_finish
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_res_cursor_pos_clamp
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_res_cursor_draw
+		FJSR	_scr_res_cursor_pos_clamp,$F6,$F9
+		FJSR	_scr_res_cursor_draw,$F6,$F9
 		JSR		_scr_res_hndl_common_exec
 		BIT		_scr_res_control_flags
 		BVC		loc_EA07F
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_res_wnd_close
+		FJSR	_scr_res_wnd_close,$F6,$F9
 		RTS
 loc_EA07F:
 		LDA		_scr_res_control_flags
@@ -111,7 +97,7 @@ _scr_res_hndl_common_exec:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl7_A_new_city_gen_init:
-		LDA		#0
+		LDA		#$00
 		STA		_info_maps_cur_col
 		STA		_info_maps_cur_row
 		STA		byte_140
@@ -145,7 +131,7 @@ loc_EA0FD:
 		BVC		loc_EA10C
 		LDA		#$40
 		STA		_scr_res_control_flags
-		LDA		#2
+		LDA		#$02
 		STA		_title_sub_idx
 		RTS
 loc_EA10C:
@@ -164,9 +150,9 @@ loc_EA124:
 		BNE		loc_EA12C
 		JMP		sub_EA2E5
 loc_EA12C:
-		CMP		#1
+		CMP		#$01
 		BNE		loc_EA138
-		LDA		#0
+		LDA		#$00
 		STA		_title_sub_idx
 		JMP		sub_EA1C5
 loc_EA138:
@@ -177,26 +163,26 @@ loc_EA13B:
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA13E:
 		LDA		_pad0_autorep_press
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_EA189
 		LDX		#$40
 		STX		_apu_se_flags+1
-		AND		#3
+		AND		#$03
 		BNE		loc_EA165
 		LDA		_pad0_autorep_release
-		CMP		#8
+		CMP		#$08
 		BNE		loc_EA158
 		DEC		byte_140
 		DEC		byte_140
 loc_EA158:
 		INC		byte_140
 		LDA		byte_140
-		AND		#3
+		AND		#$03
 		STA		byte_140
 		BPL		loc_EA187
 loc_EA165:
 		LDA		byte_140
-		CMP		#2
+		CMP		#$02
 		BCC		loc_EA189
 		LDA		_pad0_autorep_release
 		LSR
@@ -207,7 +193,7 @@ loc_EA177:
 		INC		byte_141
 		LDY		byte_141
 		BPL		loc_EA181
-		LDY		#2
+		LDY		#$02
 loc_EA181:
 		LDA		byte_EA18B,Y
 		STA		byte_141
@@ -223,11 +209,11 @@ byte_EA18B:
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA18F:
 		LDA		byte_140
-		CMP		#2
+		CMP		#$02
 		BCC		loc_EA19F
 		BEQ		loc_EA19B
 		CLC
-		ADC		#2
+		ADC		#$02
 loc_EA19B:
 		CLC
 		ADC		byte_141
@@ -238,9 +224,7 @@ loc_EA19F:
 		STA		_tmp6CE
 		LDA		byte_EA1B5+1,Y
 		STA		_tmp6CC
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F1
-		.WORD	_common_select_cursor_draw
+		FJSR	_common_select_cursor_draw,$00,$F1
 		RTS
 byte_EA1B5:
 		.BYTE	$48,$E0
@@ -258,18 +242,15 @@ sub_EA1C5:
 		STA		_apu_se_flags+1
 		LDA		byte_15B
 		BNE		locret_EA1F3
-		LDA		#<[byte_EA3D8]
-		STA		_ptr0
-		LDA		#>[byte_EA3D8]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_EA3D8
 		LDA		#<[byte_EA3EE]
 		STA		_tmp2
 		LDA		#>[byte_EA3EE]
 		STA		_tmp3
-		LDA		#0
+		LDA		#$00
 		JSR		sub_EA366
 		JSR		sub_EA405
-		LDX		#8
+		LDX		#$08
 loc_EA1E8:
 		JSR		_wait_for_nmi
 		DEX
@@ -281,11 +262,11 @@ locret_EA1F3:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA1F4:
-		LDA		#4
+		LDA		#$04
 		STA		_apu_se_flags
-		LDX		#0
+		LDX		#$00
 		LDA		byte_140
-		CMP		#2
+		CMP		#$02
 		BEQ		loc_EA203
 		LDX		#$80
 loc_EA203:
@@ -297,32 +278,27 @@ loc_EA203:
 		LDA		#$80
 		STA		byte_15C
 		STA		byte_15B
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	sub_B96A1
-		LDA		_new_map_number
-		STA		_ptr0
-		LDA		_new_map_number+1
-		STA		_ptr0+1
+		FJSR	sub_B96A1,$F7,$F9
+		MOVM16	_ptr0,_new_map_number
 		JSR		_hex_to_dec9999
 		LDY		byte_141
 		BIT		byte_15E
 		BPL		loc_EA242
 		LDA		_ptr0,Y
 		BNE		loc_EA23D
-		LDA		#$A
+		LDA		#$0A
 loc_EA23D:
 		SEC
-		SBC		#1
+		SBC		#$01
 		BPL		loc_EA24E
 loc_EA242:
 		LDA		_ptr0,Y
-		CMP		#9
+		CMP		#$09
 		BNE		loc_EA24B
 		LDA		#$FF
 loc_EA24B:
 		CLC
-		ADC		#1
+		ADC		#$01
 loc_EA24E:
 		STA		_ptr0,Y
 		LDA		_tmp2
@@ -333,7 +309,7 @@ loc_EA24E:
 		ADC		_ptr0
 		STA		_ptr0
 		LDA		byte_EA2C4+1,Y
-		ADC		#0
+		ADC		#$00
 		STA		_tmp3
 		LDY		_ptr0+1
 		LDA		byte_EA2D8,Y
@@ -342,7 +318,7 @@ loc_EA24E:
 		STA		_ptr0
 		STA		_new_map_number
 		LDA		_tmp3
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
 		STA		_new_map_number+1
 		JSR		_hex_to_dec9999
@@ -358,26 +334,20 @@ loc_EA289:
 		BPL		loc_EA295
 		LDA		#$F6
 loc_EA295:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	sub_B96A1
+		FJSR	sub_B96A1,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA29D:
 		JSR		sub_EA405
 		JSR		sub_EACE4
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	sub_B966E
+		FJSR	sub_B966E,$F7,$F9
 		JSR		_wait_for_nmi
 		JSR		_sram_on
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_generate_new_map
+		FJSR	_generate_new_map,$00,$F3
 		LDA		#$80
 		STA		_scr_res_control_flags
-		LDA		#0
+		LDA		#$00
 		STA		byte_15B
 		JMP		sub_EA405
 byte_EA2C4:
@@ -402,61 +372,52 @@ sub_EA2E5:
 		STA		_apu_se_flags+1
 		LDA		byte_15B
 		BNE		loc_EA363
-		LDA		#<[byte_EA392]
-		STA		_ptr0
-		LDA		#>[byte_EA392]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_EA392
 		LDA		#<[byte_EA3A7]
 		STA		_tmp2
 		LDA		#>[byte_EA3A7]
 		STA		_tmp3
-		LDA		#0
+		LDA		#$00
 		JSR		sub_EA366
 		JSR		_wait_for_nmi
 		LDA		_new_map_number
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		_ptr0
 		LDA		_new_map_number+1
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
-		CMP		#3
+		CMP		#$03
 		BCC		loc_EA327
 		BNE		loc_EA321
 		LDA		_ptr0
 		CMP		#$E8
 		BCC		loc_EA327
 loc_EA321:
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0+1
 		STA		_ptr0
 loc_EA327:
-		LDA		_ptr0
-		STA		_new_map_number
-		LDA		_ptr0+1
-		STA		_new_map_number+1
+		MOVM16	_new_map_number,_ptr0
 		JSR		_hex_to_dec9999
-		LDA		#1
+		LDA		#$01
 		LDX		_ptr0
 		BNE		loc_EA342
-		LDA		#3
+		LDA		#$03
 		LDX		_ptr0+1
 		BNE		loc_EA342
-		LDA		#7
+		LDA		#$07
 loc_EA342:
 		STA		byte_15E
 		JSR		sub_EA422
 		JSR		sub_EA433
 		JSR		sub_EA29D
-		LDA		#<[byte_EA3B5]
-		STA		_ptr0
-		LDA		#>[byte_EA3B5]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_EA3B5
 		LDA		#<[byte_EA3CA]
 		STA		_tmp2
 		LDA		#>[byte_EA3CA]
 		STA		_tmp3
-		LDA		#0
+		LDA		#$00
 		JMP		sub_EA366
 loc_EA363:
 		JMP		sub_EA405
@@ -465,7 +426,7 @@ loc_EA363:
 sub_EA366:
 		STA		_stack_upper
 		LDX		_ppu_queue_pos_head
-		LDY		#0
+		LDY		#$00
 loc_EA36D:
 		LDA		(_ptr0),Y
 		CMP		_stack_upper
@@ -477,7 +438,7 @@ loc_EA36D:
 loc_EA37B:
 		STX		_ppu_queue_pos_head
 		LDX		_extnt_queue_pos_head
-		LDY		#0
+		LDY		#$00
 loc_EA381:
 		LDA		(_tmp2),Y
 		CMP		_stack_upper
@@ -509,13 +470,10 @@ byte_EA3EE:
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA405:
 		JSR		sub_EA422
-		LDA		_new_map_number
-		STA		_ptr0
-		LDA		_new_map_number+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_new_map_number
 		JSR		_hex_to_dec9999
 		LDX		#$50
-		LDY		#2
+		LDY		#$02
 loc_EA419:
 		LDA		#$BE
 		JSR		sub_EA4CE
@@ -540,7 +498,7 @@ loc_EA426:
 sub_EA433:
 		LDA		#$BE
 		STA		byte_15D
-		LDY		#2
+		LDY		#$02
 		LDX		#$50
 loc_EA43C:
 		LDA		byte_15E
@@ -560,12 +518,12 @@ loc_EA44F:
 		BPL		loc_EA467
 		LDA		byte_15D
 		SEC
-		SBC		#$C
+		SBC		#$0C
 		BNE		loc_EA46D
 loc_EA467:
 		LDA		byte_15D
 		CLC
-		ADC		#$C
+		ADC		#$0C
 loc_EA46D:
 		JSR		sub_EA4CE
 		DEY
@@ -588,7 +546,7 @@ loc_EA489:
 		BEQ		loc_EA4C3
 loc_EA496:
 		LDA		byte_15E
-		LDY		#2
+		LDY		#$02
 		LDX		#$10
 loc_EA49D:
 		LSR
@@ -629,7 +587,7 @@ sub_EA4CE:
 		ADC		#$E0
 		STA		_spr_buf,X
 		INX
-		LDA		#0
+		LDA		#$00
 		STA		_spr_buf,X
 		INX
 		LDA		byte_EB784,Y
@@ -642,19 +600,19 @@ sub_EA4EA:
 		BIT		byte_15E
 		BPL		loc_EA4FD
 		LDA		_ptr0,Y
-		CMP		#9
+		CMP		#$09
 		BNE		loc_EA4F8
 		LDA		#$FF
 loc_EA4F8:
 		CLC
-		ADC		#1
+		ADC		#$01
 		BPL		loc_EA507
 loc_EA4FD:
 		LDA		_ptr0,Y
 		SEC
-		SBC		#1
+		SBC		#$01
 		BPL		loc_EA507
-		LDA		#9
+		LDA		#$09
 loc_EA507:
 		STA		_ptr0,Y
 		LDA		byte_15D
@@ -675,12 +633,12 @@ _scr_res_hndl0_A_info_maps_draw:
 		JSR		sub_EAE37
 		JSR		_info_maps_date_draw_ex
 		JSR		sub_EADB2
-		LDA		#0
+		LDA		#$00
 		STA		byte_13C
 		INC		_scr_res_idx
 		LDA		#$80
 		STA		_scr_res_control_flags
-		LDA		#$B
+		LDA		#$0B
 		STA		byte_114
 		JMP		_scr_res_hndl0_AB_info_maps_redraw
 
@@ -702,11 +660,11 @@ loc_EA554:
 		JMP		sub_EA5F2
 loc_EA563:
 		LDA		byte_13C
-		AND		#$F
+		AND		#$0F
 		TAX
 		LDA		byte_EB743,X
 		STA		_scr_res_control_flags
-		LDA		#0
+		LDA		#$00
 		STA		byte_13C
 		LDA		_maps_info_mode_idx
 		STA		byte_114
@@ -723,7 +681,7 @@ loc_EA588:
 		BVC		loc_EA594
 		JMP		sub_EADE0
 loc_EA594:
-		LDA		#0
+		LDA		#$00
 		STA		_scr_res_control_flags
 		STA		_game_core_state
 		BIT		_pad0_autorep_press
@@ -745,9 +703,7 @@ loc_EA5BA:
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 _scr_res_hndl0_AB_info_maps_redraw:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	sub_A0183
+		FJSR	sub_A0183,$F6,$F9
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw_ex:
@@ -757,12 +713,8 @@ _scr_res_hndl0_AB_info_maps_redraw_ex:
 		BEQ		_wait_for_key
 		JSR		sub_EACD9
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_pal_bg_load
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_info_maps_header_and_menu_draw
+		FJSR	_scr_pal_bg_load,$F6,$F9
+		FJSR	_info_maps_header_and_menu_draw,$F6,$F9
 		JMP		_maps_info_draw
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -792,7 +744,7 @@ sub_EA5F2:
 sub_EA605:
 		LDA		#$80
 		STA		byte_13B
-		LDA		#2
+		LDA		#$02
 		STA		_scr_res_idx
 		LDA		#$10
 		STA		_scr_res_control_flags
@@ -827,9 +779,7 @@ loc_EA637:
 		STA		byte_114
 		LDA		_ptr0
 		STA		_maps_info_mode_idx
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	sub_A0183
+		FJSR	sub_A0183,$F6,$F9
 		PLA
 		STA		byte_114
 		PLA
@@ -857,16 +807,16 @@ sub_EA662:
 		BCS		loc_EA687
 		CMP		#$20
 		BCS		loc_EA6A2
-		LDX		#7
+		LDX		#$07
 		SEC
 loc_EA687:
 		INX
 		SBC		#$10
 		BCS		loc_EA687
-		CPX		#3
+		CPX		#$03
 		BCC		loc_EA696
 		INX
-		CPX		#9
+		CPX		#$09
 		BCC		loc_EA696
 		INX
 loc_EA696:
@@ -886,12 +836,12 @@ sub_EA6A4:
 		LDA		_info_maps_cur_row
 		CMP		#$13
 		BNE		locret_EA6EE
-		LDA		#0
+		LDA		#$00
 		STA		_scr_res_control_flags
 		STA		_info_maps_cur_row
 		STA		_info_maps_cur_col
 		LDX		_scr_res_idx
-		CPX		#$A
+		CPX		#$0A
 		BCS		loc_EA6C3
 		STA		_game_core_state
 loc_EA6C3:
@@ -902,12 +852,12 @@ loc_EA6C3:
 		BNE		locret_EA6EE
 		LDA		byte_13C
 		BEQ		locret_EA6EE
-		LDA		#0
+		LDA		#$00
 		STA		_scr_res_control_flags
 		LDA		#$80
 		STA		_game_core_state
 		BNE		locret_EA6EE
-		LDA		#0
+		LDA		#$00
 		STA		byte_107
 		LDA		#$80
 		STA		_scr_res_control_flags
@@ -923,9 +873,9 @@ sub_EA6EF:
 		TAY
 		LDA		_info_maps_ppu_col_ofs_list,Y
 		LDX		_scr_res_idx
-		CPX		#$A
+		CPX		#$0A
 		BCC		loc_EA702
-		SBC		#6
+		SBC		#$06
 		CLC
 loc_EA702:
 		ADC		_info_maps_cur_col
@@ -992,7 +942,7 @@ _maps_info0_draw:
 		ADC		off_EB623,Y
 		STA		_ptr0
 		LDA		off_EB623+1,Y
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
 		JSR		sub_EAA8B
 		JMP		sub_EA94A
@@ -1012,7 +962,7 @@ _maps_info1_draw:
 		BNE		loc_EA789
 loc_EA786:
 		SEC
-		SBC		#3
+		SBC		#$03
 loc_EA789:
 		STA		_tmp4
 		LDA		_info_maps_cur_row
@@ -1045,7 +995,7 @@ locret_EA7B6:
 
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info2356_draw:
-		LDY		#0
+		LDY		#$00
 		LDA		_maps_info_mode_idx
 		ASL
 		TAY
@@ -1055,11 +1005,11 @@ _maps_info2356_draw:
 		ADC		byte_EB66F,X
 		STA		_ptr0
 		LDA		off_EB5A0+1,Y
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
 		LDX		_info_maps_cur_col
 		LDA		_info_maps_cur_row
-		AND		#1
+		AND		#$01
 		STA		_tmp6
 		BEQ		loc_EA7F4
 		INX
@@ -1067,9 +1017,9 @@ loc_EA7F4:
 		TXA
 		LSR
 		JSR		_adc_ptr0_0
-		LDY		#0
+		LDY		#$00
 		LDA		_info_maps_cur_col
-		AND		#1
+		AND		#$01
 		CMP		_tmp6
 		BNE		loc_EA80D
 		LDA		(_ptr0),Y
@@ -1080,14 +1030,14 @@ loc_EA7F4:
 		JMP		loc_EA811
 loc_EA80D:
 		LDA		(_ptr0),Y
-		AND		#$F
+		AND		#$0F
 loc_EA811:
 		STA		_tmp6
 		LDX		_maps_info_mode_idx
-		CPX		#3
+		CPX		#$03
 		BNE		loc_EA82B
 		LSR
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_EA82E
 		TAX
 		LDA		byte_EA84D,X
@@ -1148,7 +1098,7 @@ loc_EA888:
 
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info89_draw:
-		LDY		#0
+		LDY		#$00
 		LDA		_maps_info_mode_idx
 		ASL
 		TAY
@@ -1158,15 +1108,15 @@ _maps_info89_draw:
 		ADC		byte_EB682,X
 		STA		_ptr0
 		LDA		off_EB5A0+1,Y
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
 		LDA		_info_maps_cur_col
 		LSR
 		LSR
 		JSR		_adc_ptr0_0
-		LDY		#0
+		LDY		#$00
 		LDA		_info_maps_cur_col
-		AND		#2
+		AND		#$02
 		BNE		loc_EA8C8
 		LDA		(_ptr0),Y
 		LSR
@@ -1176,7 +1126,7 @@ _maps_info89_draw:
 		JMP		loc_EA8CC
 loc_EA8C8:
 		LDA		(_ptr0),Y
-		AND		#$F
+		AND		#$0F
 loc_EA8CC:
 		STA		_tmp6
 		TAX
@@ -1191,14 +1141,14 @@ loc_EA8D4:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA8DF:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_info_maps_cur_col
-		AND		#1
+		AND		#$01
 		BNE		sub_EA909
-		LDY		#0
+		LDY		#$00
 		JSR		sub_EA91A
-		LDY		#9
+		LDY		#$09
 		JSR		sub_EA8FB
 		LDY		#$13
 		JSR		sub_EA91A
@@ -1208,7 +1158,7 @@ sub_EA8DF:
 ; !FALLTHROUGH!
 sub_EA8FB:
 		LDA		(_ptr0),Y
-		AND		#$F
+		AND		#$0F
 		TAX
 		LDA		byte_EB733,X
 		CLC
@@ -1218,9 +1168,9 @@ sub_EA8FB:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA909:
-		LDY		#0
+		LDY		#$00
 		JSR		sub_EA8FB
-		LDY		#$A
+		LDY		#$0A
 		JSR		sub_EA91A
 		LDY		#$13
 		JSR		sub_EA8FB
@@ -1242,16 +1192,16 @@ sub_EA91A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_info_map_block_sum:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
-		LDY		#0
+		LDY		#$00
 		JSR		_get_two_nibbles_sum
 		LDY		#$13
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_two_nibbles_sum:
 		LDA		(_ptr0),Y
-		AND		#$F
+		AND		#$0F
 		CLC
 		ADC		_tmp5
 		STA		_tmp5
@@ -1267,20 +1217,20 @@ _get_two_nibbles_sum:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA94A:
-		LDY		#0
+		LDY		#$00
 		JSR		sub_EAA5E
 		INY
 		JSR		sub_EAA5E
 		LDA		_tmp118
 		BEQ		loc_EA964
-		CMP		#2
+		CMP		#$02
 		BCC		loc_EA964
-		LDA		#0
+		LDA		#$00
 		STA		byte_12A
 		JMP		loc_EA992
 loc_EA964:
 		LDA		byte_128
-		CMP		#2
+		CMP		#$02
 		BCC		loc_EA9A1
 		LDA		byte_127
 		CMP		byte_128
@@ -1332,31 +1282,28 @@ loc_EA9C5:
 		RTS
 loc_EA9CA:
 		STA		_tmp4
-		LDA		#<[byte_EB603]
-		STA		_ptr0
-		LDA		#>[byte_EB603]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_EB603
 		LDA		(_ptr0),Y
 		STA		_tmp5
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA9D9:
-		LDA		#2
+		LDA		#$02
 		STA		_tmp118
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0
 		STA		_ptr0+1
 loc_EA9E4:
 		LDX		_ptr0+1
-		CPX		#8
+		CPX		#$08
 		BCS		locret_EAA40
-		LDY		#0
+		LDY		#$00
 		LDA		_tmp118+8,X
-		AND		#$F
+		AND		#$0F
 		CMP		_tmp118
 		BCS		loc_EAA28
-		LDY		#2
+		LDY		#$02
 		LDA		_tmp118+8,X
 		LSR
 		LSR
@@ -1365,9 +1312,9 @@ loc_EA9E4:
 		CMP		_tmp118
 		BCS		loc_EAA28
 loc_EAA04:
-		LDY		#1
+		LDY		#$01
 		LDA		_tmp118+7,X
-		AND		#$F
+		AND		#$0F
 		CMP		_tmp118
 		BCS		loc_EAA28
 		DEC		_tmp118
@@ -1380,11 +1327,11 @@ loc_EAA15:
 		LSR
 		BEQ		loc_EAA15
 		STA		_tmp118+7,X
-		LDA		#2
+		LDA		#$02
 		STA		_tmp118
 		BNE		loc_EAA04
 loc_EAA28:
-		CPY		#0
+		CPY		#$00
 		BEQ		loc_EAA3A
 		DEY
 		TYA
@@ -1423,7 +1370,7 @@ loc_EAA5A:
 sub_EAA5E:
 		LDA		_tmp118+3
 		STA		byte_127,Y
-		LDX		#3
+		LDX		#$03
 		TXA
 		STA		byte_129,Y
 		DEX
@@ -1440,15 +1387,15 @@ loc_EAA75:
 loc_EAA7F:
 		DEX
 		BPL		loc_EAA6B
-		LDA		#0
+		LDA		#$00
 		LDX		byte_129,Y
 		STA		_tmp118,X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EAA8B:
-		LDA		#0
-		LDY		#$E
+		LDA		#$00
+		LDY		#$0E
 loc_EAA8F:
 		STA		_tmp118,Y
 		DEY
@@ -1458,7 +1405,7 @@ loc_EAA8F:
 loc_EAA99:
 		LDA		(_ptr0),Y
 loc_EAA9B:
-		LDX		#0
+		LDX		#$00
 loc_EAA9D:
 		CMP		byte_EAE92,X
 		BCC		loc_EAAA9
@@ -1469,7 +1416,7 @@ loc_EAAA7:
 		BCS		loc_EAAA7
 loc_EAAA9:
 		LDA		byte_EAEA4,X
-		CMP		#$E
+		CMP		#$0E
 		BNE		loc_EAAB6
 		JSR		sub_EAB64
 		JMP		loc_EAA9B
@@ -1477,22 +1424,22 @@ loc_EAAB6:
 		CMP		#$80
 		BCC		loc_EAABF
 		INC		byte_131
-		AND		#$F
+		AND		#$0F
 loc_EAABF:
 		TAX
 		LDA		_tmp118,X
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		_tmp118,X
 		TXA
-		AND		#3
+		AND		#$03
 		TAX
 		LDA		byte_EAE86,X
 		PHA
 		TXA
 		PHA
 		TYA
-		AND		#$F
+		AND		#$0F
 		LSR
 		TAX
 		LDA		byte_EAE8A,X
@@ -1516,7 +1463,7 @@ loc_EAAE1:
 		CPY		#$50
 		BEQ		loc_EAB00
 		LDA		#$4C
-		CPY		#4
+		CPY		#$04
 		BNE		loc_EAA99
 loc_EAB00:
 		TAY
@@ -1569,14 +1516,14 @@ loc_EAB60:
 ; =============== S U B	R O U T	I N E =======================================
 sub_EAB64:
 		LDA		(_ptr0),Y
-		AND		#$F
+		AND		#$0F
 		TAX
 		LDA		_ptr0
 		SEC
 		SBC		byte_EB5B4,X
 		STA		_tmp4
 		LDA		_ptr0+1
-		SBC		#0
+		SBC		#$00
 		STA		_tmp5
 		LDA		(_tmp4),Y
 		RTS
@@ -1608,7 +1555,7 @@ loc_EAB8B:
 		BCC		loc_EAB8B
 		CMP		#$13
 		BNE		loc_EABB8
-		LDA		#0
+		LDA		#$00
 		STA		_info_maps_cur_col
 		JSR		sub_EA6A4
 loc_EABB8:
@@ -1633,10 +1580,10 @@ loc_EABCF:
 		BMI		loc_EAC3C
 		BVS		loc_EAC0A
 		LDA		_pad0_autorep_press
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_EABCF
 		TAX
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		LDY		_maps_info_mode_idx
 		LDA		byte_EB6A9,Y
@@ -1644,15 +1591,11 @@ loc_EABCF:
 		LDA		byte_12E,Y
 		CLC
 		ADC		byte_EAC79,X
-		AND		#3
+		AND		#$03
 		STA		byte_12E,Y
 loc_EABF6:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	sub_B962F
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_res_cursor_draw
+		FJSR	sub_B962F,$F7,$F9
+		FJSR	_scr_res_cursor_draw,$F6,$F9
 		JSR		_spr_finish
 		JMP		loc_EABCF
 loc_EAC0A:
@@ -1666,15 +1609,9 @@ loc_EAC0A:
 		LDA		_maps_info_mode_idx
 		STA		byte_114
 		STY		_maps_info_mode_idx
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	sub_A0183
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_pal_bg_load
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_info_maps_header_and_menu_draw
+		FJSR	sub_A0183,$F6,$F9
+		FJSR	_scr_pal_bg_load,$F6,$F9
+		FJSR	_info_maps_header_and_menu_draw,$F6,$F9
 		RTS
 loc_EAC3C:
 		LDY		_maps_info_mode_idx
@@ -1682,7 +1619,7 @@ loc_EAC3C:
 		LDA		byte_EB6A9,Y
 		TAY
 		LDA		byte_12E,Y
-		AND		#1
+		AND		#$01
 		CLC
 		ADC		_maps_info_mode_idx
 		STA		_maps_info_mode_idx
@@ -1692,9 +1629,7 @@ loc_EAC51:
 loc_EAC56:
 		LDA		#$20
 		STA		_apu_se_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$F9
-		.WORD	_wnd_erase
+		FJSR	_wnd_erase,$FC,$F9
 		LDA		_maps_info_mode_idx
 		AND		#$FE
 		TAY
@@ -1702,7 +1637,7 @@ loc_EAC56:
 		STA		_cur_game_cursor_scr_pos._X
 		LDA		byte_EB69F+1,Y
 		STA		_cur_game_cursor_scr_pos._Y
-		LDA		#0
+		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JMP		_wait_for_nmi
 byte_EAC79:
@@ -1716,16 +1651,12 @@ sub_EAC82:
 		LDA		#$10
 		STA		_spr_buf_pos
 		JSR		_spr_finish
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_pal_bg_load
+		FJSR	_scr_pal_bg_load,$F6,$F9
 		LDA		_maps_info_mode_idx
 		PHA
-		LDA		#$D
+		LDA		#$0D
 		STA		_maps_info_mode_idx
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_info_maps_header_and_menu_draw
+		FJSR	_info_maps_header_and_menu_draw,$F6,$F9
 		PLA
 		STA		_maps_info_mode_idx
 		LDY		_maps_info_mode_idx
@@ -1733,7 +1664,7 @@ sub_EAC82:
 		TAY
 		LDA		byte_12E,Y
 		STA		byte_13A
-		LDA		#0
+		LDA		#$00
 		STA		_wnd_lvl_idx
 		LDY		_maps_info_mode_idx
 		LDA		byte_EB695,Y
@@ -1743,22 +1674,20 @@ sub_EAC82:
 		STA		_wnd_left_tile
 		LDA		byte_EB6B2+1,X
 		STA		_wnd_top_tile
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$F9
-		.WORD	_wnd_draw
+		FJSR	_wnd_draw,$FC,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EACD9:
 		LDA		byte_107
 		BEQ		sub_EACE4
-		LDA		#0
+		LDA		#$00
 		STA		byte_107
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EACE4:
-		LDA		#0
+		LDA		#$00
 		STA		_info_maps_cur_row
 loc_EACE9:
 		LDX		_ppu_queue_pos_head
@@ -1768,9 +1697,9 @@ loc_EACE9:
 		TAY
 		LDA		_info_maps_ppu_col_ofs_list,Y
 		LDY		_scr_res_idx
-		CPY		#$A
+		CPY		#$0A
 		BCC		loc_EACFD
-		SBC		#6
+		SBC		#$06
 loc_EACFD:
 		STA		_ppu_queue_buf,X
 		STA		_ptr0
@@ -1805,7 +1734,7 @@ loc_EAD17:
 		STA		_extnt_queue_buf,X
 		INX
 		TAY
-		LDA		#1
+		LDA		#$01
 loc_EAD3A:
 		STA		_extnt_queue_buf,X
 		INX
@@ -1813,21 +1742,19 @@ loc_EAD3A:
 		BNE		loc_EAD3A
 		STX		_extnt_queue_pos_head
 		LDA		_scr_res_idx
-		CMP		#$D
+		CMP		#$0D
 		BCC		loc_EAD58
 		LDA		_info_maps_cur_row
-		CMP		#8
+		CMP		#$08
 		BCC		loc_EAD58
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	sub_B966E
+		FJSR	sub_B966E,$F7,$F9
 loc_EAD58:
 		JSR		_wait_for_nmi
 		INC		_info_maps_cur_row
 		LDA		_info_maps_cur_row
 		CMP		#$13
 		BCC		loc_EACE9
-		LDA		#0
+		LDA		#$00
 		STA		_info_maps_cur_row
 		RTS
 
@@ -1835,16 +1762,13 @@ loc_EAD58:
 _info_maps_date_draw:
 		LDA		_hud_redraw_req
 		BEQ		locret_EADB1
-		LDA		#0
+		LDA		#$00
 		STA		_hud_redraw_req
 
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 _info_maps_date_draw_ex:
-		LDA		_city._cur_year
-		STA		_ptr0
-		LDA		_city._cur_year+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_city._cur_year
 		JSR		_hex_to_dec9999
 		LDA		#$15
 		JSR		_printf
@@ -1855,7 +1779,7 @@ _info_maps_date_draw_ex:
 		LDA		#$24
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#3
+		LDA		#$03
 		STA		_ppu_queue_buf,X
 		INX
 		LDA		_city._cur_month
@@ -1877,10 +1801,7 @@ locret_EADB1:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EADB2:
-		LDA		_popul_cur
-		STA		_ptr0
-		LDA		_popul_cur+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_popul_cur
 		LDA		_popul_cur+2
 		STA		_tmp2
 		JSR		_hex_to_dec9999999
@@ -1891,16 +1812,14 @@ sub_EADB2:
 sub_EADC9:
 		LDX		#$10
 		STX		_spr_buf_pos
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_map_info_spr_rect_draw
+		FJSR	_map_info_spr_rect_draw,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EADD5:
 		LDX		#$2F
 loc_EADD7:
-		LDA		#0
+		LDA		#$00
 		STA		_spr_buf+$20,X
 		DEX
 		BPL		loc_EADD7
@@ -1912,14 +1831,14 @@ sub_EADE0:
 		STA		_scr_res_control_flags
 		STA		_game_core_state
 		LDA		_pad0_autorep_press
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_EADF4
-		LDX		#4
+		LDX		#$04
 		STX		_pad0_dpad_autorep_delay
 		BNE		loc_EAE02
 loc_EADF4:
 		LDA		_pad0_held
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_EAE05
 		LDX		_pad0_dpad_autorep_delay
 		BEQ		loc_EAE02
@@ -1928,14 +1847,12 @@ loc_EADF4:
 loc_EAE02:
 		JSR		sub_EAE0D
 loc_EAE05:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_map_info_spr_arrows_draw
+		FJSR	_map_info_spr_arrows_draw,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EAE0D:
-		LDX		#1
+		LDX		#$01
 		LSR
 		BCS		loc_EAE19
 		LSR
@@ -1948,7 +1865,7 @@ loc_EAE19:
 		CMP		byte_EB751,X
 		BCS		locret_EAE36
 		CLC
-		ADC		#2
+		ADC		#$02
 		STA		byte_138,X
 		RTS
 loc_EAE28:
@@ -1956,7 +1873,7 @@ loc_EAE28:
 		CMP		byte_EB74F,X
 		BEQ		locret_EAE36
 		SEC
-		SBC		#2
+		SBC		#$02
 		STA		byte_138,X
 locret_EAE36:
 		RTS
@@ -1968,7 +1885,7 @@ sub_EAE37:
 		BEQ		locret_EAE85
 		STY		_ptr0
 		STY		_ptr0+1
-		LDY		#1
+		LDY		#$01
 		LDX		_ppu_queue_pos_head
 		LDA		#$62
 		STA		_ppu_queue_buf,X
@@ -2017,38 +1934,32 @@ byte_EAEA4:
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_A_graphs_draw:
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_PRG_PAGES
 		INC		_scr_res_idx
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_scr_res_hndl1_A_graphs_draw_init
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_scr_res_hndl1_A_graphs_draw
-		LDA		#4
+		FJSR	_scr_res_hndl1_A_graphs_draw_init,$F6,$F9
+		FJSR	_scr_res_hndl1_A_graphs_draw,$F7,$F9
+		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_B_graphs_input:
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_PRG_PAGES
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_scr_res_hndl1_B_graphs_input
-		LDA		#4
+		FJSR	_scr_res_hndl1_B_graphs_input,$F7,$F9
+		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl2_A_budget_draw:
 		LDA		_scr_res_idx
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_EAEEC
 		RTS
 loc_EAEEC:
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		LDA		#$80
 		STA		_fiscal_year_results_draw_req
@@ -2057,64 +1968,43 @@ loc_EAEEC:
 		STA		_cur_game_cursor_scr_pos._X
 		LDA		#$34
 		STA		_cur_game_cursor_scr_pos._Y
-		LDA		#0
+		LDA		#$00
 		STA		_tmp584
 		STA		_pad0_autorep_press
 		STA		_tmp118+2
 		LDA		#$A0
 		STA		_scr_res_control_flags
-		LDA		_taxes_collected
-		STA		_ptr0
-		LDA		_taxes_collected+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_taxes_collected
 		LDA		_taxes_collected+2
 		STA		_tmp2
 		JSR		_hex_to_dec99999
-		LDA		#1
+		LDA		#$01
 		JSR		_printf
-		LDA		_city._money
-		STA		_ptr0
-		LDA		_city._money+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_city._money
 		LDA		_city._money+2
 		STA		_tmp2
 		JSR		_hex_to_dec9999999
 		LDA		#$12
 		JSR		_printf
-		LDA		_fund_request_fire
-		STA		_ptr0
-		LDA		_fund_request_fire+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_fund_request_fire
 		JSR		_hex_to_dec9999
-		LDA		#2
+		LDA		#$02
 		JSR		_printf
-		LDA		_fund_request_police
-		STA		_ptr0
-		LDA		_fund_request_police+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_fund_request_police
 		JSR		_hex_to_dec9999
-		LDA		#3
+		LDA		#$03
 		JSR		_printf
-		LDA		_fund_request_trans
-		STA		_ptr0
-		LDA		_fund_request_trans+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_fund_request_trans
 		JSR		_hex_to_dec9999
-		LDA		#4
+		LDA		#$04
 		JSR		_printf
-		LDA		_fund_request_education
-		STA		_ptr0
-		LDA		_fund_request_education+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_fund_request_education
 		JSR		_hex_to_dec9999
-		LDA		#5
+		LDA		#$05
 		JSR		_printf
 		BIT		_city._bank_flags
 		BPL		loc_EAFD0
-		LDA		#<[byte_EB7C3]
-		STA		_ptr0
-		LDA		#>[byte_EB7C3]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_EB7C3
 		LDA		#<[word_EB80C]
 		STA		_tmp2
 		LDA		#>[word_EB80C]
@@ -2124,20 +2014,14 @@ loc_EAEEC:
 		JSR		_buffers_force_flush
 		BIT		_city._bank_flags
 		BVC		loc_EAFBB
-		LDA		#<[word_EB801]
-		STA		_ptr0
-		LDA		#>[word_EB801]
-		STA		_ptr0+1
+		MOVO	_ptr0,word_EB801
 		LDA		#<[word_EB84A]
 		STA		_tmp2
 		LDA		#>[word_EB84A]
 		STA		_tmp3
 		JMP		loc_EAFCB
 loc_EAFBB:
-		LDA		#<[word_EB7FC]
-		STA		_ptr0
-		LDA		#>[word_EB7FC]
-		STA		_ptr0+1
+		MOVO	_ptr0,word_EB7FC
 		LDA		#<[word_EB845]
 		STA		_tmp2
 		LDA		#>[word_EB845]
@@ -2146,8 +2030,8 @@ loc_EAFCB:
 		LDA		#$FF
 		JSR		sub_EA366
 loc_EAFD0:
-		LDY		#0
-		LDX		#3
+		LDY		#$00
+		LDX		#$03
 		CLC
 loc_EAFD5:
 		LDA		_taxes_collected,Y
@@ -2160,12 +2044,12 @@ loc_EAFD5:
 		JSR		_total_funds_calc
 		JSR		_current_funds_calc_0
 		BCS		loc_EAFF8
-		LDA		#8
+		LDA		#$08
 		JSR		_tax_alloc_clamp
 		JSR		_total_funds_calc
 		JSR		_funding_rates_recalc
 loc_EAFF8:
-		LDY		#0
+		LDY		#$00
 		STY		_tmp584
 loc_EAFFD:
 		JSR		_taxes_alloc_draw
@@ -2173,32 +2057,24 @@ loc_EAFFD:
 		INY
 		INY
 		STY		_tmp584
-		CPY		#$A
+		CPY		#$0A
 		BCC		loc_EAFFD
 		JSR		_buffers_force_flush
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_wnd_header_year_draw
+		FJSR	_wnd_header_year_draw,$F7,$F9
 		INC		_scr_res_idx
-		LDA		#0
+		LDA		#$00
 		STA		byte_596
 		STA		byte_597
 		STA		_tmp584
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_budget_wnd_cursor_pos_set
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_budget_wnd_cursor_draw
+		FJSR	_budget_wnd_cursor_pos_set,$F7,$F9
+		FJSR	_budget_wnd_cursor_draw,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl2_B_budget_input:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_scr_res_hndl2_B_budget_input
+		FJSR	_scr_res_hndl2_B_budget_input,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2217,28 +2093,26 @@ loc_EB043:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl3_A_city_eval_draw:
 		LDA		_scr_res_idx
-		CMP		#6
+		CMP		#$06
 		BEQ		loc_EB05B
 		RTS
 loc_EB05B:
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_wnd_header_year_draw
-		LDA		#0
+		FJSR	_wnd_header_year_draw,$F7,$F9
+		LDA		#$00
 		STA		_tmp13D
 		LDA		#$80
 		STA		_scr_res_control_flags
 		INC		_scr_res_idx
 		LDX		_city._city_type
-		LDA		#4
+		LDA		#$04
 		JSR		_txt_lib_printf
 		LDX		_city._difficult
-		LDA		#5
+		LDA		#$05
 		JSR		_txt_lib_printf
 loc_EB084:
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0+1
 		STA		_tmp2
 		LDA		_tmp13D
@@ -2250,8 +2124,8 @@ loc_EB084:
 		STA		_tmp5
 		LDY		_tmp13D
 		LDX		_scr06_city_eval_len_list,Y
-		LDY		#0
-		CPX		#1
+		LDY		#$00
+		CPX		#$01
 		BNE		loc_EB0A9
 		LDA		(_tmp4),Y
 		BMI		loc_EB0EA
@@ -2265,16 +2139,16 @@ loc_EB0A9:
 		LDA		(_tmp4),Y
 		BPL		loc_EB0D4
 		LDY		_tmp13D
-		CPY		#3
+		CPY		#$03
 		BEQ		loc_EB0C2
-		CPY		#6
+		CPY		#$06
 		BNE		loc_EB0D4
 loc_EB0C2:
 		LDX		_scr06_city_eval_len_list,Y
-		LDY		#0
+		LDY		#$00
 		SEC
 loc_EB0C8:
-		LDA		#0
+		LDA		#$00
 		SBC		_ptr0,Y
 		STA		_ptr0,Y
 		INY
@@ -2288,15 +2162,15 @@ loc_EB0D4:
 		JSR		_printf
 		INC		_tmp13D
 		LDA		_tmp13D
-		CMP		#$B
+		CMP		#$0B
 		BCC		loc_EB084
 loc_EB0EA:
-		LDA		#$B
+		LDA		#$0B
 		STA		_tmp13D
 loc_EB0EF:
 		LDA		_tmp13D
 		SEC
-		SBC		#$B
+		SBC		#$0B
 		STA		_tmp6+1
 		TAX
 		LDA		_worst_problem_list,X
@@ -2306,11 +2180,11 @@ loc_EB0EF:
 		JSR		_txt_lib_printf
 		INC		_tmp13D
 		LDA		_tmp13D
-		CMP		#$F
+		CMP		#$0F
 		BCC		loc_EB0EF
 loc_EB10D:
 		JSR		_buffers_force_flush
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		RTS
 
@@ -2327,13 +2201,13 @@ locret_EB11F:
 _scr_res_hndl4_A_city_overview_draw:
 		LDA		_maps_info_mode_idx
 		PHA
-		LDA		#$B
+		LDA		#$0B
 		STA		_maps_info_mode_idx
 		JSR		_thread_lock_flag_set
 		PLA
 		STA		_maps_info_mode_idx
 		INC		_game_core_state
-		LDA		#0
+		LDA		#$00
 		STA		_tmp118+4
 		INC		_scr_res_idx
 		RTS
@@ -2346,7 +2220,7 @@ _scr_res_hndl4_B_city_overview_input:
 		JSR		sub_EB162
 		LDA		_tmp118+4
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		_tmp118+4
 		CMP		#$21
 		BCC		locret_EB161
@@ -2355,17 +2229,17 @@ loc_EB153:
 		BVC		locret_EB161
 		LDA		#$40
 		STA		_scr_res_control_flags
-		LDA		#0
+		LDA		#$00
 		STA		_game_core_state
 locret_EB161:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EB162:
-		CMP		#$E
+		CMP		#$0E
 		BCC		loc_EB1A7
 		BEQ		loc_EB1C5
-		CMP		#$F
+		CMP		#$0F
 		BEQ		locret_EB177
 		CMP		#$13
 		BCC		loc_EB1DC
@@ -2405,7 +2279,7 @@ loc_EB1A7:
 		LDA		byte_EB52B,X
 		BNE		loc_EB1B9
 loc_EB1B5:
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0+1
 loc_EB1B9:
 		JSR		_hex_to_dec9999
@@ -2417,8 +2291,8 @@ loc_EB1C5:
 		CLC
 		ADC		_nuke_power_station_count
 		STA		_ptr0
-		LDA		#0
-		ADC		#0
+		LDA		#$00
+		ADC		#$00
 		STA		_ptr0+1
 		JSR		_hex_to_dec9999
 		LDA		#$36
@@ -2429,8 +2303,8 @@ loc_EB1DC:
 		JSR		_hex_to_dec9999
 		LDA		_ptr0
 		PHA
-		LDY		#3
-		LDX		#0
+		LDY		#$03
+		LDX		#$00
 loc_EB1EC:
 		LDA		_ptr0+1,X
 		STA		_ptr0,X
@@ -2442,14 +2316,14 @@ loc_EB1EC:
 		JSR		_printf
 		PLA
 		STA		_ptr0
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0+1
 		STA		_tmp2
 		STA		_tmp3
 		LDX		_tmp118+4
 		LDA		byte_EB539,X
 		CLC
-		ADC		#3
+		ADC		#$03
 		JMP		_printf
 loc_EB214:
 		LDA		_tmp118+4
@@ -2465,7 +2339,7 @@ loc_EB226:
 		PHA
 		LDX		#$64
 		JSR		_mmc5_mul16to8_0
-		LDX		#2
+		LDX		#$02
 loc_EB230:
 		LDA		_ptr0,X
 		STA		_tmp3,X
@@ -2478,10 +2352,10 @@ loc_EB230:
 		BNE		loc_EB247
 		LDA		_ptr0
 		BNE		loc_EB247
-		LDX		#0
+		LDX		#$00
 		BEQ		loc_EB24E
 loc_EB247:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp2
 		JSR		_div24
 loc_EB24E:
@@ -2496,7 +2370,7 @@ _get_constr_count_by_idx:
 		STA		_ptr0
 		LDA		off_EB26C+1,X
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		TAX
 		INY
@@ -2505,10 +2379,10 @@ _get_constr_count_by_idx:
 		STX		_ptr0
 		RTS
 off_EB26C:
-		.WORD	_RIC_areas
+		.WORD	_RIC_areas._R
 		.WORD	_RIC_areas._I
 		.WORD	_RIC_areas._C
-		.WORD	_stats
+		.WORD	_stats._developed
 		.WORD	_stats._undeveloped
 		.WORD	_stats._other
 		.WORD	_stats._total
@@ -2527,9 +2401,7 @@ off_EB26C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl5_A_history_draw:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_scr_res_hndl5_A_history_draw
+		FJSR	_scr_res_hndl5_A_history_draw,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2558,27 +2430,21 @@ locret_EB2BE:
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl6_A_bank_draw:
 		LDA		_scr_res_idx
-		CMP		#$C
+		CMP		#$0C
 		BNE		locret_EB2D0
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_scr_res_hndl6_A_bank_draw
+		FJSR	_scr_res_hndl6_A_bank_draw,$F7,$F9
 		INC		_scr_res_idx
 locret_EB2D0:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl6_B_bank_input:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_scr_res_hndl6_B_bank_input
+		FJSR	_scr_res_hndl6_B_bank_input,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_funds_recalc:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F6,$F9
-		.WORD	_budget_scr_tax_adjust
+		FJSR	_budget_scr_tax_adjust,$F6,$F9
 		JSR		_total_funds_calc
 		JSR		_current_funds_calc_0
 		BCS		_taxes_alloc_draw
@@ -2597,7 +2463,7 @@ _taxes_alloc_draw:
 		AND		#$FE
 		BEQ		loc_EB328
 		JSR		_funding_rate_calc
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0+1
 		LDA		_tmp584
 		LSR
@@ -2611,15 +2477,13 @@ _taxes_alloc_draw:
 		JSR		_printf
 		JSR		_cash_flow_draw
 loc_EB328:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_save_taxes_data
+		FJSR	_save_taxes_data,$F7,$F9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _current_funds_calc_0:
-		LDY		#0
-		LDX		#3
+		LDY		#$00
+		LDX		#$03
 		SEC
 loc_EB335:
 		LDA		_money_plus_taxes_collected,Y
@@ -2633,8 +2497,8 @@ loc_EB335:
 _tax_alloc_clamp:
 		AND		#$FE
 		PHA
-		LDX		#3
-		LDY		#0
+		LDX		#$03
+		LDY		#$00
 		SEC
 loc_EB348:
 		LDA		_total_funds,Y
@@ -2649,9 +2513,9 @@ loc_EB357:
 		LDA		_tax_alloc,Y
 		SEC
 		SBC		_ptr0
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		SBC		_ptr0+1
-		LDA		#0
+		LDA		#$00
 		SBC		_tmp2
 		BCS		loc_EB38B
 		LDA		_ptr0
@@ -2659,14 +2523,14 @@ loc_EB357:
 		SBC		_tax_alloc,Y
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		_tax_alloc._tax+1,Y
+		SBC		_tax_alloc+1,Y
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		#0
+		SBC		#$00
 		STA		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tax_alloc,Y
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		DEY
 		DEY
 		BNE		loc_EB357
@@ -2677,34 +2541,34 @@ loc_EB38B:
 		SEC
 		SBC		_ptr0
 		STA		_tax_alloc,Y
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		SBC		_ptr0+1
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _total_funds_calc:
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0
 		STA		_ptr0+1
 		STA		_tmp2
-		LDY		#2
+		LDY		#$02
 loc_EB3A7:
 		LDA		_tax_alloc,Y
 		CLC
 		ADC		_ptr0
 		STA		_ptr0
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		ADC		_ptr0+1
 		STA		_ptr0+1
-		LDA		#0
+		LDA		#$00
 		ADC		_tmp2
 		STA		_tmp2
 		INY
 		INY
-		CPY		#$A
+		CPY		#$0A
 		BCC		loc_EB3A7
-		LDY		#2
+		LDY		#$02
 loc_EB3C4:
 		LDA		_ptr0,Y
 		STA		_total_funds,Y
@@ -2713,8 +2577,8 @@ loc_EB3C4:
 		BPL		loc_EB3C4
 		BIT		_city._bank_flags
 		BVC		locret_EB3E7
-		LDX		#3
-		LDY		#0
+		LDX		#$03
+		LDY		#$00
 		CLC
 loc_EB3DA:
 		LDA		_ptr0,Y
@@ -2730,7 +2594,7 @@ _bank_loan_amount:
 
 ; =============== S U B	R O U T	I N E =======================================
 _funding_rates_recalc:
-		LDA		#2
+		LDA		#$02
 		STA		_tmp584
 loc_EB3F0:
 		JSR		_funding_rate_calc
@@ -2738,7 +2602,7 @@ loc_EB3F0:
 		INC		_tmp584
 		INC		_tmp584
 		LDA		_tmp584
-		CMP		#$A
+		CMP		#$0A
 		BCC		loc_EB3F0
 		RTS
 
@@ -2748,8 +2612,8 @@ _cash_flow_draw:
 		JSR		_hex_to_dec9999999
 		LDA		#$11
 		JSR		_printf
-		LDX		#3
-		LDY		#0
+		LDX		#$03
+		LDY		#$00
 		SEC
 loc_EB414:
 		LDA		_money_plus_taxes_collected,Y
@@ -2789,7 +2653,7 @@ _thread_lock_flag_set:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tax_alloc_calc:
-		LDA		#2
+		LDA		#$02
 		STA		_tmp584
 loc_EB450:
 		AND		#$FE
@@ -2798,7 +2662,7 @@ loc_EB450:
 		STA		_ptr0
 		LDA		_fund_reqest_ofs_list+1,Y
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		TAX
 		INY
@@ -2812,13 +2676,13 @@ loc_EB450:
 		LDA		_funding_level,Y
 		TAX
 		JSR		_mmc5_mul16to8_0
-		LDY		#2
+		LDY		#$02
 loc_EB478:
 		LDA		_ptr0,Y
 		STA		_tmp3,Y
 		DEY
 		BPL		loc_EB478
-		LDA		#0
+		LDA		#$00
 		STA		_tmp2
 		STA		_ptr0+1
 		LDA		#$64
@@ -2830,12 +2694,12 @@ loc_EB478:
 		TXA
 		STA		_tax_alloc,Y
 		LDA		_tmp6
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		JSR		_wait_for_nmi
 		INC		_tmp584
 		INC		_tmp584
 		LDA		_tmp584
-		CMP		#$A
+		CMP		#$0A
 		BCC		loc_EB450
 		RTS
 
@@ -2847,11 +2711,11 @@ _funding_rate_calc:
 		PHA
 		LDA		_tax_alloc,Y
 		STA		_ptr0
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		STA		_ptr0+1
 		LDX		#byte_64
 		JSR		_mmc5_mul16to8_0
-		LDY		#2
+		LDY		#$02
 loc_EB4C6:
 		LDA		_ptr0,Y
 		STA		_tmp3,Y
@@ -2863,20 +2727,20 @@ loc_EB4C6:
 		STA		_ptr0
 		LDA		_fund_reqest_ofs_list+1,Y
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		TAX
 		INY
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
 		BNE		loc_EB4EF
-		CPX		#0
+		CPX		#$00
 		BNE		loc_EB4EF
 		LDX		#byte_64
 		BNE		loc_EB4F8
 loc_EB4EF:
 		STX		_ptr0
-		LDA		#0
+		LDA		#$00
 		STA		_tmp2
 		JSR		_div24
 loc_EB4F8:
@@ -2897,9 +2761,9 @@ _switch:
 		ADC		_ptr0
 		STA		_ptr0
 		PLA
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		PHA
 		INY
@@ -3156,7 +3020,7 @@ _txt_lib_printf:
 		LDA		_tmp6
 		BEQ		loc_EB896
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		CLC
 loc_EB88F:
 		ADC		byte_EBB56,Y
@@ -3174,7 +3038,7 @@ loc_EB897:
 		STX		_ppu_queue_pos_head
 		LDX		_extnt_queue_pos_head
 		LDA		_tmp6+1
-		CMP		#6
+		CMP		#$06
 		BCS		locret_EB8F3
 		ASL
 		TAY
@@ -3200,7 +3064,7 @@ loc_EB897:
 		STA		_ptr0+1
 		LDY		_tmp6
 		LDA		_tmp13D
-		CMP		#$B
+		CMP		#$0B
 		BNE		loc_EB8E7
 		LDA		(_ptr0),Y
 		ORA		#$80
@@ -3219,9 +3083,9 @@ locret_EB8F3:
 ; =============== S U B	R O U T	I N E =======================================
 _printf:
 		STA		_tmp118
-		CMP		#6
+		CMP		#$06
 		BEQ		locret_EB903
-		CMP		#$B
+		CMP		#$0B
 		BEQ		locret_EB903
 		CMP		#$10
 		BNE		loc_EB904
@@ -3295,7 +3159,7 @@ locret_EB97F:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EB980:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp118+3
 		LDX		_tmp118
 		LDA		byte_EBE28,X
@@ -3306,11 +3170,11 @@ loc_EB98D:
 		BMI		loc_EB9B2
 		LDX		_tmp118+3
 		BNE		loc_EB9A9
-		CPY		#0
+		CPY		#$00
 		BEQ		loc_EB9A9
 		INC		_tmp118+3
 		TAX
-		LDA		#$B
+		LDA		#$0B
 		CPX		#$24
 		BEQ		loc_EB9B8
 		CPX		#$2D
@@ -3330,7 +3194,7 @@ loc_EB9B8:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EB9BF:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6+1
 		LDY		_tmp118
 		LDA		byte_EBE28,Y
@@ -3343,7 +3207,7 @@ loc_EB9CB:
 		DEY
 		BPL		loc_EB9CB
 		INY
-		LDX		#0
+		LDX		#$00
 		STX		_ptr0,Y
 loc_EB9DA:
 		LDX		_tmp118
@@ -3375,40 +3239,40 @@ _taxes_alloc_hex_to_dec9999:
 		TAY
 		LDA		_tax_alloc,Y
 		STA		_ptr0
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		STA		_ptr0+1
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec9999:
-		LDY		#0
+		LDY		#$00
 		STY		_tmp2
-		LDX		#3
+		LDX		#$03
 		BNE		_hex_to_dec_ex
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec99999:
-		LDX		#4
+		LDX		#$04
 		BNE		_hex_to_dec_ex
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec9999999:
-		LDX		#6
+		LDX		#$06
 		BNE		_hex_to_dec_ex
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec999999:
-		LDX		#5
+		LDX		#$05
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec_ex:
-		LDY		#0
+		LDY		#$00
 		STY		_tmp3
 		STY		_tmp4
 		STY		_tmp5
 		STY		_tmp6
 		STY		_tmp6+1
 loc_EBA2D:
-		LDY		#0
+		LDY		#$00
 loc_EBA2F:
 		LDA		_ptr0
 		CMP		byte_EBA77,X
@@ -3432,12 +3296,12 @@ loc_EBA58:
 		STY		_tmp2,X
 		DEX
 		BPL		loc_EBA2D
-		LDX		#0
+		LDX		#$00
 loc_EBA5F:
 		LDA		_tmp2,X
 		STA		_ptr0+1,X
 		INX
-		CPX		#6
+		CPX		#$06
 		BNE		loc_EBA5F
 		RTS
 byte_EBA69:
@@ -3467,7 +3331,7 @@ _mmc5_mul16to8_0:
 		ADC		_tmp2
 		STA		_ptr0+1
 		LDA		_tmp3
-		ADC		#0
+		ADC		#$00
 		STA		_tmp2
 		RTS
 
@@ -3475,8 +3339,8 @@ _mmc5_mul16to8_0:
 _cash_flow_calc:
 		LDA		#$DC
 		STA		_tmp6
-		LDY		#0
-		LDX		#3
+		LDY		#$00
+		LDX		#$03
 		SEC
 loc_EBAB4:
 		LDA		_taxes_collected,Y
@@ -3488,8 +3352,8 @@ loc_EBAB4:
 		BCS		loc_EBAD9
 		LDA		#$7F
 		STA		_tmp6
-		LDY		#0
-		LDX		#3
+		LDY		#$00
+		LDX		#$03
 		SEC
 loc_EBACC:
 		LDA		_total_funds,Y
@@ -3506,7 +3370,7 @@ loc_EBAD9:
 		LDA		#$26
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#1
+		LDA		#$01
 		STA		_ppu_queue_buf,X
 		INX
 		LDA		_tmp6
@@ -3523,7 +3387,7 @@ _div24:
 		ROL		_tmp5
 		JMP		loc_EBB06
 loc_EBB02:
-		LDX		#0
+		LDX		#$00
 		STX		_tmp6
 loc_EBB06:
 		LDA		_tmp3

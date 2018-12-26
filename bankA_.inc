@@ -4,10 +4,10 @@
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se8_start:
 		STY		_apu_se_loop_flags
-		LDA		#$A
+		LDA		#$0A
 		STA		byte_F8
 		JSR		_apu_tri_chnl_with_dpcm
-		LDA		#1
+		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$88
 		STA		_APU_PULSE2_ENV
@@ -24,7 +24,7 @@ _apu_se8_loop:
 		JSR		_apu_pulse1_note_load
 		DEC		byte_F8
 		BNE		locret_195833
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags
 		JSR		_apu_status_reset
 locret_195833:
@@ -57,12 +57,12 @@ _apu_se80_loop:
 		EOR		#$F0
 loc_195861:
 		STA		_APU_PULSE2_TIME
-		LDA		#8
+		LDA		#$08
 		STA		_APU_PULSE2_LEN
 		DEC		byte_FD
 		DEC		byte_FD
 		BNE		locret_195876
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags
 		JSR		_apu_status_reset
 locret_195876:
@@ -77,14 +77,14 @@ _apu_se20_start:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se20_loop:
-		LDA		#7
+		LDA		#$07
 		STA		_APU_TRI_COUNT
 		LDY		byte_F8
 		LDA		byte_195899-1,Y
 		JSR		_apu_tri_note_load
 		DEC		byte_F8
 		BNE		locret_195898
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags
 		JSR		_apu_status_reset
 locret_195898:
@@ -99,7 +99,7 @@ _apu_se40_start:
 		STY		_apu_se_loop_flags
 		LDA		#$14
 		STA		byte_F8
-		LDA		#7
+		LDA		#$07
 		STA		_APU_TRI_COUNT
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -109,7 +109,7 @@ _apu_se40_loop:
 		JSR		_apu_tri_note_load
 		DEC		byte_F8
 		BNE		locret_1958CE
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags
 		JSR		_apu_status_reset
 locret_1958CE:
@@ -229,14 +229,14 @@ _j_apu_se30_loop:
 _apu_se200_start:
 		STY		_apu_se_loop_flags+1
 		JSR		_apu_tri_chnl_no_dpcm
-		LDA		#0
+		LDA		#$00
 		STA		_APU_DMC_ADDR
 		LDA		#$FF
 		STA		_APU_DMC_LEN
-		LDA		#$C
+		LDA		#$0C
 		STA		_APU_DMC_FREQ
 		LDA		_APU_STATUS
-		AND		#9
+		AND		#$09
 		LDX		_apu_idx
 		BMI		loc_195978
 		ORA		#$10
@@ -248,10 +248,10 @@ _apu_se200_loop:
 		LDA		_APU_STATUS
 		AND		#$10
 		BNE		locret_19598E
-		ORA		#$F
+		ORA		#$0F
 		STA		_APU_STATUS
 		JSR		_apu_tri_chnl_no_dpcm
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 locret_19598E:
 		RTS
@@ -264,10 +264,10 @@ _apu_se100_start:
 		STA		_APU_DMC_ADDR
 		LDA		#$DF
 		STA		_APU_DMC_LEN
-		LDA		#$D
+		LDA		#$0D
 		STA		_APU_DMC_FREQ
 		LDA		_APU_STATUS
-		AND		#9
+		AND		#$09
 		LDX		_apu_idx
 		BMI		loc_1959AE
 		ORA		#$19
@@ -279,10 +279,10 @@ _apu_se100_loop:
 		LDA		_APU_STATUS
 		AND		#$10
 		BNE		locret_1959C4
-		ORA		#$F
+		ORA		#$0F
 		STA		_APU_STATUS
 		JSR		_apu_tri_chnl_no_dpcm
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 locret_1959C4:
 		RTS
@@ -298,7 +298,7 @@ _apu_se400_start:
 _apu_se400_loop:
 		LDY		_apu_se_var0
 		LDA		byte_1959FA-1,Y
-		ORA		#$C
+		ORA		#$0C
 		STA		_APU_NOISE_LOOP
 		LDA		_apu_se_var0
 		LSR
@@ -312,7 +312,7 @@ _apu_se400_loop:
 		DEC		_apu_se_var0
 		BNE		locret_1959F9
 		JSR		_apu_tri_chnl_with_dpcm
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 		LDA		#$10
 		STA		_APU_NOISE_ENV
@@ -347,7 +347,7 @@ _apu_se30_loop:
 		STA		_APU_NOISE_LEN
 		DEC		_apu_se_var0
 		BNE		locret_195A4A
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 locret_195A4A:
 		RTS
@@ -355,7 +355,7 @@ locret_195A4A:
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se800_start:
 		STY		_apu_se_loop_flags+1
-		LDA		#$A
+		LDA		#$0A
 		STA		_apu_se_var0
 		JSR		_apu_tri_chnl_with_dpcm
 
@@ -366,12 +366,12 @@ _apu_se800_loop:
 		LDX		byte_195A7D-1,Y
 		STA		_APU_NOISE_ENV
 		STX		_APU_NOISE_LOOP
-		LDA		#8
+		LDA		#$08
 		STA		_APU_NOISE_LEN
 		DEC		_apu_se_var0
 		BNE		locret_195A72
 		JSR		_apu_status_reset
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 locret_195A72:
 		RTS
@@ -405,7 +405,7 @@ _apu_se1000_loop:
 loc_195AB1:
 		DEC		_apu_se_var0
 		BNE		locret_195ABC
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 		JSR		_apu_status_reset
 locret_195ABC:
@@ -431,12 +431,12 @@ _apu_se2000_start:
 		STA		_APU_PULSE2_ENV
 		LDA		#$9D
 		STA		_APU_PULSE2_SWEEP
-		LDA		#1
+		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$FE
 		STA		_APU_PULSE2_TIME
 		STA		_APU_TRI_TIME
-		LDA		#8
+		LDA		#$08
 		STA		_APU_PULSE2_LEN
 		STA		_APU_TRI_LEN
 
@@ -444,7 +444,7 @@ _apu_se2000_start:
 _apu_se2000_loop:
 		DEC		_apu_se_var0
 		BNE		locret_195B70
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 		JSR		_apu_status_reset
 locret_195B70:
@@ -453,19 +453,19 @@ locret_195B70:
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se4000_start:
 		STY		_apu_se_loop_flags+1
-		LDA		#$A
+		LDA		#$0A
 		STA		_apu_se_var0
 		JSR		_apu_tri_chnl_with_dpcm
 		LDA		#$83
 		STA		_APU_PULSE2_ENV
 		LDA		#$9D
 		STA		_APU_PULSE2_SWEEP
-		LDA		#1
+		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$FE
 		STA		_APU_PULSE2_TIME
 		STA		_APU_TRI_TIME
-		LDA		#9
+		LDA		#$09
 		STA		_APU_PULSE2_LEN
 		STA		_APU_TRI_LEN
 
@@ -473,7 +473,7 @@ _apu_se4000_start:
 _apu_se4000_loop:
 		DEC		_apu_se_var0
 		BNE		locret_195BA4
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 		JSR		_apu_status_reset
 locret_195BA4:
@@ -485,7 +485,7 @@ _apu_se8000_start:
 		LDA		#$15
 		STA		_apu_se_var0
 		JSR		_apu_tri_chnl_with_dpcm
-		LDA		#1
+		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$83
 		STA		_APU_PULSE2_ENV
@@ -501,7 +501,7 @@ _apu_se8000_loop:
 		DEC		_apu_se_var0
 		BNE		locret_195BD2
 		JSR		_apu_status_reset
-		LDA		#0
+		LDA		#$00
 		STA		_apu_se_loop_flags+1
 locret_195BD2:
 		RTS
@@ -572,27 +572,27 @@ _apu_tri_chnl_with_dpcm:
 		LDA		_APU_STATUS
 		AND		#$19
 		STA		_APU_STATUS
-		ORA		#$F
+		ORA		#$0F
 		STA		_APU_STATUS
-		LDA		#1
+		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$FF
 		STA		_APU_TRI_TIME
-		LDA		#$F
+		LDA		#$0F
 		STA		_APU_TRI_LEN
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_tri_chnl_no_dpcm:
 		LDA		_APU_STATUS
-		AND		#$F
-		ORA		#$F
+		AND		#$0F
+		ORA		#$0F
 		STA		_APU_STATUS
-		LDA		#1
+		LDA		#$01
 		STA		_APU_TRI_COUNT
 		LDA		#$FF
 		STA		_APU_TRI_TIME
-		LDA		#$F
+		LDA		#$0F
 		STA		_APU_TRI_LEN
 		RTS
 
@@ -601,7 +601,7 @@ _apu_status_reset:
 		LDA		_APU_STATUS
 		AND		#$1D
 		STA		_APU_STATUS
-		ORA		#$F
+		ORA		#$0F
 		STA		_APU_STATUS
 		RTS
 

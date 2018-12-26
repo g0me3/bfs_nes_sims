@@ -6,7 +6,7 @@
 ; =============== S U B	R O U T	I N E =======================================
 _scr_chr_vars_init:
 		LDA		_ppu_ctrl_shadow
-		ORA		#1
+		ORA		#$01
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
 		LDA		#$84
@@ -17,7 +17,7 @@ _scr_chr_vars_init:
 		STA		_scr_res_idx
 		ASL
 		TAX
-		LDY		#0
+		LDY		#$00
 loc_A001C:
 		LDA		_screen_chr_banks_lib,X
 		BEQ		loc_A0024
@@ -25,9 +25,9 @@ loc_A001C:
 loc_A0024:
 		INX
 		INY
-		CPY		#4
+		CPY		#$04
 		BNE		loc_A001C
-		LDA		#0
+		LDA		#$00
 		STA		_info_maps_cur_row
 		STA		_info_maps_cur_col
 		STA		_fund_request_tax+1
@@ -51,7 +51,7 @@ _screen_chr_banks_lib:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_pal_bg_load:
-		LDA		#2
+		LDA		#$02
 		STA		_ppu_pal_dequeue_req
 		LDA		_scr_res_idx
 		AND		#$FE
@@ -120,7 +120,7 @@ _scr_res_wnd_close:
 		AND		#$FC
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_NT_MODE
 		STA		_game_wnd_spr_mode_flag
 		STA		_scr_res_window_opened_flag
@@ -135,7 +135,7 @@ _budget_scr_tax_adjust:
 		STA		_ptr0
 		LDA		_fund_reqest_vars_list+1,X
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		STA		_tmp2
 		INY
@@ -162,7 +162,7 @@ loc_A0118:
 		CLC
 		ADC		word_A0388,X
 		STA		_ptr0
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		ADC		word_A0388+1,X
 		STA		_ptr0+1
 		CMP		_tmp3
@@ -176,11 +176,11 @@ loc_A0148:
 		LDA		_tmp2
 		STA		_tax_alloc,Y
 		LDA		_tmp3
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		RTS
 loc_A0153:
 		LDA		_ptr0+1
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		LDA		_ptr0
 		STA		_tax_alloc,Y
 		RTS
@@ -191,15 +191,15 @@ loc_A015E:
 		SEC
 		SBC		word_A0388,X
 		STA		_ptr0
-		LDA		_tax_alloc._tax+1,Y
+		LDA		_tax_alloc+1,Y
 		SBC		word_A0388+1,X
 		BCS		loc_A017A
-		LDA		#0
+		LDA		#$00
 		STA		_tax_alloc,Y
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		RTS
 loc_A017A:
-		STA		_tax_alloc._tax+1,Y
+		STA		_tax_alloc+1,Y
 		LDA		_ptr0
 		STA		_tax_alloc,Y
 		RTS
@@ -210,14 +210,14 @@ sub_A0183:
 		LDY		_maps_info_mode_idx
 		LDA		byte_A0435,Y
 		TAY
-		CMP		#8
+		CMP		#$08
 		BEQ		loc_A0199
 		LDY		byte_114
 		LDA		byte_A0435,Y
 		JSR		sub_A01DB
 loc_A0199:
 		LDY		_maps_info_mode_idx
-		CPY		#$B
+		CPY		#$0B
 		BEQ		sub_A01BC
 		LDA		byte_A0435,Y
 
@@ -229,11 +229,11 @@ sub_A01A3:
 		TAY
 		LDA		byte_A0441,Y
 		AND		#$C0
-		ORA		#4
+		ORA		#$04
 		STA		_tmp2
 		LDA		byte_A0441+1,Y
 		AND		#$C0
-		ORA		#4
+		ORA		#$04
 		STA		_tmp3
 		PLA
 		JSR		sub_A01E9
@@ -251,7 +251,7 @@ sub_A01BF:
 		BEQ		loc_A01CC
 		TYA
 		CLC
-		ADC		#$A
+		ADC		#$0A
 		JSR		sub_A01DB
 loc_A01CC:
 		LDY		byte_598
@@ -261,7 +261,7 @@ loc_A01CC:
 loc_A01D4:
 		TYA
 		CLC
-		ADC		#$A
+		ADC		#$0A
 		JMP		sub_A01A3
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -290,7 +290,7 @@ sub_A01E9:
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 sub_A01F8:
-		LDA		#3
+		LDA		#$03
 		STA		_tmp5
 loc_A01FC:
 		LDA		(_ptr0),Y
@@ -319,13 +319,13 @@ _scr_res_hndl1_A_graphs_draw_init:
 sub_A021E:
 		LDY		_graphs_scr_period_mode
 		LDA		byte_A0465,Y
-		LDY		#0
+		LDY		#$00
 		JSR		sub_A0234
 		LDA		_graphs_scr_period_mode
-		EOR		#1
+		EOR		#$01
 		TAY
 		LDA		byte_A0465,Y
-		LDY		#4
+		LDY		#$04
 
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
@@ -353,10 +353,10 @@ _info_maps_header_and_menu_draw:
 		JSR		_flush_wait_0
 		LDA		_maps_info_mode_idx
 		BEQ		loc_A0262
-		CMP		#$D
+		CMP		#$0D
 		BEQ		loc_A0266
 		CLC
-		ADC		#3
+		ADC		#$03
 		BPL		loc_A0266
 loc_A0262:
 		CLC
@@ -393,10 +393,7 @@ loc_A0266:
 		JSR		_strcpy_ex
 		STX		_extnt_queue_pos_head
 		JSR		_flush_wait_0
-		LDA		#<[off_A046F]
-		STA		_ptr0
-		LDA		#>[off_A046F]
-		STA		_ptr0+1
+		MOVO	_ptr0,off_A046F
 		LDA		#<[_ppu_queue_buf]
 		STA		_tmp2
 		LDA		#>[_ppu_queue_buf]
@@ -404,10 +401,7 @@ loc_A0266:
 		LDA		_ppu_queue_pos_head
 		JSR		_strcpy_lib_ex
 		STX		_ppu_queue_pos_head
-		LDA		#<[off_A0479]
-		STA		_ptr0
-		LDA		#>[off_A0479]
-		STA		_ptr0+1
+		MOVO	_ptr0,off_A0479
 		LDA		#<[_extnt_queue_buf]
 		STA		_tmp2
 		LDA		#>[_extnt_queue_buf]
@@ -434,7 +428,7 @@ _strcpy_lib_ex:
 
 ; =============== S U B	R O U T	I N E =======================================
 _strcpy_ex:
-		LDY		#0
+		LDY		#$00
 		STY		_tmp5
 		BEQ		loc_A02FD
 loc_A02F1:
@@ -460,13 +454,13 @@ _scr_res_cursor_pos_clamp:
 		AND		#$20
 		BNE		locret_A0323
 		LDA		_pad0_held
-		AND		#$F
+		AND		#$0F
 		BNE		loc_A0324
 locret_A0323:
 		RTS
 loc_A0324:
-		LDX		#0
-		LDY		#3
+		LDX		#$00
+		LDY		#$03
 		LDA		_pad0_held
 loc_A032A:
 		LSR
@@ -483,20 +477,20 @@ loc_A032A:
 loc_A0340:
 		PLA
 loc_A0341:
-		CPY		#2
+		CPY		#$02
 		BNE		loc_A0346
 		INX
 loc_A0346:
 		DEY
 		BPL		loc_A032A
-		LDA		#0
+		LDA		#$00
 		STA		_cur_game_cursor_area
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_cursor_draw:
 		LDA		_scr_res_control_flags
-		AND		#8
+		AND		#$08
 		BNE		locret_A0360
 		LDA		_spr_buf_pos
 		BEQ		_scr_res_cursor_spr_insert_ex
@@ -509,7 +503,7 @@ locret_A0360:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_cursor_spr_insert_ex_0:
-		LDA		#0
+		LDA		#$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_cursor_spr_insert_ex:
@@ -783,45 +777,39 @@ _scr_common_draw:
 		STA		_cur_game_cursor_scr_pos._X
 		LDA		#$62
 		STA		_cur_game_cursor_scr_pos._Y
-		LDA		#<[byte_A0B6A]
-		STA		_ptr0
-		LDA		#>[byte_A0B6A]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_A0B6A
 		JSR		_tlm_transfer
 		LDX		#$2C
-		LDA		#1
+		LDA		#$01
 		JSR		_ppu_area_fill
-		LDA		#<[byte_A0BE3]
-		STA		_ptr0
-		LDA		#>[byte_A0BE3]
-		STA		_ptr0+1
+		MOVO	_ptr0,byte_A0BE3
 		JMP		_tlm_transfer
 loc_A0A9A:
-		CMP		#2
+		CMP		#$02
 		BNE		loc_A0AA1
 		JMP		_scr_res1_draw
 loc_A0AA1:
-		CMP		#4
+		CMP		#$04
 		BNE		loc_A0AA8
 		JMP		_scr_res2_draw
 loc_A0AA8:
-		CMP		#6
+		CMP		#$06
 		BNE		loc_A0AAF
 		JMP		_scr_res3_draw
 loc_A0AAF:
-		CMP		#8
+		CMP		#$08
 		BNE		loc_A0AB6
 		JMP		_scr_res4_draw
 loc_A0AB6:
-		CMP		#$A
+		CMP		#$0A
 		BNE		loc_A0ABD
 		JMP		_scr_res5_draw
 loc_A0ABD:
-		CMP		#$C
+		CMP		#$0C
 		BNE		loc_A0AC4
 		JMP		_scr_res6_draw
 loc_A0AC4:
-		CMP		#$E
+		CMP		#$0E
 		BNE		locret_A0ACB
 		JMP		_scr_res7_draw
 locret_A0ACB:

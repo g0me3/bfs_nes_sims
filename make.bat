@@ -6,6 +6,8 @@ pause 0
 
 :again
 
+del !simcity.nes
+
 cd nas
 
 echo assemble...

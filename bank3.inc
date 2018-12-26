@@ -18,19 +18,19 @@ _cur_money_str_calc:
 		STA		_ptr0
 		STX		_ptr0+1
 		STY		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
-		LDY		#1
-		LDX		#6
+		LDY		#$01
+		LDX		#$06
 		LDA		#$DF
 		STA		_pre_ppu_buf
 loc_58026:
 		JSR		_hex_to_dec_9999999
-		CMP		#0
+		CMP		#$00
 		BNE		loc_5803C
 		LDA		_tmp3
 		BNE		loc_5804F
-		CPX		#0
+		CPX		#$00
 		BEQ		loc_5803C
 		LDA		#$DF
 		STA		_pre_ppu_buf,Y
@@ -48,13 +48,13 @@ loc_5804A:
 		BPL		loc_58026
 		RTS
 loc_5804F:
-		LDA		#0
+		LDA		#$00
 		STA		_pre_ppu_buf,Y
 		BEQ		loc_5804A
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec_9999999:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp4
 loc_5805A:
 		SEC
@@ -111,20 +111,20 @@ loc_580B0:
 loc_580BE:
 		STA		_ptr0
 		CLC
-		ADC		#7
+		ADC		#$07
 		CMP		#$20
 		BCC		loc_580D4
 		SBC		#$1F
 		STA		_tmp3
-		LDA		#8
+		LDA		#$08
 		SEC
 		SBC		_tmp3
 		STA		_tmp2
 		BNE		loc_580DC
 loc_580D4:
-		LDA		#8
+		LDA		#$08
 		STA		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 loc_580DC:
 		LDA		_ptr0+1
@@ -147,7 +147,7 @@ loc_580F2:
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_str_queue:
 		LDX		_ppu_queue_pos_head
-		LDY		#0
+		LDY		#$00
 		LDA		_ptr0
 		STA		_ppu_queue_buf,X
 		INX
@@ -167,7 +167,7 @@ loc_58110:
 		LDA		_tmp3
 		BEQ		loc_5813D
 		STA		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 		LDA		_ptr0
 		AND		#$E0
@@ -186,8 +186,8 @@ loc_5813D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_handler:
-		LDX		#3
-		LDA		#0
+		LDX		#$03
+		LDA		#$00
 loc_58144:
 		STA		byte_70,X
 		STA		byte_76,X
@@ -208,30 +208,28 @@ loc_58144:
 		STA		byte_52E
 		STA		byte_52F
 		STA		byte_530
-		LDA		#5
+		LDA		#$05
 		STA		_scr_mode_idx
 		JSR		_spr_clear
 		JSR		_game_msg_pal_select
-		LDA		#1
+		LDA		#$01
 		STA		_ppu_pal_dequeue_req
 		JSR		_game_msg_apu_select
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F2,$F2
-		.WORD	_game_msg_chr_setup
-		LDA		#0
+		FJSR	_game_msg_chr_setup,$F2,$F2
+		LDA		#$00
 		STA		_ptr0
 		JSR		_game_msg_display
-		LDA		#0
+		LDA		#$00
 		STA		byte_525
 		STA		byte_524
 loc_581A4:
 		LDA		_ptr0
 		PHA
 		JSR		_wait_for_nmi
-		LDA		#0
+		LDA		#$00
 		STA		_spr_buf_pos
 		JSR		_game_msg_wnd_animA
 		JSR		_game_msg_wnd_animB
@@ -249,13 +247,13 @@ loc_581A4:
 		BEQ		loc_581A4
 		LDA		_ptr0
 		CLC
-		ADC		#1
+		ADC		#$01
 		LDX		_game_msg_idx
 		CMP		_game_msg_screens_count_list,X
 		BCS		loc_581EC
 		STA		_ptr0
 		JSR		_game_msg_display
-		LDA		#0
+		LDA		#$00
 		STA		byte_525
 		STA		byte_524
 		JMP		loc_581A4
@@ -264,7 +262,7 @@ loc_581EC:
 		STA		_input_forbid_delay
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		LDA		#0
+		LDA		#$00
 		STA		_scr_mode_idx
 		LDA		#$80
 		JSR		_pal_load_lib
@@ -276,7 +274,7 @@ loc_581EC:
 		STA		_MMC5_CHR_BANKSA+3
 		LDA		#$FF
 		STA		byte_53
-		LDA		#0
+		LDA		#$00
 		STA		byte_54
 		STA		byte_56
 		LDA		#$4D
@@ -286,7 +284,7 @@ loc_581EC:
 		JSR		_special_building_put_in_list
 		JSR		_init_special_year_date
 		JSR		_debug_flag_toggle_test
-		LDA		#0
+		LDA		#$00
 		STA		_game_msg_idx
 		RTS
 
@@ -295,7 +293,7 @@ _game_msg_apu_select:
 		LDX		_game_msg_idx
 		LDA		_game_msg_apu_types_list,X
 		BEQ		locret_5824B
-		CMP		#1
+		CMP		#$01
 		BNE		loc_58243
 		LDA		#$60
 		STA		_apu_mus_idx_req
@@ -316,7 +314,7 @@ _game_msg_music_restore:
 		LDX		_city._city_type
 		LDY		_bg_music_list,X
 		LDA		_city._game_flags
-		AND		#8
+		AND		#$08
 		BNE		loc_58262
 		LDY		#$80
 loc_58262:
@@ -334,7 +332,7 @@ _game_msg_display:
 		JSR		_far_wnd_header_draw
 		PLA
 		STA		_ptr0
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0+1
 loc_5829C:
 		LDA		_ptr0
@@ -364,9 +362,7 @@ loc_5829C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_wnd_header_draw:
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F0,$F0
-		.WORD	_wnd_header_draw
+		FJSR	_wnd_header_draw,$F0,$F0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -374,7 +370,7 @@ _game_msg_line_pos_calc:
 		LDA		_cur_screen_tile._Y
 		LSR
 		CLC
-		ADC		#4
+		ADC		#$04
 		ADC		_ptr0+1
 		CMP		#$1E
 		BCC		loc_582E4
@@ -384,7 +380,7 @@ loc_582E4:
 		LDA		_cur_screen_tile._X
 		LSR
 		CLC
-		ADC		#8
+		ADC		#$08
 		CMP		#$20
 		BCC		loc_582F2
 		SBC		#$20
@@ -404,7 +400,7 @@ loc_582F2:
 loc_58308:
 		LDA		#$17
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 loc_58310:
 		LDA		_tmp2
@@ -417,7 +413,7 @@ loc_58310:
 		ADC		_tmp3
 		STA		_tmp2
 		TXA
-		ADC		#0
+		ADC		#$00
 		STA		_tmp3
 		RTS
 
@@ -464,7 +460,7 @@ _game_msg_line_display:
 		STA		_extnt_queue_buf,X
 		INX
 loc_58371:
-		LDA		#$B
+		LDA		#$0B
 		STA		_extnt_queue_buf,X
 		INX
 		DEC		_tmp4
@@ -472,7 +468,7 @@ loc_58371:
 		LDA		_tmp5
 		BEQ		loc_5839E
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0
@@ -493,7 +489,7 @@ loc_5839E:
 		PLA
 		STA		_tmp4
 		LDX		_ppu_queue_pos_head
-		LDY		#0
+		LDY		#$00
 		LDA		_tmp2
 		STA		_ppu_queue_buf,X
 		INX
@@ -509,7 +505,7 @@ loc_583BE:
 		INY
 		CMP		#$40
 		BEQ		loc_583FA
-		CMP		#$F
+		CMP		#$0F
 		BNE		loc_583CC
 		DEY
 		LDA		#$20
@@ -521,7 +517,7 @@ loc_583CC:
 		LDA		_tmp5
 		BEQ		loc_583F7
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0
@@ -563,7 +559,7 @@ loc_58419:
 		BEQ		locret_5846D
 		LDY		#$CF
 		LDX		_spr_buf_pos
-		LDA		#7
+		LDA		#$07
 		STA		_ptr0
 loc_58425:
 		LDA		#$F4
@@ -593,11 +589,11 @@ loc_58443:
 		STA		_spr_buf+7,X
 		TXA
 		CLC
-		ADC		#8
+		ADC		#$08
 		TAX
 		TYA
 		SEC
-		SBC		#8
+		SBC		#$08
 		TAY
 		DEC		_ptr0
 		BNE		loc_58425
@@ -608,11 +604,11 @@ locret_5846D:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_bonus_item_clear:
 		LDA		byte_528
-		CMP		#2
+		CMP		#$02
 		BEQ		loc_58476
 		RTS
 loc_58476:
-		LDA		#2
+		LDA		#$02
 		STA		_ptr0+1
 loc_5847A:
 		JSR		_game_msg_bonus_item_pos_calc
@@ -627,7 +623,7 @@ _game_msg_bonus_item_pos_calc:
 		LDA		_cur_screen_tile._Y
 		LSR
 		CLC
-		ADC		#$C
+		ADC		#$0C
 		ADC		_ptr0+1
 		CMP		#$1E
 		BCC		loc_58496
@@ -646,18 +642,18 @@ loc_584A4:
 		LDA		#$20
 		SEC
 		SBC		_tmp3
-		CMP		#3
+		CMP		#$03
 		BCS		loc_584BA
 		STA		_tmp4
-		LDA		#3
+		LDA		#$03
 		SEC
 		SBC		_tmp4
 		STA		_tmp5
 		BNE		loc_584C2
 loc_584BA:
-		LDA		#3
+		LDA		#$03
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 loc_584C2:
 		LDA		_tmp2
@@ -670,14 +666,14 @@ loc_584C2:
 		ADC		_tmp3
 		STA		_tmp2
 		TXA
-		ADC		#0
+		ADC		#$00
 		STA		_tmp3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_bonus_item_line_clear:
 		LDX		_extnt_queue_pos_head
-		LDY		#$B
+		LDY		#$0B
 		LDA		_tmp2
 		STA		_extnt_queue_buf,X
 		INX
@@ -700,7 +696,7 @@ loc_584FB:
 		LDA		_tmp6+1
 		BEQ		loc_58527
 		STA		_tmp6
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6+1
 		LDA		_tmp2
 		AND		#$E0
@@ -737,7 +733,7 @@ loc_58541:
 		LDA		_tmp5
 		BEQ		loc_5856D
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0
@@ -783,7 +779,7 @@ loc_58586:
 loc_585A5:
 		LDY		byte_52C
 		LDX		byte_52B
-		CPX		#0
+		CPX		#$00
 		BNE		loc_585CA
 		INY
 		LDA		byte_58659,Y
@@ -814,7 +810,7 @@ loc_585DB:
 		STY		byte_52C
 		LDY		byte_52E
 		LDX		byte_52D
-		CPX		#0
+		CPX		#$00
 		BNE		loc_585F2
 		INY
 		LDX		byte_58684,Y
@@ -836,7 +832,7 @@ loc_585F2:
 loc_58614:
 		LDY		byte_530
 		LDX		byte_52F
-		CPX		#0
+		CPX		#$00
 		BNE		loc_58622
 		INY
 		LDX		byte_586A2,Y
@@ -913,7 +909,7 @@ loc_58707:
 		STA		_spr_insert_args._pos._X
 		LDA		byte_74,Y
 		STA		_spr_insert_args._pos._Y
-		LDA		#1
+		LDA		#$01
 		STA		byte_70,Y
 		LDA		off_704A4,X
 		STA		_ptr0
@@ -934,7 +930,7 @@ loc_58707:
 		LDX		byte_76,Y
 		LDA		byte_78,Y
 		TAY
-		CPX		#0
+		CPX		#$00
 		BNE		loc_58751
 loc_58748:
 		LDA		(_tmp2),Y
@@ -982,7 +978,7 @@ loc_5877E:
 		LDA		byte_7E,Y
 		BEQ		loc_587AA
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_7E,Y
 		BEQ		loc_587A4
 		LDA		byte_83
@@ -1019,7 +1015,7 @@ loc_587C5:
 		LDX		byte_7A,Y
 		LDA		byte_7C,Y
 		TAY
-		CPX		#0
+		CPX		#$00
 		BNE		loc_587DE
 		LDA		(_tmp6),Y
 		TAX
@@ -1053,7 +1049,7 @@ loc_587F6:
 		LDA		byte_80,Y
 		BEQ		loc_58822
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_80,Y
 		BEQ		loc_5881C
 		LDA		byte_83
@@ -1089,8 +1085,8 @@ loc_58837:
 		STA		byte_7A,Y
 		PLA
 		TAX
-		AND		#$F
-		CMP		#8
+		AND		#$0F
+		CMP		#$08
 		BCC		loc_58850
 		ORA		#$F0
 loc_58850:
@@ -1103,7 +1099,7 @@ loc_58850:
 		LSR
 		LSR
 		LSR
-		CMP		#8
+		CMP		#$08
 		BCC		loc_58864
 		ORA		#$F0
 loc_58864:
@@ -1144,7 +1140,7 @@ _cmd40_24_name:
 loc_58896:
 		TYA
 		PHA
-		LDY		#0
+		LDY		#$00
 loc_5889A:
 		LDA		(word_DA),Y
 		INY
@@ -1155,7 +1151,7 @@ loc_5889A:
 		LDA		_tmp5
 		BEQ		loc_588CE
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0
@@ -1183,64 +1179,49 @@ loc_588CE:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_select_name:
-		CMP		#0
+		CMP		#$00
 		BEQ		loc_588E4
-		CMP		#1
+		CMP		#$01
 		BEQ		loc_588F6
-		CMP		#2
+		CMP		#$02
 		BEQ		loc_58908
-		CMP		#3
+		CMP		#$03
 		BEQ		loc_5891A
 		BNE		loc_5892C
 loc_588E4:
 		LDA		_city._name
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_51A
-		LDA		#<[_city._name+1]
-		STA		word_DA
-		LDA		#>[_city._name+1]
-		STA		word_DA+1
+		MOVO	word_DA,_city._name+1
 		RTS
 loc_588F6:
 		LDA		_city._sister_name
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_51A
-		LDA		#<[_city._sister_name+1]
-		STA		word_DA
-		LDA		#>[_city._sister_name+1]
-		STA		word_DA+1
+		MOVO	word_DA,_city._sister_name+1
 		RTS
 loc_58908:
 		LDA		_city._bank_name
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_51A
-		LDA		#<[_city._bank_name+1]
-		STA		word_DA
-		LDA		#>[_city._bank_name+1]
-		STA		word_DA+1
+		MOVO	word_DA,_city._bank_name+1
 		RTS
 loc_5891A:
 		LDA		_city._unused_name3
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_51A
-		LDA		#<[_city._unused_name3+1]
-		STA		word_DA
-		LDA		#>[_city._unused_name3+1]
-		STA		word_DA+1
+		MOVO	word_DA,_city._unused_name3+1
 		RTS
 loc_5892C:
 		LDA		_city._unused_name4
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		byte_51A
-		LDA		#<[_city._unused_name4+1]
-		STA		word_DA
-		LDA		#>[_city._unused_name4+1]
-		STA		word_DA+1
+		MOVO	word_DA,_city._unused_name4+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1250,11 +1231,11 @@ _cmd40_23_popul:
 		SEC
 		SBC		#$30
 		JSR		_get_select_popul_num
-		LDA		#1
+		LDA		#$01
 		STA		byte_51B
 		TYA
 		PHA
-		LDY		#5
+		LDY		#$05
 loc_58950:
 		LDA		_tmp_popul_decimal_buf,Y
 		DEY
@@ -1269,14 +1250,14 @@ loc_58961:
 loc_58963:
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#0
+		LDA		#$00
 		STA		byte_51B
 		DEC		_tmp4
 		BNE		loc_58990
 		LDA		_tmp5
 		BEQ		loc_58998
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_tmp2
 		AND		#$E0
@@ -1304,31 +1285,23 @@ loc_58998:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_select_popul_num:
-		CMP		#0
+		CMP		#$00
 		BEQ		loc_589A4
-		CMP		#1
+		CMP		#$01
 		BEQ		loc_589B9
 loc_589A4:
-		LDA		_popul_cur
-		STA		_tmp_popul_hex
-		LDA		_popul_cur+1
-		STA		_tmp_popul_hex+1
+		MOVM16	_tmp_popul_hex,_popul_cur
 		LDA		_popul_cur+2
 		STA		_tmp_popul_hex+2
 		JMP		loc_589C8
 loc_589B9:
-		LDA		#$10
-		STA		_tmp_popul_hex
-		LDA		#$27
-		STA		_tmp_popul_hex+1
-		LDA		#0
-		STA		_tmp_popul_hex+2
+		MOVID	_tmp_popul_hex,$002710
 loc_589C8:
 		TYA
 		PHA
-		LDY		#5
+		LDY		#$05
 loc_589CC:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp_popul_decimal_buf,Y
 loc_589D1:
 		SEC
@@ -1344,7 +1317,7 @@ loc_589D1:
 		BCC		loc_589FA
 		LDA		_tmp_popul_decimal_buf,Y
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		_tmp_popul_decimal_buf,Y
 		BNE		loc_589D1
 loc_589FA:
@@ -1404,30 +1377,30 @@ byte_58A31:
 ;
 ;
 _special_building_put_in_list:
-		LDX		#$F
+		LDX		#$0F
 		LDA		_game_msg_idx
-		CMP		#2
+		CMP		#$02
 		BEQ		loc_58A5A
-		LDX		#1
-		CMP		#$B
+		LDX		#$01
+		CMP		#$0B
 		BEQ		loc_58A5A
 		CMP		#$15
 		BEQ		locret_58A6D
-		CMP		#$D
+		CMP		#$0D
 		BCC		locret_58A6D
 		CMP		#$1B
 		BCS		locret_58A6D
 		SEC
-		SBC		#$B
+		SBC		#$0B
 		TAX
-		CPX		#$B
+		CPX		#$0B
 		BCC		loc_58A5A
 		DEX
 loc_58A5A:
 		TXA
 		PHA
 		LDX		#$FF
-		LDY		#4
+		LDY		#$04
 loc_58A60:
 		INX
 		LDA		_city._special_buildings_list,X
@@ -1443,19 +1416,19 @@ locret_58A6D:
 ; =============== S U B	R O U T	I N E =======================================
 _init_special_year_date:
 		LDA		_game_msg_idx
-		CMP		#$C
+		CMP		#$0C
 		BEQ		loc_58A79
 		CMP		#$15
 		BEQ		loc_58A85
 		RTS
 loc_58A79:
-		LDA		#$A
+		LDA		#$0A
 		JSR		_adc_cur_year
 		STA		_city._year_to_liberty
 		STX		_city._year_to_liberty+1
 		RTS
 loc_58A85:
-		LDA		#1
+		LDA		#$01
 		JSR		_adc_cur_year
 		STA		_city._year_to_expo
 		STX		_city._year_to_expo+1
@@ -1476,7 +1449,7 @@ locret_58A9E:
 _game_msg_wnd_draw:
 		JSR		_ppu_queue_empty_test
 		BCS		_game_msg_wnd_draw
-		LDA		#0
+		LDA		#$00
 		STA		_ptr0
 loc_58AA8:
 		LDA		_ptr0
@@ -1506,7 +1479,7 @@ loc_58ACC:
 		LDA		_cur_screen_tile._X
 		LSR
 		CLC
-		ADC		#7
+		ADC		#$07
 		CMP		#$20
 		BCC		loc_58ADA
 		SBC		#$20
@@ -1526,7 +1499,7 @@ loc_58ADA:
 loc_58AF0:
 		LDA		#$19
 		STA		_tmp3
-		LDA		#0
+		LDA		#$00
 		STA		_tmp4
 loc_58AF8:
 		LDA		_ptr0+1
@@ -1539,7 +1512,7 @@ loc_58AF8:
 		ADC		_tmp2
 		STA		_ptr0+1
 		TXA
-		ADC		#0
+		ADC		#$00
 		STA		_tmp2
 		RTS
 
@@ -1573,7 +1546,7 @@ loc_58B38:
 		LDA		_tmp6
 		BEQ		loc_58B67
 		STA		_tmp5
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6
 		LDA		_ptr0+1
 		AND		#$E0
@@ -1611,7 +1584,7 @@ loc_58B81:
 		LDA		_tmp4
 		BEQ		loc_58BB0
 		STA		_tmp3
-		LDA		#0
+		LDA		#$00
 		STA		_tmp4
 		LDA		_ptr0+1
 		AND		#$E0
@@ -1679,17 +1652,17 @@ loc_58CDB:
 		STA		_scroll_msg_shift_pos
 loc_58CE6:
 		LDA		_scroll_msg_shift_pos
-		AND		#7
+		AND		#$07
 		BEQ		loc_58D0D
 		LDA		_scroll_msg_shift_pos
 		CLC
-		ADC		#2
+		ADC		#$02
 		STA		_scroll_msg_shift_pos
 		LDA		_scroll_msg_start_pos
 		LDX		_scroll_msg_idx
 		CMP		_scroll_msg_sizes_list,X
 		BCC		locret_58D0C
-		LDA		#0
+		LDA		#$00
 		STA		_scroll_msg_active_flag
 		STA		_scroll_msg_start_pos
 		STA		_debug_scroll_msg_flags
@@ -1697,7 +1670,7 @@ locret_58D0C:
 		RTS
 loc_58D0D:
 		LDA		_debug_scroll_msg_flags
-		CMP		#3
+		CMP		#$03
 		BNE		loc_58D30
 		LDA		_city._game_flags
 		AND		#$10
@@ -1711,7 +1684,7 @@ loc_58D21:
 loc_58D25:
 		STA		_tmp15
 		STX		_tmp15+1
-		LDA		#1
+		LDA		#$01
 		STA		_scroll_msg_idx
 		BNE		loc_58D3D
 loc_58D30:
@@ -1757,7 +1730,7 @@ loc_58D49:
 		LDA		_tmp18
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#1
+		LDA		#$01
 		STA		_ppu_queue_buf,X
 		INX
 		LDA		(_tmp15),Y
@@ -1768,7 +1741,7 @@ loc_58D49:
 loc_58D94:
 		LDA		_scroll_msg_shift_pos
 		CLC
-		ADC		#2
+		ADC		#$02
 		STA		_scroll_msg_shift_pos
 		RTS
 loc_58D9E:
@@ -1788,7 +1761,7 @@ _cur_date_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_calc:
-		LDX		#0
+		LDX		#$00
 		JSR		_cur_year_str_queue
 		LDA		#$DF
 		STA		_pre_ppu_buf,X
@@ -1802,9 +1775,9 @@ _cur_year_str_queue:
 		LDY		_city._cur_year+1
 		STA		_ptr0
 		STY		_ptr0+1
-		LDA		#4
+		LDA		#$04
 		STA		_tmp2
-		LDY		#0
+		LDY		#$00
 loc_58DE7:
 		JSR		_hex_to_dec_9999
 		STA		_pre_ppu_buf,X
@@ -1817,7 +1790,7 @@ loc_58DE7:
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec_9999:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 loc_58DF9:
 		LDA		_ptr0
@@ -1849,7 +1822,7 @@ _cur_month_str_queue:
 		CLC
 		ADC		_ptr0
 		TAY
-		LDA		#3
+		LDA		#$03
 		STA		_ptr0
 loc_58E2E:
 		LDA		_months_lib,Y
@@ -1899,20 +1872,20 @@ loc_58E73:
 loc_58E81:
 		STA		_ptr0
 		CLC
-		ADC		#7
+		ADC		#$07
 		CMP		#$20
 		BCC		loc_58E97
 		SBC		#$1F
 		STA		_tmp3
-		LDA		#8
+		LDA		#$08
 		SEC
 		SBC		_tmp3
 		STA		_tmp2
 		BNE		loc_58E9F
 loc_58E97:
-		LDA		#8
+		LDA		#$08
 		STA		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 loc_58E9F:
 		LDA		_ptr0+1
@@ -1933,7 +1906,7 @@ loc_58EB5:
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_queue:
 		LDX		_ppu_queue_pos_head
-		LDY		#0
+		LDY		#$00
 		LDA		_tmp2
 		STA		_tmp4
 		LDA		_tmp3
@@ -1958,7 +1931,7 @@ loc_58EDA:
 		LDA		_tmp5
 		BEQ		loc_58F09
 		STA		_tmp4
-		LDA		#0
+		LDA		#$00
 		STA		_tmp5
 		LDA		_ptr0
 		AND		#$E0
@@ -1990,7 +1963,7 @@ loc_58F09:
 ;		STA		_extnt_queue_buf,X
 ;		INX
 ;loc_58F22:
-;		LDA		#2
+;		LDA		#$02
 ;		STA		_extnt_queue_buf,X
 ;		INX
 ;		DEC		_tmp2
@@ -1998,7 +1971,7 @@ loc_58F09:
 ;		LDA		_tmp3
 ;		BEQ		loc_58F4F
 ;		STA		_tmp2
-;		LDA		#0
+;		LDA		#$00
 ;		STA		_tmp3
 ;		LDA		_ptr0
 ;		AND		#$E0
@@ -2020,44 +1993,36 @@ loc_58F09:
 _game_menu_exec:
 		TXA
 		PHA
-		LDA		#1
+		LDA		#$01
 		STA		_scr_mode_idx
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
 		PLA
 		TAX
-		CPX		#0
+		CPX		#$00
 		BNE		loc_58F72
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_game_save_menu
+		FJSR	_game_save_menu,$00,$F3
 		JMP		_game_menu_break
 loc_58F72:
 		DEX
 		BNE		loc_58F7F
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_game_load_menu
+		FJSR	_game_load_menu,$00,$F3
 		JMP		_game_menu_break
 loc_58F7F:
 		DEX
 		BNE		loc_58F90
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_game_title_return
+		FJSR	_game_title_return,$00,$F3
 		JMP		_game_menu_break
 loc_58F90:
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_game_quit
+		FJSR	_game_quit,$00,$F3
 _game_menu_break:
-		LDA		#0
+		LDA		#$00
 		STA		_scr_mode_idx
 		RTS
 
@@ -2068,9 +2033,7 @@ _game_save_menu:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_wnd_erase
+		FJSR	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		SEC
 		RTS
@@ -2082,22 +2045,16 @@ loc_58FBA:
 _sram_data_save:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_on
-		LDA		#<[_wram_map_buf]
-		STA		_ptr0
-		LDA		#>[_wram_map_buf]
-		STA		_ptr0+1
+		MOVO	_ptr0,_wram_map_buf
 		LDA		#<[_sram_map_buf]
 		STA		_tmp2
 		LDA		#>[_sram_map_buf]
 		STA		_tmp3
-		LDY		#0
+		LDY		#$00
 loc_58FD3:
 		LDA		(_ptr0),Y
 		STA		(_tmp2),Y
-		INC		_ptr0
-		BNE		loc_58FDD
-		INC		_ptr0+1
-loc_58FDD:
+		INCW	_ptr0
 		INC		_tmp2
 		BNE		loc_58FE3
 		INC		_tmp3
@@ -2108,21 +2065,21 @@ loc_58FE3:
 		LDA		_ptr0+1
 		CMP		#>[_power_grid_map_buf]
 		BNE		loc_58FD3
-		LDX		#0
+		LDX		#$00
 loc_58FF1:
 		LDA		_wram_graphs,X
 		STA		_sram_graphs,X
 		INX
 		CPX		#$78
 		BNE		loc_58FF1
-		LDX		#0
+		LDX		#$00
 loc_58FFE:
 		LDA		_city,X
 		STA		_sram_vars,X
 		INX
 		CPX		#$80
 		BNE		loc_58FFE
-		LDA		#1
+		LDA		#$01
 		STA		_has_saved_city_data_flag
 		STA		_sram_has_saved_city_data_flag
 		JSR		_sram_sum_reinit
@@ -2132,31 +2089,29 @@ loc_58FFE:
 
 ; =============== S U B	R O U T	I N E =======================================
 _save_menu_exec:
-		LDA		#1
+		LDA		#$01
 		STA		_wnd_lvl_idx
-		LDA		#$B
+		LDA		#$0B
 		STA		_wnd_idx+1
-		LDA		#9
+		LDA		#$09
 		STA		_wnd_left_tile+1
-		LDA		#$C
+		LDA		#$0C
 		STA		_wnd_top_tile+1
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_yes_no_question_menu:
 		LDA		#$80
 		STA		_pal_load_lib
-		LDA		#1
+		LDA		#$01
 		STA		_ppu_pal_dequeue_req
 		JSR		_wait_for_nmi
 		LDA		#$FF
 		STA		_mmc5_operation_in_progress_flag
-		LDA		#0
+		LDA		#$00
 		STA		_common_yes_no_menu_cursor_pos
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_wnd_draw
+		FJSR	_wnd_draw,$FC,$FD
 loc_59047:
-		LDA		#0
+		LDA		#$00
 		STA		_spr_buf_pos
 		JSR		_wait_for_nmi
 		LDA		#$37
@@ -2169,7 +2124,7 @@ loc_59047:
 		AND		#$40
 		BNE		loc_5909C
 		LDA		_pad0_autorep_press
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_59047
 		LDA		#$40
 		STA		_apu_se_flags+1
@@ -2196,7 +2151,7 @@ loc_5908E:
 		CLC
 		RTS
 loc_59097:
-		LDA		#0
+		LDA		#$00
 		PHA
 		BEQ		loc_5909F
 loc_5909C:
@@ -2208,12 +2163,10 @@ loc_5909F:
 		LDA		#$20
 		STA		_apu_se_flags+1
 		JSR		_spr_clear
-		LDA		#0
+		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_wnd_erase
+		FJSR	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		PLA
 		SEC
@@ -2221,7 +2174,7 @@ loc_5909F:
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_yes_no_menu_cursor_draw:
-		LDA		#0
+		LDA		#$00
 		LDX		_common_yes_no_menu_cursor_pos
 		BEQ		loc_590C9
 		LDA		#$30
@@ -2231,22 +2184,22 @@ loc_590C9:
 		STA		_spr_insert_args._pos._X
 		LDA		#$90
 		STA		_spr_insert_args._pos._Y
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._idx
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._attr
 		JMP		_spr_lib_prg2_insert
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_yes_no_menu_yes_push_draw:
-		LDA		#$C
+		LDA		#$0C
 		STA		_spr_insert_args._idx
 		LDA		#$60
 		BNE		_common_yes_no_menu_button_push_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _common_yes_no_menu_no_push_draw:
-		LDA		#$D
+		LDA		#$0D
 		STA		_spr_insert_args._idx
 		LDA		#$90
 
@@ -2255,7 +2208,7 @@ _common_yes_no_menu_button_push_draw:
 		STA		_spr_insert_args._pos._X
 		LDA		#$88
 		STA		_spr_insert_args._pos._Y
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._attr
 		JMP		_spr_lib_prg2_insert
 
@@ -2263,22 +2216,20 @@ _common_yes_no_menu_button_push_draw:
 _game_load_menu:
 		LDA		_has_saved_city_data_flag
 		BNE		loc_59103
-		LDA		#2
+		LDA		#$02
 		STA		_apu_se_flags
 		BNE		loc_5912E
 loc_59103:
-		LDA		#0
+		LDA		#$00
 		STA		_cur_game_mode
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		JSR		_load_menu_exec
 		BCS		loc_5912E
 		JSR		_sram_data_load
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_wnd_erase
+		FJSR	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		JSR		_pal_fade_out
 		TSX
@@ -2293,13 +2244,13 @@ loc_5912E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _load_menu_exec:
-		LDA		#1
+		LDA		#$01
 		STA		_wnd_lvl_idx
 		LDA		#$10
 		STA		_wnd_idx+1
-		LDA		#9
+		LDA		#$09
 		STA		_wnd_left_tile+1
-		LDA		#$C
+		LDA		#$0C
 		STA		_wnd_top_tile+1
 		JMP		_common_yes_no_question_menu
 
@@ -2307,22 +2258,16 @@ _load_menu_exec:
 _sram_data_load:
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_sram_on
-		LDA		#<[_sram_map_buf]
-		STA		_ptr0
-		LDA		#>[_sram_map_buf]
-		STA		_ptr0+1
+		MOVO	_ptr0,_sram_map_buf
 		LDA		#<[_wram_map_buf]
 		STA		_tmp2
 		LDA		#>[_wram_map_buf]
 		STA		_tmp3
-		LDY		#0
+		LDY		#$00
 loc_5915A:
 		LDA		(_ptr0),Y
 		STA		(_tmp2),Y
-		INC		_ptr0
-		BNE		loc_59164
-		INC		_ptr0+1
-loc_59164:
+		INCW	_ptr0
 		INC		_tmp2
 		BNE		loc_5916A
 		INC		_tmp3
@@ -2333,14 +2278,14 @@ loc_5916A:
 		LDA		_tmp3
 		CMP		#>[_power_grid_map_buf]
 		BNE		loc_5915A
-		LDX		#0
+		LDX		#$00
 loc_59178:
 		LDA		_sram_graphs,X
 		STA		_wram_graphs,X
 		INX
 		CPX		#$78
 		BNE		loc_59178
-		LDX		#0
+		LDX		#$00
 loc_59185:
 		LDA		_sram_vars,X
 		STA		_city,X
@@ -2363,9 +2308,7 @@ loc_591A1:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_wnd_erase
+		FJSR	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 		JSR		_pal_fade_out
 loc_591B7:
@@ -2383,12 +2326,10 @@ loc_591C5:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_wnd_erase
+		FJSR	_wnd_erase,$FC,$FD
 		JSR		_game_msg_chr_common_load
 loc_591D8:
-		LDA		#0
+		LDA		#$00
 		STA		_main_sub_idx
 		JSR		_pal_fade_out
 		TSX
@@ -2403,7 +2344,7 @@ loc_591D8:
 _turn_off_power_screen:
 		LDA		#$80
 		STA		_apu_mus_idx_req
-		LDA		#0
+		LDA		#$00
 		STA		_ppu_ctrl_shadow
 		STA		_PPU_CTRL
 		STA		_ppu_mask_shadow
@@ -2417,7 +2358,7 @@ _turn_off_power_screen:
 		JSR		_turn_off_power_draw
 		LDA		#$13
 		STA		_screen_pal_cur_bg_idx
-		LDA		#$B
+		LDA		#$0B
 		STA		_screen_pal_cur_spr_idx
 		LDA		#$80
 		STA		_ppu_ctrl_shadow
@@ -2438,7 +2379,7 @@ loc_59229:
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_scr_clear:
 		LDA		#$20
-		LDX		#0
+		LDX		#$00
 		STA		_PPU_ADDR
 		STX		_PPU_ADDR
 		LDY		#$1E
@@ -2451,14 +2392,14 @@ loc_5924A:
 		BNE		loc_5924A
 		DEY
 		BNE		loc_59248
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		LDA		#>[_MMC5_EXRAM]
 		STA		_ptr0+1
 		LDA		#<[_MMC5_EXRAM]
 		STA		_ptr0
-		LDY		#0
-		LDX		#4
+		LDY		#$00
+		LDX		#$04
 		LDA		#$59
 loc_59266:
 		STA		(_ptr0),Y
@@ -2469,17 +2410,14 @@ loc_59266:
 		INC		_ptr0+1
 		BNE		loc_59266
 loc_59272:
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _turn_off_power_draw:
-		LDA		#<[aTurnOffPowerSwitch]
-		STA		_ptr0
-		LDA		#>[aTurnOffPowerSwitch]
-		STA		_ptr0+1
-		LDY		#0
+		MOVO	_ptr0,aTurnOffPowerSwitch
+		LDY		#$00
 		LDA		#$21
 		LDX		#$E6
 		STA		_PPU_ADDR
@@ -2520,7 +2458,7 @@ _turn_off_power_animate:
 		STA		_spr_insert_args._idx
 		JSR		_spr_lib_prg2_insert
 		LDA		byte_582
-		LDX		#0
+		LDX		#$00
 loc_592E4:
 		CMP		byte_5930F,X
 		BCC		loc_592ED
@@ -2542,7 +2480,7 @@ loc_59301:
 		INX
 		CPX		#$52
 		BCC		loc_5930B
-		LDX		#0
+		LDX		#$00
 loc_5930B:
 		STX		byte_582
 		RTS
@@ -2559,10 +2497,7 @@ byte_5930F:
 _generate_new_map:
 		LDA		#$FF
 		STA		_mmc5_operation_in_progress_flag
-		LDA		_new_map_number
-		STA		_rand_seed
-		LDA		_new_map_number+1
-		STA		_rand_seed+1
+		MOVM16	_rand_seed,_new_map_number
 		ROL		_rand_seed
 		ROL		_rand_seed+1
 		ROL
@@ -2580,7 +2515,7 @@ _generate_new_map:
 		CMP		#$2B
 		BCS		loc_59354
 		JSR		_generate_isle_map
-		LDA		#0
+		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		RTS
 loc_59354:
@@ -2592,7 +2527,7 @@ loc_59354:
 		JSR		_generate_new_mapE
 		JSR		_generate_new_mapF
 		JSR		_generate_new_mapG
-		LDA		#0
+		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		RTS
 
@@ -2602,18 +2537,18 @@ _generate_isle_map:
 		STA		byte_573
 		STA		byte_574
 loc_59379:
-		LDA		#2
+		LDA		#$02
 		LDX		byte_573
-		CPX		#2
+		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
 		LDX		byte_574
-		CPX		#2
+		CPX		#$02
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
-		LDA		#0
+		LDA		#$00
 loc_59393:
 		JSR		_isle_map_tile_write
 		DEC		byte_574
@@ -2624,16 +2559,16 @@ loc_59393:
 		STA		byte_574
 		JMP		loc_59379
 loc_593A8:
-		LDA		#0
+		LDA		#$00
 		STA		byte_573
 loc_593AD:
-		LDX		#9
+		LDX		#$09
 		JSR		_mul_rand
 		STA		byte_576
 		LDA		byte_573
 		STA		byte_575
 		JSR		_generate_new_map_sub3
-		LDX		#9
+		LDX		#$09
 		JSR		_mul_rand
 		STA		_ptr0
 		LDA		#$47
@@ -2641,7 +2576,7 @@ loc_593AD:
 		SBC		_ptr0
 		STA		byte_576
 		JSR		_generate_new_map_sub3
-		LDA		#0
+		LDA		#$00
 		STA		byte_576
 		JSR		_generate_new_map_sub3
 		LDA		#$48
@@ -2653,16 +2588,16 @@ loc_593AD:
 		STX		byte_573
 		CPX		#$4C
 		BCC		loc_593AD
-		LDA		#0
+		LDA		#$00
 		STA		byte_574
 loc_593F1:
-		LDX		#9
+		LDX		#$09
 		JSR		_mul_rand
 		STA		byte_575
 		LDA		byte_574
 		STA		byte_576
 		JSR		_generate_new_map_sub3
-		LDX		#9
+		LDX		#$09
 		JSR		_mul_rand
 		STA		_ptr0
 		LDA		#$47
@@ -2670,7 +2605,7 @@ loc_593F1:
 		SBC		_ptr0
 		STA		byte_575
 		JSR		_generate_new_map_sub3
-		LDA		#0
+		LDA		#$00
 		STA		byte_575
 		JSR		_generate_new_map_sub3
 		LDA		#$48
@@ -2703,25 +2638,19 @@ _isle_map_tile_write:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		PLA
 		STA		(_ptr0),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _wram_map_clear:
-		LDA		#<[_wram_map_buf]
-		STA		_ptr0
-		LDA		#>[_wram_map_buf]
-		STA		_ptr0+1
-		LDY		#0
+		MOVO	_ptr0,_wram_map_buf
+		LDY		#$00
 loc_5946A:
-		LDA		#0
+		LDA		#$00
 		STA		(_ptr0),Y
-		INC		_ptr0
-		BNE		loc_59474
-		INC		_ptr0+1
-loc_59474:
+		INCW	_ptr0
 		LDA		_ptr0+1
 		CMP		#>[_power_grid_map_buf]
 		BCC		loc_5946A
@@ -2748,7 +2677,7 @@ _generate_new_mapA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapB:
-		LDX		#4
+		LDX		#$04
 		JSR		_mul_rand
 		STA		byte_57F
 		STA		byte_57E
@@ -2758,7 +2687,7 @@ _generate_new_mapB:
 		LDA		byte_574
 		STA		byte_576
 		LDA		byte_57F
-		EOR		#4
+		EOR		#$04
 		STA		byte_57F
 		STA		byte_57E
 		JSR		_generate_new_mapB_0
@@ -2766,7 +2695,7 @@ _generate_new_mapB:
 		STA		byte_575
 		LDA		byte_574
 		STA		byte_576
-		LDX		#4
+		LDX		#$04
 		JSR		_mul_rand
 		STA		byte_57F
 		JSR		_generate_new_mapB_1
@@ -2778,12 +2707,12 @@ _generate_new_mapB_0:
 		BCS		locret_5950D
 		JSR		_generate_new_map_sub0
 		JSR		_rand
-		AND		#1
+		AND		#$01
 		BEQ		loc_594F0
 		INC		byte_57E
 loc_594F0:
 		JSR		_rand
-		AND		#1
+		AND		#$01
 		BEQ		loc_594FA
 		DEC		byte_57E
 loc_594FA:
@@ -2804,12 +2733,12 @@ _generate_new_mapB_1:
 		BCS		locret_5953D
 		JSR		_generate_new_map_sub3
 		JSR		_rand
-		AND		#1
+		AND		#$01
 		BEQ		loc_59520
 		INC		byte_57E
 loc_59520:
 		JSR		_rand
-		AND		#1
+		AND		#$01
 		BEQ		loc_5952A
 		DEC		byte_57E
 loc_5952A:
@@ -2857,7 +2786,7 @@ _generate_new_mapF_0:
 		LDA		byte_576
 		STA		byte_578
 loc_5957F:
-		LDX		#8
+		LDX		#$08
 		JSR		_mul_rand
 		STA		byte_57E
 		JSR		_generate_new_mapF_0A
@@ -2875,10 +2804,10 @@ loc_5957F:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		BNE		loc_595B5
-		LDA		#5
+		LDA		#$05
 		STA		(_ptr0),Y
 loc_595B5:
 		DEC		byte_57D
@@ -2888,7 +2817,7 @@ locret_595BA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapC:
-		LDX		#5
+		LDX		#$05
 		JSR		_mul_rand
 		TAX
 		INX
@@ -2897,29 +2826,29 @@ loc_595C5:
 		LDX		#$3E
 		JSR		_mul_rand
 		CLC
-		ADC		#3
+		ADC		#$03
 		STA		byte_575
 		LDX		#$3E
 		JSR		_mul_rand
 		CLC
-		ADC		#3
+		ADC		#$03
 		STA		byte_576
-		LDX		#6
+		LDX		#$06
 		JSR		_mul_rand
-		ADC		#1
+		ADC		#$01
 		STA		byte_581
 loc_595E5:
-		LDX		#7
+		LDX		#$07
 		JSR		_mul_rand
 		SEC
-		SBC		#3
+		SBC		#$03
 		CLC
 		ADC		byte_575
 		STA		byte_577
-		LDX		#7
+		LDX		#$07
 		JSR		_mul_rand
 		SEC
-		SBC		#3
+		SBC		#$03
 		CLC
 		ADC		byte_576
 		STA		byte_578
@@ -2940,7 +2869,7 @@ loc_59613:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapF_0A:
 		LDA		byte_57E
-		AND		#7
+		AND		#$07
 		STA		byte_57E
 		LDX		byte_57E
 		LDA		byte_577
@@ -2956,7 +2885,7 @@ _generate_new_mapF_0A:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapB_0A:
 		LDA		byte_57E
-		AND		#7
+		AND		#$07
 		STA		byte_57E
 		LDX		byte_57E
 		LDA		byte_575
@@ -2977,7 +2906,7 @@ byte_59666:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub0:
-		LDA		#0
+		LDA		#$00
 		STA		byte_579
 loc_59673:
 		LDX		byte_579
@@ -3026,7 +2955,7 @@ byte_59700:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub3:
-		LDA		#0
+		LDA		#$00
 		STA		byte_57A
 loc_59736:
 		LDX		byte_57A
@@ -3081,15 +3010,15 @@ _generate_new_map_sub1:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		BEQ		loc_597C9
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_597C7
-		CMP		#2
+		CMP		#$02
 		BNE		loc_597C9
 		PLA
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_597CA
 		RTS
 loc_597C7:
@@ -3143,7 +3072,7 @@ loc_59800:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub5:
-		LDA		#0
+		LDA		#$00
 		STA		byte_575
 		STA		byte_576
 loc_5980A:
@@ -3159,16 +3088,16 @@ loc_5980A:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		BMI		loc_5988D
 		BEQ		loc_5988D
-		LDA		#0
+		LDA		#$00
 		STA		byte_57B
 		STY		_tmp4
 loc_59835:
 		LDY		_tmp4
-		CPY		#4
+		CPY		#$04
 		BCS		loc_59883
 		LDA		byte_575
 		CLC
@@ -3192,7 +3121,7 @@ loc_59835:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_tmp3
-		LDY		#0
+		LDY		#$00
 		LDA		(_tmp2),Y
 		BMI		loc_5987B
 		BEQ		loc_5987B
@@ -3207,7 +3136,7 @@ loc_5987C:
 loc_59883:
 		LDX		byte_57B
 		LDA		byte_598AD,X
-		LDY		#0
+		LDY		#$00
 		STA		(_ptr0),Y
 loc_5988D:
 		INC		byte_575
@@ -3220,7 +3149,7 @@ loc_5989A:
 		LDA		byte_576
 		CMP		#$4C
 		BCS		locret_598AC
-		LDA		#0
+		LDA		#$00
 		STA		byte_575
 		JMP		loc_5980A
 locret_598AC:
@@ -3233,7 +3162,7 @@ byte_598AD:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapD:
-		LDA		#0
+		LDA		#$00
 		STA		byte_575
 		STA		byte_576
 loc_598C5:
@@ -3249,18 +3178,18 @@ loc_598C5:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
-		CMP		#3
+		CMP		#$03
 		BEQ		loc_598EC
 		JMP		loc_59991
 loc_598EC:
-		LDA		#0
+		LDA		#$00
 		STA		byte_57B
 		STY		_tmp4
 loc_598F3:
 		LDY		_tmp4
-		CPY		#4
+		CPY		#$04
 		BCC		loc_598FC
 		JMP		loc_59987
 loc_598FC:
@@ -3278,14 +3207,14 @@ loc_598FC:
 		LDA		byte_599B1,Y
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 		CLC
 		ADC		byte_575
 		STA		byte_577
 		LDA		byte_599B5,Y
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 		CLC
 		ADC		byte_576
 		STA		byte_578
@@ -3300,7 +3229,7 @@ loc_598FC:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_tmp3
-		LDY		#0
+		LDY		#$00
 		LDA		(_tmp2),Y
 		BNE		loc_5997C
 		SEC
@@ -3318,7 +3247,7 @@ loc_59957:
 		TXA
 		ADC		#>[_wram_map_buf]
 		STA		_tmp3
-		LDY		#0
+		LDY		#$00
 		LDA		(_tmp2),Y
 		BEQ		loc_5997C
 		SEC
@@ -3333,7 +3262,7 @@ loc_5997D:
 loc_59987:
 		LDX		byte_57B
 		LDA		byte_599B9,X
-		LDY		#0
+		LDY		#$00
 		STA		(_ptr0),Y
 loc_59991:
 		INC		byte_575
@@ -3346,7 +3275,7 @@ loc_5999E:
 		LDA		byte_576
 		CMP		#$4C
 		BCS		locret_599B0
-		LDA		#0
+		LDA		#$00
 		STA		byte_575
 		JMP		loc_598C5
 locret_599B0:
@@ -3363,11 +3292,8 @@ byte_599B9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapG:
-		LDA		#<[_wram_map_buf]
-		STA		_ptr0
-		LDA		#>[_wram_map_buf]
-		STA		_ptr0+1
-		LDY		#0
+		MOVO	_ptr0,_wram_map_buf
+		LDY		#$00
 loc_599D3:
 		LDA		(_ptr0),Y
 		BMI		loc_599E8
@@ -3379,14 +3305,11 @@ loc_599D3:
 		LSR
 		PLA
 		BCS		loc_599E6
-		ADC		#9
+		ADC		#$09
 loc_599E6:
 		STA		(_ptr0),Y
 loc_599E8:
-		INC		_ptr0
-		BNE		loc_599EE
-		INC		_ptr0+1
-loc_599EE:
+		INCW	_ptr0
 		LDA		_ptr0+1
 		CMP		#>[_power_grid_map_buf]
 		BCC		loc_599D3
@@ -3404,19 +3327,16 @@ loc_599FB:
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapE:
-		LDA		#<[_wram_map_buf]
-		STA		_ptr0
-		LDA		#>[_wram_map_buf]
-		STA		_ptr0+1
-		LDY		#0
+		MOVO	_ptr0,_wram_map_buf
+		LDY		#$00
 loc_59A11:
 		LDA		(_ptr0),Y
 		BEQ		loc_59A43
-		CMP		#2
+		CMP		#$02
 		BEQ		loc_59A47
-		CMP		#7
+		CMP		#$07
 		BEQ		loc_59A47
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_59A4D
 		CLC
 		ADC		#$AE
@@ -3425,14 +3345,11 @@ loc_59A11:
 		LSR
 		PLA
 		BCS		loc_59A2E
-		ADC		#8
+		ADC		#$08
 loc_59A2E:
 		STA		(_ptr0),Y
 loc_59A30:
-		INC		_ptr0
-		BNE		loc_59A36
-		INC		_ptr0+1
-loc_59A36:
+		INCW	_ptr0
 		LDA		_ptr0+1
 		CMP		#>[_power_grid_map_buf]
 		BCC		loc_59A11
@@ -3471,27 +3388,24 @@ _cur_popul_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_popul:
-		LDA		_popul_cur
-		STA		_ptr0
-		LDA		_popul_cur+1
-		STA		_ptr0+1
+		MOVM16	_ptr0,_popul_cur
 		LDA		_popul_cur+2
 		STA		_tmp2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_calc:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
-		LDY		#0
-		LDX		#5
+		LDY		#$00
+		LDX		#$05
 loc_59A88:
 		JSR		_hex_to_dec_999999
-		CMP		#0
+		CMP		#$00
 		BNE		loc_59A9E
 		LDA		_tmp3
 		BNE		loc_59AA8
-		CPX		#0
+		CPX		#$00
 		BEQ		loc_59A9E
 		LDA		#$DF
 		STA		_pre_ppu_buf,Y
@@ -3505,13 +3419,13 @@ loc_59AA3:
 		BPL		loc_59A88
 		RTS
 loc_59AA8:
-		LDA		#0
+		LDA		#$00
 		STA		_pre_ppu_buf,Y
 		BEQ		loc_59AA3
 
 ; =============== S U B	R O U T	I N E =======================================
 _hex_to_dec_999999:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp4
 loc_59AB3:
 		SEC
@@ -3561,27 +3475,27 @@ loc_59B06:
 		LDA		_cur_screen_tile._X
 		LSR
 		CLC
-		ADC		#$E
+		ADC		#$0E
 		CMP		#$20
 		BCC		loc_59B14
 		SBC		#$20
 loc_59B14:
 		STA		_ptr0
 		CLC
-		ADC		#5
+		ADC		#$05
 		CMP		#$20
 		BCC		loc_59B2A
 		SBC		#$1F
 		STA		_tmp3
-		LDA		#6
+		LDA		#$06
 		SEC
 		SBC		_tmp3
 		STA		_tmp2
 		BNE		loc_59B32
 loc_59B2A:
-		LDA		#6
+		LDA		#$06
 		STA		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 loc_59B32:
 		LDA		_ptr0+1
@@ -3604,7 +3518,7 @@ loc_59B48:
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_queue:
 		LDX		_ppu_queue_pos_head
-		LDY		#0
+		LDY		#$00
 		LDA		_ptr0
 		STA		_ppu_queue_buf,X
 		INX
@@ -3624,7 +3538,7 @@ loc_59B66:
 		LDA		_tmp3
 		BEQ		loc_59B93
 		STA		_tmp2
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 		LDA		_ptr0
 		AND		#$E0
@@ -3649,7 +3563,7 @@ _msg_wnd_cheat_test:
 		CMP		#$CF
 		BNE		loc_59BA9
 		LDA		_debug_scroll_msg_flags
-		ORA		#1
+		ORA		#$01
 		STA		_debug_scroll_msg_flags
 		RTS
 loc_59BA9:
@@ -3661,7 +3575,7 @@ loc_59BA9:
 		BEQ		locret_59BBF
 		BCC		locret_59BBF
 		LDA		_debug_scroll_msg_flags
-		ORA		#2
+		ORA		#$02
 		STA		_debug_scroll_msg_flags
 locret_59BBF:
 		RTS
@@ -3669,7 +3583,7 @@ locret_59BBF:
 ; =============== S U B	R O U T	I N E =======================================
 _debug_flag_toggle_test:
 		LDA		_debug_scroll_msg_flags
-		CMP		#3
+		CMP		#$03
 		BNE		locret_59BCF
 		LDA		_city._game_flags
 		EOR		#$10
@@ -3729,7 +3643,7 @@ loc_59C1A:
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_sum_calc:
-		LDY		#0
+		LDY		#$00
 		STY		_tmp4
 		STY		_tmp5
 		STY		_tmp6
@@ -3748,9 +3662,9 @@ loc_59C3F:
 		LDA		_ptr0+1
 		CMP		#$A0
 		BNE		loc_59C3F
-		LDA		#0
+		LDA		#$00
 		JSR		_sum_calc
-		LDA		#0
+		LDA		#$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _sum_calc:
@@ -3759,21 +3673,21 @@ _sum_calc:
 		STA		_tmp4
 		LDA		_tmp3
 		STA		_tmp5
-		LDX		#0
+		LDX		#$00
 loc_59C62:
 		LSR		_tmp6
 		ROR		_tmp5
 		ROR		_tmp4
 		BCC		loc_59C76
 		LDA		_tmp4
-		EOR		#5
+		EOR		#$05
 		STA		_tmp4
 		LDA		_tmp5
 		EOR		#$C0
 		STA		_tmp5
 loc_59C76:
 		INX
-		CPX		#8
+		CPX		#$08
 		BNE		loc_59C62
 		LDA		_tmp4
 		STA		_tmp2

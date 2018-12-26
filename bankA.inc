@@ -9,7 +9,7 @@ _year_to_str:
 		STA		_tmpE6
 		LDA		_city._cur_year+1
 		STA		_tmpE7
-		LDY		#2
+		LDY		#$02
 loc_10400C:
 		LDA		_tmpE6
 		CMP		byte_10402E,Y
@@ -45,10 +45,7 @@ _RCI_meters_recalc:
 		LSR
 		ROR		_tmp6AA
 		STA		_tmp6AA+1
-		LDA		_cur_RCI_levels_sum
-		STA		_prev_RCI_levels_sum
-		LDA		_cur_RCI_levels_sum+1
-		STA		_prev_RCI_levels_sum+1
+		MOVM16	_prev_RCI_levels_sum,_cur_RCI_levels_sum
 		LDA		_city._level._I
 		CLC
 		ADC		_city._level._C
@@ -67,27 +64,27 @@ _RCI_meters_recalc:
 		STA		_tmpEB
 		ADC		_tmpE8
 		STA		_cur_RCI_levels_sum+1
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE8+1
 		STA		_tmpE6
 		JSR		_div_16to16
 		BCC		loc_10409D
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE8
 		STA		_tmpE8+1
-		LDA		#1
+		LDA		#$01
 		STA		_tmpE7
 		LDA		#$4D
 		STA		_tmpE6
 loc_10409D:
 		LDA		_tmpE6
 		CLC
-		ADC		#5
+		ADC		#$05
 		STA		_tmpE6
 		BCC		loc_1040A8
 		INC		_tmpE7
 loc_1040A8:
-		LDX		#0
+		LDX		#$00
 		JSR		_RCI_meter_recalc
 		LDA		_tmp6AA
 		STA		_tmpE7
@@ -97,14 +94,14 @@ loc_1040A8:
 		STA		_tmpEA
 		LDA		_tmp6AC+1
 		STA		_tmpEB
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE8+1
 		STA		_tmpE6
 		JSR		_div_16to16
 		BCC		loc_1040D8
-		LDA		#1
+		LDA		#$01
 		STA		_tmpE7
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE8
 		STA		_tmpE8+1
@@ -112,21 +109,18 @@ loc_1040D8:
 		LDA		_tmpE6
 		CMP		#$4C
 		LDA		_tmpE7
-		SBC		#1
+		SBC		#$01
 		BCC		loc_1040EA
 		LDA		#$4C
 		STA		_tmpE6
-		LDA		#1
+		LDA		#$01
 		STA		_tmpE7
 loc_1040EA:
 		LDA		_tmpE7
 		PHA
 		LDA		_tmpE6
 		PHA
-		LDA		#$33
-		STA		_tmpE8
-		LDA		#1
-		STA		_tmpE8+1
+		MOVIW	_tmpE8,$0133
 		LDA		_tmpE8+1
 		PHA
 		LDA		_tmpE8
@@ -142,16 +136,13 @@ loc_1040EA:
 		PLA
 		STA		_tmpE7
 		PLA
-		LDX		#2
+		LDX		#$02
 		JSR		_RCI_meter_recalc
 		PLA
 		STA		_tmpE6
 		PLA
 		STA		_tmpE7
-		LDA		_cur_RCI_levels_sum
-		STA		_tmpE8
-		LDA		_cur_RCI_levels_sum+1
-		STA		_tmpE8+1
+		MOVM16	_tmpE8,_cur_RCI_levels_sum
 		LDA		_tmpE8+1
 		PHA
 		LDA		_tmpE8
@@ -180,19 +171,19 @@ loc_1040EA:
 loc_104150:
 		JSR		_div_16to16
 		BCC		loc_10415F
-		LDA		#0
+		LDA		#$00
 		STA		_tmpEB
-		LDA		#1
+		LDA		#$01
 		STA		_tmpEA
 		BEQ		loc_104150
 loc_10415F:
-		LDX		#1
+		LDX		#$01
 
 ; =============== S U B	R O U T	I N E =======================================
 _RCI_meter_recalc:
 		LDA		_city._delta,X
 		BMI		loc_10416D
-		LDA		#0
+		LDA		#$00
 		LDY		_required_flags,X
 		BNE		loc_1041BD
 loc_10416D:
@@ -201,16 +192,16 @@ loc_10416D:
 		BNE		loc_10417B
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 		JMP		loc_104181
 loc_10417B:
-		CPY		#2
+		CPY		#$02
 		BCC		loc_104181
 		LDA		#$FF
 loc_104181:
 		PHA
 		LDA		#$19
-		CPX		#0
+		CPX		#$00
 		BEQ		loc_10418A
 		LDA		#$14
 loc_10418A:
@@ -222,7 +213,7 @@ loc_10418A:
 		BNE		loc_104199
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 loc_104199:
 		STA		_tmpE8
 		LDA		_city._tax_rate
@@ -250,7 +241,7 @@ loc_1041BD:
 		BPL		loc_1041DB
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 		PHA
 		LDA		#$1B
 		PHA
@@ -259,7 +250,7 @@ loc_1041BD:
 		PLA
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 		JMP		loc_1041E4
 loc_1041DB:
 		PHA
@@ -278,14 +269,14 @@ byte_1041E8:
 ; =============== S U B	R O U T	I N E =======================================
 _power_grid_recalc:
 		JSR		_sram_on
-		LDA		#0
+		LDA		#$00
 		TAY
 loc_104203:
 		STA		_power_grid_map_buf,Y
 		STA		_power_grid_map_buf+$100,Y
 		INY
 		BNE		loc_104203
-		LDA		#0
+		LDA		#$00
 		TAY
 loc_10420F:
 		STA		_power_grid_map_buf+$200,Y
@@ -293,7 +284,7 @@ loc_10420F:
 		CPY		#$D2
 		BNE		loc_10420F
 		JSR		_sram_off
-		LDA		#2
+		LDA		#$02
 		PHA
 		LDA		#$BC
 		PHA
@@ -306,7 +297,7 @@ loc_10420F:
 		STA		_tmpE7
 		PLA
 		STA		_tmpE8
-		LDA		#7
+		LDA		#$07
 		PHA
 		LDA		#$D0
 		PHA
@@ -331,7 +322,7 @@ loc_104253:
 		STA		_tmp6CC
 		LDA		_tmpE7
 		STA		_tmp6CC+1
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6CE
 		STA		_tmp6CE+1
 loc_104265:
@@ -358,13 +349,10 @@ loc_104285:
 		BNE		loc_104296
 		DEC		_power_stations_list_pos+1
 loc_104296:
-		LDA		#4
+		LDA		#$04
 		STA		_tmp6D0
 loc_10429B:
-		INC		_tmp6CE
-		BNE		loc_1042A3
-		INC		_tmp6CE+1
-loc_1042A3:
+		INCW	_tmp6CE
 		LDA		_tmp6CE
 		CMP		_tmp6CC
 		LDA		_tmp6CE+1
@@ -373,15 +361,15 @@ loc_1042A3:
 		LDX		_tmp6D0
 		JSR		_tmp_map_pos_clockwise_next_set
 		JSR		_power_grid_map_bit_set
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D2
 		STA		_tmp6D0+1
 loc_1042C2:
 		LDA		_tmp6D0+1
-		CMP		#4
+		CMP		#$04
 		BCS		loc_1042E7
 		LDA		_tmp6D2
-		CMP		#2
+		CMP		#$02
 		BCS		loc_1042E7
 		JSR		_farcall_argsXY_safe
 		.BYTE	$00,$FB
@@ -395,7 +383,7 @@ loc_1042E2:
 		BNE		loc_1042C2
 loc_1042E7:
 		LDA		_tmp6D2
-		CMP		#2
+		CMP		#$02
 		BCC		loc_1042F1
 		JSR		_power_stations_map_pos_list_insert
 loc_1042F1:
@@ -407,7 +395,7 @@ locret_1042F9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_pos_clockwise_next_set:
-		CPX		#0
+		CPX		#$00
 		BNE		loc_104307
 		LDA		_tmp_map_pos._Y
 		BEQ		locret_10432E
@@ -447,12 +435,12 @@ _power_stations_map_pos_list_insert:
 		BNE		loc_10433C
 		INX
 loc_10433C:
-		CPX		#2
+		CPX		#$02
 		BEQ		loc_104368
 		STY		_power_stations_list_pos
 		STX		_power_stations_list_pos+1
 		LDY		_power_stations_list_pos
-		CPX		#0
+		CPX		#$00
 		BEQ		loc_10435C
 		LDA		_tmp_map_pos._X
 		STA		_tmp_recalc_bufs,Y
@@ -481,7 +469,7 @@ _power_grid_map_bit_set:
 		STA		_tmpE6
 		PHA
 		LDA		_MMC5_MUL1
-		ADC		#0
+		ADC		#$00
 		LSR
 		ROR		_tmpE6
 		LSR
@@ -497,9 +485,9 @@ _power_grid_map_bit_set:
 		ADC		#>[_power_grid_map_buf]
 		STA		_tmpE7
 		PLA
-		AND		#7
+		AND		#$07
 		TAX
-		LDY		#0
+		LDY		#$00
 		LDA		(_tmpE6),Y
 		ORA		_inv_bitmasks,X
 		JSR		_sram_on
@@ -509,7 +497,7 @@ _power_grid_map_bit_set:
 ; =============== S U B	R O U T	I N E =======================================
 _game_vars_init:
 		JSR		_sram_on
-		LDX		#0
+		LDX		#$00
 		TXA
 loc_1043C4:
 		STA		_wram_graphs,X
@@ -517,7 +505,7 @@ loc_1043C4:
 		CPX		#$78
 		BNE		loc_1043C4
 		JSR		_sram_off
-		LDX		#0
+		LDX		#$00
 loc_1043D1:
 		STA		_city._level,X
 		INX
@@ -533,9 +521,7 @@ loc_1043D1:
 		STA		_city._year_to_liberty+1
 		LDX		_cur_game_mode
 		BNE		loc_1043FF
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_sram_data_load
+		FJSR	_sram_data_load,$00,$F3
 		JMP		loc_104494
 loc_1043FF:
 		DEX
@@ -545,22 +531,16 @@ loc_1043FF:
 		STA		_city._money
 		LDA		_difficult_money_list_hi,Y
 		STA		_city._money+1
-		LDA		#$6C
-		STA		_city._cur_year
-		LDA		#7
-		STA		_city._cur_year+1
-		LDA		#9
+		MOVIW	_city._cur_year,$076C
+		LDA		#$09
 		STA		_city._game_flags
-		LDA		#0
+		LDA		#$00
 		STA		_city._city_type
 		JMP		loc_104494
 loc_104428:
 		DEX
 		BNE		loc_104476
-		LDA		#$20
-		STA		_city._money
-		LDA		#$4E
-		STA		_city._money+1
+		MOVIW	_city._money,$4E20
 		LDY		_scenario_idx
 		LDA		_scenario_start_year_lo,Y
 		STA		_city._cur_year+1
@@ -578,44 +558,38 @@ loc_10443E:
 		ASL
 		ASL
 		TAY
-		LDX		#0
+		LDX		#$00
 loc_10445D:
 		LDA		_scenario_special_events_flags_lib,Y
 		STA		_city._events_used_flags,X
 		INY
 		INX
-		CPX		#4
+		CPX		#$04
 		BNE		loc_10445D
-		LDA		#2
+		LDA		#$02
 		STA		_city._game_speed
-		LDA		#9
+		LDA		#$09
 		STA		_city._game_flags
 		JMP		loc_104494
 loc_104476:
-		LDA		#$20
-		STA		_city._money
-		LDA		#$4E
-		STA		_city._money+1
-		LDA		#$6C
-		STA		_city._cur_year
-		LDA		#7
-		STA		_city._cur_year+1
-		LDA		#0
+		MOVIW	_city._money,$4E20
+		MOVIW	_city._cur_year,$076C
+		LDA		#$00
 		STA		_city._city_type
-		LDA		#9
+		LDA		#$09
 		STA		_city._game_flags
 loc_104494:
 		LDY		_city._city_type
 		LDA		_city._game_flags
-		AND		#8
+		AND		#$08
 		BEQ		loc_1044A3
 		LDA		_bg_music_list,Y
 		STA		_apu_mus_idx_req
 loc_1044A3:
-		LDA		#7
+		LDA		#$07
 		STA		_city._tax_rate
 		STA		_tax_alloc._tax
-		LDA		#$F
+		LDA		#$0F
 		STA		_police_fund_rate
 		STA		_fire_fund_rate
 		LDA		#$20
@@ -628,8 +602,8 @@ loc_1044A3:
 		STA		_tmpE6
 		LDA		#>[_power_grid_map_buf]
 		STA		_tmpE7
-		LDX		#5
-		LDY		#0
+		LDX		#$05
+		LDY		#$00
 		TYA
 loc_1044D0:
 		STA		(_tmpE6),Y
@@ -647,8 +621,8 @@ loc_1044DA:
 		STA		_tmpE6
 		LDA		#>[_land_value_map_buf]
 		STA		_tmpE7
-		LDX		#3
-		LDY		#0
+		LDX		#$03
+		LDY		#$00
 		TYA
 loc_1044EE:
 		STA		(_tmpE6),Y
@@ -689,37 +663,37 @@ _bg_music_for_scenario_start_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _graphs_10_year_data_update:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		JSR		_sram_on
-		LDX		#0
+		LDX		#$00
 loc_104559:
-		LDA		_wram_graphs._10y._R._data+1,X
-		STA		_wram_graphs,X
+		LDA		_wram_graphs._10y._R+1,X
+		STA		_wram_graphs._10y._R,X
 		CMP		_tmpE6
 		BCC		loc_104565
 		STA		_tmpE6
 loc_104565:
-		LDA		_wram_graphs._10y._C._data+1,X
+		LDA		_wram_graphs._10y._C+1,X
 		STA		_wram_graphs._10y._C,X
 		CMP		_tmpE6
 		BCC		loc_104571
 		STA		_tmpE6
 loc_104571:
-		LDA		_wram_graphs._10y._I._data+1,X
+		LDA		_wram_graphs._10y._I+1,X
 		STA		_wram_graphs._10y._I,X
 		CMP		_tmpE6
 		BCC		loc_10457D
 		STA		_tmpE6
 loc_10457D:
-		LDA		_wram_graphs._10y._crime._data+1,X
+		LDA		_wram_graphs._10y._crime+1,X
 		STA		_wram_graphs._10y._crime,X
-		LDA		_wram_graphs._10y._money._data+1,X
+		LDA		_wram_graphs._10y._money+1,X
 		STA		_wram_graphs._10y._money,X
-		LDA		_wram_graphs._10y._tax_income._data+1,X
+		LDA		_wram_graphs._10y._tax_income+1,X
 		STA		_wram_graphs._10y._tax_income,X
 		INX
-		CPX		#9
+		CPX		#$09
 		BNE		loc_104559
 		LDA		_tmpE6
 		STA		_RCI_max_range_10_years
@@ -729,7 +703,7 @@ loc_10457D:
 		STA		_tmpE6
 		ASL		_tmpE6
 		ROL
-		STA		_wram_graphs._10y._R._data+9
+		STA		_wram_graphs._10y._R+9
 		LDA		_city._level._C+1
 		STA		_tmpE6
 		LDA		_city._level._C
@@ -741,7 +715,7 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_wram_graphs._10y._C._data+9
+		STA		_wram_graphs._10y._C+9
 		LDA		_city._level._I+1
 		STA		_tmpE6
 		LDA		_city._level._I
@@ -753,29 +727,29 @@ loc_10457D:
 		ROR
 		LSR		_tmpE6
 		ROR
-		STA		_wram_graphs._10y._I._data+9
+		STA		_wram_graphs._10y._I+9
 		LDA		_city._crime_level+1
 		AND		#$7F
 		SEC
-		SBC		_wram_graphs._10y._crime._data+8
+		SBC		_wram_graphs._10y._crime+8
 		LSR
 		LSR
-		ADC		_wram_graphs._10y._crime._data+8
+		ADC		_wram_graphs._10y._crime+8
 		BCC		loc_1045E9
 		LDA		#$FF
 loc_1045E9:
-		STA		_wram_graphs._10y._crime._data+9
+		STA		_wram_graphs._10y._crime+9
 		LDA		_city._money+2
 		AND		#$7F
 		SEC
-		SBC		_wram_graphs._10y._money._data+8
+		SBC		_wram_graphs._10y._money+8
 		LSR
 		LSR
-		ADC		_wram_graphs._10y._money._data+8
+		ADC		_wram_graphs._10y._money+8
 		BCC		loc_1045FE
 		LDA		#$FF
 loc_1045FE:
-		STA		_wram_graphs._10y._money._data+9
+		STA		_wram_graphs._10y._money+9
 		LDA		byte_137
 		BNE		loc_104625
 		LDA		_taxes_income+1
@@ -798,9 +772,9 @@ loc_1045FE:
 loc_104625:
 		LDA		#$FF
 loc_104627:
-		STA		_wram_graphs._10y._tax_income._data+9
+		STA		_wram_graphs._10y._tax_income+9
 		JSR		_sram_off
-		LDX		#0
+		LDX		#$00
 		LDA		_city._level._R+1
 		CMP		_R_hospitals_count
 		BCC		loc_10463B
@@ -810,10 +784,10 @@ loc_10463B:
 		LDX		#$FF
 		BNE		loc_104641
 loc_10463F:
-		LDX		#1
+		LDX		#$01
 loc_104641:
 		STX		_hospitals_delta
-		LDX		#0
+		LDX		#$00
 		LDA		_city._level._R+1
 		CMP		_R_schools_count
 		BCC		loc_104652
@@ -823,70 +797,67 @@ loc_104652:
 		LDX		#$FF
 		BNE		loc_104658
 loc_104656:
-		LDX		#1
+		LDX		#$01
 loc_104658:
 		STX		_schools_delta
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _graphs_100_year_data_update:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		JSR		_sram_on
-		LDX		#0
+		LDX		#$00
 loc_104665:
-		LDA		_wram_graphs._100y._R._data+1,X
-		STA		_wram_graphs._100y,X
+		LDA		_wram_graphs._100y._R+1,X
+		STA		_wram_graphs._100y._R,X
 		CMP		_tmpE6
 		BCC		loc_104671
 		STA		_tmpE6
 loc_104671:
-		LDA		_wram_graphs._100y._C._data+1,X
+		LDA		_wram_graphs._100y._C+1,X
 		STA		_wram_graphs._100y._C,X
 		CMP		_tmpE6
 		BCC		loc_10467D
 		STA		_tmpE6
 loc_10467D:
-		LDA		_wram_graphs._100y._I._data+1,X
+		LDA		_wram_graphs._100y._I+1,X
 		STA		_wram_graphs._100y._I,X
 		CMP		_tmpE6
 		BCC		loc_104689
 		STA		_tmpE6
 loc_104689:
-		LDA		_wram_graphs._100y._crime._data+1,X
+		LDA		_wram_graphs._100y._crime+1,X
 		STA		_wram_graphs._100y._crime,X
-		LDA		_wram_graphs._100y._money._data+1,X
+		LDA		_wram_graphs._100y._money+1,X
 		STA		_wram_graphs._100y._money,X
-		LDA		_wram_graphs._100y._tax_income._data+1,X
+		LDA		_wram_graphs._100y._tax_income+1,X
 		STA		_wram_graphs._100y._tax_income,X
 		INX
-		CPX		#9
+		CPX		#$09
 		BNE		loc_104665
 		LDA		_tmpE6
 		STA		_RCI_max_range_100_years
-		LDA		_wram_graphs._10y._R._data+9
-		STA		_wram_graphs._100y._R._data+9
-		LDA		_wram_graphs._10y._C._data+9
-		STA		_wram_graphs._100y._C._data+9
-		LDA		_wram_graphs._10y._I._data+9
-		STA		_wram_graphs._100y._I._data+9
-		LDA		_wram_graphs._10y._crime._data+9
-		STA		_wram_graphs._100y._crime._data+9
-		LDA		_wram_graphs._10y._money._data+9
-		STA		_wram_graphs._100y._money._data+9
-		LDA		_wram_graphs._10y._tax_income._data+9
-		STA		_wram_graphs._100y._tax_income._data+9
+		LDA		_wram_graphs._10y._R+9
+		STA		_wram_graphs._100y._R+9
+		LDA		_wram_graphs._10y._C+9
+		STA		_wram_graphs._100y._C+9
+		LDA		_wram_graphs._10y._I+9
+		STA		_wram_graphs._100y._I+9
+		LDA		_wram_graphs._10y._crime+9
+		STA		_wram_graphs._100y._crime+9
+		LDA		_wram_graphs._10y._money+9
+		STA		_wram_graphs._100y._money+9
+		LDA		_wram_graphs._10y._tax_income+9
+		STA		_wram_graphs._100y._tax_income+9
 		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
 _fiscal_year_over_calculations:
-		LDA		#0
+		LDA		#$00
 		STA		_taxes_income
-		LDA		_city._tax_year_rate
-		STA		_tmp6CC
-		LDA		_city._tax_year_rate+1
-		STA		_tmp6CC+1
-		LDA		#0
+		MOVM16	_tmp6CC,_city._tax_year_rate
+		LDA		#$00
 		STA		_city._tax_year_rate
 		STA		_city._tax_year_rate+1
 		LDA		_fiscal_year_results_draw_req
@@ -1002,12 +973,12 @@ loc_1046EB:
 		LDA		_cur_RCI_levels_sum
 		ORA		_cur_RCI_levels_sum+1
 		BNE		loc_1047BF
-		LDA		#$F
+		LDA		#$0F
 		STA		_police_fund_rate
 		STA		_fire_fund_rate
 		RTS
 loc_1047BF:
-		LDA		#1
+		LDA		#$01
 		STA		_fiscal_year_results_draw_req
 		STA		_game_core_state
 loc_1047C7:
@@ -1076,7 +1047,7 @@ loc_104856:
 		SBC		#$F4
 		STA		_city._money
 		LDA		_city._money+1
-		SBC		#1
+		SBC		#$01
 		STA		_city._money+1
 		BCS		loc_10486C
 		DEC		_city._money+2
@@ -1108,7 +1079,7 @@ loc_10486C:
 		LDA		#$20
 		BNE		loc_1048D7
 loc_1048A9:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE8+1
 		LDA		_road_fund_alloc
@@ -1137,10 +1108,10 @@ loc_1048D7:
 		LDA		_fund_request_police
 		ORA		_fund_request_police+1
 		BNE		loc_1048E6
-		LDA		#$F
+		LDA		#$0F
 		BNE		loc_104914
 loc_1048E6:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE8+1
 		LDA		_police_fund_alloc
@@ -1168,10 +1139,10 @@ loc_104914:
 		LDA		_fund_request_fire
 		ORA		_fund_request_fire+1
 		BNE		loc_104923
-		LDA		#$F
+		LDA		#$0F
 		BNE		loc_104951
 loc_104923:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE8+1
 		LDA		_fire_fund_alloc
@@ -1220,12 +1191,12 @@ _city_stats_recalc:
 loc_10497B:
 		JSR		_city_stats_reset
 loc_10497E:
-		LDA		#1
+		LDA		#$01
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_stats_reset:
-		LDA		#0
+		LDA		#$00
 		STA		_doing_a_good_job_votes
 		STA		_doing_a_bad_job_votes
 		STA		_popul_cur
@@ -1240,10 +1211,7 @@ _city_stats_reset:
 		STA		_assessed_value
 		STA		_annual_score_change
 		STA		_annual_score_change+1
-		LDA		#$F4
-		STA		_city._score
-		LDA		#1
-		STA		_city._score+1
+		MOVIW	_city._score,$01F4
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1252,7 +1220,7 @@ _city_assessed_value_recalc:
 		PHA
 		LDA		_roads_counter
 		PHA
-		LDA		#5
+		LDA		#$05
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1265,7 +1233,7 @@ _city_assessed_value_recalc:
 		PHA
 		LDA		_rails_count
 		PHA
-		LDA		#$A
+		LDA		#$0A
 		PHA
 		JSR		_mmc5_mul16to8
 		PLA
@@ -1278,7 +1246,7 @@ _city_assessed_value_recalc:
 		PLA
 		ADC		_tmpE8
 		STA		_tmpE8
-		LDA		#3
+		LDA		#$03
 		PHA
 		LDA		#$E8
 		PHA
@@ -1299,7 +1267,7 @@ _city_assessed_value_recalc:
 		STA		_tmpE8
 		LDA		#$90
 		PHA
-		LDA		#1
+		LDA		#$01
 		PHA
 		LDA		_R_hospitals_count
 		PHA
@@ -1316,7 +1284,7 @@ _city_assessed_value_recalc:
 		STA		_tmpE8
 		LDA		#$B8
 		PHA
-		LDA		#$B
+		LDA		#$0B
 		PHA
 		LDA		_stadiums_count
 		PHA
@@ -1367,7 +1335,7 @@ _city_assessed_value_recalc:
 		STA		_tmpE8
 		LDA		#$B8
 		PHA
-		LDA		#$B
+		LDA		#$0B
 		PHA
 		LDA		_coal_power_station_count
 		PHA
@@ -1413,13 +1381,10 @@ _city_popul_relalc:
 		LDA		_popul_cur+2
 		SBC		_popul_last_year+2
 		STA		_popul_net_migration+2
-		LDA		_popul_cur
-		STA		_popul_last_year
-		LDA		_popul_cur+1
-		STA		_popul_last_year+1
+		MOVM16	_popul_last_year,_popul_cur
 		LDA		_popul_cur+2
 		STA		_popul_last_year+2
-		LDY		#5
+		LDY		#$05
 loc_104AF0:
 		LDA		_popul_cur
 		CMP		byte_104B17,Y
@@ -1466,7 +1431,7 @@ _city_problems_list_recalc:
 		STA		_tmp6D3
 		LDA		_city._tax_rate
 		PHA
-		LDA		#$A
+		LDA		#$0A
 		PHA
 		JSR		_mmc5_mul8to8
 		PLA
@@ -1476,28 +1441,25 @@ _city_problems_list_recalc:
 		JSR		_farcall_argsXY_safe
 		.BYTE	$00,$FB
 		.WORD	_traffic_jam_recalc
-		LDA		_traffic_level_value
-		STA		_tmp6D6
-		LDA		_traffic_level_value+1
-		STA		_tmp6D6+1
+		MOVM16	_tmp6D6,_traffic_level_value
 		JSR		sub_104C2B
 		STA		_tmp6D8
 		JSR		_wrong_var_mul5
 		STA		_tmp6DA
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D9
 		STA		_tmp6DB
 		JSR		sub_104BCE
-		LDY		#0
+		LDY		#$00
 		TYA
 loc_104B8F:
 		STA		byte_6DC,Y
 		INY
-		CPY		#7
+		CPY		#$07
 		BNE		loc_104B8F
-		LDX		#0
+		LDX		#$00
 loc_104B99:
-		LDY		#0
+		LDY		#$00
 		STY		_tmpE6
 loc_104B9D:
 		LDA		byte_6DC,Y
@@ -1509,11 +1471,11 @@ loc_104B9D:
 		STA		_worst_problem_percents,X
 		TYA
 		STA		_worst_problem_list,X
-		LDA		#1
+		LDA		#$01
 		STA		byte_6DC,Y
 loc_104BB7:
 		INY
-		CPY		#7
+		CPY		#$07
 		BNE		loc_104B9D
 		LDA		_tmpE6
 		BNE		loc_104BC8
@@ -1522,25 +1484,25 @@ loc_104BB7:
 		STA		_worst_problem_list,X
 loc_104BC8:
 		INX
-		CPX		#4
+		CPX		#$04
 		BNE		loc_104B99
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_104BCE:
-		LDY		#0
+		LDY		#$00
 		TYA
 loc_104BD1:
 		STA		byte_6E3,Y
 		INY
-		CPY		#7
+		CPY		#$07
 		BNE		loc_104BD1
 		STA		_tmpE8
 		STA		_tmpE8+1
 		STA		_tmpEA
 		STA		_tmpEB
 loc_104BE1:
-		LDA		#1
+		LDA		#$01
 		PHA
 		LDA		#$90
 		PHA
@@ -1566,9 +1528,9 @@ loc_104BE1:
 loc_104C0C:
 		INC		_tmpE8
 		LDA		_tmpE8
-		CMP		#7
+		CMP		#$07
 		BCC		loc_104C18
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE8
 loc_104C18:
 		INC		_tmpEA
@@ -1576,7 +1538,7 @@ loc_104C18:
 		INC		_tmpEB
 loc_104C1E:
 		LDA		_tmpEB
-		CMP		#2
+		CMP		#$02
 		BCS		locret_104C2A
 		LDA		_tmpE8+1
 		CMP		#$64
@@ -1601,10 +1563,10 @@ sub_104C2B:
 		STA		_tmpE7
 		ORA		_tmpE6
 		BNE		loc_104C4C
-		LDA		#0
+		LDA		#$00
 		RTS
 loc_104C4C:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE8+1
 		LDA		_city._level._R
@@ -1633,11 +1595,8 @@ locret_104C75:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_score_recalc:
-		LDA		_city._score
-		STA		_prev_city_score
-		LDA		_city._score+1
-		STA		_prev_city_score+1
-		LDY		#0
+		MOVM16	_prev_city_score,_city._score
+		LDY		#$00
 		STY		_tmpE6
 		STY		_tmpE7
 		STY		_tmpE8
@@ -1652,9 +1611,9 @@ loc_104C8E:
 		ADC		_tmpE7
 		STA		_tmpE7
 		INY
-		CPY		#7
+		CPY		#$07
 		BNE		loc_104C8E
-		LDA		#3
+		LDA		#$03
 		STA		_tmpEB
 		JSR		_div_16to16
 		LDA		_tmpE7
@@ -1662,12 +1621,12 @@ loc_104C8E:
 		LDA		#$FF
 		STA		_tmpE6
 loc_104CB1:
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE7
 		LDA		_tmpE6
 		EOR		#$FF
 		CLC
-		ADC		#1
+		ADC		#$01
 		ASL
 		ROL		_tmpE7
 		ASL
@@ -1675,11 +1634,11 @@ loc_104CB1:
 		LDA		_tmpE6
 		CMP		#$E8
 		LDA		_tmpE7
-		SBC		#3
+		SBC		#$03
 		BCC		loc_104CD4
 		LDA		#$E8
 		STA		_tmpE6
-		LDA		#3
+		LDA		#$03
 		STA		_tmpE7
 loc_104CD4:
 		LDA		_required_flags._stadium
@@ -1712,12 +1671,12 @@ loc_104CFE:
 		DEC		_tmpE7
 loc_104D0A:
 		LDA		_police_fund_rate
-		CMP		#$F
+		CMP		#$0F
 		BCS		loc_104D14
 		JSR		sub_104E54
 loc_104D14:
 		LDA		_fire_fund_rate
-		CMP		#$F
+		CMP		#$0F
 		BCS		loc_104D1E
 		JSR		sub_104E54
 loc_104D1E:
@@ -1762,7 +1721,7 @@ loc_104D6D:
 		PHA
 		LDA		_tmpE6
 		PHA
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE8+1
 		LDA		_popul_net_migration
 		STA		_tmpE6
@@ -1793,16 +1752,16 @@ loc_104DAE:
 		PHA
 		LDA		_tmpE6
 		PHA
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE8+1
-		LDA		#0
+		LDA		#$00
 		SEC
 		SBC		_popul_net_migration
 		STA		_tmpE6
-		LDA		#0
+		LDA		#$00
 		SBC		_popul_net_migration+1
 		STA		_tmpE7
-		LDA		#0
+		LDA		#$00
 		SBC		_popul_net_migration+2
 		STA		_tmpE8
 		LDA		_popul_cur+1
@@ -1810,11 +1769,11 @@ loc_104DAE:
 		LDA		_popul_cur+2
 		STA		_tmpEB
 		JSR		_div_16to16
-		LDA		#1
+		LDA		#$01
 		SEC
 		SBC		_tmpE7
 		STA		_tmpE7
-		LDA		#0
+		LDA		#$00
 		SBC		_tmpE6
 		STA		_tmpE6
 		LDA		_tmpE7
@@ -1831,7 +1790,7 @@ loc_104DAE:
 loc_104DF9:
 		LDA		_tmpE7
 		BPL		loc_104E05
-		LDA		#0
+		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE7
 		BEQ		loc_104E17
@@ -1839,11 +1798,11 @@ loc_104E05:
 		LDA		_tmpE6
 		CMP		#$E8
 		LDA		_tmpE7
-		SBC		#3
+		SBC		#$03
 		BCC		loc_104E17
 		LDA		#$E8
 		STA		_tmpE6
-		LDA		#3
+		LDA		#$03
 		STA		_tmpE7
 loc_104E17:
 		LDA		_city._score
@@ -1901,12 +1860,12 @@ sub_104E54:
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_votes_recalc:
-		LDA		#0
+		LDA		#$00
 		STA		_doing_a_good_job_votes
 		STA		_doing_a_bad_job_votes
 		LDY		#$64
 loc_104E75:
-		LDA		#3
+		LDA		#$03
 		PHA
 		LDA		#$E8
 		PHA
@@ -1941,8 +1900,8 @@ _events_manager:
 		BNE		locret_104ED8
 		LDA		_game_msg_idx
 		STA		_prev_game_msg_idx
-		LDX		#0
-		LDY		#0
+		LDX		#$00
+		LDY		#$00
 loc_104EB7:
 		LDA		_city._events_used_flags,X
 		STA		_tmpE6
@@ -1963,7 +1922,7 @@ loc_104ECB:
 		CPY		#$1B
 		BEQ		locret_104ED8
 		TYA
-		AND		#7
+		AND		#$07
 		BNE		loc_104EBC
 		INX
 		BNE		loc_104EB7
@@ -2001,7 +1960,7 @@ _event01_city_growt:
 _event06_total_jam:
 		LDA		_traffic_level_value+1
 		BMI		nullsub_4
-		CMP		#7
+		CMP		#$07
 		BCC		nullsub_4
 		ORA		#$80
 		STA		_traffic_level_value+1
@@ -2011,7 +1970,7 @@ _event06_total_jam:
 _event07_traffic:
 		LDA		_traffic_level_value+1
 		BMI		nullsub_4
-		CMP		#2
+		CMP		#$02
 		BCC		nullsub_4
 		ORA		#$80
 		STA		_traffic_level_value+1
@@ -2021,7 +1980,7 @@ _event07_traffic:
 _event08_crime:
 		LDA		_city._crime_level+1
 		BMI		nullsub_4
-		CMP		#7
+		CMP		#$07
 		BCC		nullsub_4
 		ORA		#$80
 		STA		_city._crime_level+1
@@ -2048,7 +2007,7 @@ nullsub_4:
 
 ; =============== S U B	R O U T	I N E =======================================
 _event0C_relationships:
-		LDX		#5
+		LDX		#$05
 		JSR		_popul_compare
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
@@ -2057,7 +2016,7 @@ _event0C_relationships:
 _event0D_amusement:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_4
-		LDX		#6
+		LDX		#$06
 		JSR		_popul_compare
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
@@ -2066,7 +2025,7 @@ _event0D_amusement:
 _event0E_zoo:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_4
-		LDX		#7
+		LDX		#$07
 		JSR		_popul_compare
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
@@ -2075,7 +2034,7 @@ _event0E_zoo:
 _event0F_casino:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_4
-		LDX		#8
+		LDX		#$08
 		JSR		_popul_compare
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
@@ -2085,7 +2044,7 @@ _event10_extra_land:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_4
 		LDA		_sea_ports_count
-		CMP		#2
+		CMP		#$02
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
 
@@ -2094,7 +2053,7 @@ _event11_new_police:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_4
 		LDA		_police_stations_count
-		CMP		#$A
+		CMP		#$0A
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
 
@@ -2103,7 +2062,7 @@ _event12_new_fire:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_4
 		LDA		_fire_stations_count
-		CMP		#$A
+		CMP		#$0A
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
 
@@ -2114,7 +2073,7 @@ _event13_10th_monument:
 		LDA		_city._cur_year
 		CMP		#$76
 		LDA		_city._cur_year+1
-		SBC		#7
+		SBC		#$07
 		BCC		nullsub_4
 		JMP		_new_event_register_flag
 
@@ -2125,7 +2084,7 @@ _event14_100th_monument:
 		LDA		_city._cur_year
 		CMP		#$D0
 		LDA		_city._cur_year+1
-		SBC		#7
+		SBC		#$07
 		BCC		nullsub_2
 		JMP		_new_event_register_flag
 
@@ -2135,7 +2094,7 @@ _event15_expo:
 		CMP		#$9E
 		BNE		nullsub_2
 		LDA		_city._cur_year+1
-		CMP		#7
+		CMP		#$07
 		BNE		nullsub_2
 		BEQ		_new_event_register_flag
 
@@ -2165,7 +2124,7 @@ _event17_liberty:
 _event18_library:
 		JSR		_check_for_free_special_biulding_slot
 		BNE		nullsub_2
-		LDX		#9
+		LDX		#$09
 		JSR		_popul_compare
 		BCC		nullsub_2
 		BCS		_new_event_register_flag
@@ -2203,7 +2162,7 @@ _new_event_register_flag:
 		LSR
 		TAX
 		TYA
-		AND		#7
+		AND		#$07
 		TAY
 		LDA		_city._events_used_flags,X
 		ORA		_bitmasks,Y
@@ -2219,7 +2178,7 @@ _new_event_set:
 _new_event_break:
 		CPY		_prev_game_msg_idx
 		BEQ		loc_105059
-		LDA		#1
+		LDA		#$01
 		STA		_game_msg_awaits_flag
 loc_105059:
 		PLA
@@ -2231,11 +2190,11 @@ loc_105059:
 ; =============== S U B	R O U T	I N E =======================================
 ; BUGBUGBUG
 _check_for_free_special_biulding_slot:
-		LDX		#2
+		LDX		#$02
 		LDA		_city._events_used_flags
-		AND		#4
+		AND		#$04
 		BEQ		loc_105069
-		LDX		#3
+		LDX		#$03
 loc_105069:
 		LDA		_city._special_buildings_list,X
 		BEQ		locret_105071
@@ -2248,7 +2207,7 @@ locret_105071:
 _city_history_write:
 		TYA
 		PHA
-		LDY		#0
+		LDY		#$00
 loc_105076:
 		LDA		_city._history_list,Y
 		BEQ		loc_10508F
@@ -2257,7 +2216,7 @@ loc_105076:
 		INY
 		CPY		#$15
 		BNE		loc_105076
-		LDY		#0
+		LDY		#$00
 loc_105084:
 		LDA		_city._history_list+3,Y
 		STA		_city._history_list,Y
@@ -2357,7 +2316,7 @@ _scroll_msg_start:
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg_force_start:
 		STA		_scroll_msg_idx
-		LDY		#0
+		LDY		#$00
 		STY		_scroll_msg_start_pos
 		DEY
 		STY		_scroll_msg_active_flag
@@ -2367,7 +2326,7 @@ locret_105124:
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_mode_events_handler:
 		LDA		_cur_game_mode
-		CMP		#2
+		CMP		#$02
 		BNE		locret_105197
 		LDA		_scenario_disaster_year_pending
 		CMP		_city._cur_year
@@ -2375,7 +2334,7 @@ _scenario_mode_events_handler:
 		LDX		_scenario_idx
 		BNE		loc_105142
 		LDA		_city._city_type
-		CMP		#4
+		CMP		#$04
 		BCC		loc_10519C
 		BCS		loc_105198
 loc_105142:
@@ -2402,7 +2361,7 @@ loc_105164:
 		LDA		_city._score
 		CMP		#$F4
 		LDA		_city._score+1
-		SBC		#1
+		SBC		#$01
 		BCC		loc_10519C
 		BCS		loc_105198
 loc_105175:
@@ -2411,7 +2370,7 @@ loc_105175:
 		LDA		_city._score
 		CMP		#$F4
 		LDA		_city._score+1
-		SBC		#1
+		SBC		#$01
 		BCC		loc_10519C
 		BCS		loc_105198
 loc_105186:
@@ -2420,19 +2379,19 @@ loc_105186:
 		LDA		_city._score
 		CMP		#$F4
 		LDA		_city._score+1
-		SBC		#1
+		SBC		#$01
 		BCC		loc_10519C
 		BCS		loc_105198
 locret_105197:
 		RTS
 loc_105198:
-		LDA		#1
+		LDA		#$01
 		BNE		loc_10519E
 loc_10519C:
-		LDA		#2
+		LDA		#$02
 loc_10519E:
 		STA		_scenario_result_idx
-		LDA		#$B
+		LDA		#$0B
 		STA		_game_setup_sub_idx
 		DEC		_main_sub_idx
 		RTS
@@ -2440,16 +2399,16 @@ loc_10519E:
 ; =============== S U B	R O U T	I N E =======================================
 _practice_mode_events_handler:
 		LDA		_cur_game_mode
-		CMP		#3
+		CMP		#$03
 		BNE		_exit
 		LDA		_city._cur_week
-		AND		#3
+		AND		#$03
 		BNE		_exit
 		LDA		_city._cur_year+1
-		CMP		#7
+		CMP		#$07
 		BNE		_exit
 		LDA		_city._cur_month
-		CMP		#1
+		CMP		#$01
 		BNE		_exit
 		LDA		_city._cur_year
 		CMP		#$6C
@@ -2475,7 +2434,7 @@ loc_1051D1:
 		INX
 loc_1051F4:
 		STX		_game_msg_idx
-		LDA		#1
+		LDA		#$01
 		STA		_game_msg_awaits_flag
 _exit:
 		RTS
@@ -2493,7 +2452,7 @@ loc_105204:
 		INY
 		CPY		#$10
 		BNE		loc_105212
-		LDY		#0
+		LDY		#$00
 loc_105212:
 		CPY		_tmpEB
 		BNE		loc_105204
@@ -2583,9 +2542,9 @@ _scroll_msg02_test:
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg03_test:
 		LDA		_total_RIC_areas
-		CMP		#$A
+		CMP		#$0A
 		LDA		_total_RIC_areas+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_10
 		LDA		_roads_counter
 		CMP		_total_RIC_areas
@@ -2603,7 +2562,7 @@ _scroll_msg04_test:
 		LDA		_total_RIC_areas
 		CMP		#$32
 		LDA		_total_RIC_areas+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_10
 		LDA		_rails_count
 		CMP		_total_RIC_areas
@@ -2617,7 +2576,7 @@ _scroll_msg05_test:
 		LDA		_total_RIC_areas+1
 		BNE		loc_1052EA
 		LDA		_total_RIC_areas
-		CMP		#$A
+		CMP		#$0A
 		BCC		nullsub_10
 loc_1052EA:
 		LDA		_tmp6CC
@@ -2626,12 +2585,12 @@ loc_1052EA:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg06_test:
-		LDA		#0
+		LDA		#$00
 		STA		_required_flags._stadium
 		LDA		_city._level._R
 		CMP		#$F4
 		LDA		_city._level._R+1
-		SBC		#1
+		SBC		#$01
 		BCC		nullsub_10
 		LDA		_stadiums_count
 		BNE		nullsub_10
@@ -2641,12 +2600,12 @@ _scroll_msg06_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg07_test:
-		LDA		#0
+		LDA		#$00
 		STA		_required_flags._airport
 		LDA		_city._level._I
 		CMP		#$64
 		LDA		_city._level._I+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_10
 		LDA		_sea_ports_count
 		BNE		nullsub_10
@@ -2656,12 +2615,12 @@ _scroll_msg07_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg08_test:
-		LDA		#0
+		LDA		#$00
 		STA		_required_flags._seaport
 		LDA		_city._level._C
 		CMP		#$96
 		LDA		_city._level._C+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_10
 		LDA		_airports_count
 		BNE		nullsub_5
@@ -2674,7 +2633,7 @@ _scroll_msg09_test:
 		LDA		_cur_RCI_levels_sum
 		CMP		#$3C
 		LDA		_cur_RCI_levels_sum+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_5
 		LDA		_fire_stations_count
 		BNE		nullsub_5
@@ -2685,7 +2644,7 @@ _scroll_msg0A_test:
 		LDA		_cur_RCI_levels_sum
 		CMP		#$3C
 		LDA		_cur_RCI_levels_sum+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_5
 		LDA		_police_stations_count
 		BNE		nullsub_5
@@ -2698,7 +2657,7 @@ nullsub_6:
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0C_test:
 		LDA		_city._tax_rate
-		CMP		#$C
+		CMP		#$0C
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
@@ -2710,31 +2669,31 @@ _scroll_msg0D_test:
 		LDA		_roads_counter
 		CMP		#$1E
 		LDA		_roads_counter+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0E_test:
 		LDA		_fire_fund_rate
-		CMP		#$B
+		CMP		#$0B
 		BCS		nullsub_5
 		LDA		_cur_RCI_levels_sum
 		CMP		#$14
 		LDA		_cur_RCI_levels_sum+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0F_test:
 		LDA		_police_fund_rate
-		CMP		#$B
+		CMP		#$0B
 		BCS		nullsub_5
 		LDA		_cur_RCI_levels_sum
 		CMP		#$14
 		LDA		_cur_RCI_levels_sum+1
-		SBC		#0
+		SBC		#$00
 		BCC		nullsub_5
 		JMP		_scroll_msg_start
 

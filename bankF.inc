@@ -9,7 +9,7 @@
 RESET:
 		SEI
 		CLD
-		LDX		#0
+		LDX		#$00
 		STX		_PPU_CTRL
 		STX		_PPU_MASK
 		INX
@@ -21,9 +21,9 @@ loc_18A00B:
 		BNE		loc_18A00B
 		DEX
 		TXS
-		LDX		#4
+		LDX		#$04
 		STX		_MMC5_PRG_PAGES
-		LDX		#0
+		LDX		#$00
 		STX		_APU_STATUS
 		STX		_ppu_mask_shadow
 loc_18A023:
@@ -47,8 +47,8 @@ loc_18A03C:
 		BNE		loc_18A03C
 		DEC		_ptr0+1
 		BPL		loc_18A03C
-		LDX		#0
-		LDY		#4
+		LDX		#$00
+		LDY		#$04
 loc_18A049:
 		LDA		aIshi,X
 		STA		_ram_signature,X
@@ -62,9 +62,9 @@ loc_18A053:
 		CMP		#$F0
 		BEQ		loc_18A053
 		JSR		_gui_ctrl_menu_pos_list_ilit
-		LDA		#3
+		LDA		#$03
 		STA		_MMC5_PRG_SIZE
-		LDA		#4
+		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		LDY		#$FC
 		STY		_prg_prg8000_shadow
@@ -76,69 +76,65 @@ loc_18A053:
 		STY		_MMC5_PRG_PAGES+3
 		INY
 		STY		_MMC5_PRG_PAGES+4
-		LDA		#0
+		LDA		#$00
 		STA		byte_9
 		LDA		#$C0
 		STA		_PAD1_REG
-		LDA		#0
+		LDA		#$00
 		STA		byte_4084+$F8C
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F0
-		.WORD	_apu_init
+		FJSR	_apu_init,$00,$F0
 		LDA		#$80
 		STA		_apu_mus_idx_req
 		LDX		#$1F
-		LDA		#$F
+		LDA		#$0F
 loc_18A09D:
 		STA		_pal_bg_buf,X
 		DEX
 		BPL		loc_18A09D
-		LDA		#3
+		LDA		#$03
 		STA		_MMC5_CHR_SIZE
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_CHR_BANKSA+7
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		STA		_mmc5_chr_mode_shadow
-		LDA		#0
+		LDA		#$00
 		STA		_mmc5_sp_mode_shadow
 		STA		_MMC5_SP_MODE
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_SP_SCROLL
 		STA		_mmc5_sp_scroll_shadow
 		STA		_MMC5_SP_PAGE
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_NT_MODE
 		LDA		#$FF
 		STA		_MMC5_NT_FILL
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_AT_FILL
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_IRQ_ENABLE
 		STA		_title_sub_idx
 		JSR		_spr_clear
-		LDY		#1
+		LDY		#$01
 		STY		_rand_seed
 		INY
 		STY		_rand_seed+1
 		INY
 		STY		_rand_seed+2
 		JSR		_thread1_init
-		LDX		#4
+		LDX		#$04
 		LDA		#$64
 loc_18A0F0:
 		STA		_funding_level,X
 		DEX
 		BPL		loc_18A0F0
 		JSR		_sram_on
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_sram_init
+		FJSR	_sram_init,$00,$F3
 		JSR		_sram_off
 		LDA		#$FF
 		STA		_game_core_state
 		STA		byte_37
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		STA		_mmc5_chr_mode_shadow
 		LDA		#$80
@@ -156,31 +152,23 @@ _THREAD0_LOOP:
 _THREAD0_MAIN:
 		LDX		_main_sub_idx
 		BNE		_game_setup_mode
-		LDA		#0
+		LDA		#$00
 		STA		_scr_res_idx
 		JSR		_ppu_queues_reset
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$F7,$F9
-		.WORD	_title_screen
+		FJSR	_title_screen,$F7,$F9
 		INC		_main_sub_idx
 		RTS
 _game_setup_mode:
 		DEX
 		BNE		_ingame_mode
 		JSR		_ppu_queues_reset
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F1
-		.WORD	_game_setup
+		FJSR	_game_setup,$00,$F1
 		RTS
 _ingame_mode:
 		JSR		_ppu_queues_reset
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$FA
-		.WORD	_game_vars_init
+		FJSR	_game_vars_init,$00,$FA
 		JSR		_thread1_init
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$FC,$FD
-		.WORD	_game_start
+		FJSR	_game_start,$FC,$FD
 		RTS
 aIshi:
 		.BYTE	"ISHI",$FF
@@ -206,7 +194,7 @@ loc_18A178:
 		LDA		_ppu_mask_shadow
 		AND		#$18
 		BEQ		loc_18A193
-		LDA		#2
+		LDA		#$02
 		STA		_PPU_OAM_DMA
 		CLI
 		JSR		_ppu_regs_reload
@@ -215,13 +203,13 @@ loc_18A178:
 loc_18A193:
 		JMP		loc_18A359
 loc_18A196:
-		LDA		#2
+		LDA		#$02
 		STA		_PPU_OAM_DMA
 		CLI
 		LDA		_ppu_pal_dequeue_req
 		BEQ		loc_18A1B8
 		JSR		_pal_ppu_send
-		LDA		#0
+		LDA		#$00
 		STA		_ppu_pal_dequeue_req
 		JSR		_ppu_regs_reload
 		LDA		_wnd_ppu_data_backup_req
@@ -241,7 +229,7 @@ loc_18A1B8:
 		STA		_PPU_DATA
 		LDA		#$3F
 		STA		_PPU_ADDR
-		LDA		#0
+		LDA		#$00
 		STA		_PPU_ADDR
 		STA		_PPU_ADDR
 		STA		_PPU_ADDR
@@ -260,10 +248,7 @@ loc_18A1F3:
 		JSR		_ppu_scrolls_reload
 		LDA		_main_sub_idx
 		BNE		loc_18A213
-		LDA		_mmc5_chr_banks_shadow
-		STA		_MMC5_CHR_BANKSA
-		LDA		_mmc5_chr_banks_shadow+1
-		STA		_MMC5_CHR_BANKSA+1
+		MOVM16	_MMC5_CHR_BANKSA,_mmc5_chr_banks_shadow
 		LDA		_mmc5_chr_banks_shadow+2
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		_mmc5_chr_banks_shadow+3
@@ -284,18 +269,18 @@ loc_18A213:
 		INC		_frames_counter
 		INC		_frames_div8_counter
 		LDA		_frames_div8_counter
-		AND		#7
+		AND		#$07
 		STA		_frames_div8_counter
 		INC		_frames_div4_counter
 		LDA		_frames_div4_counter
-		AND		#$F
+		AND		#$0F
 		STA		_frames_div4_counter
-		LDA		#0
+		LDA		#$00
 		STA		_spr_buf_pos
 		LDA		_scr_mode_idx
 		BEQ		loc_18A258
 		LDA		_scr_res_idx
-		CMP		#1
+		CMP		#$01
 		BNE		loc_18A2A1
 		LDA		_maps_info_mode_idx
 		BNE		loc_18A2A1
@@ -311,7 +296,7 @@ loc_18A258:
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		LDA		_scr_mode_idx
-		CMP		#1
+		CMP		#$01
 		BEQ		loc_18A284
 		PHA
 		JSR		_spr_game_interface_cursor_draw
@@ -342,9 +327,9 @@ loc_18A2A1:
 		LDA		_game_wnd_spr_mode_flag
 		BNE		loc_18A2D6
 		LDA		_city._game_speed
-		CMP		#3
+		CMP		#$03
 		BNE		loc_18A2B4
-		LDA		#0
+		LDA		#$00
 		STA		_game_core_stop_flag
 		BEQ		loc_18A2D6
 loc_18A2B4:
@@ -370,8 +355,8 @@ loc_18A2D6:
 		BPL		loc_18A2FC
 		AND		#$7F
 		TAY
-		LDX		#0
-		CMP		#8
+		LDX		#$00
+		CMP		#$08
 		BCC		loc_18A2E5
 		INX
 loc_18A2E5:
@@ -381,33 +366,33 @@ loc_18A2E5:
 		LDA		_thread_priority_req
 		AND		#$7F
 		STA		_thread_priority_req
-		LDA		#1
+		LDA		#$01
 		STA		_game_core_state
 		BNE		_switch_to_thread0
 loc_18A2FC:
 		LDA		_game_core_state
 		ORA		_pad0_held
 		BNE		_switch_to_thread0
-		LDX		#0
+		LDX		#$00
 		LDY		_maps_info_mode_idx
-		CPY		#8
+		CPY		#$08
 		BCC		loc_18A30D
 		INX
 loc_18A30D:
 		LDA		_bitmasks,Y
 		AND		_thread1_flags,X
 		BEQ		_switch_to_thread1
-		LDY		#0
+		LDY		#$00
 		STY		_thread1_flags
 		STY		_thread1_flags+1
 		INY
 		STY		byte_107
 		STY		_game_core_state
 _switch_to_thread0:
-		LDX		#0
+		LDX		#$00
 		BEQ		loc_18A32E
 _switch_to_thread1:
-		LDX		#0
+		LDX		#$00
 		STX		_game_core_state
 		INX
 loc_18A32E:
@@ -468,7 +453,7 @@ loc_18A3A6:
 		LDA		_pal_anim_counter
 		CMP		#$28
 		BCC		loc_18A3B2
-		LDA		#0
+		LDA		#$00
 		STA		_pal_anim_counter
 loc_18A3B2:
 		LDA		_pad0_held
@@ -482,7 +467,7 @@ loc_18A3BD:
 		CMP		#$3C
 		BCC		loc_18A3CF
 		INC		byte_524
-		LDA		#0
+		LDA		#$00
 		STA		byte_525
 loc_18A3CF:
 		LDA		#$FF
@@ -508,13 +493,13 @@ _inv_bitmasks:
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_scrolls_reload:
 		LDA		_game_wnd_spr_mode_flag
-		LDX		#0
+		LDX		#$00
 		ASL
 		BCS		loc_18A45A
 		LDA		_scr_mode_idx
-		CMP		#3
+		CMP		#$03
 		BNE		loc_18A41F
-		LDA		#0
+		LDA		#$00
 		TAX
 		BEQ		loc_18A45A
 loc_18A41F:
@@ -527,21 +512,21 @@ loc_18A41F:
 		BEQ		loc_18A44B
 		STA		_tmp15
 		LDA		_frames_counter
-		AND		#3
+		AND		#$03
 		BNE		loc_18A438
 		DEC		byte_674
 loc_18A438:
 		LDA		_frames_counter
-		AND		#$F
-		CMP		#8
+		AND		#$0F
+		CMP		#$08
 		LDA		_tmp15
 		BCS		loc_18A448
 		SEC
-		SBC		#2
+		SBC		#$02
 		JMP		loc_18A44B
 loc_18A448:
 		CLC
-		ADC		#2
+		ADC		#$02
 loc_18A44B:
 		TAX
 		LDA		_cur_screen_tile._Y
@@ -576,7 +561,7 @@ _mmc5_scrolls_reload:
 loc_18A478:
 		LDA		_scr_mode_idx
 		BNE		loc_18A48B
-		LDA		#0
+		LDA		#$00
 		STA		byte_14
 		LDA		#$1E
 		STA		_MMC5_SP_PAGE+1
@@ -584,9 +569,9 @@ loc_18A478:
 		STA		_MMC5_IRQ_ENABLE
 		RTS
 loc_18A48B:
-		CMP		#3
+		CMP		#$03
 		BEQ		loc_18A49E
-		LDA		#2
+		LDA		#$02
 		STA		byte_14
 		LDA		#$DE
 		STA		_MMC5_SP_PAGE+1
@@ -594,7 +579,7 @@ loc_18A48B:
 		STA		_MMC5_IRQ_ENABLE
 		RTS
 loc_18A49E:
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_IRQ_ENABLE
 		RTS
 
@@ -608,9 +593,9 @@ IRQ:
 		LDA		_MMC5_IRQ_ENABLE
 		LDA		byte_14
 		BEQ		loc_18A4BE
-		CMP		#1
+		CMP		#$01
 		BEQ		sub_18A4E4
-		CMP		#2
+		CMP		#$02
 		BEQ		sub_18A4FB
 loc_18A4B8:
 		PLA
@@ -623,10 +608,10 @@ loc_18A4BE:
 		JSR		_delay
 		JSR		_delay
 		LDA		_scroll_msg_shift_pos
-		LDX		#0
+		LDX		#$00
 		STA		_PPU_SCROLL
 		STX		_PPU_SCROLL
-		LDA		#1
+		LDA		#$01
 		STA		byte_14
 		LDA		#$26
 		STA		_MMC5_SP_PAGE+1
@@ -645,7 +630,7 @@ locret_18A4E3:
 sub_18A4E4:
 		JSR		_delay
 		JSR		_ppu_scrolls_reload
-		LDA		#2
+		LDA		#$02
 		STA		byte_14
 		LDA		#$DE
 		STA		_MMC5_SP_PAGE+1
@@ -655,7 +640,7 @@ sub_18A4E4:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_18A4FB:
-		LDA		#0
+		LDA		#$00
 		STA		_MMC5_IRQ_ENABLE
 		LDA		_APU_STATUS
 		AND		#$10
@@ -679,7 +664,7 @@ loc_18A51E:
 
 ; =============== S U B	R O U T	I N E =======================================
 _wait_for_nmi:
-		LDA		#0
+		LDA		#$00
 		STA		_nmi_flag
 loc_18A525:
 		LDA		_nmi_flag
@@ -697,7 +682,7 @@ _wait_for_mmc5_irq:
 ;_unref_3:
 ;		LDA		byte_13
 ;		BEQ		_unref_3
-;		LDA		#0
+;		LDA		#$00
 ;		STA		byte_13
 ;		RTS
 
@@ -717,20 +702,20 @@ loc_18A54E:
 		DEX
 		STX		_input_forbid_delay
 loc_18A557:
-		LDA		#0
+		LDA		#$00
 		STA		_pad0_held
 		STA		_pad0_autorep_press
 		STA		_pad0_autorep_release
 		RTS
 loc_18A560:
-		LDX		#1
+		LDX		#$01
 		JSR		_read_pad
 		STA		_tmp15
 		JSR		_read_pad
 		CMP		_tmp15
 		BNE		loc_18A560
 		STA		_pad1_prev_held
-		LDX		#0
+		LDX		#$00
 		LDA		_pad0_held
 		STA		_pad0_prev_held
 		JSR		_read_pad
@@ -744,13 +729,13 @@ loc_18A57B:
 loc_18A587:
 		TAX
 		BPL		loc_18A58E
-		LDX		#8
+		LDX		#$08
 		BNE		loc_18A590
 loc_18A58E:
-		LDX		#4
+		LDX		#$04
 loc_18A590:
 		STX		_pad0_autorep_delay
-		CMP		#0
+		CMP		#$00
 		BEQ		loc_18A5C2
 		CMP		_pad0_held
 		BEQ		loc_18A5AE
@@ -758,13 +743,13 @@ loc_18A590:
 		AND		_tmp15
 		STA		_pad0_autorep_press
 		STA		_pad0_autorep_release
-		CMP		#0
+		CMP		#$00
 		BEQ		loc_18A5C8
-		LDA		#8
+		LDA		#$08
 		STA		_pad0_autorep_timer
 		JMP		loc_18A5C8
 loc_18A5AE:
-		LDA		#0
+		LDA		#$00
 		STA		_pad0_autorep_press
 		DEC		_pad0_autorep_timer
 		BNE		loc_18A5BD
@@ -775,7 +760,7 @@ loc_18A5BD:
 		STA		_pad0_autorep_release
 		JMP		loc_18A5C8
 loc_18A5C2:
-		LDA		#0
+		LDA		#$00
 		STA		_pad0_autorep_press
 		STA		_pad0_autorep_release
 loc_18A5C8:
@@ -785,10 +770,10 @@ loc_18A5C8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pad:
-		LDY		#8
-		LDA		#1
+		LDY		#$08
+		LDA		#$01
 		STA		_PAD0_REG
-		LDA		#0
+		LDA		#$00
 		STA		_PAD0_REG
 loc_18A5D9:
 		PHA
@@ -816,7 +801,7 @@ _spr_lib_prg2_insert:
 		STA		_ptr0+1
 		DEC		_spr_insert_args._pos._Y
 		LDX		_spr_buf_pos
-		LDY		#0
+		LDY		#$00
 loc_18A603:
 		LDA		(_ptr0),Y
 		CMP		#$80
@@ -827,7 +812,7 @@ loc_18A603:
 		INY
 		BCC		loc_18A615
 		EOR		#$FF
-		SBC		#6
+		SBC		#$06
 loc_18A615:
 		CLC
 		ADC		_spr_insert_args._pos._Y
@@ -849,7 +834,7 @@ loc_18A615:
 		INY
 		BCC		loc_18A639
 		EOR		#$FF
-		SBC		#6
+		SBC		#$06
 loc_18A639:
 		CLC
 		ADC		_spr_insert_args._pos._X
@@ -876,7 +861,7 @@ _spr_lib_prg8_insert:
 		STA		_ptr0+1
 		DEC		_spr_insert_args._pos._Y
 		LDX		_spr_buf_pos
-		LDY		#0
+		LDY		#$00
 loc_18A666:
 		LDA		(_ptr0),Y
 		CMP		#$80
@@ -934,7 +919,7 @@ _ppu_dequeue:
 		RTS
 loc_18A6C1:
 		LDX		_ppu_queue_pos_tail
-		LDA		#2
+		LDA		#$02
 		STA		_tmp15
 loc_18A6C7:
 		CPX		_ppu_queue_pos_head
@@ -981,7 +966,7 @@ _extnt_dequeue:
 		RTS
 loc_18A714:
 		LDX		_extnt_queue_pos_tail
-		LDA		#2
+		LDA		#$02
 		STA		_tmp17
 loc_18A71A:
 		CPX		_extnt_queue_pos_head
@@ -994,7 +979,7 @@ loc_18A71A:
 		INX
 		STA		_tmp15
 		STY		_tmp15+1
-		LDY		#0
+		LDY		#$00
 		LDA		_extnt_queue_buf,X
 		BPL		loc_18A739
 		AND		#$7F
@@ -1003,7 +988,7 @@ loc_18A739:
 		INX
 		STY		_word15_v_h_selector
 		STA		_tmp18
-		LDY		#0
+		LDY		#$00
 loc_18A740:
 		LDA		_extnt_queue_buf,X
 		INX
@@ -1018,7 +1003,7 @@ loc_18A74F:
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_queues_reset:
-		LDA		#0
+		LDA		#$00
 		STA		_ppu_queue_pos_tail
 		STA		_ppu_queue_pos_head
 		STA		_extnt_queue_pos_tail
@@ -1032,7 +1017,7 @@ _spr_finish:
 
 ; =============== S U B	R O U T	I N E =======================================
 _spr_clear:
-		LDX		#0
+		LDX		#$00
 loc_18A763:
 		LDA		#$F4
 loc_18A765:
@@ -1053,9 +1038,9 @@ _sram_enable_restore:
 ; =============== S U B	R O U T	I N E =======================================
 _sram_on:
 		PHA
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_WRAM0_ENABLE
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_WRAM1_ENABLE
 		LDA		#$FF
 		STA		_sram_state_flag
@@ -1065,11 +1050,11 @@ _sram_on:
 ; =============== S U B	R O U T	I N E =======================================
 _sram_off:
 		PHA
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_WRAM0_ENABLE
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_WRAM1_ENABLE
-		LDA		#0
+		LDA		#$00
 		STA		_sram_state_flag
 		PLA
 		RTS
@@ -1083,11 +1068,11 @@ _farcall_argsAXY_safe:
 		PLA
 		STA		_ptr0
 		CLC
-		ADC		#4
+		ADC		#$04
 		STA		_tmp2
 		PLA
 		STA		_ptr0+1
-		ADC		#0
+		ADC		#$00
 		PHA
 		LDA		_tmp2
 		PHA
@@ -1095,7 +1080,7 @@ _farcall_argsAXY_safe:
 		PHA
 		LDA		_prg_prgA000_shadow
 		PHA
-		LDY		#1
+		LDY		#$01
 		LDA		(_ptr0),Y
 		INY
 		PHA
@@ -1147,11 +1132,11 @@ _farcall_argsXY_safe:
 		PLA
 		STA		_ptrDC
 		CLC
-		ADC		#4
+		ADC		#$04
 		TAX
 		PLA
 		STA		_ptrDC+1
-		ADC		#0
+		ADC		#$00
 		PHA
 		TXA
 		PHA
@@ -1160,7 +1145,7 @@ _farcall_argsXY_safe:
 		LDA		_prg_prgA000_shadow
 		PHA
 		CMP		#$FB
-		LDY		#1
+		LDY		#$01
 		LDA		(_ptrDC),Y
 		INY
 		PHA
@@ -1201,10 +1186,7 @@ _jmp_ptrDC:
 _inc_word15_v_h:
 		LDA		_word15_v_h_selector
 		BNE		loc_18A866
-		INC		_tmp15
-		BNE		locret_18A865
-		INC		_tmp15+1
-locret_18A865:
+		INCW	_tmp15
 		RTS
 loc_18A866:
 		LDA		_tmp15
@@ -1212,7 +1194,7 @@ loc_18A866:
 		ADC		#$20
 		STA		_tmp15
 		LDA		_tmp15+1
-		ADC		#0
+		ADC		#$00
 		STA		_tmp15+1
 		RTS
 
@@ -1228,7 +1210,7 @@ _pal_ppu_send:
 loc_18A881:
 		LSR
 		BCC		locret_18A889
-		LDY		#0
+		LDY		#$00
 		JSR		_pal_ppu_buf_send
 locret_18A889:
 		RTS
@@ -1247,7 +1229,7 @@ loc_18A894:
 		BNE		loc_18A894
 		LDA		#$3F
 		STA		_PPU_ADDR
-		LDA		#0
+		LDA		#$00
 		STA		_PPU_ADDR
 		STA		_PPU_ADDR
 		STA		_PPU_ADDR
@@ -1257,7 +1239,7 @@ loc_18A894:
 _pal_load_lib:
 		AND		#$FF
 		BMI		loc_18A8CA
-		LDX		#0
+		LDX		#$00
 		STX		_ptr0+1
 		ASL
 		ASL
@@ -1282,12 +1264,12 @@ loc_18A8CA:
 		ADC		#<[_pal_spr_lib]
 		STA		_ptr0
 		LDA		#>[_pal_spr_lib]
-		ADC		#0
+		ADC		#$00
 		STA		_ptr0+1
 loc_18A8DD:
 		LDA		#$10
 		STA		_tmp2
-		LDY		#0
+		LDY		#$00
 loc_18A8E3:
 		LDA		(_ptr0),Y
 		INY
@@ -1301,7 +1283,7 @@ loc_18A8E3:
 _pal_fade_in:
 		LDA		_game_core_state
 		PHA
-		LDA		#1
+		LDA		#$01
 		STA		_game_core_state
 		LDA		_screen_pal_cur_bg_idx
 		JSR		_pal_load_lib
@@ -1309,12 +1291,12 @@ _pal_fade_in:
 		ORA		#$80
 		JSR		_pal_load_lib
 		JSR		_pal_cut_off_half
-		LDA		#4
+		LDA		#$04
 		STA		_ptr0
 loc_18A90D:
-		LDA		#5
+		LDA		#$05
 		STA		_ptr0+1
-		LDA		#3
+		LDA		#$03
 		STA		_ppu_pal_dequeue_req
 loc_18A916:
 		JSR		_wait_for_nmi
@@ -1332,7 +1314,7 @@ _pal_cut_off_half:
 		LDX		#$1F
 loc_18A92B:
 		LDA		_pal_bg_buf,X
-		AND		#$F
+		AND		#$0F
 		STA		_pal_bg_buf,X
 		DEX
 		BPL		loc_18A92B
@@ -1340,7 +1322,7 @@ loc_18A92B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _pal_buf_fade_in:
-		LDA		#0
+		LDA		#$00
 		STA		_tmp3
 		LDA		_screen_pal_cur_bg_idx
 		ASL
@@ -1368,7 +1350,7 @@ _pal_buf_fade_in:
 		ADC		#<[_pal_spr_lib]
 		STA		_tmp2
 		LDA		#>[_pal_spr_lib]
-		ADC		#0
+		ADC		#$00
 		STA		_tmp3
 		LDA		#<[_pal_spr_buf]
 		STA		_tmp4
@@ -1380,7 +1362,7 @@ _pal_buf_fade_in:
 ; !FALLTHROUGH!
 __pal_buf_fade_in:
 		LDX		#$10
-		LDY		#0
+		LDY		#$00
 loc_18A97B:
 		LDA		(_tmp4),Y
 		CMP		(_tmp2),Y
@@ -1398,15 +1380,15 @@ loc_18A986:
 _pal_fade_out:
 		LDA		_game_core_state
 		PHA
-		LDA		#1
+		LDA		#$01
 		STA		_game_core_state
 		JSR		_pal_buf_fade_out
-		LDA		#4
+		LDA		#$04
 		STA		_ptr0
 loc_18A99B:
-		LDA		#5
+		LDA		#$05
 		STA		_ptr0+1
-		LDA		#3
+		LDA		#$03
 		STA		_ppu_pal_dequeue_req
 loc_18A9A4:
 		JSR		_wait_for_nmi
@@ -1430,7 +1412,7 @@ loc_18A9B9:
 		STA		_pal_bg_buf,X
 		BCS		loc_18A9CB
 loc_18A9C6:
-		LDA		#$F
+		LDA		#$0F
 		STA		_pal_bg_buf,X
 loc_18A9CB:
 		DEX
@@ -1472,7 +1454,7 @@ _ppu_set_hor_increment:
 _ppu_set_vert_increment:
 		PHA
 		LDA		_ppu_ctrl_shadow
-		ORA		#4
+		ORA		#$04
 		STA		_PPU_CTRL
 		PLA
 		RTS
@@ -1480,17 +1462,14 @@ _ppu_set_vert_increment:
 ; =============== S U B	R O U T	I N E =======================================
 _map_buf_init:
 		JSR		_sram_on
-		LDX		#0
-		LDA		#<[_wram_map_buf]
-		STA		_ptr0
-		LDA		#>[_wram_map_buf]
-		STA		_ptr0+1
+		LDX		#$00
+		MOVO	_ptr0,_wram_map_buf
 		LDA		#$90
 		LDX		#$16
 		STA		_tmp2
 		STX		_tmp3
 		LDA		#$90
-		LDY		#0
+		LDY		#$00
 loc_18AA19:
 		STA		(_ptr0),Y
 		INY
@@ -1506,7 +1485,7 @@ loc_18AA20:
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_reset:
 		LDA		_PPU_STATUS
-		LDA		#0
+		LDA		#$00
 		STA		_PPU_SCROLL
 		STA		_PPU_SCROLL
 		RTS
@@ -1557,7 +1536,7 @@ loc_18AA80:
 		LDA		byte_A0
 		BEQ		loc_18AAAF
 		STA		byte_9F
-		LDA		#0
+		LDA		#$00
 		STA		byte_A0
 		LDA		_wnd_line_tmp_ppu_ofs
 		AND		#$E0
@@ -1609,7 +1588,7 @@ loc_18AAE5:
 		LDA		byte_A0
 		BEQ		loc_18AAAF
 		STA		byte_9F
-		LDA		#0
+		LDA		#$00
 		STA		byte_A0
 		LDA		_game_wnd_spr_mode_flag
 		BEQ		loc_18AB01
@@ -1630,7 +1609,7 @@ loc_18AB07:
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_extnt_data_backup:
 		JSR		_sram_on
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		LDA		_wnd_line_tmp_width
 		STA		byte_9F
@@ -1650,7 +1629,7 @@ _ppu_extnt_data_backup:
 		LDY		_wnd_lvl_idx
 		LDA		_wnd_type,Y
 		BNE		loc_18AB79
-		LDY		#0
+		LDY		#$00
 loc_18AB3D:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_18AB49
@@ -1662,16 +1641,13 @@ loc_18AB49:
 		STA		_extnt_backup0,X
 loc_18AB4E:
 		INX
-		INC		word_9B
-		BNE		loc_18AB55
-		INC		word_9B+1
-loc_18AB55:
+		INCW	word_9B
 		DEC		byte_9F
 		BNE		loc_18AB3D
 		LDA		byte_A0
 		BEQ		loc_18AB71
 		STA		byte_9F
-		LDA		#0
+		LDA		#$00
 		STA		byte_A0
 		LDA		_wnd_line_tmp_ppu_ofs
 		AND		#$E0
@@ -1681,11 +1657,11 @@ loc_18AB55:
 		STA		word_9B+1
 		BNE		loc_18AB3D
 loc_18AB71:
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		JMP		_sram_off
 loc_18AB79:
-		LDY		#0
+		LDY		#$00
 loc_18AB7B:
 		LDA		_wnd_lvl_idx
 		BEQ		loc_18AB87
@@ -1697,19 +1673,13 @@ loc_18AB87:
 		STA		_extnt_backup0,X
 loc_18AB8C:
 		INX
-		LDA		word_9B
-		CLC
-		ADC		#$20
-		STA		word_9B
-		BCC		loc_18AB98
-		INC		word_9B+1
-loc_18AB98:
+		ADDW8	word_9B,#$20
 		DEC		byte_9F
 		BNE		loc_18AB7B
 		LDA		byte_A0
 		BEQ		loc_18AB71
 		STA		byte_9F
-		LDA		#0
+		LDA		#$00
 		STA		byte_A0
 		LDA		_wnd_line_tmp_ppu_ofs
 		AND		#$1F
@@ -1720,7 +1690,7 @@ loc_18AB98:
 
 ; =============== S U B	R O U T	I N E =======================================
 _gui_ctrl_menu_pos_list_ilit:
-		LDX		#$B
+		LDX		#$0B
 loc_18ABB5:
 		LDA		_gui_ctrl_menu_pos_data,X
 		STA		_gui_ctrl_menu_pos_list,X
@@ -1756,7 +1726,7 @@ _thread1_init:
 		STA		_thread_prgA000+1
 		LDA		#>[_THREAD1_MAIN]
 		STA		_stack_upper+$4F
-		LDA		#0
+		LDA		#$00
 		STA		_thread_prg8000+1
 		STA		_stack_upper+$4E
 		STA		_stack_upper+$4D
@@ -1782,7 +1752,7 @@ _apu_music_off:
 		LDA		_APU_STATUS
 		CMP		_APU_STATUS
 		BNE		_apu_music_off
-		AND		#$F
+		AND		#$0F
 		STA		_APU_STATUS
 		LDA		_apu_idx
 		ORA		#$80
@@ -1802,7 +1772,7 @@ _tlm_res_unpack:
 		LDA		_PPU_STATUS
 		STX		_ptr0
 		STY		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		STA		_tmp2
 		INY
@@ -1834,7 +1804,7 @@ _tlm_unpack:
 		LDA		_tmp3
 		STA		_tmp5
 loc_18AC7A:
-		LDY		#0
+		LDY		#$00
 		LDA		(_tmp6),Y
 		CMP		#$FF
 		BNE		loc_18AC83
@@ -1851,15 +1821,12 @@ loc_18AC83:
 		PHA
 		LDA		(_tmp6),Y
 		INY
-		AND		#3
+		AND		#$03
 		STA		word_5A9+1
 		LDA		(_tmp6),Y
 		INY
 		STA		word_5A9
-		INC		word_5A9
-		BNE		loc_18ACA7
-		INC		word_5A9+1
-loc_18ACA7:
+		INCW	word_5A9
 		BNE		loc_18ACBA
 loc_18ACA9:
 		PHA
@@ -1867,9 +1834,9 @@ loc_18ACA9:
 		INY
 		AND		#$1F
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		word_5A9
-		LDA		#0
+		LDA		#$00
 		STA		word_5A9+1
 loc_18ACBA:
 		PLA
@@ -1951,7 +1918,7 @@ loc_18AD42:
 loc_18AD45:
 		STA		_PPU_DATA
 		CLC
-		ADC		#1
+		ADC		#$01
 		DEX
 		BNE		loc_18AD45
 		DEC		byte_5AD
@@ -2018,7 +1985,7 @@ sub_18ADC9:
 		LDX		word_5A9
 		LDA		word_5A9+1
 		BEQ		loc_18ADD3
-		LDX		#0
+		LDX		#$00
 loc_18ADD3:
 		STX		byte_5AF
 		RTS
@@ -2065,7 +2032,7 @@ _tlm_rotate_data:
 loc_18AE19:
 		LDA		_ppu_queue_buf,X
 		STA		byte_5AD
-		LDY		#8
+		LDY		#$08
 loc_18AE21:
 		ASL		byte_5AD
 		ROR
@@ -2086,13 +2053,13 @@ _tlm_get_ppu_data:
 		STA		byte_5AB
 		TAY
 		LDA		byte_5AC
-		SBC		#0
+		SBC		#$00
 		STA		byte_5AC
 		STA		_PPU_ADDR
 		STY		_PPU_ADDR
 		LDA		_PPU_DATA
 		LDA		_PPU_DATA
-		LDX		#0
+		LDX		#$00
 loc_18AE56:
 		INX
 		LDA		_PPU_DATA
@@ -2130,13 +2097,13 @@ loc_18AE69:
 		STA		_spr_buf+$D,X
 		LDA		_goto_transition_counter
 		BNE		loc_18AEA8
-		LDA		#0
+		LDA		#$00
 		BEQ		loc_18AEB4
 loc_18AEA8:
-		LDA		#2
+		LDA		#$02
 		DEC		_goto_transition_counter
 		BNE		loc_18AEB4
-		LDA		#0
+		LDA		#$00
 		STA		_goto_alert_req
 loc_18AEB4:
 		STA		_spr_buf+2,X
@@ -3298,10 +3265,10 @@ _rand:
 _ppu_area_fill:
 		JSR		_ppu_set_hor_increment
 		STX		_PPU_ADDR
-		LDX		#0
+		LDX		#$00
 		STX		_PPU_ADDR
-		LDX		#4
-		LDY		#0
+		LDX		#$04
+		LDY		#$00
 loc_18BB97:
 		STA		_PPU_DATA
 		DEY
@@ -3314,7 +3281,7 @@ loc_18BB97:
 _ppu_increment_select:
 		PHA
 		LDA		_ppu_ctrl_shadow
-		ORA		#4
+		ORA		#$04
 		BCS		loc_18BBAC
 		AND		#$FB
 loc_18BBAC:
@@ -3351,7 +3318,7 @@ loc_18BBCD:
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_transfer:
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		BNE		_tlm_send
 		JMP		_ppu_reset
@@ -3500,7 +3467,7 @@ _mmc5_mul16to8:
 		ADC		_mmc5_mtmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
-		ADC		#0
+		ADC		#$00
 		STA		$105,X
 		LDX		_backup_var
 		RTS
@@ -3527,7 +3494,7 @@ _mmc5_mul32to8:
 		ADC		_mmc5_mtmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
-		ADC		#0
+		ADC		#$00
 		STA		_mmc5_mtmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
@@ -3537,7 +3504,7 @@ _mmc5_mul32to8:
 		ADC		_mmc5_mtmp_mul_result
 		STA		$105,X
 		LDA		_MMC5_MUL1
-		ADC		#0
+		ADC		#$00
 		STA		_mmc5_mtmp_mul_result
 		LDA		$107,X
 		STA		_mmc5_mul0_shadow
@@ -3547,7 +3514,7 @@ _mmc5_mul32to8:
 		ADC		_mmc5_mtmp_mul_result
 		STA		$106,X
 		LDA		_MMC5_MUL1
-		ADC		#0
+		ADC		#$00
 		STA		$107,X
 		LDX		_backup_var
 		RTS
@@ -3574,7 +3541,7 @@ _mmc5_mul16to16:
 		ADC		_mmc5_mtmp_mul_result
 		STA		_mmc5_mtmp_mul_result
 		LDA		_MMC5_MUL1
-		ADC		#0
+		ADC		#$00
 		STA		byte_5A6
 		LDA		$104,X
 		STA		_mmc5_mul1_shadow
@@ -3589,8 +3556,8 @@ _mmc5_mul16to16:
 		LDA		_MMC5_MUL1
 		ADC		byte_5A6
 		STA		byte_5A6
-		LDA		#0
-		ADC		#0
+		LDA		#$00
+		ADC		#$00
 		STA		byte_5A7
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow

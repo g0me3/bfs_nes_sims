@@ -8,9 +8,9 @@ _game_setup:
 		LDA		#$80
 		STA		_apu_mus_idx_req
 		JSR		_wait_for_nmi
-		LDA		#4
+		LDA		#$04
 		STA		_apu_mus_idx_req
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D5
 		STA		_tmp6D2
 		STA		_tmp6D3
@@ -27,7 +27,7 @@ loc_2402A:
 		JSR		_wait_for_nmi
 		JSR		_game_setup_sub_exec
 		LDA		_main_sub_idx
-		CMP		#1
+		CMP		#$01
 		BEQ		loc_2402A
 		RTS
 _game_setup_subs_list:
@@ -80,7 +80,7 @@ _game_setup_lib_hi:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup05_scenario_init:
-		LDA		#1
+		LDA		#$01
 		STA		_game_core_state
 		JSR		_ppu_queues_reset
 		JSR		_pal_fade_out
@@ -88,12 +88,12 @@ _game_setup05_scenario_init:
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
-		LDY		#1
+		LDY		#$01
 		STY		_scr_mode_idx
 		INY
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
-		LDA		#8
+		LDA		#$08
 		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
 		LDA		_city._all_scenarios_are_clear_ram_flag
@@ -101,43 +101,41 @@ _game_setup05_scenario_init:
 		LDX		#<[_tlm_res_scenario_normal]
 		LDY		#>[_tlm_res_scenario_normal]
 		JSR		_tlm_res_unpack
-		LDY		#3
+		LDY		#$03
 		BNE		loc_240B2
 loc_240A5:
 		LDX		#<[_tlm_res_scenario_complete]
 		LDY		#>[_tlm_res_scenario_complete]
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$FA
-		.WORD	_tlm_res_unpack
-		LDY		#4
+		FJSR	_tlm_res_unpack,$00,$FA
+		LDY		#$04
 loc_240B2:
 		STY		_tmp6D4
 		JSR		_ppu_queues_reset
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		JSR		_scenario_closed_screen_update
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D0+1
 		STA		_tmp6D0
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
-		LDA		#2
+		LDA		#$02
 		STA		_screen_pal_cur_spr_idx
-		LDA		#8
+		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
 		INC		_game_setup_sub_idx
 		JMP		_pal_fade_in
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_closed_screen_update:
-		LDY		#0
-		LDX		#6
+		LDY		#$00
+		LDX		#$06
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BEQ		loc_240FA
-		LDY		#6
-		LDX		#8
+		LDY		#$06
+		LDX		#$08
 		LDA		_city._scenarios_clear_flags
 		LSR
 		LSR
@@ -180,7 +178,7 @@ _scenario_closed_icon_draw:
 		STA		_ptr0+1
 		LDA		_scenario_closed_ppu_ofs_lo,Y
 		STA		_ptr0
-		LDY		#0
+		LDY		#$00
 loc_24130:
 		LDA		_ptr0
 		STA		_ppu_queue_buf,X
@@ -188,7 +186,7 @@ loc_24130:
 		LDA		_ptr0+1
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#6
+		LDA		#$06
 		STA		_ppu_queue_buf,X
 		STA		_tmp3
 		INX
@@ -199,13 +197,7 @@ loc_24144:
 		INX
 		DEC		_tmp3
 		BNE		loc_24144
-		LDA		_ptr0
-		CLC
-		ADC		#$20
-		STA		_ptr0
-		BCC		loc_2415B
-		INC		_ptr0+1
-loc_2415B:
+		ADDW8	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24130
 		STX		_ppu_queue_pos_head
@@ -217,7 +209,7 @@ loc_2415B:
 		STA		_ptr0+1
 		LDA		_scenario_closed_ppu_ofs_lo,Y
 		STA		_ptr0
-		LDY		#0
+		LDY		#$00
 loc_24174:
 		LDA		_ptr0
 		STA		_extnt_queue_buf,X
@@ -225,7 +217,7 @@ loc_24174:
 		LDA		_ptr0+1
 		STA		_extnt_queue_buf,X
 		INX
-		LDA		#6
+		LDA		#$06
 		STA		_extnt_queue_buf,X
 		STA		_tmp3
 		INX
@@ -236,13 +228,7 @@ loc_24188:
 		INX
 		DEC		_tmp3
 		BNE		loc_24188
-		LDA		_ptr0
-		CLC
-		ADC		#$20
-		STA		_ptr0
-		BCC		loc_2419F
-		INC		_ptr0+1
-loc_2419F:
+		ADDW8	_ptr0,#$20
 		CPY		#$24
 		BNE		loc_24174
 		STX		_extnt_queue_pos_head
@@ -271,7 +257,7 @@ _game_setup06_scenario_select_input:
 		JSR		_scenario_select_input
 		BIT		_pad0_autorep_press
 		BVC		loc_2420C
-		LDA		#2
+		LDA		#$02
 		STA		_title_sub_idx
 		DEC		_main_sub_idx
 		JMP		_pal_fade_out
@@ -281,7 +267,7 @@ loc_2420C:
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_select_input:
 		LDA		_pad0_autorep_release
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_24219
 		LDA		#$40
 		STA		_apu_se_flags+1
@@ -293,7 +279,7 @@ loc_24219:
 		INX
 		CPX		_tmp6D4
 		BNE		loc_24229
-		LDX		#0
+		LDX		#$00
 loc_24229:
 		LSR
 		BCC		loc_24233
@@ -302,10 +288,10 @@ loc_24229:
 		LDX		_tmp6D4
 		DEX
 loc_24233:
-		AND		#3
+		AND		#$03
 		BEQ		loc_2423F
 		LDA		_tmp6D3
-		EOR		#1
+		EOR		#$01
 		STA		_tmp6D3
 loc_2423F:
 		STX		_tmp6D2
@@ -327,7 +313,7 @@ loc_24256:
 		TAY
 		LDA		byte_2427D,Y
 		STA		_scenario_idx
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		INC		_game_setup_sub_idx
 locret_24273:
@@ -367,7 +353,7 @@ _game_setup07_scenario_intro_init:
 		STA		_tmp6D6
 		LDA		_scenario_msg_lib_hi,Y
 		STA		_tmp6D6+1
-		LDY		#0
+		LDY		#$00
 		STY		_tmp6DA
 		STY		_tmp6D9
 		DEY
@@ -380,7 +366,7 @@ _game_setup08_scenario_intro_draw:
 		JSR		_msg_print_out_handler
 		BIT		_pad0_autorep_press
 		BPL		loc_242EC
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		JSR		_scenario_map_load
 		INC		_main_sub_idx
@@ -415,20 +401,17 @@ loc_2430D:
 		STA		_ptr0+1
 		LDA		_tmp6D6
 		STA		_ptr0
-		INC		_tmp6D6
-		BNE		loc_24323
-		INC		_tmp6D6+1
-loc_24323:
-		LDY		#0
+		INCW	_tmp6D6
+		LDY		#$00
 		LDA		(_ptr0),Y
 		BPL		loc_24330
 		AND		#$7F
 		STA		_tmp6D8
 		BPL		_msg_print_out
 loc_24330:
-		CMP		#$A
+		CMP		#$0A
 		BNE		loc_2433D
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D9
 		INC		_tmp6DA
 		RTS
@@ -450,7 +433,7 @@ loc_24347:
 		LDA		_msg_print_out_ppu_pos_list_hi,Y
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#1
+		LDA		#$01
 		STA		_ppu_queue_buf,X
 		INX
 		PLA
@@ -471,7 +454,7 @@ _scenario_map_load:
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_map_buf_init
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_SIZE
 		JSR		_apu_music_off
 		LDY		_scenario_idx
@@ -481,7 +464,7 @@ _scenario_map_load:
 		STX		_MMC5_CHR_BANKSA+7
 		LDA		_PPU_STATUS
 		LDA		_scenario_data_ppu_hi,Y
-		AND		#$F
+		AND		#$0F
 		STA		_PPU_ADDR
 		LDA		_scenario_data_ppu_lo,Y
 		STA		_PPU_ADDR
@@ -497,12 +480,12 @@ _scenario_map_load:
 		JSR		_sram_on
 		JSR		_scenario_map_unpack
 		JSR		_sram_off
-		LDA		#3
+		LDA		#$03
 		STA		_MMC5_CHR_SIZE
 		JSR		_apu_music_on
 		LDY		_scenario_idx
 		LDX		_scenario_titles_ofs_lib,Y
-		LDY		#1
+		LDY		#$01
 loc_243F1:
 		LDA		_scenario_town_names_list,X
 		BMI		loc_243FD
@@ -519,7 +502,7 @@ loc_243FD:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_map_unpack:
-		LDY		#0
+		LDY		#$00
 		LDA		_PPU_DATA
 		STA		_tmp6
 		AND		#$F0
@@ -561,7 +544,7 @@ loc_24449:
 _scenario_map_block_unpack:
 		STA		_tmp6+1
 loc_24453:
-		LDY		#0
+		LDY		#$00
 		LDA		(_tmp4),Y
 		CMP		#$90
 		BEQ		loc_2446F
@@ -581,7 +564,7 @@ loc_2446F:
 		BMI		loc_244D6
 		CMP		#$64
 		BNE		loc_2449E
-		LDY		#3
+		LDY		#$03
 		LDA		#$8E
 		STA		(_tmp4),Y
 		LDY		#$4F
@@ -605,7 +588,7 @@ loc_2446F:
 loc_2449E:
 		CMP		#$60
 		BCC		loc_244BE
-		LDY		#2
+		LDY		#$02
 		LDA		#$87
 		STA		(_tmp4),Y
 		LDY		#$4E
@@ -621,7 +604,7 @@ loc_2449E:
 		LDA		#$85
 		STA		(_tmp4),Y
 loc_244BE:
-		LDY		#0
+		LDY		#$00
 		LDA		_tmp6+1
 		STA		(_tmp4),Y
 		INY
@@ -635,7 +618,7 @@ loc_244BE:
 		STA		(_tmp4),Y
 		BNE		loc_244DA
 loc_244D6:
-		LDY		#0
+		LDY		#$00
 		STA		(_tmp4),Y
 loc_244DA:
 		INC		_tmp4
@@ -668,13 +651,13 @@ _game_setup01_name_input_init:
 		JSR		_ppu_queues_reset
 		JSR		_pal_fade_out
 		JSR		_render_off
-		LDA		#8
+		LDA		#$08
 		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
-		LDY		#1
+		LDY		#$01
 		STY		_scr_mode_idx
 		STY		_game_core_state
 		INY
@@ -683,12 +666,10 @@ _game_setup01_name_input_init:
 		JSR		_spr_clear
 		LDX		#<[_tlm_res_name_init]
 		LDY		#>[_tlm_res_name_init]
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$FA
-		.WORD	_tlm_res_unpack
-		LDA		#0
+		FJSR	_tlm_res_unpack,$00,$FA
+		LDA		#$00
 		STA		byte_6DC+2
-		LDA		#2
+		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		LDX		#<[_rle_tlm_nt_input_name]
 		LDY		#>[_rle_tlm_nt_input_name]
@@ -703,7 +684,7 @@ loc_24549:
 		JSR		_extnt_dequeue
 		JSR		_ppu_queue_empty_compare
 		BNE		loc_24549
-		LDA		#1
+		LDA		#$01
 		STA		_MMC5_CHR_MODE
 		LDA		#$2C
 		STA		_MMC5_CHR_BANKSA+2
@@ -715,13 +696,13 @@ loc_24549:
 		STA		_tmp6CC
 		LDA		#$A6
 		STA		_tmp6CE
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D0+1
 		STA		_tmp6D0
 		INC		_game_setup_sub_idx
-		LDA		#9
+		LDA		#$09
 		STA		_screen_pal_cur_bg_idx
-		LDA		#7
+		LDA		#$07
 		STA		_screen_pal_cur_spr_idx
 		JMP		_pal_fade_in
 
@@ -756,7 +737,7 @@ _name_input_next_scr:
 		JSR		_rle_extnt_res_queue
 		JMP		_wait_for_flush
 loc_245C9:
-		LDA		#$D
+		LDA		#$0D
 		STA		_game_setup_sub_idx
 		RTS
 
@@ -775,7 +756,7 @@ _name_input_previous_scr:
 		JSR		_rle_extnt_res_queue
 		JMP		_wait_for_flush
 loc_245EE:
-		LDA		#0
+		LDA		#$00
 		STA		_game_setup_sub_idx
 		RTS
 
@@ -807,9 +788,9 @@ loc_24614:
 		BMI		loc_24632
 		LDA		_tmp6D0
 		BNE		loc_2462F
-		LDY		#8
+		LDY		#$08
 		LDA		_tmp6D0+1
-		EOR		#1
+		EOR		#$01
 		STA		_tmp6D0+1
 		BEQ		loc_2462C
 		LDY		#$10
@@ -818,7 +799,7 @@ loc_2462C:
 loc_2462F:
 		DEC		_tmp6D0
 loc_24632:
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._idx
 		STA		_spr_buf_pos
 		LDA		_tmp6D0+1
@@ -839,7 +820,7 @@ _name_input_button_push_draw:
 		LDY		byte_6DC+6
 		CPY		#$21
 		BCS		loc_2469A
-		CPY		#8
+		CPY		#$08
 		BEQ		loc_2469A
 		CMP		#$10
 		BNE		loc_24688
@@ -852,7 +833,7 @@ _name_input_button_push_draw:
 		LDY		#>[byte_24C6A]
 		JMP		_rle_extnt_res_queue
 loc_24676:
-		CPY		#$C
+		CPY		#$0C
 		BNE		locret_246DB
 		LDX		#<[byte_24C45]
 		LDY		#>[byte_24C45]
@@ -861,7 +842,7 @@ loc_24676:
 		LDY		#>[byte_24C51]
 		JMP		_rle_extnt_res_queue
 loc_24688:
-		CMP		#1
+		CMP		#$01
 		BNE		locret_246DB
 		LDX		#<[byte_24CA5]
 		LDY		#>[byte_24CA5]
@@ -888,7 +869,7 @@ loc_246AC:
 		JSR		_spr_lib_prg2_insert
 		LDX		#$FD
 		LDA		byte_6DC+6
-		CMP		#8
+		CMP		#$08
 		BEQ		loc_246C9
 		ORA		#$80
 		TAX
@@ -897,9 +878,9 @@ loc_246C9:
 		LDA		byte_6DC+6
 		SEC
 		SBC		#$30
-		CMP		#$A
+		CMP		#$0A
 		BCS		locret_246DB
-		LDA		#2
+		LDA		#$02
 		STA		_spr_buf+$1A
 locret_246DB:
 		RTS
@@ -907,7 +888,7 @@ locret_246DB:
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_cursor_move_control:
 		LDA		_pad0_autorep_release
-		AND		#$F
+		AND		#$0F
 		BEQ		loc_246E6
 		LDA		#$40
 		STA		_apu_se_flags+1
@@ -918,63 +899,63 @@ loc_246E6:
 		LSR
 		BCC		loc_24706
 		INX
-		CPX		#$A
+		CPX		#$0A
 		BNE		loc_24700
-		CPY		#0
+		CPY		#$00
 		BEQ		loc_24700
-		CPY		#2
+		CPY		#$02
 		BNE		loc_246FF
 		INX
 loc_246FF:
 		INX
 loc_24700:
-		CPX		#$C
+		CPX		#$0C
 		BNE		loc_24706
-		LDX		#0
+		LDX		#$00
 loc_24706:
 		LSR
 		BCC		loc_2471C
 		DEX
 		BPL		loc_24713
-		LDX		#$B
-		CPY		#2
+		LDX		#$0B
+		CPY		#$02
 		BNE		loc_24713
 		DEX
 loc_24713:
-		CPX		#$A
+		CPX		#$0A
 		BNE		loc_2471C
-		CPY		#0
+		CPY		#$00
 		BEQ		loc_2471C
 		DEX
 loc_2471C:
 		LSR
 		BCC		loc_24732
 		INY
-		CPX		#$A
+		CPX		#$0A
 		BCC		loc_2472C
 		BNE		loc_24727
 		INX
 loc_24727:
-		CPY		#2
+		CPY		#$02
 		BNE		loc_2472C
 		INY
 loc_2472C:
-		CPY		#4
+		CPY		#$04
 		BNE		loc_24732
-		LDY		#0
+		LDY		#$00
 loc_24732:
 		LSR
 		BCC		loc_24746
 		DEY
 		BPL		loc_2473A
-		LDY		#3
+		LDY		#$03
 loc_2473A:
-		CPX		#$A
+		CPX		#$0A
 		BCC		loc_24746
 		BNE		loc_24741
 		INX
 loc_24741:
-		CPY		#2
+		CPY		#$02
 		BNE		loc_24746
 		DEY
 loc_24746:
@@ -1011,12 +992,12 @@ _name_input_button_push_control:
 		STA		byte_6DC+1
 		STA		byte_6DC+6
 		BPL		loc_247A1
-		LDY		#0
+		LDY		#$00
 		STY		byte_6DC+1
 		INY
 		STY		byte_6DC+6
 		STY		_apu_se_flags
-		LDA		#8
+		LDA		#$08
 		STA		byte_6DC+3
 		LDX		#<[byte_24C77]
 		LDY		#>[byte_24C77]
@@ -1029,19 +1010,19 @@ _name_input_button_push_control:
 loc_247A1:
 		LDA		_tmp6CC
 		SEC
-		SBC		#4
+		SBC		#$04
 		STA		byte_6DC+4
 		LDA		_tmp6CE
 		SEC
-		SBC		#4
+		SBC		#$04
 		STA		byte_6DC+5
 		LDA		#$10
 		STA		byte_6DC+3
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		RTS
 loc_247BD:
-		LDA		#0
+		LDA		#$00
 		STA		byte_6DC+1
 		RTS
 _input_chars_tbl:
@@ -1059,11 +1040,11 @@ _name_input_char_store:
 		STA		_ptr0
 		LDA		#>[_city]
 		STA		_ptr0+1
-		LDY		#0
+		LDY		#$00
 		LDA		(_ptr0),Y
 		STA		_tmp2
 		LDA		byte_6DC+1
-		CMP		#8
+		CMP		#$08
 		BNE		loc_24821
 		LDY		_tmp2
 		DEY
@@ -1071,29 +1052,29 @@ _name_input_char_store:
 		LDA		#$7C
 		STA		(_ptr0),Y
 		TYA
-		LDY		#0
+		LDY		#$00
 		STA		(_ptr0),Y
 		BEQ		locret_24842
 loc_24821:
-		CMP		#$C
+		CMP		#$0C
 		BNE		loc_24834
 		LDA		#$7C
-		LDY		#$A
+		LDY		#$0A
 loc_24829:
 		STA		(_ptr0),Y
 		DEY
 		BNE		loc_24829
-		LDA		#1
+		LDA		#$01
 		STA		(_ptr0),Y
 		BNE		locret_24842
 loc_24834:
 		LDY		_tmp2
-		CPY		#$B
+		CPY		#$0B
 		BEQ		locret_24842
 		STA		(_ptr0),Y
 		INY
 		TYA
-		LDY		#0
+		LDY		#$00
 		STA		(_ptr0),Y
 locret_24842:
 		RTS
@@ -1113,16 +1094,16 @@ _name_input_char_nt_queue:
 		LDA		byte_248C1,Y
 		STA		_ppu_queue_buf,X
 		INX
-		LDA		#$A
+		LDA		#$0A
 		STA		_ppu_queue_buf,X
 		INX
-		LDY		#1
+		LDY		#$01
 loc_2486A:
 		LDA		(_ptr0),Y
 		STA		_ppu_queue_buf,X
 		INX
 		INY
-		CPY		#$B
+		CPY		#$0B
 		BNE		loc_2486A
 		STX		_ppu_queue_pos_head
 		RTS
@@ -1144,24 +1125,24 @@ _name_input_char_extnt_queue:
 		ADC		#$3C
 		STA		_extnt_queue_buf,X
 		INX
-		LDA		#$A
+		LDA		#$0A
 		STA		_extnt_queue_buf,X
 		INX
-		LDY		#1
+		LDY		#$01
 loc_248A2:
 		STX		_tmp3
 		LDX		#$8B
 		LDA		(_ptr0),Y
 		CMP		#$7C
 		BEQ		loc_248AE
-		LDX		#$B
+		LDX		#$0B
 loc_248AE:
 		TXA
 		LDX		_tmp3
 		STA		_extnt_queue_buf,X
 		INX
 		INY
-		CPY		#$B
+		CPY		#$0B
 		BNE		loc_248A2
 		STX		_extnt_queue_pos_head
 		RTS
@@ -1183,7 +1164,7 @@ _game_setup0D_difficult_init:
 		LDY		#>[_tlm_res_game_play_level]
 		JSR		_tlm_res_unpack
 		JSR		_difficult_scr_cursor_draw
-		LDA		#0
+		LDA		#$00
 		STA		_tmp6D0+1
 		STA		_tmp6D0
 		INC		_mmc5_operation_in_progress_flag
@@ -1197,18 +1178,18 @@ _game_setup0E_difficult_input:
 		JSR		_common_select_cursor_draw
 		BIT		_pad0_autorep_press
 		BPL		loc_2493D
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		LDA		_city._name
-		CMP		#1
+		CMP		#$01
 		BNE		loc_24916
-		LDY		#8
+		LDY		#$08
 		LDX		_scenario_titles_ofs_lib,Y
-		LDY		#1
+		LDY		#$01
 loc_24907:
 		LDA		_scenario_town_names_list,X
 		BMI		loc_24913
-		STA		_city,Y
+		STA		_city._name,Y
 		INX
 		INY
 		BNE		loc_24907
@@ -1216,11 +1197,11 @@ loc_24913:
 		STY		_city._name
 loc_24916:
 		LDA		_city._sister_name
-		CMP		#1
+		CMP		#$01
 		BNE		loc_24933
-		LDY		#8
+		LDY		#$08
 		LDX		_scenario_titles_ofs_lib,Y
-		LDY		#1
+		LDY		#$01
 loc_24924:
 		LDA		_scenario_town_names_list,X
 		BMI		loc_24930
@@ -1237,7 +1218,7 @@ loc_24933:
 		JMP		_pal_fade_out
 loc_2493D:
 		BVC		locret_24944
-		LDA		#1
+		LDA		#$01
 		STA		_game_setup_sub_idx
 locret_24944:
 		RTS
@@ -1245,21 +1226,21 @@ locret_24944:
 ; =============== S U B	R O U T	I N E =======================================
 _difficult_scr_cursor_move:
 		LDA		_pad0_autorep_press
-		AND		#$C
+		AND		#$0C
 		BEQ		locret_2496C
 		LDY		_city._difficult
-		CMP		#4
+		CMP		#$04
 		BNE		loc_2495D
-		CPY		#2
+		CPY		#$02
 		BEQ		locret_2496C
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		INY
 		BNE		loc_24966
 loc_2495D:
-		CPY		#0
+		CPY		#$00
 		BEQ		locret_2496C
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		DEY
 loc_24966:
@@ -1271,7 +1252,7 @@ locret_2496C:
 ; =============== S U B	R O U T	I N E =======================================
 _difficult_scr_cursor_draw:
 		LDX		_extnt_queue_pos_head
-		LDY		#2
+		LDY		#$02
 loc_24971:
 		LDA		off_249B0,Y
 		STA		_extnt_queue_buf,X
@@ -1334,13 +1315,11 @@ _game_setup00_new_city_gen:
 		LDA		#$24
 		STA		_MMC5_NT_MODE
 		STA		_mmc5_nt_mode_shadow
-		LDA		#7
+		LDA		#$07
 		STA		_scr_res_idx
-		LDA		#0
+		LDA		#$00
 		STA		_scr_res_control_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F9
-		.WORD	_scr_res_common
+		FJSR	_scr_res_common,$00,$F9
 		LDA		_title_sub_idx
 		BEQ		loc_249F4
 		DEC		_main_sub_idx
@@ -1353,7 +1332,7 @@ loc_249F4:
 _rle_nt_res_queue:
 		STY		_ptr0+1
 		STX		_ptr0
-		LDY		#0
+		LDY		#$00
 		LDX		_ppu_queue_pos_head
 loc_24A00:
 		LDA		(_ptr0),Y
@@ -1390,7 +1369,7 @@ loc_24A28:
 _rle_extnt_res_queue:
 		STY		_ptr0+1
 		STX		_ptr0
-		LDY		#0
+		LDY		#$00
 		LDX		_extnt_queue_pos_head
 loc_24A36:
 		LDA		(_ptr0),Y
@@ -1442,21 +1421,18 @@ _game_setup09_practice_msg_init:
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
-		LDY		#1
+		LDY		#$01
 		STY		_scr_mode_idx
 		INY
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		LDA		#8
+		LDA		#$08
 		STA		_MMC5_NT_MODE
 		LDX		#<[_tlm_res_fullscreen_wnd]
 		LDY		#>[_tlm_res_fullscreen_wnd]
 		JSR		_tlm_res_unpack
-		LDA		#<[_tlm_practice_wnd_header]
-		STA		_ptr0
-		LDA		#>[_tlm_practice_wnd_header]
-		STA		_ptr0+1
+		MOVO	_ptr0,_tlm_practice_wnd_header
 		JSR		_tlm_transfer
 		LDY		#<[_practice_msg0]
 		LDX		#>[_practice_msg0]
@@ -1467,14 +1443,14 @@ _game_setup09_practice_msg_init:
 loc_24AB0:
 		STY		_tmp6D6
 		STX		_tmp6D6+1
-		LDY		#0
+		LDY		#$00
 		STY		_tmp6DA
 		STY		_tmp6D9
 		DEY
 		STY		_tmp6D8
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
-		LDA		#8
+		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
 		INC		_game_setup_sub_idx
 		JMP		_pal_fade_in
@@ -1484,13 +1460,13 @@ _game_setup0A_practice_msg_draw:
 		JSR		_msg_print_out_handler
 		BIT		_pad0_autorep_press
 		BVC		loc_24AE4
-		LDA		#2
+		LDA		#$02
 		STA		_title_sub_idx
 		DEC		_main_sub_idx
 		JMP		_pal_fade_out
 loc_24AE4:
 		BPL		locret_24B0D
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags
 		LDA		_tmp6D5
 		BNE		loc_24AF6
@@ -1498,10 +1474,10 @@ loc_24AE4:
 		DEC		_game_setup_sub_idx
 		RTS
 loc_24AF6:
-		LDA		#8
+		LDA		#$08
 		STA		_scenario_idx
 		JSR		_scenario_map_load
-		LDA		#0
+		LDA		#$00
 		STA		_scenario_idx
 		INC		_main_sub_idx
 		LDA		#$80
@@ -1518,28 +1494,25 @@ _game_setup0B_scenario_over_init:
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
-		LDY		#1
+		LDY		#$01
 		STY		_scr_mode_idx
 		INY
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
-		LDA		#8
+		LDA		#$08
 		STA		_MMC5_NT_MODE
 		JSR		_spr_clear
 		LDX		#<[_tlm_res_fullscreen_wnd]
 		LDY		#>[_tlm_res_fullscreen_wnd]
 		JSR		_tlm_res_unpack
 		LDA		_scenario_result_idx
-		CMP		#1
+		CMP		#$01
 		BEQ		loc_24B49
-		LDA		#<[_tlm_scenario_loose_header]
-		STA		_ptr0
-		LDA		#>[_tlm_scenario_loose_header]
-		STA		_ptr0+1
+		MOVO	_ptr0,_tlm_scenario_loose_header
 		JSR		_tlm_transfer
 loc_24B49:
 		LDA		_scenario_result_idx
-		CMP		#1
+		CMP		#$01
 		BNE		loc_24B6C
 		JSR		_sram_on
 		LDY		_scenario_idx
@@ -1547,9 +1520,7 @@ loc_24B49:
 		ORA		_bitmasks,Y
 		STA		_city._scenarios_clear_flags
 		STA		_sram_vars._scenarios_clear_flags
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_sram_sum_reinit
+		FJSR	_sram_sum_reinit,$00,$F3
 		JSR		_sram_off
 loc_24B6C:
 		LDY		_scenario_result_idx
@@ -1558,7 +1529,7 @@ loc_24B6C:
 		STA		_tmp6D6
 		LDA		_final_msg_lib_hi,Y
 		STA		_tmp6D6+1
-		LDY		#0
+		LDY		#$00
 		STY		_tmp6DA
 		STY		_tmp6D9
 		DEY
@@ -1576,15 +1547,15 @@ _game_setup0C_scenario_over_input:
 		LDA		_pad0_autorep_press
 		AND		#$C0
 		BEQ		locret_24BC1
-		LDA		#0
+		LDA		#$00
 		STA		_scenario_result_idx
-		LDX		#5
+		LDX		#$05
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		loc_24BBE
 		LDA		_city._scenarios_clear_flags
 		CMP		#$3F
 		BNE		loc_24BBE
-		LDX		#$F
+		LDX		#$0F
 loc_24BBE:
 		STX		_game_setup_sub_idx
 locret_24BC1:
@@ -1598,42 +1569,34 @@ _game_setup0F_all_complete_init:
 		LDY		#$80
 		STY		_game_wnd_spr_mode_flag
 		STY		_ppu_ctrl_shadow
-		LDY		#1
+		LDY		#$01
 		STY		_scr_mode_idx
 		INY
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
-		LDA		#8
+		LDA		#$08
 		STA		_MMC5_NT_MODE
 		JSR		_spr_clear
 		LDX		#<[_tlm_res_fullscreen_wnd]
 		LDY		#>[_tlm_res_fullscreen_wnd]
 		JSR		_tlm_res_unpack
-		LDA		#<[_tlm_all_complete_]
-		STA		_ptr0
-		LDA		#>[_tlm_all_complete_]
-		STA		_ptr0+1
+		MOVO	_ptr0,_tlm_all_complete_
 		JSR		_tlm_transfer
-		LDA		#<[_all_scenarios_clear_msg]
-		STA		_tmp6D6
-		LDA		#>[_all_scenarios_clear_msg]
-		STA		_tmp6D6+1
-		LDY		#0
+		MOVO	_tmp6D6,_all_scenarios_clear_msg
+		LDY		#$00
 		STY		_tmp6DA
 		STY		_tmp6D9
 		DEY
 		STY		_tmp6D8
 		JSR		_sram_on
-		LDA		#1
+		LDA		#$01
 		STA		_city._all_scenarios_are_clear_ram_flag
 		STA		_sram_vars._all_scenarios_are_clear_ram_flag
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$F3
-		.WORD	_sram_sum_reinit
+		FJSR	_sram_sum_reinit,$00,$F3
 		JSR		_sram_off
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
-		LDA		#8
+		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
 		INC		_game_setup_sub_idx
 		JMP		_pal_fade_in
@@ -1644,9 +1607,9 @@ _game_setup10_all_complete_input:
 		LDA		_pad0_autorep_press
 		AND		#$C0
 		BEQ		locret_24C44
-		LDA		#0
+		LDA		#$00
 		STA		_scenario_result_idx
-		LDA		#5
+		LDA		#$05
 		STA		_game_setup_sub_idx
 locret_24C44:
 		RTS

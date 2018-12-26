@@ -17,12 +17,12 @@ loc_8800F:
 		LDA		_airplane_crash_req
 		BEQ		loc_8801C
 		JSR		_airplane_crash_start
-		LDA		#0
+		LDA		#$00
 		STA		_airplane_crash_req
 loc_8801C:
 		JSR		_obj_spr_bank_select
 		LDA		_obj_active_flags
-		AND		#2
+		AND		#$02
 		BEQ		loc_88029
 		JSR		_obj_hndl02_plane
 loc_88029:
@@ -42,18 +42,18 @@ loc_8803C:
 		JSR		_obj_hndl10_monster
 loc_88046:
 		LDA		_obj_active_flags
-		AND		#8
+		AND		#$08
 		BEQ		loc_88050
 		JSR		_obj_hndl08_train
 loc_88050:
 		LDA		_obj_active_flags
-		AND		#4
+		AND		#$04
 		BEQ		loc_8805A
 		JSR		_obj_hndl04_ship_unused
 loc_8805A:
 		LDA		_obj_active_flags
-		AND		#3
-		CMP		#3
+		AND		#$03
+		CMP		#$03
 		BNE		locret_88076
 		LDA		_obj_pos._heli._X
 		CMP		_obj_pos._plane._X
@@ -73,14 +73,14 @@ _airplane_crash_start:
 		STX		_goto_dest_tile._X
 		LDY		_obj_pos._plane._Y
 		STX		_goto_dest_tile._Y
-		LDA		#1
+		LDA		#$01
 		STA		_goto_alert_req
 		STA		_game_msg_awaits_flag
 		JSR		_far_fire_or_destroy_map_tile_ex
 		LDA		_obj_active_flags
 		AND		#$FD
 		STA		_obj_active_flags
-		LDA		#4
+		LDA		#$04
 		STA		_apu_se_flags+1
 		LDA		_ptr0
 		PHA
@@ -94,10 +94,8 @@ _airplane_crash_start:
 		PHA
 		LDA		_tmp5
 		PHA
-		LDY		#8
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$FA
-		.WORD	_city_history_write
+		LDY		#$08
+		FJSR	_city_history_write,$00,$FA
 		PLA
 		STA		_tmp5
 		PLA
@@ -114,7 +112,7 @@ _airplane_crash_start:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl02_plane:
-		LDA		#1
+		LDA		#$01
 		STA		_cur_obj_idx
 		JSR		_obj_pos_fetch
 		BIT		_obj_plane_anim_idx
@@ -151,11 +149,11 @@ _obj_draw:
 loc_88110:
 		LDY		_cur_obj_idx
 		BEQ		loc_8812C
-		CPY		#2
+		CPY		#$02
 		BEQ		loc_88149
-		CPY		#4
+		CPY		#$04
 		BEQ		loc_88138
-		CPY		#5
+		CPY		#$05
 		BEQ		loc_8815E
 loc_88121:
 		LDA		_obj_spr_idx,Y
@@ -180,11 +178,11 @@ loc_88149:
 		SEC
 		SBC		#$9E
 		LDA		_city._cur_year+1
-		SBC		#7
+		SBC		#$07
 		BCS		loc_88121
 		LDA		_obj_spr_idx,Y
 		CLC
-		ADC		#8
+		ADC		#$08
 		BNE		loc_88124
 loc_8815E:
 		LDX		_obj_tornado_counter
@@ -205,13 +203,13 @@ loc_88171:
 		LDA		_obj_plane_anim_idx
 		AND		#$7F
 		SEC
-		SBC		#1
+		SBC		#$01
 		BEQ		loc_881A1
 		ORA		#$80
 		STA		_obj_plane_anim_idx
 		CMP		#$84
 		BNE		loc_88193
-		LDA		#6
+		LDA		#$06
 		STA		_obj_spr_idx._plane
 loc_88193:
 		JSR		_cur_obj_move
@@ -223,7 +221,7 @@ loc_88196:
 		BNE		loc_881A6
 loc_881A1:
 		STA		_obj_plane_anim_idx
-		LDA		#8
+		LDA		#$08
 loc_881A6:
 		STA		_spr_insert_args._idx
 		LDX		_game_wnd_spr_mode_flag
@@ -257,7 +255,7 @@ _cur_obj_move:
 _obj_hndl02_plane_landing_test:
 		LDA		_obj_spr_idx._plane
 		BEQ		locret_88202
-		CMP		#4
+		CMP		#$04
 		BCS		locret_88202
 		LDA		_obj_pos._plane._X
 		CMP		_last_airport_pos._X
@@ -269,14 +267,14 @@ _obj_hndl02_plane_landing_test:
 		STA		_obj_plane_anim_idx
 		LDA		#$20
 		STA		_obj_plane_anim_timer
-		LDA		#2
+		LDA		#$02
 		STA		_obj_spr_idx._plane
 locret_88202:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl01_heli:
-		LDA		#0
+		LDA		#$00
 		STA		_cur_obj_idx
 		JSR		_obj_pos_fetch
 		LDX		_frames_div8_counter
@@ -302,18 +300,18 @@ _obj_animate:
 		LDA		_obj_anim_cnt,Y
 		CLC
 		ADC		_obj_spr_idx,Y
-		AND		#7
+		AND		#$07
 		STA		_obj_spr_idx,Y
 		CMP		_obj_anim_max,Y
 		BNE		loc_88246
-		LDA		#0
+		LDA		#$00
 		STA		_obj_anim_cnt,Y
 loc_88246:
 		JMP		_obj_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl04_ship_unused:
-		LDA		#2
+		LDA		#$02
 		STA		_cur_obj_idx
 		JSR		_obj_pos_fetch
 		LDX		_frames_div8_counter
@@ -333,10 +331,10 @@ loc_8826A:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl04_ship_animate:
 		LDA		_obj_timer._ship._X
-		CMP		#4
+		CMP		#$04
 		BNE		loc_8828E
 		LDA		_obj_timer._ship._Y
-		CMP		#4
+		CMP		#$04
 		BNE		loc_8828E
 		LDA		_cur_obj_pos._X
 		CMP		_obj_next_pos._ship._X
@@ -353,13 +351,13 @@ loc_8828E:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl04_ship_subA:
 		JSR		_get_cur_obj_map_ptr
-		LDA		#0
+		LDA		#$00
 		STA		_tmp17
 		LDA		_obj_spr_idx._ship
 		TAX
 		CLC
-		ADC		#4
-		AND		#7
+		ADC		#$04
+		AND		#$07
 		STA		_tmp18
 		JSR		_obj_hndl04_ship_subA0
 		TXA
@@ -380,7 +378,7 @@ _obj_hndl04_ship_subA:
 		LDA		_tmp18
 		CLC
 		ADC		_obj_anim_cnt,Y
-		AND		#7
+		AND		#$07
 		STA		_obj_spr_idx._ship
 		PLA
 loc_882D1:
@@ -393,10 +391,10 @@ loc_882D1:
 		CLC
 		ADC		byte_889CC,X
 		STA		_obj_next_pos,Y
-		LDA		_obj_next_pos._heli._Y,Y
+		LDA		_obj_next_pos+1,Y
 		CLC
 		ADC		byte_889CC+1,X
-		STA		_obj_next_pos._heli._Y,Y
+		STA		_obj_next_pos+1,Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -421,7 +419,7 @@ loc_882FD:
 loc_8830B:
 		INX
 		TXA
-		AND		#7
+		AND		#$07
 		TAX
 		CMP		_obj_spr_idx._ship
 		BNE		_obj_hndl04_ship_subA0
@@ -432,7 +430,7 @@ byte_88318:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl08_train:
-		LDA		#3
+		LDA		#$03
 		STA		_cur_obj_idx
 		JSR		_obj_pos_fetch
 		LDX		_frames_div8_counter
@@ -456,11 +454,11 @@ loc_88347:
 _obj_hndl08_trainA:
 		LDX		_obj_timer._train._X
 		LDA		_obj_spr_idx._train
-		AND		#2
+		AND		#$02
 		BNE		loc_88357
 		LDX		_obj_timer._train._Y
 loc_88357:
-		CPX		#4
+		CPX		#$04
 		BNE		locret_8836D
 		LDA		_cur_obj_pos._X
 		CMP		_obj_next_pos._train._X
@@ -475,16 +473,16 @@ locret_8836D:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl08_trainB:
 		JSR		_get_cur_obj_map_ptr
-		LDA		#0
+		LDA		#$00
 		STA		_tmp17
 		LDA		_obj_spr_idx._train
 		TAX
 		CLC
-		ADC		#4
-		AND		#7
+		ADC		#$04
+		AND		#$07
 		STA		_tmp18
-		LDX		#0
-		LDY		#0
+		LDX		#$00
+		LDY		#$00
 		LDA		(_tmp15),Y
 loc_88386:
 		CMP		byte_883F1,X
@@ -497,23 +495,23 @@ loc_88386:
 		JMP		loc_88434
 loc_88398:
 		LDA		_obj_spr_idx._train
-		AND		#2
+		AND		#$02
 		BEQ		loc_883AE
 		BNE		loc_883A5
 loc_883A1:
-		CPX		#4
+		CPX		#$04
 		BCS		loc_883AA
 loc_883A5:
-		LDY		#0
+		LDY		#$00
 		JMP		loc_88402
 loc_883AA:
-		CPX		#8
+		CPX		#$08
 		BCS		loc_883B3
 loc_883AE:
-		LDY		#1
+		LDY		#$01
 		JMP		loc_88402
 loc_883B3:
-		CPX		#$C
+		CPX		#$0C
 		BCS		loc_883BA
 		JMP		loc_88451
 loc_883BA:
@@ -526,7 +524,7 @@ loc_883C1:
 		ASL
 		STA		_tmp118
 		LDA		byte_572
-		AND		#3
+		AND		#$03
 		CLC
 		ADC		_tmp118
 		TAX
@@ -571,7 +569,7 @@ loc_88434:
 		LDA		_obj_active_flags
 		AND		#$F7
 		STA		_obj_active_flags
-		LDA		#0
+		LDA		#$00
 		STA		byte_571
 		RTS
 loc_88442:
@@ -585,7 +583,7 @@ byte_8844D:
 loc_88451:
 		TXA
 		SEC
-		SBC		#8
+		SBC		#$08
 		ASL
 		ASL
 		TAX
@@ -630,7 +628,7 @@ loc_884A3:
 		INC		byte_572
 		TXA
 		SEC
-		SBC		#$C
+		SBC		#$0C
 		ASL
 		ASL
 		ASL
@@ -638,7 +636,7 @@ loc_884A3:
 		ADC		_obj_spr_idx._train
 		TAX
 		LDA		byte_572
-		AND		#1
+		AND		#$01
 		BEQ		loc_884BA
 		INX
 loc_884BA:
@@ -687,10 +685,10 @@ loc_884FC:
 		BCC		loc_8852F
 		CMP		#$E4
 		BCS		loc_8852F
-		LDA		#3
+		LDA		#$03
 		BNE		loc_8852A
 loc_88528:
-		LDA		#0
+		LDA		#$00
 loc_8852A:
 		STA		byte_571
 		SEC
@@ -709,28 +707,28 @@ loc_88531:
 		BCC		loc_8855B
 		DEC		_tmp15+1
 		LDA		(_tmp15),Y
-		AND		#$F
+		AND		#$0F
 		TAX
 		LDA		_tmp15
 		SEC
 		SBC		byte_8858C,X
 		STA		_tmp18
 		LDA		_tmp15+1
-		SBC		#0
+		SBC		#$00
 		STA		_word15_v_h_selector
 		INC		_tmp15+1
 		LDA		(_tmp18),Y
 		JMP		loc_88570
 loc_8855B:
 		LDA		(_tmp15),Y
-		AND		#$F
+		AND		#$0F
 		TAX
 		LDA		_tmp15
 		SEC
 		SBC		byte_8858C,X
 		STA		_tmp18
 		LDA		_tmp15+1
-		SBC		#0
+		SBC		#$00
 		STA		_word15_v_h_selector
 		LDA		(_tmp18),Y
 loc_88570:
@@ -746,9 +744,9 @@ loc_88570:
 		RTS
 loc_8857F:
 		LDA		_obj_spr_idx._train
-		AND		#2
+		AND		#$02
 		LSR
-		ADC		#1
+		ADC		#$01
 		STA		byte_571
 loc_8858A:
 		SEC
@@ -766,11 +764,11 @@ byte_8858C:
 ; probably makes difference on monster anim
 ;
 _obj_hndl10_monster:
-		LDX		#0
+		LDX		#$00
 loc_88596:
 		DEX
 		BNE		loc_88596
-		LDA		#4
+		LDA		#$04
 		STA		_cur_obj_idx
 		BIT		_obj_monster_anim_phase1
 		BMI		loc_885A9
@@ -783,9 +781,9 @@ loc_885A9:
 		BNE		loc_885D5
 		DEC		_obj_monster_delay
 		BEQ		loc_885C3
-		CMP		#7
+		CMP		#$07
 		BCC		loc_885C6
-		LDA		#2
+		LDA		#$02
 		STA		_obj_monster_delay
 		BNE		loc_885C6
 loc_885C3:
@@ -815,7 +813,7 @@ _obj_hndl10_monster_chr01_anim:
 		BNE		loc_885EE
 loc_885E9:
 		LDA		_obj_monster_chr_idx
-		AND		#$F
+		AND		#$0F
 loc_885EE:
 		TAX
 		LDA		byte_6CA
@@ -834,9 +832,9 @@ loc_88602:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl10_monster_chr2_anim:
-		LDX		#0
+		LDX		#$00
 		LDA		_obj_monster_chr_idx
-		AND		#1
+		AND		#$01
 		BEQ		loc_88613
 		INX
 loc_88613:
@@ -851,7 +849,7 @@ loc_8861C:
 		BNE		loc_88628
 		TXA
 		CLC
-		ADC		#4
+		ADC		#$04
 		TAX
 loc_88628:
 		LDA		_obj_monster_chr_anim_list2,X
@@ -874,14 +872,14 @@ loc_88633:
 		BNE		loc_8864B
 loc_88645:
 		LDA		_obj_monster_chr_idx
-		AND		#$F
+		AND		#$0F
 		ASL
 loc_8864B:
 		STA		_tmp17
 		LDY		byte_6CA
 		BEQ		loc_88657
 		CLC
-		ADC		#8
+		ADC		#$08
 		STA		_tmp17
 loc_88657:
 		TAX
@@ -893,11 +891,11 @@ loc_88657:
 loc_88665:
 		LDA		(_tmp15),Y
 		BNE		loc_886A2
-		LDY		#0
+		LDY		#$00
 		STY		_obj_monster_anim_phase0
 		LDA		_obj_monster_anim_phase1
 		AND		#$7F
-		EOR		#1
+		EOR		#$01
 		TAY
 		LDA		_obj_pos._monster,Y
 		CMP		_obj_next_pos._monster,Y
@@ -906,7 +904,7 @@ loc_88665:
 		AND		#$7F
 		STA		_tmp17
 		LDA		_obj_monster_anim_phase1
-		EOR		#1
+		EOR		#$01
 		STA		_obj_monster_anim_phase1
 		LDA		byte_6CA
 		BNE		loc_88633
@@ -914,7 +912,7 @@ loc_88665:
 		CLC
 		ADC		#$14
 		STA		_obj_monster_spr_idx
-		LDA		#2
+		LDA		#$02
 		STA		_obj_monster_delay
 		BNE		locret_886C5
 loc_886A2:
@@ -931,7 +929,7 @@ loc_886A2:
 		BCC		locret_886C5
 		CMP		#$14
 		BCS		locret_886C5
-		LDA		#1
+		LDA		#$01
 		STA		_apu_se_flags+1
 locret_886C5:
 		RTS
@@ -939,50 +937,50 @@ locret_886C5:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_hndl10_monster_move:
 		LDA		_obj_monster_anim_phase1
-		AND		#1
+		AND		#$01
 		TAY
 		LDA		_obj_monster_chr_idx
 		AND		byte_8873F,Y
 		BNE		loc_886ED
 		LDA		_obj_timer._monster,Y
 		CLC
-		ADC		#1
-		AND		#7
+		ADC		#$01
+		AND		#$07
 		STA		_obj_timer._monster,Y
 		BNE		loc_8872E
 		LDA		_obj_pos._monster,Y
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		_obj_pos._monster,Y
 		JMP		loc_88705
 loc_886ED:
 		LDA		_obj_timer._monster,Y
 		SEC
-		SBC		#1
-		AND		#7
+		SBC		#$01
+		AND		#$07
 		STA		_obj_timer._monster,Y
-		CMP		#7
+		CMP		#$07
 		BNE		loc_8872E
 		LDA		_obj_pos._monster,Y
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		_obj_pos._monster,Y
 loc_88705:
 		LDA		_obj_pos._monster,Y
 		CMP		_obj_next_pos._monster,Y
 		BNE		loc_8872E
 		TYA
-		EOR		#1
+		EOR		#$01
 		TAY
 		LDA		_obj_pos._monster,Y
 		CMP		_obj_next_pos._monster,Y
 		BEQ		loc_88730
-		LDA		#0
+		LDA		#$00
 		STA		_obj_monster_delay
 		LDA		#$1F
 		STA		_obj_monster_anim_phase0
 		LDA		_obj_monster_anim_phase1
-		EOR		#1
+		EOR		#$01
 		STA		_obj_monster_anim_phase1
 		JSR		_obj_hndl10_monster_chr_anim
 loc_8872E:
@@ -992,7 +990,7 @@ loc_88730:
 		LDA		_obj_active_flags
 		AND		#$EF
 		STA		_obj_active_flags
-		LDA		#0
+		LDA		#$00
 		STA		_obj_monster_anim_phase1
 		SEC
 		RTS
@@ -1003,13 +1001,13 @@ byte_8873F:
 _obj_hndl10_monster_anim_start:
 		LDA		#$20
 		STA		_obj_monster_chr_idx
-		LDA		#1
+		LDA		#$01
 		STA		_obj_monster_delay
-		LDX		#0
+		LDX		#$00
 		LDA		_frames_counter
 		LSR
 		BCC		loc_88754
-		LDX		#1
+		LDX		#$01
 loc_88754:
 		TXA
 		ORA		#$80
@@ -1018,7 +1016,7 @@ loc_88754:
 		CMP		_obj_pos._monster._X
 		BCS		loc_8876A
 		LDA		_obj_monster_chr_idx
-		ORA		#1
+		ORA		#$01
 		STA		_obj_monster_chr_idx
 loc_8876A:
 		LDA		_obj_next_pos._monster._Y
@@ -1036,7 +1034,7 @@ _unused_0:
 _obj_hndl20_tornado:
 		LDA		#$4C
 		STA		_MMC5_CHR_BANKSA+1
-		LDA		#5
+		LDA		#$05
 		STA		_cur_obj_idx
 		JSR		_obj_pos_fetch
 		LDX		_frames_div8_counter
@@ -1044,10 +1042,10 @@ _obj_hndl20_tornado:
 		BNE		loc_887B6
 		LDA		_obj_tornado_counter
 		CLC
-		ADC		#1
+		ADC		#$01
 		CMP		#$1B
 		BCC		loc_887A3
-		LDA		#0
+		LDA		#$00
 loc_887A3:
 		STA		_obj_tornado_counter
 		JSR		_obj_tornado_pos_adjust
@@ -1063,7 +1061,7 @@ locret_887B9:
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_tornado_pos_adjust:
-		LDX		#0
+		LDX		#$00
 		STX		_tmp15
 		LDA		_cur_obj_pos._X
 		CMP		_next_obj_pos._X
@@ -1073,13 +1071,13 @@ _obj_tornado_pos_adjust:
 		SBC		_next_obj_pos._X
 		BCS		loc_887D8
 loc_887CF:
-		LDX		#1
+		LDX		#$01
 		LDA		_next_obj_pos._X
 		SEC
 		SBC		_cur_obj_pos._X
 loc_887D8:
 		STA		_tmp15
-		LDY		#0
+		LDY		#$00
 		LDA		_cur_obj_pos._Y
 		CMP		_next_obj_pos._Y
 		BEQ		loc_88834
@@ -1095,28 +1093,28 @@ loc_887F1:
 		SBC		_cur_obj_pos._Y
 		CMP		_tmp15
 		BCC		loc_88806
-		LDY		#1
+		LDY		#$01
 loc_887FE:
 		STY		_tmp15
-		LDX		#$B
-		LDY		#1
+		LDX		#$0B
+		LDY		#$01
 		BNE		loc_8880C
 loc_88806:
 		STX		_tmp15
-		LDX		#$A
-		LDY		#0
+		LDX		#$0A
+		LDY		#$00
 loc_8880C:
 		LDA		_obj_timer._tornado,Y
 		CLC
 		ADC		_tmp15
-		AND		#7
+		AND		#$07
 		STA		_obj_timer._tornado,Y
 		BNE		loc_8881F
 		LDA		_tmp15
 		BMI		locret_88833
 		BPL		loc_88827
 loc_8881F:
-		CMP		#7
+		CMP		#$07
 		BNE		locret_88833
 		LDA		_tmp15
 		BPL		locret_88833
@@ -1140,13 +1138,13 @@ _obj_pos_fetch:
 		LDA		_cur_obj_idx
 		ASL
 		TAX
-		LDA		_obj_pos,X
+		LDA		_obj_pos._X,X
 		STA		_cur_obj_pos._X
-		LDA		_obj_pos._heli._Y,X
+		LDA		_obj_pos._Y,X
 		STA		_cur_obj_pos._Y
-		LDA		_obj_next_pos,X
+		LDA		_obj_next_pos._X,X
 		STA		_next_obj_pos._X
-		LDA		_obj_next_pos._heli._Y,X
+		LDA		_obj_next_pos._Y,X
 		STA		_next_obj_pos._Y
 		RTS
 
@@ -1156,9 +1154,9 @@ _obj_pos_flush:
 		ASL
 		TAX
 		LDA		_cur_obj_pos._X
-		STA		_obj_pos,X
+		STA		_obj_pos._X,X
 		LDA		_cur_obj_pos._Y
-		STA		_obj_pos._heli._Y,X
+		STA		_obj_pos._Y,X
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1168,30 +1166,30 @@ _cur_obj_move_adjust:
 		BPL		loc_88891
 		CLC
 		ADC		_obj_timer,Y
-		AND		#7
+		AND		#$07
 		STA		_obj_timer,Y
-		CMP		#7
+		CMP		#$07
 		BNE		locret_888A9
 		TXA
-		AND		#1
+		AND		#$01
 		TAY
 		LDA		_cur_obj_pos,Y
 		SEC
-		SBC		#1
+		SBC		#$01
 		STA		_cur_obj_pos,Y
 		RTS
 loc_88891:
 		CLC
 		ADC		_obj_timer,Y
-		AND		#7
+		AND		#$07
 		STA		_obj_timer,Y
 		BNE		locret_888A9
 		TXA
-		AND		#1
+		AND		#$01
 		TAY
 		LDA		_cur_obj_pos,Y
 		CLC
-		ADC		#1
+		ADC		#$01
 		STA		_cur_obj_pos,Y
 locret_888A9:
 		RTS
@@ -1204,9 +1202,9 @@ _obj_create:
 		ASL
 		TAY
 		JSR		_generate_rand_obj_pos
-		STA		_obj_next_pos,Y
+		STA		_obj_next_pos._X,Y
 		JSR		_generate_rand_obj_pos
-		STA		_obj_next_pos._heli._Y,Y
+		STA		_obj_next_pos._Y,Y
 		JSR		_obj_pos_fetch
 		JSR		_calc_cur_obj_mov_dir
 		CMP		#$FF
@@ -1230,7 +1228,7 @@ _get_cur_obj_map_ptr:
 		ADC		_cur_obj_pos._X
 		STA		_tmp15
 		LDA		off_88941,Y
-		ADC		#0
+		ADC		#$00
 		STA		_tmp15+1
 		RTS
 off_888F5:
@@ -1404,30 +1402,30 @@ loc_8899F:
 loc_889A1:
 		INX
 		TXA
-		AND		#7
+		AND		#$07
 		TAX
 		CLC
 		RTS
 loc_889A8:
-		CPX		#5
+		CPX		#$05
 		BCC		loc_8899F
 		BCS		loc_889A1
 loc_889AE:
-		CPX		#1
+		CPX		#$01
 		BCC		loc_8899F
-		CPX		#4
+		CPX		#$04
 		BCC		loc_889A1
 		BCS		loc_8899F
 loc_889B8:
-		CPX		#2
+		CPX		#$02
 		BCC		loc_889A1
-		CPX		#7
+		CPX		#$07
 		BEQ		loc_889A1
 		BNE		loc_8899F
 loc_889C2:
-		CPX		#3
+		CPX		#$03
 		BCC		loc_8899F
-		CPX		#6
+		CPX		#$06
 		BCC		loc_889A1
 		BCS		loc_8899F
 byte_889CC:
@@ -1447,7 +1445,7 @@ _obj_spr_draw:
 		STA		_spr_insert_args._idx
 		TXA
 		LSR
-		AND		#1
+		AND		#$01
 		CLC
 		ADC		_spr_insert_args._idx
 		STA		_spr_insert_args._idx
@@ -1483,7 +1481,7 @@ loc_88A0D:
 		SEC
 		SBC		_cur_map_wnd_pos._X
 		CLC
-		ADC		#7
+		ADC		#$07
 		ASL
 		ASL
 		ASL
@@ -1494,15 +1492,15 @@ loc_88A0D:
 		SEC
 		SBC		_cur_map_wnd_pos._Y
 		CLC
-		ADC		#7
+		ADC		#$07
 		ASL
 		ASL
 		ASL
 		CLC
-		ADC		_obj_timer._heli._Y,X
+		ADC		_obj_timer._Y,X
 		STA		_spr_insert_args._pos._Y
 		LDA		_cur_obj_idx
-		CMP		#3
+		CMP		#$03
 		BNE		loc_88A42
 		LDA		byte_571
 		BNE		locret_88A45
@@ -1514,7 +1512,7 @@ locret_88A45:
 ; =============== S U B	R O U T	I N E =======================================
 _obj_flip_select_unused:
 		TAX
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._flip
 		LDA		_spr_insert_args._pos._X
 		CLC
@@ -1522,7 +1520,7 @@ _obj_flip_select_unused:
 		CMP		#$38
 		BCS		loc_88A5B
 		LDA		_spr_insert_args._flip
-		ORA		#1
+		ORA		#$01
 		STA		_spr_insert_args._flip
 loc_88A5B:
 		LDA		_spr_insert_args._pos._Y
@@ -1531,7 +1529,7 @@ loc_88A5B:
 		CMP		#$38
 		BCS		loc_88A6D
 		LDA		_spr_insert_args._flip
-		ORA		#2
+		ORA		#$02
 		STA		_spr_insert_args._flip
 		BNE		locret_88A7D
 loc_88A6D:
@@ -1541,17 +1539,17 @@ loc_88A6D:
 		CMP		#$D9
 		BCC		locret_88A7D
 		LDA		_spr_insert_args._flip
-		ORA		#4
+		ORA		#$04
 		STA		_spr_insert_args._flip
 locret_88A7D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_spr_clip_draw:
-		LDA		#0
+		LDA		#$00
 		STA		_spr_insert_args._flip
 		LDA		_cur_obj_idx
-		CMP		#8
+		CMP		#$08
 		BCC		loc_88A8C
 loc_88A89:
 		JMP		loc_88A89
@@ -1573,7 +1571,7 @@ loc_88A8C:
 		STX		_tmp15
 		DEC		_spr_insert_args._pos._Y
 		LDX		_spr_buf_pos
-		LDY		#0
+		LDY		#$00
 loc_88AAC:
 		STX		_tmp17
 		LDA		(_tmp15),Y
@@ -1649,7 +1647,7 @@ _obj_spr_insert_ex:
 		PHA
 		TYA
 		AND		#$FC
-		ORA		#3
+		ORA		#$03
 		TAY
 		PLA
 		STA		_spr_buf,X
@@ -1724,50 +1722,50 @@ _calc_cur_obj_mov_dir:
 		CMP		_next_obj_pos._Y
 		BEQ		loc_88B91
 		BCC		loc_88B94
-		LDA		#1
+		LDA		#$01
 		RTS
 loc_88B91:
-		LDA		#2
+		LDA		#$02
 		RTS
 loc_88B94:
-		LDA		#3
+		LDA		#$03
 		RTS
 loc_88B97:
 		LDA		_cur_obj_pos._Y
 		CMP		_next_obj_pos._Y
 		BEQ		loc_88BBA
 		BCC		loc_88BA4
-		LDA		#0
+		LDA		#$00
 		RTS
 loc_88BA4:
-		LDA		#4
+		LDA		#$04
 		RTS
 loc_88BA7:
 		LDA		_cur_obj_pos._Y
 		CMP		_next_obj_pos._Y
 		BEQ		loc_88BB4
 		BCS		loc_88BB7
-		LDA		#5
+		LDA		#$05
 		RTS
 loc_88BB4:
-		LDA		#6
+		LDA		#$06
 		RTS
 loc_88BB7:
-		LDA		#7
+		LDA		#$07
 		RTS
 loc_88BBA:
-		CPY		#3
+		CPY		#$03
 		BNE		loc_88BD9
 		LDA		_obj_spr_idx._train
-		AND		#2
+		AND		#$02
 		BEQ		loc_88BCE
 		LDA		_obj_timer._train._X
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_88BD9
 		BEQ		loc_88BD5
 loc_88BCE:
 		LDA		_obj_timer._train._Y
-		CMP		#4
+		CMP		#$04
 		BEQ		loc_88BD9
 loc_88BD5:
 		LDA		_obj_spr_idx._train
@@ -1779,7 +1777,7 @@ loc_88BD9:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_rand_obj_pos:
 		LDA		_frames_counter
-		AND		#$F
+		AND		#$0F
 		TAX
 		LDA		_rand_seed
 		LSR
@@ -1811,7 +1809,7 @@ _map_scr_obj_spr_insert:
 		ASL
 		TAX
 		LDY		_spr_buf_pos
-		LDA		_obj_pos._heli._Y,X
+		LDA		_obj_pos._Y,X
 		LDX		_cur_obj_idx
 		ASL
 		CLC
@@ -1862,9 +1860,7 @@ _far_fire_or_destroy_map_tile_ex:
 		PHA
 		LDA		_tmp5
 		PHA
-		JSR		_farcall_argsAXY_safe
-		.BYTE	$00,$FB
-		.WORD	_fire_or_destroy_map_tile_ex
+		FJSR	_fire_or_destroy_map_tile_ex,$00,$FB
 		PLA
 		STA		_tmp5
 		PLA
@@ -1888,7 +1884,7 @@ _spr_lib_prgF_insert:
 		STA		_tmp15+1
 		DEC		_spr_prgF_args_pos._Y
 		LDX		_spr_buf_pos
-		LDY		#0
+		LDY		#$00
 loc_88C9C:
 		LDA		(_tmp15),Y
 		CMP		#$80
@@ -1924,7 +1920,7 @@ _spr_game_interface_cursor_draw:
 		LDA		_cur_game_cursor_area
 		BNE		loc_88CE0
 loc_88CD1:
-		LDA		#0
+		LDA		#$00
 		STA		_spr_prgF_args_idx
 		LDA		_cur_game_cursor_scr_pos._X
 		STA		_spr_prgF_args_pos._X
@@ -1934,7 +1930,7 @@ loc_88CD1:
 loc_88CE0:
 		LDX		_prev_constr_palette_press_idx
 		LDA		_constr_building_sizes_list,X
-		CPX		#$C
+		CPX		#$0C
 		BNE		loc_88CEC
 		CLC
 		ADC		_cur_port_type_select_idx
@@ -1959,25 +1955,25 @@ nullsub_8:
 ; 2000 - bank 3C, 3D
 ; 2050 - bank 3E, 3F
 _obj_spr_bank_select:
-		LDX		#0
+		LDX		#$00
 		LDA		_city._cur_year
 		SEC
 		SBC		#$9E
 		STA		_tmp15
 		LDA		_city._cur_year+1
-		SBC		#7
+		SBC		#$07
 		STA		_tmp15+1
 		BCC		loc_88D25
 loc_88D11:
 		INX
-		CPX		#3
+		CPX		#$03
 		BCS		loc_88D25
 		LDA		_tmp15
 		SEC
 		SBC		#$32
 		STA		_tmp15
 		LDA		_tmp15+1
-		SBC		#0
+		SBC		#$00
 		STA		_tmp15+1
 		BCS		loc_88D11
 loc_88D25:
