@@ -564,9 +564,9 @@ _scenario_map_load:
 		LDA		_scenario_map_dicts_lib_hi,Y
 		STA		_tmp3
 		MOVWO	_tmp4,_wram_map_buf				; load wram map buf ptr as dst ptr
-		JSR		_sram_on						; enable wram bank
+		JSR		_sram_write_enable						; enable wram bank
 		JSR		_scenario_map_unpack			; do unpack
-		JSR		_sram_off						; disable back
+		JSR		_sram_write_disable						; disable back
 		LDA		#$03
 		STA		_MMC5_CHR_SIZE					; restore CHR bank size 1K
 		JSR		_apu_dpcm_allow					; allow dpcm back
@@ -1413,14 +1413,14 @@ loc_24B49:
 		LDA		_scenario_result_idx
 		CMP		#$01
 		BNE		loc_24B6C						; if scenario completed, update completion flags in sram
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDY		_scenario_idx
 		LDA		_city._scenarios_clear_flags
 		ORA		_bitmasks,Y
 		STA		_city._scenarios_clear_flags
 		STA		_sram_vars._scenarios_clear_flags
 		FJSRA	_sram_sum_reinit,SRAM,PRG3
-		JSR		_sram_off
+		JSR		_sram_write_disable
 loc_24B6C:
 ; OPTIMIZED, lib indexes are 8, 9, but _scenario_result_idx should be -1
 ; so +7
@@ -1677,12 +1677,12 @@ _game_setup0F_all_complete_init:
 ;		STY		_tmp6D9
 ;		DEY
 ;		STY		_tmp6D8
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDA		#$01
 		STA		_city._all_scenarios_are_clear_ram_flag		; set all complete global flag
 		STA		_sram_vars._all_scenarios_are_clear_ram_flag; now it's stored in sram forever
 		FJSRA	_sram_sum_reinit,SRAM,PRG3
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		LDA		#$08
 		STA		_screen_pal_cur_bg_idx
 ; REDUNDANT
@@ -1716,7 +1716,7 @@ _game_vars_init:
 		LDA		_city._difficult
 		PHA
 ; -
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		#$00								; X=A=0
 		TXA
 loc_1043C4:
@@ -1724,7 +1724,7 @@ loc_1043C4:
 		INX
 		CPX		#$78
 		BNE		loc_1043C4
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		LDX		#$00								; A=0 still here
 loc_1043D1:
 		STA		_city._level,X						; part of the city vars clear
@@ -1842,7 +1842,7 @@ loc_1044A3:
 		LDA		#$26
 		STA		_cur_population_dencity
 		STA		_cur_population_dencity+1
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
 ; REDUNDANT, for some reason they clear $570 instead of full $5A4
 ;		LDX		#$05
@@ -1864,7 +1864,7 @@ loc_1044A3:
 ; OPTIMIZED
 		LDX		#$05
 		LDY		#$A4
-		JSR		_clear_buffer
+		JSR		_clear_buf
 		MOVWO	_tmpE6,_land_value_map_buf			; clear the rest of the statistic maps
 ; -
 ; REDUNDANT
@@ -1887,9 +1887,9 @@ loc_1044A3:
 ; OPTIMIZED
 		LDX		#$03								; size is correct this time
 		LDY		#$ED
-		JSR		_clear_buffer
+		JSR		_clear_buf
 ; -
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		JMP		_city_stats_reset					; ALERT! _city_stats_reset used here from PRGB as well!
 
 _difficult_money_list_lo:

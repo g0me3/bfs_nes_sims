@@ -35,7 +35,7 @@ loc_11E047:
 		LDA		_frames_counter					; adjust random seed
 		STA		_rand_seed
 		ADDWB	_city._tax_year_rate,_city._tax_rate
-		MOVWI	_power_stations_list_pos,0
+		MOVWI	_power_nodes_cnt,0
 		LDA		#$07
 		STA		_thread0_flags+1
 		JSR		_overall_stats_clear
@@ -615,7 +615,7 @@ _inc_hospital:
 		LDA		_hospitals_delta
 		BPL		locret_11E558
 		LDA		#$15
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		BNE		locret_11E558
 		BEQ		loc_11E553
 _inc_school:
@@ -623,7 +623,7 @@ _inc_school:
 		LDA		_schools_delta
 		BPL		locret_11E558
 		LDA		#$15
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		BNE		locret_11E558
 loc_11E553:
 		LDA		#$00
@@ -648,7 +648,7 @@ loc_11E573:
 		JSR		_inc_areas_stats
 		JSR		_R_areas_twin_blocks_delete_test
 		LDA		#$24
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		CMP		_cur_R_area_develop_state
 		BCS		loc_11E590
 		LDA		#$00
@@ -755,7 +755,7 @@ loc_11E644:
 		JSR		_inc_areas_stats
 		JSR		_C_areas_twin_blocks_delete_test
 		LDA		#$06
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		CMP		_cur_R_area_develop_state
 		BCS		loc_11E661
 		LDA		#$01
@@ -903,7 +903,7 @@ _I_areas_develop:
 loc_11E75C:
 		JSR		_inc_areas_stats
 		LDA		#$06
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		CMP		_cur_R_area_develop_state
 		BCS		loc_11E776
 		LDA		#$02
@@ -954,7 +954,7 @@ _collect_other_buildings_stats:
 		BMI		loc_11E7C4						; no greater than 128
 		INC		_coal_power_station_count
 loc_11E7C4:
-		FJSR	_power_stations_map_pos_list_insert,SRAM,PRGA
+		FJSR	_power_node_insert,SRAM,PRGA
 		RTS
 loc_11E7CC:
 		CMP		#$61
@@ -963,7 +963,7 @@ loc_11E7CC:
 		BMI		loc_11E7D8						; no greater than 128
 		INC		_nuke_power_station_count
 loc_11E7D8:
-		FJSR	_power_stations_map_pos_list_insert,SRAM,PRGA
+		FJSR	_power_node_insert,SRAM,PRGA
 		RTS
 loc_11E7E0:
 		CMP		#$50
@@ -1124,17 +1124,33 @@ locret_11E8D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: when space is enough, merge me with my copy
+; copy of _power_grid_read in PRGA
+;
 _test_power_grid_map_bit:
-		PUSHB	_tmp_map_pos._ROW
-		PUSHB	#$4C
-		JSR		_mmc5_mul8to8
-		PLA
+; REDUNDANT
+;		PUSHB	_tmp_map_pos._ROW
+;		PUSHB	#$4C
+;		JSR		_mmc5_mul8to8
+;		PLA
+;		CLC
+;		ADC		_tmp_map_pos._COL
+;		STA		_tmpE6
+;		TAY
+;		PLA
+;		ADC		#$00
+; -
+; OPTIMIZED
+		LDA		_tmp_map_pos._ROW				; calculate map buf offset
+		MULAI	#$4C
+		LDA		_MMC5_MUL0
 		CLC
 		ADC		_tmp_map_pos._COL
-		STA		_tmpE6
-		TAY
-		PLA
+		STA		_tmpE6							; store low nibble
+		TAY										; backup it for now
+		LDA		_MMC5_MUL1						; adjust high nibble in A
 		ADC		#$00
+; -
 		LSR
 		ROR		_tmpE6
 		LSR
@@ -1215,7 +1231,7 @@ loc_11E96D:
 ; =============== S U B	R O U T	I N E =======================================
 sub_11E96F:
 		LDA		#$04
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_tmp6CE+1
 		CMP		#$04
 		BCC		loc_11E97E
@@ -1285,7 +1301,7 @@ loc_11E9E8:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11E9EF:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDY		_tmp6D2
 		INY
 		LDA		_tmp_map_pos._COL
@@ -1293,7 +1309,7 @@ sub_11E9EF:
 		LDA		_tmp_map_pos._ROW
 		STA		_tmp_recalc_bufs+$1B,Y
 		STY		_tmp6D2
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_11EA08:
@@ -2179,7 +2195,7 @@ _add_select_police_fire_recalc:
 
 ; =============== S U B	R O U T	I N E =======================================
 _clear_tmp_recalc_bufB5:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDY		#$00
 		TYA
 loc_11F0D3:
@@ -2187,7 +2203,7 @@ loc_11F0D3:
 		INY
 		CPY		#$B5
 		BNE		loc_11F0D3
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 ; return
@@ -2325,93 +2341,34 @@ _map_tile_read:
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_write:
 		PHA
-		PUSHB	_tmp_map_pos._ROW
-		PUSHB	#$4C
-		JSR		_mmc5_mul8to8
-		PLA
+; REDUNDANT, too slow for such frequently used routine
+;		PUSHB	_tmp_map_pos._ROW
+;		PUSHB	#$4C
+;		JSR		_mmc5_mul8to8
+;		PLA
+;		CLC
+;		ADC		#<[_wram_map_buf]
+;		STA		word_EC
+;		PLA
+;		ADC		#>[_wram_map_buf]
+;		STA		word_EC+1
+; -
+; OPTIMIZED, FASTER!
+		LDA		_tmp_map_pos._ROW
+		MULAI	#$4C
+		LDA		#<[_wram_map_buf]
 		CLC
-		ADC		#<[_wram_map_buf]
+		ADC		_MMC5_MUL0
 		STA		word_EC
-		PLA
-		ADC		#>[_wram_map_buf]
+		LDA		#>[_wram_map_buf]
+		ADC		_MMC5_MUL1
 		STA		word_EC+1
+; -
 		LDY		_tmp_map_pos._COL
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		PLA
 		STA		(word_EC),Y
-		JMP		_sram_off
-
-; =============== S U B	R O U T	I N E =======================================
-; same as _tmp_map_pos_near_tile_select routine
-; -0-
-; 3*1
-; -2-
-; also this routine returns C=1 if couldn't set a near tile idx due to
-; current value is on the map edge
-;
-_jump_to_near_to_tmp_map_pos_tile:
-		CPX		#$00						; we must keep X here, some routines
-		BEQ		_tmp_map_dec_pos_Y			; depends on it
-		CPX		#$01
-		BEQ		_tmp_map_inc_pos_X
-		CPX		#$02
-		BEQ		_tmp_map_inc_pos_Y
-		CPX		#$03
-		BEQ		_tmp_map_dec_pos_X
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_back_from_near_tmp_map_pos_tile:
-		CPX		#$00						; same here
-		BEQ		_tmp_map_inc_pos_Y
-		CPX		#$01
-		BEQ		_tmp_map_dec_pos_X
-		CPX		#$02
-		BEQ		_tmp_map_dec_pos_Y
-		CPX		#$03
-		BEQ		_tmp_map_inc_pos_X
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tmp_map_dec_pos_Y:
-		LDA		_tmp_map_pos._ROW
-		BEQ		_tmp_map_cant_change_pos
-		DEC		_tmp_map_pos._ROW
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tmp_map_inc_pos_X:
-		LDA		_tmp_map_pos._COL
-		CMP		#$4B
-		BEQ		_tmp_map_cant_change_pos
-		INC		_tmp_map_pos._COL
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tmp_map_inc_pos_Y:
-		LDA		_tmp_map_pos._ROW
-		CMP		#$4B
-		BEQ		_tmp_map_cant_change_pos
-		INC		_tmp_map_pos._ROW
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tmp_map_dec_pos_X:
-		LDA		_tmp_map_pos._COL
-		BEQ		_tmp_map_cant_change_pos
-		DEC		_tmp_map_pos._COL
-		CLC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_tmp_map_cant_change_pos:
-		SEC
-		RTS
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_pos_backup:
@@ -2447,7 +2404,7 @@ loc_11F242:
 		LDA		_city._bank_flags
 		AND		#$C0
 		STA		_city._bank_flags
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDY		#$00
 		TYA
 loc_11F26A:
@@ -2456,7 +2413,7 @@ loc_11F26A:
 		INY
 		CPY		#$32
 		BNE		loc_11F26A
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _population_growth_map_recalc:
@@ -2548,7 +2505,7 @@ _critical_section_enter:
 _map_corruption_tiles_animate:
 		LDA		_corruption_anim_flag
 		BEQ		loc_11F33A
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		MOVWO	_tmpE6,_wram_map_buf
 		LDY		#$00
 		STY		_corruption_anim_flag
@@ -2570,7 +2527,7 @@ loc_11F324:
 		JSR		_wait_for_hud_redraw
 		JMP		_map_corruption_tiles_animate
 loc_11F33A:
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 _corrupt_ground_tiles_list:
 		.BYTE	$E8,$E9,$EA,$B4
@@ -2759,7 +2716,7 @@ locret_11F48C:
 ; =============== S U B	R O U T	I N E =======================================
 sub_11F48D:
 		LDA		#$02
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		byte_6C3
 		LDA		_cur_R_area_develop_state
 		CMP		#$04
@@ -2946,7 +2903,7 @@ locret_11F5F4:
 ; =============== S U B	R O U T	I N E =======================================
 sub_11F5F5:
 		LDA		#$02
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		byte_6C3
 		LDA		_cur_R_area_develop_state
 		SEC
@@ -3395,9 +3352,9 @@ _write_buf_pos_4bit_nibble_ex:
 loc_11F8BB:
 		AND		(word_EE),Y
 		ORA		byte_E5
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		STA		(word_EE),Y
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_unused_11:
@@ -3475,92 +3432,6 @@ loc_11F93E:
 		POPB	_tmp_map_pos._COL
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-; called only from PRGA in power grind map generating routine
-; however, this one uses _map_tiles_flags_tbl from PRGB so cannot be
-; moved into PRGA just now.
-;
-_test_select_map_tile_if_powered_up:
-		PUSHW	_tmp_map_pos					; backup current _tmp_map_pos
-		LDX		_tmp6D1
-		JSR		_jump_to_near_to_tmp_map_pos_tile	; select
-		BCS		.cant_test_power_map_tile
-		JSR		_test_map_tile_if_powered_up
-		BCS		.cant_test_power_map_tile
-		POPW	_tmp_map_pos
-		CLC
-		RTS
-.cant_test_power_map_tile:
-		POPW	_tmp_map_pos
-		SEC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; return C=1 if not powerable tile or already powered.
-;
-_test_map_tile_if_powered_up:
-		JSR		_map_tile_read					; read nearest tile
-		TAY
-		LDA		_map_tiles_flags_tbl,Y
-		BPL		.nothing_to_power				; test if powerable
-		TYA
-		CMP		#_MAP_COAL_POWER				; also test for power stations we
-		BEQ		.nothing_to_power				; already have in our list
-		CMP		#_MAP_NUCLEAR_POWER
-		BEQ		.nothing_to_power
-		LDA		_tmp_map_pos._ROW				; now calc the power map grid idx again
-		MULAI	#$4C							; as done in power map set routine before
-		LDA		_MMC5_MUL0						; TODO: optimize me!
-		CLC
-		ADC		_tmp_map_pos._COL
-		STA		_tmpE6
-		PHA
-		LDA		_MMC5_MUL1
-		ADC		#$00
-		LSR
-		ROR		_tmpE6
-		LSR
-		ROR		_tmpE6
-		LSR
-		ROR		_tmpE6
-		STA		_tmpE7
-		LDA		_tmpE6
-		CLC
-		ADC		#<[_power_grid_map_buf]
-		STA		_tmpE6
-		LDA		_tmpE7
-		ADC		#>[_power_grid_map_buf]
-		STA		_tmpE7
-		PLA
-		AND		#$07
-		TAX
-		LDY		#$00
-		LDA		_inv_bitmasks,X					; test if selected tile is powered already
-		AND		(_tmpE6),Y						; return C=0 need power up
-		BNE		.nothing_to_power
-		CLC
-		RTS
-.nothing_to_power:
-		SEC
-		RTS
-
-_map_tiles_flags_tbl:
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-		.BYTE	$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$00
-		.BYTE	$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00
-		.BYTE	$02,$62,$62,$62,$62,$62,$62,$62,$62,$62,$62,$62,$52,$52,$52,$52
-		.BYTE	$52,$52,$52,$52,$52,$52,$52,$C2,$C2,$C2,$C2,$C2,$C2,$C2,$C2,$C2
-		.BYTE	$C2,$C2,$46,$06,$02,$00,$00,$52,$52,$E2,$E2,$D2,$D2,$05,$06,$06
-		.BYTE	$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$46,$46
-		.BYTE	$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46
-		.BYTE	$05,$05,$15,$15,$85,$85,$00,$00,$00,$00,$00,$05,$05,$05,$05,$05
-		.BYTE	$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$00,$05,$00
 _R_area_develop_states_list:
 		.BYTE	$00,$04,$06,$08,$0C,$10,$18,$20,$28,$10,$18,$20,$28,$10,$18,$20
 		.BYTE	$28,$10,$18,$20,$28,$28,$28,$28,$28
@@ -3618,10 +3489,10 @@ _fire_disaster_start_common:
 		TYA
 		PHA
 		LDA		#$4C
-		JSR		_rand_clamp						; select random tile to burn
+		JSR		_rand_clamp_A						; select random tile to burn
 		STA		_tmp_map_pos._COL					; through the whole map
 		LDA		#$4C							; so fire can start at many points
-		JSR		_rand_clamp						; at the same time
+		JSR		_rand_clamp_A						; at the same time
 		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read					; read cur tile under the selection
 		TAY
@@ -3656,10 +3527,10 @@ loc_11FB9A:
 		TYA
 		PHA
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._COL
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._ROW
 		JSR		_map_tile_read
 		CMP		#$BE
@@ -3734,10 +3605,10 @@ loc_11FC38:
 		STA		_earthquake_shake_req
 loc_11FC3E:
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._COL
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_tmp_map_pos._ROW
 		JSR		_get_building_map_tile
 		TAY
@@ -3792,18 +3663,18 @@ _tornado_disaster_start:
 		STA		_mmc5_chr_banks_shadow+1
 		STA		_MMC5_CHR_BANKSA+1				; CHR bank init
 		LDA		#$4C
-		JSR		_rand_clamp						; select random map starting pos
+		JSR		_rand_clamp_A						; select random map starting pos
 		STA		_obj_pos._tornado._COL
 		STA		_tmp_map_pos._COL
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_obj_pos._tornado._ROW
 		STA		_tmp_map_pos._ROW
 		LDA		#$4C
-		JSR		_rand_clamp						; and absolutely random dst pos on map
+		JSR		_rand_clamp_A						; and absolutely random dst pos on map
 		STA		_obj_dst_pos._tornado._COL
 		LDA		#$4C
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_obj_dst_pos._tornado._ROW
 		LDA		_disasters_flags				; clear disaster flag as well
 		AND		#$F7
@@ -3837,7 +3708,7 @@ _monster_disaster_start:
 		BNE		locret_11FD73					; bank
 		LDY		#$00
 		LDA		#$4C
-		JSR		_rand_clamp						; appear at random map position
+		JSR		_rand_clamp_A						; appear at random map position
 		STA		_obj_pos._monster._COL
 		STA		_tmp_map_pos._COL
 		CMP		#$26
@@ -3847,7 +3718,7 @@ loc_11FD17:
 		STY		_obj_dst_pos._monster._COL
 		LDY		#$00
 		LDA		#$4C
-		JSR		_rand_clamp						; the same for Y
+		JSR		_rand_clamp_A					; the same for Y
 		STA		_obj_pos._monster._ROW
 		STA		_tmp_map_pos._ROW
 		CMP		#$26
@@ -3857,7 +3728,7 @@ loc_11FD2D:
 ;		STY		_obj_dst_pos._monster._COL		; BUG, seems another copypaste here
 		STY		_obj_dst_pos._monster._ROW		; FIX
 		LDA		#$97
-		JSR		_rand_clamp						; if this code change X position,
+		JSR		_rand_clamp_A						; if this code change X position,
 		LSR										; the Y will be uninitialized actually
 		BCS		loc_11FD3D						; due to BUG above, but seems it's not
 		STA		_obj_dst_pos._monster._COL		; much important, since we have it initialized to
@@ -4065,7 +3936,7 @@ loc_11FEB9:
 		PUSHB	_tmp_map_pos._COL
 		PUSHB	_tmp_map_pos._ROW
 		LDA		#$1F
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		CLC
 		ADC		_tmp_map_pos._COL
 		SBC		#$0F
@@ -4073,7 +3944,7 @@ loc_11FEB9:
 		BCS		loc_11FEEA
 		STA		_tmp_map_pos._COL
 		LDA		#$1F
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		CLC
 		ADC		_tmp_map_pos._ROW
 		SBC		#$0F
@@ -4135,12 +4006,12 @@ loc_11FF45:
 		AND		#$30							; wait for tornado disappear if any.
 		BNE		loc_11FF45						; as a side effect, town freezed by this time
 		LDA		#$1A
-		JSR		_rand_clamp						; as against manually selected monster disaster
+		JSR		_rand_clamp_A						; as against manually selected monster disaster
 		ADC		#$2D							; scenario starting point is area near the center
 		STA		_obj_pos._monster._COL			; of the map within square in 26 tiles
 		STA		_tmp_map_pos._COL
 		LDA		#$1A
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_obj_pos._monster._ROW
 		STA		_tmp_map_pos._ROW
 		LDA		#$00
@@ -4148,7 +4019,7 @@ loc_11FF45:
 		LDA		#$4B
 		STA		_obj_dst_pos._monster._ROW
 		LDA		#$97
-		JSR		_rand_clamp						; but rnd will change one of the coordinates, so
+		JSR		_rand_clamp_A						; but rnd will change one of the coordinates, so
 		LSR										; it will travel either to the leftmost of the bottom side
 		BCS		loc_11FF7B						; in the direction of the sea
 		STA		_obj_dst_pos._monster._COL

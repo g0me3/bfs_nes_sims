@@ -1669,9 +1669,9 @@ locret_59BCF:
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_reset:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		INC		_sram_data_crc
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		JMP		RESET
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1682,7 +1682,7 @@ _sram_sum_reinit:
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_init:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		JSR		_sram_sum_calc
 		LDA		_sram_data_crc
 		CMP		_tmp2
@@ -1696,7 +1696,7 @@ _sram_init:
 		STA		_city._all_scenarios_are_clear_ram_flag
 		LDA		_sram_has_saved_city_data_flag
 		STA		_has_saved_city_data_flag
-		JMP		_sram_off
+		JMP		_sram_write_disable
 loc_59C0E:
 		LDA		#>[_land_value_map_buf]			; CAUTION: low nibble is zero
 		STA		_ptr0+1							; here
@@ -1713,7 +1713,7 @@ loc_59C1A:
 		CPX		#$A0
 		BNE		loc_59C1A
 		INC		_sram_data_crc
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_sum_calc:
@@ -1772,7 +1772,7 @@ loc_59C76:
 ; =============== S U B	R O U T	I N E =======================================
 _sram_data_load:
 		DEC		_mmc5_operation_in_progress_flag
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		MOVWO	_ptr0,_sram_map_buf
 		MOVWO	_tmp2,_wram_map_buf
 		LDY		#$00
@@ -1804,14 +1804,14 @@ loc_59185:
 		INX
 		CPX		#$80
 		BNE		loc_59185
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		INC		_mmc5_operation_in_progress_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_data_save:
 		DEC		_mmc5_operation_in_progress_flag
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		MOVWO	_ptr0,_wram_map_buf
 		MOVWO	_tmp2,_sram_map_buf
 		LDY		#$00
@@ -1847,7 +1847,7 @@ loc_58FFE:
 		STA		_has_saved_city_data_flag
 		STA		_sram_has_saved_city_data_flag
 		JSR		_sram_sum_reinit
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		INC		_mmc5_operation_in_progress_flag
 		RTS
 
@@ -2577,13 +2577,13 @@ loc_593A8:
 		STA		_tmp573
 loc_593AD:
 		LDX		#$09
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp576
 		LDA		_tmp573
 		STA		_tmp575
 		JSR		_generate_new_map_sub3
 		LDX		#$09
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_ptr0
 		LDA		#$47
 		SEC
@@ -2606,13 +2606,13 @@ loc_593AD:
 		STA		_tmp574
 loc_593F1:
 		LDX		#$09
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp575
 		LDA		_tmp574
 		STA		_tmp576
 		JSR		_generate_new_map_sub3
 		LDX		#$09
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_ptr0
 		LDA		#$47
 		SEC
@@ -2692,13 +2692,13 @@ loc_5946A:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapA:
 		LDX		#$19
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		CLC
 		ADC		#$1A
 		STA		_tmp573
 		STA		_tmp575
 		LDX		#$19
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		CLC
 		ADC		#$1A
 		STA		_tmp574
@@ -2708,7 +2708,7 @@ _generate_new_mapA:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapB:
 		LDX		#$04
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp57F
 		STA		_tmp57E
 		JSR		_generate_new_mapB_0
@@ -2726,7 +2726,7 @@ _generate_new_mapB:
 		LDA		_tmp574
 		STA		_tmp576
 		LDX		#$04
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp57F
 		JMP		_generate_new_mapB_1
 
@@ -2786,16 +2786,16 @@ locret_5953D:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapF:
 		LDX		#$32
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		CLC
 		ADC		#$17
 		STA		_tmp57C
 loc_59549:
 		LDX		#$4C
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp575
 		LDX		#$4C
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp576
 		JSR		_generate_new_mapF_0
 		DEC		_tmp57C
@@ -2807,7 +2807,7 @@ loc_59549:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapF_0:
 		LDX		#$3C
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		CLC
 		ADC		#$17
 		STA		_tmp57D
@@ -2817,7 +2817,7 @@ _generate_new_mapF_0:
 		STA		_tmp578
 loc_5957F:
 		LDX		#$08
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		STA		_tmp57E
 		JSR		_generate_new_mapF_0A
 		JSR		_generate_map_buf_end_test
@@ -2835,35 +2835,35 @@ locret_595BA:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapC:
 		LDX		#$05
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		TAX
 		INX
 		STX		_tmp580
 loc_595C5:
 		LDX		#$3E
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		CLC
 		ADC		#$03
 		STA		_tmp575
 		LDX		#$3E
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		CLC
 		ADC		#$03
 		STA		_tmp576
 		LDX		#$06
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		ADC		#$01
 		STA		_tmp581
 loc_595E5:
 		LDX		#$07
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		SEC
 		SBC		#$03
 		CLC
 		ADC		_tmp575
 		STA		_tmp577
 		LDX		#$07
-		JSR		_mul_rand
+		JSR		_rand_clamp_X
 		SEC
 		SBC		#$03
 		CLC
@@ -3325,7 +3325,7 @@ loc_59A4D:
 		BNE		loc_59A30
 
 ; =============== S U B	R O U T	I N E =======================================
-_mul_rand:
+_rand_clamp_X:
 		JSR		_rand
 		MULAX
 		RTS

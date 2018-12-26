@@ -207,8 +207,30 @@ _rci_meters_accel_tax_list:
 ; additional value depending on how much conjunctions it has with other powerable
 ; tiles details are below.
 ;
+; at the beginning the power nodes list consists only of power station coordinates
+;
+; 1. fetch current power node, until there are no more, else exit
+; 2. enable power grid for current node, increment power consumption
+; 3. search if nearest tiles from 0 to 3 clockwise are need power
+;	(if tile powerable and not powered yet and not the power station itself)
+; 4. jump 3. unless there are no more or there are more than one
+; 5. if there are more than one, then
+;		put current node to the nodes list again, jump 6.
+;	 if there are no more, then
+;		jump 1.
+; 6. set the last tile need to be powered we found as a current node, jump 2.
+;	(even if this tile already added in the nodes list again
+;
+; As we can see, there is more overpowering exist for those tiles which has more
+; than one conjuncted tiles need to be powered. it can be readded to the power
+; nodes list up to three times and thus one simgle tile may consume 3 times more
+; still being the same tile already powered.
+;
+; also, due to calling methods and routines arrangements in ROM, there a lot of
+; time spent to lookup tiles than set the power grid, and this is highly unoptimal
+;
 _power_grid_recalc:
-		JSR		_sram_on						; set game buffers to read
+		JSR		_sram_write_enable						; set game buffers to read
 ; REDUNDANT
 ;		LDA		#$00
 ;		TAY
@@ -229,9 +251,9 @@ _power_grid_recalc:
 		MOVWO	_tmpE6,_power_grid_map_buf		; clear power grid map
 		LDX		#$02							; 76*76/8 = 722
 		LDY		#$D2
-		JSR		_clear_buffer
+		JSR		_clear_buf
 ; -
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		PUSHWI	700								; calculate power generation
 		PUSHB	_coal_power_station_count
 		JSR		_mmc5_mul16to8					; E6 = COL * 700
@@ -256,13 +278,13 @@ loc_104253:
 		MOVW	_tmp6CC,_tmpE6					; _tmp6CC here is full power generation value
 		MOVWI	_tmp6CE,0						; _tmp6CE current consumtion counter, initial value 0
 .power_grid_recalc_loop:
-		LDA		_power_stations_list_pos		; here must be already collected list of power stations
-		ORA		_power_stations_list_pos+1		; if not, skip calcs.
+		LDA		_power_nodes_cnt				; here must be already collected list of power stations
+		ORA		_power_nodes_cnt+1				; if not, skip calcs.
 		BNE		loc_10426E
 		RTS
 loc_10426E:
-		LDY		_power_stations_list_pos		; load counter
-		LDA		_power_stations_list_pos+1		; to start with list0 or list1 test higher counter byte
+		LDY		_power_nodes_cnt				; load counter
+		LDA		_power_nodes_cnt+1				; to start with list0 or list1 test higher counter byte
 		BEQ		loc_10427F
 		LDX		_tmp_recalc_bufs,Y				; list 1 read
 		LDA		_tmp_recalc_bufs+$300,Y
@@ -274,112 +296,113 @@ loc_104285:
 		STX		_tmp_map_pos._COL				; fetch last power station position on map
 		STA		_tmp_map_pos._ROW
 		DEY										; decrement power stations list counter
-		STY		_power_stations_list_pos
+		STY		_power_nodes_cnt
 		CPY		#$FF
 		BNE		loc_104296
-		DEC		_power_stations_list_pos+1
+		DEC		_power_nodes_cnt+1
 loc_104296:
 		LDA		#$04
-		STA		_tmp6D0							; default nearest tile position idx, see below
+		STA		_tmp6D0							; idx=4 isn't valid, with this it will skip position change
 .power_search_loop0:
-		INCW	_tmp6CE							; for every tile we test, increment consumption counter
-		CMPW	_tmp6CE,_tmp6CC					; compare with max possible according to power stations number
+		INCW	_tmp6CE							; for every entry in the power nodes list, increase power consumption
+		CMPW	_tmp6CE,_tmp6CC					; then compare with max possible according to power stations number
 		BCS		locret_1042F9
-		LDX		_tmp6D0
-		JSR		_tmp_map_pos_near_tile_select	; read current conjuncted tile
-; NOTE, this algo mark as powered not only the buildings and wires, but
-; a subset of cunjuncted tiles near the powerable tiles.
-;
-		JSR		_power_grid_map_bit_set			; mark nearest tile as powered
+		LDX		_tmp6D0							; load near tile idx and change cur pos to it
+		JSR		_jump_to_near_to_tmp_map_pos_tile; at the beginning of loop, this is out power station tile
+		JSR		_power_grid_set					; set the power grid flag for current tile
 		LDA		#$00
-		STA		_tmp6D2
+		STA		_tmp6D2							; counter found tiles to be powered
 		STA		_tmp6D1							; loop1 counter
 .power_search_loop1:
-		LDA		_tmp6D1							; test all 4 nearest tiles for current nearest to power station
-		CMP		#$04
-		BCS		loc_1042E7
+		LDA		_tmp6D1							; test all 4 nearest tiles for current selected tile
+		CMP		#$04							; in this loop we does nothing except looking for powerable tiles
+		BCS		.power_next_loop0
 		LDA		_tmp6D2
 		CMP		#$02
-		BCS		loc_1042E7
-		FJSR	_test_select_map_tile_if_powered_up,SRAM,PRGB
-		BCS		loc_1042E2
-		INC		_tmp6D2
-		LDA		_tmp6D1
-		STA		_tmp6D0
-loc_1042E2:
-		INC		_tmp6D1
-		BNE		.power_search_loop1
-loc_1042E7:
+		BCS		.power_next_loop0				; FIXME, redundant double check jump here
+;		FJSR	_power_tile_test,SRAM,PRGB		; test if nearest tile powerable but not powered
+		JSR		_power_tile_test
+		BCS		.power_no_need					; skip if already powerable or not need to power
+		INC		_tmp6D2							; increment counter of tiles found
+		LDA		_tmp6D1							; current tile need to power idx goes to main near tile selector
+		STA		_tmp6D0							; upon search we will have here idx of every 3th powerable tile found or less
+.power_no_need:
+		INC		_tmp6D1							; next tile select
+		BNE		.power_search_loop1				; unconditional break
+.power_next_loop0:
+		LDA		_tmp6D2							; when we found more than 2 powerable tiles, we need to add third one
+		CMP		#$02							; to the power nodes list, so two other we will skip then
+		BCC		.power_no_insert				; for every powerable tile we must add at least 2 of 4 to nodes
+		JSR		_power_node_insert
+.power_no_insert:
 		LDA		_tmp6D2
-		CMP		#$02
-		BCC		loc_1042F1
-		JSR		_power_stations_map_pos_list_insert
-loc_1042F1:
-		LDA		_tmp6D2
-		BNE		.power_search_loop0
-		JMP		.power_grid_recalc_loop						; TODO: optimize me
+		BNE		.power_search_loop0				; search until we have no more tiles to power up
+		JMP		.power_grid_recalc_loop			; then we jump to retch another power node from list
 locret_1042F9:
 		RTS
 
+; REDUNDANT, merged with _jump_to_near_to_tmp_map_pos_tile, moved to system bank
 ; =============== S U B	R O U T	I N E =======================================
 ; this is a copy of similar routine in bank which cannot be used
 ; also _back_from_near_tmp_map_pos_tile cannot be optimized like this routine
 ; because we need to keep X there
 ;
-_tmp_map_pos_near_tile_select:
-		CPX		#$00							; input arg - one of the select direction
-		BNE		loc_104307						; -0-
-		LDA		_tmp_map_pos._ROW				; 3*1
-		BEQ		locret_10432E					; -2-
-		DEC		_tmp_map_pos._ROW				; if at the map edge, use the same tile
-		RTS
-loc_104307:
-		DEX
-		BNE		loc_104315
-		LDA		_tmp_map_pos._COL
-		CMP		#$4B
-		BEQ		locret_10432E
-		INC		_tmp_map_pos._COL
-		RTS
-loc_104315:
-		DEX
-		BNE		loc_104323
-		LDA		_tmp_map_pos._ROW
-		CMP		#$4B
-		BEQ		locret_10432E
-		INC		_tmp_map_pos._ROW
-		RTS
-loc_104323:
-		DEX
-		BNE		locret_10432E
-		LDA		_tmp_map_pos._COL
-		BEQ		locret_10432E
-		DEC		_tmp_map_pos._COL
-locret_10432E:
-		RTS
+;_tmp_map_pos_near_tile_select:
+;		CPX		#$00							; input arg - one of the select direction
+;		BNE		loc_104307						; -0-
+;		LDA		_tmp_map_pos._ROW				; 3*1
+;		BEQ		locret_10432E					; -2-
+;		DEC		_tmp_map_pos._ROW				; if at the map edge, use the same tile
+;		RTS
+;loc_104307:
+;		DEX
+;		BNE		loc_104315
+;		LDA		_tmp_map_pos._COL
+;		CMP		#$4B
+;		BEQ		locret_10432E
+;		INC		_tmp_map_pos._COL
+;		RTS
+;loc_104315:
+;		DEX
+;		BNE		loc_104323
+;		LDA		_tmp_map_pos._ROW
+;		CMP		#$4B
+;		BEQ		locret_10432E
+;		INC		_tmp_map_pos._ROW
+;		RTS
+;loc_104323:
+;		DEX
+;		BNE		locret_10432E
+;		LDA		_tmp_map_pos._COL
+;		BEQ		locret_10432E
+;		DEC		_tmp_map_pos._COL
+;		SEC
+;		RTS
+;locret_10432E:
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_power_stations_map_pos_list_insert:
-		JSR		_sram_on
+_power_node_insert:
+		JSR		_sram_write_enable
 ; REDUNDANT
-;		LDY		_power_stations_list_pos		; get counter 16-bit value
-;		LDX		_power_stations_list_pos+1		; increment by 1
+;		LDY		_power_nodes_cnt				; get counter 16-bit value
+;		LDX		_power_nodes_cnt+1				; increment by 1
 ;		INY										; X/Y = list_pos+1 now
 ;		BNE		loc_10433C
 ;		INX
 ;loc_10433C:
 ;		CPX		#$02
 ;		BEQ		loc_104368						; maximum entries in list 512
-;		STY		_power_stations_list_pos		; save value
-;		STX		_power_stations_list_pos+1
-;		LDY		_power_stations_list_pos
+;		STY		_power_nodes_cnt				; save value
+;		STX		_power_nodes_cnt+1
+;		LDY		_power_nodes_cnt
 ;		CPX		#$00
 ;		BEQ		.power_grid_list0_store
 ; -
 ; OPTIMIZED
-		INCW	_power_stations_list_pos
-		LDY		_power_stations_list_pos
-		LDX		_power_stations_list_pos+1
+		INCW	_power_nodes_cnt
+		LDY		_power_nodes_cnt
+		LDX		_power_nodes_cnt+1
 		BEQ		.power_grid_list0_store			; less than 256 entries, store list 0
 		CPX		#$02
 		BEQ		loc_104368						; maximum entries in list 512
@@ -395,17 +418,146 @@ _power_stations_map_pos_list_insert:
 		LDA		_tmp_map_pos._ROW
 		STA		_tmp_recalc_bufs+$200,Y
 loc_104368:
-		JMP		_sram_off
+		JMP		_sram_write_disable
+
+; OPTIMIZED, moved here from PRGB to be lockal
+; =============== S U B	R O U T	I N E =======================================
+_power_tile_test:
+		PUSHW	_tmp_map_pos					; backup current _tmp_map_pos
+		LDX		_tmp6D1							; external near tile idx selector
+		JSR		_jump_to_near_to_tmp_map_pos_tile	; change cur pos to selected near tile
+		BCS		.cant_test_power_map_tile		; skip if can't change, tile is on the map edge
+		JSR		_power_grid_test				; if tile is powerable but has no power, return C=0
+		BCS		.cant_test_power_map_tile
+		POPW	_tmp_map_pos
+		CLC
+		RTS
+.cant_test_power_map_tile:
+		POPW	_tmp_map_pos					; return C=1 otherwise
+		SEC
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_power_grid_map_bit_set:
+; return C=1 if not powerable tile (also when tile is a power plant)
+; or tile already powered.
+;
+_power_grid_test:
+		JSR		_map_tile_read_0				; read nearest tile
+		TAY
+		LDA		_map_tiles_flags_tbl,Y
+		BPL		.nothing_to_power				; test if powerable
+		TYA
+		CMP		#_MAP_COAL_POWER				; also test for power stations we
+		BEQ		.nothing_to_power				; already have in our list
+		CMP		#_MAP_NUCLEAR_POWER
+		BEQ		.nothing_to_power
+; REDUNDANT
+;		LDA		_tmp_map_pos._ROW				; now calc the power map grid idx again
+;		MULAI	#$4C							; as done in power map set routine before
+;		LDA		_MMC5_MUL0						; TODO: optimize me!
+;		CLC
+;		ADC		_tmp_map_pos._COL
+;		STA		_tmpE6
+;		PHA
+;		LDA		_MMC5_MUL1
+;		ADC		#$00
+;		LSR
+;		ROR		_tmpE6
+;		LSR
+;		ROR		_tmpE6
+;		LSR
+;		ROR		_tmpE6
+;		STA		_tmpE7
+;		LDA		_tmpE6
+;		CLC
+;		ADC		#<[_power_grid_map_buf]
+;		STA		_tmpE6
+;		LDA		_tmpE7
+;		ADC		#>[_power_grid_map_buf]
+;		STA		_tmpE7
+;		PLA
+;		AND		#$07
+;		TAX
+;		LDY		#$00
+;		LDA		_inv_bitmasks,X					; test if selected tile is powered already
+;		AND		(_tmpE6),Y						; return C=0 need power up
+; -
+; OPTIMIZED
+		JSR		_power_grid_read
+		AND		_inv_bitmasks,X					; test if selected tile is powered already
+; -
+		BNE		.nothing_to_power
+		CLC
+		RTS
+.nothing_to_power:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; TODO: when space is enough, merge me with my copy
+; copy of _map_tile_read in PRGB
+;
+_map_tile_read_0:
+		LDA		_tmp_map_pos._ROW
+		MULAI	#$4C
+		LDA		#<[_wram_map_buf]
+		CLC
+		ADC		_MMC5_MUL0
+		STA		word_EC
+		LDA		#>[_wram_map_buf]
+		ADC		_MMC5_MUL1
+		STA		word_EC+1
+		LDY		_tmp_map_pos._COL
+		LDA		(word_EC),Y
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_power_grid_set:
+;		LDA		_tmp_map_pos._ROW				; calculate map buf offset
+;		MULAI	#$4C
+;		LDA		_MMC5_MUL0
+;		CLC
+;		ADC		_tmp_map_pos._COL
+;		STA		_tmpE6							; store low nibble
+;		PHA										; backup it for now
+;		LDA		_MMC5_MUL1						; adjust high nibble in A
+;		ADC		#$00
+;		LSR										; div 8, since every tile uses
+;		ROR		_tmpE6							; one bit in power grid map
+;		LSR
+;		ROR		_tmpE6
+;		LSR
+;		ROR		_tmpE6
+;		STA		_tmpE7							; store shifted high nibble
+;		LDA		_tmpE6							; lower already shifted, load
+;		CLC
+;		ADC		#<[_power_grid_map_buf]			; add buffer offset to get full ptr
+;		STA		_tmpE6
+;		LDA		_tmpE7
+;		ADC		#>[_power_grid_map_buf]
+;		STA		_tmpE7
+;		PLA
+;		AND		#$07							; extract lower 3 bits for number of
+;		TAX										; selected bit in current byte of grid map
+;		LDY		#$00
+;		LDA		(_tmpE6),Y						; load it
+; OPTIMIZED
+		JSR		_power_grid_read
+; -
+		ORA		_inv_bitmasks,X					; set flag
+		JSR		_sram_write_enable
+		STA		(_tmpE6),Y						; store byte back
+		JMP		_sram_write_disable
+
+; =============== S U B	R O U T	I N E =======================================
+_power_grid_read:
 		LDA		_tmp_map_pos._ROW				; calculate map buf offset
 		MULAI	#$4C
 		LDA		_MMC5_MUL0
 		CLC
 		ADC		_tmp_map_pos._COL
 		STA		_tmpE6							; store low nibble
-		PHA										; backup it for now
+		TAY										; backup it for now
 		LDA		_MMC5_MUL1						; adjust high nibble in A
 		ADC		#$00
 		LSR										; div 8, since every tile uses
@@ -422,15 +574,12 @@ _power_grid_map_bit_set:
 		LDA		_tmpE7
 		ADC		#>[_power_grid_map_buf]
 		STA		_tmpE7
-		PLA
+		TYA
 		AND		#$07							; extract lower 3 bits for number of
 		TAX										; selected bit in current byte of grid map
 		LDY		#$00
 		LDA		(_tmpE6),Y						; load it
-		ORA		_inv_bitmasks,X					; set flag
-		JSR		_sram_on
-		STA		(_tmpE6),Y						; store byte back
-		JMP		_sram_off
+		RTS
 
 		SECTION_ENDS B01, "PRGB RCI METERS POWER GRID RECALC"
 
@@ -440,7 +589,7 @@ _power_grid_map_bit_set:
 _graphs_10_year_data_update:
 		LDA		#$00
 		STA		_tmpE6
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		#$00
 loc_104559:
 		LDA		_wram_graphs._10y._R+1,X
@@ -548,7 +697,7 @@ loc_104625:
 		LDA		#$FF
 loc_104627:
 		STA		_wram_graphs._10y._tax_income+9
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		LDX		#$00
 		LDA		_city._level._R.INT
 		CMP		_R_hospitals_count
@@ -581,7 +730,7 @@ loc_104658:
 _graphs_100_year_data_update:
 		LDA		#$00
 		STA		_tmpE6
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		#$00
 loc_104665:
 		LDA		_wram_graphs._100y._R+1,X
@@ -625,7 +774,7 @@ loc_104689:
 		STA		_wram_graphs._100y._money+9
 		LDA		_wram_graphs._10y._tax_income+9
 		STA		_wram_graphs._100y._tax_income+9
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _fiscal_year_results_calc:
@@ -714,10 +863,10 @@ loc_1047C7:
 		BNE		loc_1047C7						; the budget screen were displayed, and
 		LDA		_city._money					; player has finished adjustements, so
 		CLC										; now all fundings are recalculated
-		ADC		_city_taxes_collected				; and we can finally spend our money
+		ADC		_city_taxes_collected			; and we can finally spend our money
 		STA		_city._money					; note, that budget can't get more money
 		LDA		_city._money+1					; than you have, so further subtraction never
-		ADC		_city_taxes_collected+1				; goes over
+		ADC		_city_taxes_collected+1			; goes over
 		STA		_city._money+1
 		BCC		loc_1047E4
 		INC		_city._money+2					; first add taxes collected to our money
@@ -1991,7 +2140,7 @@ _exit:
 ;
 _scroll_msg_manager:
 		LDA		#$10							; get RND in range 00-0F
-		JSR		_rand_clamp
+		JSR		_rand_clamp_A
 		STA		_tmpEB
 		TAY										; execute handlers from RND
 loc_105204:

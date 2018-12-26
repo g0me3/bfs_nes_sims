@@ -361,6 +361,9 @@ OTHER_WIDX			EQU 4
 		POPB	{1}+1
 	ENDM
 
+	MAC	MULA8
+	ENDM
+
 NONE	EQU		-1
 
 	;\t\tLDA\t\t(.*)\n\t\tLSR\n\t\tCLC\n\t\tADC\t\t(.*)\n\t\tCMP\t\t(.*)\n\t\tBCC\t\t(.*)\n\t\tSBC\t\t\3\n\4:\n\t\tSTA\t\t(.*)\n

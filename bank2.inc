@@ -18,7 +18,7 @@
 ; far routine for bank 0C
 ;
 _presents_wnd_generate:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		#$F0
 loc_3E0B0:
 		LDA		_tlm_nt_presents_menu-1,X		; copy empty window data
@@ -39,7 +39,7 @@ loc_3E0C1:
 loc_3E0CD:
 		DEX
 		BPL		loc_3E0C1
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _presents_wnd_icon_insert:

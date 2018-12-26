@@ -338,7 +338,7 @@ _new_city_map_generate:
 ;		FJSRA	_new_city_please_wait_spr_draw,PRG7,PRG9	; REDUNDANT
 		JSR		_new_city_please_wait_spr_draw	; OPTIMIZED, local now
 		JSR		_wait_for_nmi
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		FJSRA	_generate_new_map,SRAM,PRG3		; do actual generation, lock other activity
 		LDA		#$80
 		STA		_scr_res_control_flags			; done, go to the input part

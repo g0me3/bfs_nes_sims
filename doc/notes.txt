@@ -136,6 +136,8 @@
 18. Sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner.
 19. Game cursor not disables when the game message window appears. to reproduce, start practice, enter info screen maps, exit and enter a message hint or wait for the first practice message.
 20. Difficult settings does not work for New City mode. Although it can be selected, it will clear at the beginning of any game mode, so in any case you'll play on EASY by default.
+21. When you buid a present, a corresponding item removed from the list and when empty disables the menu. If you select first one and build a present, then you'll be able to build a second present immediately. They will be properly removed from the list. However, if you choose to build the second prize first, then immediately build another one, you'll build a glitched construction that can't be removed or bulldozered.
+22. Some electric tiles near the water electric tiles treated as non-powered in some cases.
 
 	MISC
 

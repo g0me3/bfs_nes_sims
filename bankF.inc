@@ -29,16 +29,18 @@ loc_18A00B:
 		LDX		#$00
 		STX		_APU_STATUS
 		STX		_ppu_mask_shadow
-loc_18A023:
-		LDA		aIshi,X							; check ram signature
-		BMI		loc_18A033						; when ram isn't clear, just reset map buffer
-		CMP		_ram_signature,X				; oddly enough because its always rewritten any way
-		BNE		loc_18A030
-		INX
-		BNE		loc_18A023
-loc_18A030:
-		JSR		_map_buf_init					; so actually this check does nothing here
-loc_18A033:
+; REDUNDANT
+;loc_18A023:
+;		LDA		aIshi,X							; check ram signature
+;		BMI		loc_18A033						; when ram isn't clear, just reset map buffer
+;		CMP		_ram_signature,X
+;		BNE		loc_18A030
+;		INX
+;		BNE		loc_18A023
+;loc_18A030:
+;		JSR		_map_buf_init					; so actually this check does nothing here
+;loc_18A033:
+; -
 		LDY		#$07							; now clar ram area $0000-$07FF
 		STY		_ptr0+1							; because we load 700, then decrease Y
 		LDY		#$00							; we will get 7FF for next offset and so on
@@ -50,14 +52,16 @@ loc_18A03C:
 		BNE		loc_18A03C
 		DEC		_ptr0+1
 		BPL		loc_18A03C
-		LDX		#$00
-		LDY		#$04
-loc_18A049:
-		LDA		aIshi,X							; rewrite signature even if it already there
-		STA		_ram_signature,X
-		INX
-		DEY
-		BNE		loc_18A049
+; REDUNDANT
+;		LDX		#$00
+;		LDY		#$04
+;loc_18A049:
+;		LDA		aIshi,X							; rewrite signature even if it already there
+;		STA		_ram_signature,X
+;		INX
+;		DEY
+;		BNE		loc_18A049
+; -
 loc_18A053:
 		JSR		_get_input						; read pad to check if we rebooted with
 		LDA		_pad0_held						; soft-reset buttons, then
@@ -159,9 +163,9 @@ loc_18A0F0:
 		STA		_budget_fund_rate,X
 		DEX
 		BPL		loc_18A0F0
-;		JSR		_sram_on						; REDUNDANT
+;		JSR		_sram_write_enable						; REDUNDANT
 		FJSRA	_sram_init,SRAM,PRG3
-;		JSR		_sram_off						; REDUNDANT
+;		JSR		_sram_write_disable						; REDUNDANT
 		LDA		#$FF
 		STA		_game_core_state
 ;		STA		byte_37							; REDUNDANT, never read!
@@ -227,7 +231,7 @@ _city_stats_reset:
 ; =============== S U B	R O U T	I N E =======================================
 ; clear RAM area from _tmpE6 ptr X/Y size
 ;
-_clear_buffer:
+_clear_buf:
 		STY		_tmp9
 		LDY		#$00
 		TYA
@@ -1136,11 +1140,11 @@ _buffers_test_wait_flush:
 ; =============== S U B	R O U T	I N E =======================================
 _sram_enable_restore:
 		LDA		_sram_state_flag
-		BNE		_sram_on
-		BEQ		_sram_off
+		BNE		_sram_write_enable
+		BEQ		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
-_sram_on:
+_sram_write_enable:
 		PHA
 		LDA		#$02
 		STA		_MMC5_WRAM0_ENABLE
@@ -1152,7 +1156,7 @@ _sram_on:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_sram_off:
+_sram_write_disable:
 		PHA
 		LDA		#$01
 		STA		_MMC5_WRAM0_ENABLE
@@ -1534,7 +1538,7 @@ _ppu_set_vert_increment:
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_buf_init:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		#$00
 		MOVWO	_ptr0,_wram_map_buf				; map buf ptr
 		MOVWI	_tmp2,$1690						; map buf size
@@ -1554,7 +1558,7 @@ loc_18AA20:
 		BNE		loc_18AA19
 		DEC		_tmp3
 		BPL		loc_18AA19
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_reset:
@@ -1566,7 +1570,7 @@ _ppu_reset:
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_nt_data_backup:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDA		_wnd_line_tmp_width
 		STA		byte_9F
 		LDA		_wnd_line_tmp_height
@@ -1625,7 +1629,7 @@ loc_18AAA3:
 		LDA		_PPU_DATA
 		JMP		loc_18AA6D
 loc_18AAAF:
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		JMP		_ppu_scrolls_reload
 loc_18AAB5:
 		JSR		_ppu_set_vert_increment
@@ -1674,7 +1678,7 @@ loc_18AB07:
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_extnt_data_backup:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
 		LDA		_wnd_line_tmp_width
@@ -1721,7 +1725,7 @@ loc_18AB4E:
 loc_18AB71:
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
-		JMP		_sram_off
+		JMP		_sram_write_disable
 loc_18AB79:
 		LDY		#$00
 loc_18AB7B:
@@ -3694,6 +3698,78 @@ _tlm_lib:
 		.WORD	_tlm_nt_all_buttons_release,_tlm_extnt_all_buttons_release	; 38 PRG1
 
 ; =============== S U B	R O U T	I N E =======================================
+; OPTIMIZED, same as _tmp_map_pos_near_tile_select routine buth with C result
+; -0-
+; 3*1
+; -2-
+; C=0 if done ok
+; C=1 if cannot change
+;
+_jump_to_near_to_tmp_map_pos_tile:
+		CPX		#$00						; we must keep X here, some routines
+		BEQ		_tmp_map_dec_pos_Y			; depends on it
+		CPX		#$01
+		BEQ		_tmp_map_inc_pos_X
+		CPX		#$02
+		BEQ		_tmp_map_inc_pos_Y
+		CPX		#$03
+		BEQ		_tmp_map_dec_pos_X
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_back_from_near_tmp_map_pos_tile:
+		CPX		#$00						; same here
+		BEQ		_tmp_map_inc_pos_Y
+		CPX		#$01
+		BEQ		_tmp_map_dec_pos_X
+		CPX		#$02
+		BEQ		_tmp_map_dec_pos_Y
+		CPX		#$03
+		BEQ		_tmp_map_inc_pos_X
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_tmp_map_dec_pos_Y:
+		LDA		_tmp_map_pos._ROW
+		BEQ		_tmp_map_cant_change_pos
+		DEC		_tmp_map_pos._ROW
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_tmp_map_inc_pos_X:
+		LDA		_tmp_map_pos._COL
+		CMP		#$4B
+		BEQ		_tmp_map_cant_change_pos
+		INC		_tmp_map_pos._COL
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_tmp_map_inc_pos_Y:
+		LDA		_tmp_map_pos._ROW
+		CMP		#$4B
+		BEQ		_tmp_map_cant_change_pos
+		INC		_tmp_map_pos._ROW
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_tmp_map_dec_pos_X:
+		LDA		_tmp_map_pos._COL
+		BEQ		_tmp_map_cant_change_pos
+		DEC		_tmp_map_pos._COL
+		CLC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_tmp_map_cant_change_pos:
+		SEC
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 _rand:
 		LDA		_rand_seed						; result of operations here
 		STA		_rand_seed+2					; depends on undefined C state
@@ -3704,7 +3780,7 @@ _rand:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_rand_clamp:
+_rand_clamp_A:
 		PHA
 		JSR		_rand
 		PHA
@@ -4036,6 +4112,25 @@ _hex_to_dec_tbl2:
 		.BYTE	[[100000 >> 16] & $FF]	; $01
 		.BYTE	[[1000000 >> 16] & $FF] ; $0F
 		.BYTE	[[10000000 >> 16] & $FF]; $98
+
+; OPTIMIZED, moved here to be usable from both PRGA and PRGB by now
+_map_tiles_flags_tbl:
+		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
+		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00
+		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
+		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$CA,$CA,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+		.BYTE	$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$CE,$00
+		.BYTE	$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$C0,$00
+		.BYTE	$02,$62,$62,$62,$62,$62,$62,$62,$62,$62,$62,$62,$52,$52,$52,$52
+		.BYTE	$52,$52,$52,$52,$52,$52,$52,$C2,$C2,$C2,$C2,$C2,$C2,$C2,$C2,$C2
+		.BYTE	$C2,$C2,$46,$06,$02,$00,$00,$52,$52,$E2,$E2,$D2,$D2,$05,$06,$06
+		.BYTE	$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$06,$46,$46
+		.BYTE	$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46,$46
+		.BYTE	$05,$05,$15,$15,$85,$85,$00,$00,$00,$00,$00,$05,$05,$05,$05,$05
+		.BYTE	$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$05,$00,$05,$00
 
 		LAST_BANK_END FF,$10000
 

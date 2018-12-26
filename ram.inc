@@ -1045,7 +1045,7 @@ byte_6C3:
 		.BYTE	0
 _tmp6C4:
 		.BYTE	0
-_power_stations_list_pos:
+_power_nodes_cnt:
 		.BYTE	0,0
 _RCI_max_range_10_years:
 		.BYTE	0

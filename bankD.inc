@@ -545,7 +545,7 @@ _get_cur_constr_cursor_map_tile:
 
 ; =============== S U B	R O U T	I N E =======================================
 _build_cur_constr_cursor_area:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDA		_cur_build_store_tile_idx		; previously calcularet duild tile idx
 		CMP		#$FF
 		BNE		.instant_build_single_tile		; if !=FF, then custom 1x1 tile here
@@ -579,21 +579,21 @@ loc_150531:
 		INY
 		BNE		loc_150518						; repeat
 loc_150545:
-		JMP		_sram_off
+		JMP		_sram_write_disable
 .instant_build_single_tile:
 		LDY		#$00
 		STA		(_tmp_ptrC1),Y
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 ; =============== S U B	R O U T	I N E =======================================
 _adjust_surround_net_tilesCC:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		byte_CC
 		JMP		_adjust_surround_net_tiles_ex
 
 ; =============== S U B	R O U T	I N E =======================================
 _adjust_surround_net_tiles:
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDX		_cur_selected_buildings_size
 
 ; !FALLTHROUGH!
@@ -619,7 +619,7 @@ loc_15057E:
 		INY
 		BNE		loc_15056C
 loc_150581:
-		JMP		_sram_off
+		JMP		_sram_write_disable
 
 _surround_tiles_lib_lo:
 		.BYTE	<[_surround_tiles0_list]
@@ -1272,7 +1272,7 @@ _bulldoze_a_building:
 		JSR		_test_valid_buildings_to_bulldoze
 		BCS		locret_1508E5
 		JSR		_get_building_scheme_ex
-		JSR		_sram_on
+		JSR		_sram_write_enable
 		LDY		#$00
 loc_1508CF:
 		STY		_ptr0								; erase building by scheme for all tiles inside
@@ -1286,7 +1286,7 @@ loc_1508CF:
 		INY
 		BNE		loc_1508CF
 loc_1508E1:
-		JSR		_sram_off
+		JSR		_sram_write_disable
 		CLC
 locret_1508E5:
 		RTS
