@@ -1094,7 +1094,7 @@ _apu_mus_tri_data_pos:
 
 _apu_mus_v09:
 		.BYTE	0
-_apu_mus_wave:
+_apu_mus_tempo:
 		.BYTE	0
 _apu_mus_v0B:
 		.BYTE	0
@@ -1104,16 +1104,16 @@ _apu_mus_dmc_data_pos:
 		.BYTE	0
 _apu_mus_dmc_timer:
 		.BYTE	0
-_apu_mus_p1_env_delta:
+_apu_mus_p1_tempo_delta:
 		.BYTE	0
 
 _apu_mus_p1_time_lo:
 		.BYTE	0
-_apu_mus_p2_env_delta:
+_apu_mus_p2_tempo_delta:
 		.BYTE	0
-_apu_mus_p1_env_cnt:
+_apu_mus_p1_tempo_cnt:
 		.BYTE	0
-_apu_mus_p2_env_cnt:
+_apu_mus_p2_tempo_cnt:
 		.BYTE	0
 _apu_mus_p2_time_lo:
 		.BYTE	0
@@ -1125,11 +1125,11 @@ _apu_mus_dmc_delay:
 		.BYTE	0
 _apu_mus_tri_time_lo:
 		.BYTE	0
-_apu_mus_p1_time_recalc_mode:
+_apu_mus_p1_release_mode:
 		.BYTE	0
-_apu_mus_p2_time_recalc_mode:
+_apu_mus_p2_release_mode:
 		.BYTE	0
-_mus_fade_out_timer:
+_apu_mus_fade_out_timer:
 		.BYTE	0
 
 ;--------------------P-P-U----------------------

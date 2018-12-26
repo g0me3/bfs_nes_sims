@@ -158,19 +158,19 @@ _game_msg_apu_select:
 		BEQ		locret_5824B
 		CMP		#$01
 		BNE		loc_58243
-		LDA		#$60
+		LDA		#_MUS_IDX_NOTICE0
 		STA		_apu_mus_idx_req
 		BNE		locret_5824B
 loc_58243:
 		APUA_SE	_SE_IDX_ALERT
-		LDA		#$21
+		LDA		#_MUS_IDX_ALERT0
 		STA		_apu_mus_idx_req
 locret_5824B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_music_restore:
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		JSR		_wait_for_nmi
 		LDX		_city._city_type
@@ -178,7 +178,7 @@ _game_msg_music_restore:
 		LDA		_city._game_flags
 		AND		#$08
 		BNE		loc_58262
-		LDY		#$80
+		LDY		#_MUS_IDX_STOP
 loc_58262:
 		STY		_apu_mus_idx_req
 		RTS
@@ -2349,7 +2349,7 @@ loc_591D8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _turn_off_power_screen:
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		LDA		#$00
 		STA		_ppu_ctrl_shadow

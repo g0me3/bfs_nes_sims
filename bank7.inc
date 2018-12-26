@@ -772,7 +772,7 @@ _title_sub0_init:
 		STX		_game_wnd_spr_mode_flag
 ;		STX		_tmp118							; also redundant
 		STX		_cur_game_mode
-		INX
+		LDX		#_MUS_IDX_TITLE0
 		STX		_apu_mus_idx_req
 		LDA		#$03
 		STA		_scr_mode_idx
@@ -851,7 +851,7 @@ loc_B859E:
 		BEQ		loc_B85CB
 		CMP		#$02
 		BEQ		loc_B85CB
-		LDA		#$01
+		LDA		#_MUS_IDX_TITLE0
 		STA		_apu_mus_idx_req
 loc_B85CB:
 		LDA		#$90

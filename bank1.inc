@@ -9,10 +9,10 @@
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup:
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req				; stop music
 		JSR		_wait_for_nmi
-		LDA		#$04
+		LDA		#_MUS_IDX_SETUP
 		STA		_apu_mus_idx_req				; load degault setup music idx
 		LDA		#$00
 		STA		_tmp6D5
@@ -22,7 +22,7 @@ _game_setup:
 		BNE		loc_2402A						; do no load_cur_game_mode, jump directly
 		LDY		_cur_game_mode					; to new scenario select
 		BNE		loc_24024
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 loc_24024:
 		LDA		_game_setup_subs_list,Y			; load actual game mode setup sub
@@ -410,7 +410,7 @@ _game_setup08_scenario_intro_draw:
 		APUA_SE	_SE_IDX_CLICK					; skip scenario intro if pressed
 		JSR		_scenario_map_load				; load scenario map from PPU ROM
 		INC		_main_sub_idx					; go to the game
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		RTS
 loc_242EC:
@@ -1277,7 +1277,7 @@ loc_24930:
 		STY		_city._sister_name
 loc_24933:
 		INC		_main_sub_idx
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		JMP		_pal_fade_out
 loc_2493D:
@@ -1362,7 +1362,7 @@ _game_setup03_dummy:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup04_break:
 		INC		_main_sub_idx
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		JMP		_pal_fade_out
 
@@ -1525,7 +1525,7 @@ loc_24AF6:
 		LDA		#$00
 		STA		_scenario_idx
 		INC		_main_sub_idx
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		JMP		_pal_fade_out
 locret_24B0D:

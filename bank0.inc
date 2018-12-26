@@ -48,7 +48,7 @@ _apu_init:
 		STA		_APU_DMC_FREQ
 		STA		_APU_DMC_LOAD
 ;		STA		byte_4083						; debug leftovers
-		STA		_mus_fade_out_timer
+		STA		_apu_mus_fade_out_timer
 		LDA		#$0F
 		STA		_APU_STATUS						; enable channels except dpcm
 		RTS
@@ -58,7 +58,7 @@ _apu_all_stop:
 		LDA		#$00
 		STA		_apu_mus_seq_ofs
 		STA		_apu_mus_cur_idx
-		STA		_mus_fade_out_timer
+		STA		_apu_mus_fade_out_timer
 		STA		_APU_TRI_COUNT
 
 ; !FALLTHROUGH!
@@ -84,16 +84,16 @@ _apu_play_mus:
 .apu_mus_load:
 		STA		_apu_mus_cur_idx				; currently played mus idx as bit-field
 ; TODO, optimize me
-		CMP		#$01							; check for special mus tracks that should
+		CMP		#_MUS_IDX_TITLE0				; check for special mus tracks that should
 		BEQ		.apu_mus_stop_reload			; stop current mus instantly and start immediately
-		CMP		#$04							; tracks 01, 04, 21 and 60 are such tracks
+		CMP		#_MUS_IDX_SETUP					; tracks 01, 04, 21 and 60 are such tracks
 		BEQ		.apu_mus_stop_reload			; (title, game setup, alert, game message)
-		CMP		#$21
+		CMP		#_MUS_IDX_ALERT0
 		BEQ		.apu_mus_stop_reload
-		CMP		#$60
+		CMP		#_MUS_IDX_NOTICE0
 		BEQ		.apu_mus_stop_reload
 ; -
-; FIX
+; OPTIMIZED, speed
 ;		TAX
 ;		LDA		_mus_fade_require_list,X
 ;		BEQ		.apu_mus_stop_reload
@@ -102,35 +102,39 @@ _apu_play_mus:
 		BEQ		.apu_mus_stop_reload			; to play new sound, fade out timer loaded
 		BMI		.apu_mus_stop_reload			; it will fade out all tracks until zero, then
 		LDA		#$C0							; jump to reload new music idx
-		STA		_mus_fade_out_timer
+		STA		_apu_mus_fade_out_timer
 		BNE		.j_mus_play
 .apu_mus_stop_reload:
 		LDA		_apu_mus_cur_idx				; stop before reload
 		JSR		_apu_all_reset					; A is safe here
 .apu_mus_reload:
-; TODO: optimize me!
-		TAX										; decode bitfields:
-		ASL										; 01 02 04 05 10 20 21 22 40 41 42 44 48 50 60
-		BMI		loc_A09D						; 00 01 02 03 04 05 0D 0E 0C 06 07 08 09 0A 0B
-		ASL										; &40!=0  + 6 (40<=X<=60 -> 06-0C)
-		BPL		loc_A0A1						; &23!=0  + D (21<=X<=22 -> 21-22)
-		ASL										; rest    + 0 (01<=X<=20 -> 00-05)
-		BEQ		loc_A0A1						; very criptic
-		LDY		#$0C
-		BNE		loc_A0A3
-loc_A09D:
-		LDY		#$05
-		BNE		loc_A0A3
-loc_A0A1:
-		LDY		#$FF
-loc_A0A3:
-		TXA
-loc_A0A4:
-		INY
-		LSR
-		BCC		loc_A0A4						; extract lower bit-field idx
+; REDUNDANT: optimize me!
+;		TAX										; decode bitfields:
+;		ASL										; 01 02 04 05 10 20 21 22 40 41 42 44 48 50 60
+;		BMI		loc_A09D						; 00 01 02 03 04 05 0D 0E 0C 06 07 08 09 0A 0B
+;		ASL										; &40!=0  + 6 (40<=X<=60 -> 06-0C)
+;		BPL		loc_A0A1						; &23!=0  + D (21<=X<=22 -> 21-22)
+;		ASL										; rest    + 0 (01<=X<=20 -> 00-05)
+;		BEQ		loc_A0A1						; very criptic
+;		LDY		#$0C
+;		BNE		loc_A0A3
+;loc_A09D:
+;		LDY		#$05
+;		BNE		loc_A0A3
+;loc_A0A1:
+;		LDY		#$FF
+;loc_A0A3:
+;		TXA
+;loc_A0A4:
+;		INY
+;		LSR
+;		BCC		loc_A0A4						; extract lower bit-field idx
 ; -
-		LDA		_apu_mus_seq_ofs_list,Y			; load sequence offset
+; OPTIMIZED, that's IT! one byte decode for sequential indexes instead of bitfields!!!
+		TAY
+; -
+;		LDA		_apu_mus_seq_ofs_list,Y			; REDUNDANT, load sequence offset
+		LDA		_apu_mus_seq_ofs_list-1,Y		; OPTIMIZED, load sequence offset
 		STA		_apu_mus_seq_ofs
 		TAY
 .mus_trk_data_ofs_load:
@@ -144,51 +148,56 @@ loc_A0A4:
 loc_A0BE:
 		CMP		#$FE							; sequence NEXT code test
 		BNE		.mus_trk_data_load
-; TODO: optimize me!
-		LDA		_apu_mus_cur_idx				; calculate next mus idx to continue
-		ASL										; since this is still a bitfield, we need some more
-		BPL		loc_A0CC						; criptic calculations to get the next encoded
-		ORA		#$40							; bitfield value.
-		BNE		loc_A0D8						; we need to convert 01 to 02, 08 to 10 (<<1, easy)
-loc_A0CC:										; also 48 to 50 (<<1|$40, easy?), and finally
-		TAX										; 21 to 22 ((<<1&$3F)|$20), EASY?!)
-		ASL
-		BPL		loc_A0D7
-		TXA
-		AND		#$3F
-		ORA		#$20
-		BNE		loc_A0D8
-loc_A0D7:
-		TXA
-loc_A0D8:
-		AND		#$7F
-		STA		_apu_mus_cur_idx
+; REDUNDANT: optimize me!
+;		LDA		_apu_mus_cur_idx				; calculate next mus idx to continue
+;		ASL										; since this is still a bitfield, we need some more
+;		BPL		loc_A0CC						; criptic calculations to get the next encoded
+;		ORA		#$40							; bitfield value.
+;		BNE		loc_A0D8						; we need to convert 01 to 02, 08 to 10 (<<1, easy)
+;loc_A0CC:										; also 48 to 50 ((<<1&$7F)|$40, easy?), and finally
+;		TAX										; 21 to 22 ((<<1&$3F)|$20), EASY?!)
+;		ASL
+;		BPL		loc_A0D7
+;		TXA
+;		AND		#$3F
+;		ORA		#$20
+;		BNE		loc_A0D8
+;loc_A0D7:
+;		TXA
+;loc_A0D8:
+;		AND		#$7F
+;		STA		_apu_mus_cur_idx
 ;		LDY		#$FF							; REDUNDANT, Y will be initialized by the reload code
+;		BNE		.apu_mus_reload					; unconditional jump
+; -
+; OPTIMIZED,
+		INC		_apu_mus_cur_idx
+		LDA		_apu_mus_cur_idx
 		BNE		.apu_mus_reload					; unconditional jump
 ; -
 .mus_trk_data_load:
 		TAY
-		LDA		[_trk00._env]-1],Y				; wave-table offset for current track common for all channels
-		STA		_apu_mus_wave
+		LDA		[_trk00._tempo]-1],Y			; duration table offset for current track common for all channels
+		STA		_apu_mus_tempo
 		LDA		[_trk00._ptr]-1],Y				; mus data block ptr for all channels
 		STA		_apu_trk_data_ptr
 		LDA		[_trk00._ptr],Y
 		STA		_apu_trk_data_ptr+1
-		LDA		[_trk00._var0]-1],Y				; starting offset for SQUARE2 data
+		LDA		[_trk00._p2]-1],Y				; starting offset for SQUARE2 data
 		STA		_apu_mus_p2_data_pos
-		LDA		[_trk00._var1]-1],Y
-		STA		_apu_mus_tri_data_pos				; starting offset for TRIANGLE data
-		LDA		[_trk00._var2]-1],Y
+		LDA		[_trk00._tri]-1],Y
+		STA		_apu_mus_tri_data_pos			; starting offset for TRIANGLE data
+		LDA		[_trk00._env]-1],Y
 		STA		_apu_mus_envelope				; common envelope parameter for all channels
-		LDA		[_trk00._var3]-1],Y
-		STA		_apu_mus_dmc_data_pos				; starting offset for DMC data
+		LDA		[_trk00._dmc]-1],Y
+		STA		_apu_mus_dmc_data_pos			; starting offset for DMC data
 		LDA		#$01
-		STA		_apu_mus_p1_timer				; default values for channel timers, makes
-		STA		_apu_mus_p2_timer				; the first fetch load an envelopes first
+		STA		_apu_mus_p1_timer				; init timers to load the channel data immediately
+		STA		_apu_mus_p2_timer				; at the start (decrement->zero test->fetch)
 		STA		_apu_mus_tri_timer
 		STA		_apu_mus_dmc_timer
 		LDA		#$00
-		STA		_apu_mus_p1_data_pos				; starting offset for SQUARE1 always 0 in data block
+		STA		_apu_mus_p1_data_pos			; starting offset for SQUARE1 always 0 in data block
 		LDA		_APU_STATUS						; reset TRIANGLE channel
 		AND		#$1B
 		STA		_APU_STATUS
@@ -197,9 +206,9 @@ loc_A0D8:
 		ORA		#$0F							; re-enable channels
 		STA		_APU_STATUS
 .mus_play:
-		LDA		_mus_fade_out_timer		; if fade out timer is zero, skip
+		LDA		_apu_mus_fade_out_timer			; if fade out timer is zero, skip
 		BEQ		.mus_p1_play
-		DEC		_mus_fade_out_timer		; else decrement until zero
+		DEC		_apu_mus_fade_out_timer			; else decrement until zero
 		BNE		.mus_p1_play
 		LDA		_apu_mus_cur_idx				; when zero, load another mus track
 		JMP		.apu_mus_stop_reload
@@ -207,8 +216,8 @@ loc_A0D8:
 ; - start of SQUARE1 channel work
 .mus_p1_play:
 		DEC		_apu_mus_p1_timer
-		BNE		.mus_p1_do_envelope				; note loaded and played, do special envelope work
-		LDY		_apu_mus_p1_data_pos				; fetch track cmd, always present in data
+		BNE		.mus_p1_do_tempoelope			; note loaded and played, do special envelope work
+		LDY		_apu_mus_p1_data_pos			; fetch track cmd, always present in data
 		INC		_apu_mus_p1_data_pos
 		LDA		(_apu_trk_data_ptr),Y			; CMD: ab--cccc
 		BNE		.mus_p1_continues				; CMD=0, end of sequence
@@ -221,25 +230,30 @@ loc_A0D8:
 		ASL										;
 		BMI		.mus_p1_cmdC0					; b test
 		LDA		#$00							; b = 0, two-bytes cmd80 codes
-		STA		_apu_mus_p1_time_recalc_mode		; p1time recalc mode flag = 0
-		TXA										; restore actual code without shift
-		BNE		.mus_p1_extra_fetch
-; REDUNDANT, no such commands here!, even more, they aren't useful actually
-; since we have only 0-15 wave form indexes, we could store waveform delta in two-codes as well
-; there may be another music uses more than 00-63 delta range where it may be helpful
+;		STA		_apu_mus_p1_release_mode		; p1time recalc mode flag = 0
+;		TXA										; restore actual code without shift
+;		BNE		.mus_p1_extra_fetch
+		BEQ		.mus_p1_extra_fetch
 .mus_p1_cmdC0:
 		LDA		#$80							; b = 1, three-bytes cmdC0 codes
-		STA		_apu_mus_p1_time_recalc_mode		; p1time recalc mode flag != 0
-		LDY		_apu_mus_p1_data_pos				; read second envelope data byte
-		INC		_apu_mus_p1_data_pos
-		LDA		(_apu_trk_data_ptr),Y
+;		STA		_apu_mus_p1_release_mode		; p1time recalc mode flag != 0
+; REDUNDANT, no such commands here!, even more, they aren't useful actually
+; since we have only 0-15 note lengths (use only 9) indexes, we could store
+; C0 commands in two-byte codes as well.
+;		LDY		_apu_mus_p1_data_pos			; read second envelope data byte
+;		INC		_apu_mus_p1_data_pos
+;		LDA		(_apu_trk_data_ptr),Y
 ; -
+; OPTIMIZED
 .mus_p1_extra_fetch:
-		AND		#$0F							; wave-form delta
+		STA		_apu_mus_p1_release_mode		; p1time recalc mode flag != 0
+		TXA
+; -
+		AND		#$0F							; mask out note duration
 		CLC
-		ADC		_apu_mus_wave					; wave-form ofs
+		ADC		_apu_mus_tempo					; select from duration table
 		TAY
-		LDA		_apu_mus_wave_tbl,Y				; read wave-form delay
+		LDA		_apu_mus_duration_table,Y		; and calc an actual delay for a note
 		STA		_apu_mus_p1_delay
 		LDY		_apu_mus_p1_data_pos
 		INC		_apu_mus_p1_data_pos
@@ -248,15 +262,15 @@ loc_A0D8:
 		JSR		_apu_p1_time_load				; finally load an actual channe freq
 		LDA		_apu_mus_p1_delay				; reload timer with delay value for SQUARE1
 		STA		_apu_mus_p1_timer
-		JSR		_apu_mus_env_delta_calc
-		STA		_apu_mus_p1_env_delta
+		JSR		_apu_mus_tempo_delta_calc
+		STA		_apu_mus_p1_tempo_delta
 		LDA		#$00
-		STA		_apu_mus_p1_env_cnt				; reset env counter for SQIARE1
-.mus_p1_do_envelope:
-		INC		_apu_mus_p1_env_cnt
-		LDY		_apu_mus_p1_env_delta
+		STA		_apu_mus_p1_tempo_cnt			; reset env counter for SQIARE1
+.mus_p1_do_tempoelope:
+		INC		_apu_mus_p1_tempo_cnt
+		LDY		_apu_mus_p1_tempo_delta
 		BEQ		loc_A1A6
-		DEC		_apu_mus_p1_env_delta
+		DEC		_apu_mus_p1_tempo_delta
 loc_A1A6:
 		LDA		_apu_mus_envelope
 		AND		#$70
@@ -271,17 +285,17 @@ loc_A1A6:
 		STA		_APU_PULSE1_ENV
 		LDA		#$7F
 		STA		_APU_PULSE1_SWEEP
-		LDA		_apu_mus_p1_time_lo
+		LDX		_apu_mus_p1_time_lo				; OPTIMIZED
 		BEQ		.mus_p2_play
-		LDA		_apu_mus_p1_env_cnt
-		LDX		_apu_mus_p1_time_lo
-		LDY		_apu_mus_p1_time_recalc_mode
+		LDA		_apu_mus_p1_tempo_cnt
+;		LDX		_apu_mus_p1_time_lo				; REDUNDANT
+		LDY		_apu_mus_p1_release_mode
 		BNE		loc_A1D7
-		JSR		_apu_mus_p_time_recalcA
+		JSR		_apu_mus_p_releaseA
 		JMP		loc_A1DC
 loc_A1D7:
 		LDY		#$00
-		JSR		_apu_mus_p_time_recalcB
+		JSR		_apu_mus_p_releaseB
 loc_A1DC:
 		STX		_APU_PULSE1_TIME
 ; - end of SQUARE1 channel work
@@ -289,7 +303,7 @@ loc_A1DC:
 ; - start of SQUARE2 channel work
 .mus_p2_play:
 		DEC		_apu_mus_p2_timer
-		BNE		.mus_p2_do_envelope
+		BNE		.mus_p2_do_tempoelope
 		LDY		_apu_mus_p2_data_pos
 		BNE		.mus_p2_continues				; if no SQAURE2 data (offset = 0)
 		LDA		#$50							; then force it to mute, skip to TRI
@@ -303,24 +317,27 @@ loc_A1DC:
 		ASL
 		BMI		.mus_p2_cmdC0					; once more redundant
 		LDA		#$00
-		STA		_apu_mus_p2_time_recalc_mode		; recalc mode for SQUARE2
-		TXA
-		BNE		.mus_p2_extra_fetch
+;		STA		_apu_mus_p2_release_mode		; recalc mode for SQUARE2
+;		TXA
+;		BNE		.mus_p2_extra_fetch
+		BEQ		.mus_p2_extra_fetch
 ; REDUNDANT as well, there aren't such codes in current music data
 ;
 .mus_p2_cmdC0:
 		LDA		#$80
-		STA		_apu_mus_p2_time_recalc_mode
-		LDY		_apu_mus_p2_data_pos
-		INC		_apu_mus_p2_data_pos
-		LDA		(_apu_trk_data_ptr),Y
-; -
+;		STA		_apu_mus_p2_release_mode
+;		LDY		_apu_mus_p2_data_pos
+;		INC		_apu_mus_p2_data_pos
+;		LDA		(_apu_trk_data_ptr),Y
 .mus_p2_extra_fetch:
-		AND		#$0F							; similar to SQUARE2 load of wave-form data
+		STA		_apu_mus_p2_release_mode
+		TXA
+; -
+		AND		#$0F							; similar to SQUARE2 load of durations
 		CLC
-		ADC		_apu_mus_wave
+		ADC		_apu_mus_tempo
 		TAY
-		LDA		_apu_mus_wave_tbl,Y
+		LDA		_apu_mus_duration_table,Y
 		STA		_apu_mus_p2_delay
 		LDY		_apu_mus_p2_data_pos
 		INC		_apu_mus_p2_data_pos
@@ -340,15 +357,15 @@ loc_A1DC:
 .mus_p2_skip_load:
 		LDA		_apu_mus_p2_delay
 		STA		_apu_mus_p2_timer
-		JSR		_apu_mus_env_delta_calc
-		STA		_apu_mus_p2_env_delta
+		JSR		_apu_mus_tempo_delta_calc
+		STA		_apu_mus_p2_tempo_delta
 		LDA		#$00
-		STA		_apu_mus_p2_env_cnt
-.mus_p2_do_envelope:
-		INC		_apu_mus_p2_env_cnt
-		LDY		_apu_mus_p2_env_delta
+		STA		_apu_mus_p2_tempo_cnt
+.mus_p2_do_tempoelope:
+		INC		_apu_mus_p2_tempo_cnt
+		LDY		_apu_mus_p2_tempo_delta
 		BEQ		loc_A257
-		DEC		_apu_mus_p2_env_delta
+		DEC		_apu_mus_p2_tempo_delta
 loc_A257:
 		LDA		_apu_se_loop_counters+1			; here we skip the envelope settings as well
 		BNE		.mus_tri_play					; for SE proiority on SQUARE2, but still need calc it!
@@ -386,24 +403,24 @@ loc_A293:
 		STA		_APU_PULSE2_ENV
 		LDA		#$7F
 		STA		_APU_PULSE2_SWEEP
-		LDA		_apu_mus_p2_time_lo
+		LDX		_apu_mus_p2_time_lo				; OPTIMIZED
 		BEQ		.mus_tri_play
-		LDA		_apu_mus_p2_env_cnt
-		LDX		_apu_mus_p2_time_lo
-		LDY		_apu_mus_p2_time_recalc_mode
+		LDA		_apu_mus_p2_tempo_cnt
+;		LDX		_apu_mus_p2_time_lo				; REDUNDANT
+		LDY		_apu_mus_p2_release_mode
 		BNE		loc_A2B1
-		JSR		_apu_mus_p_time_recalcA
+		JSR		_apu_mus_p_releaseA
 		JMP		loc_A2B6
 loc_A2B1:
 		LDY		#$04
-		JSR		_apu_mus_p_time_recalcB
+		JSR		_apu_mus_p_releaseB
 loc_A2B6:
 		STX		_APU_PULSE2_TIME
 ; - end of SQIARE2 channel work
 ;
 ; - start TRIANGLE chanel work
 .mus_tri_play:
-		LDA		_mus_fade_out_timer			; the last 16 clocks of fade out
+		LDA		_apu_mus_fade_out_timer			; the last 16 clocks of fade out
 		BEQ		.mus_tri_continues				; TRI/DMC channels are mute, no need to fetch data then
 		AND		#$C0
 		BNE		.mus_tri_continues				; fade out is over, stop sounds
@@ -422,9 +439,9 @@ loc_A2B6:
 		BPL		loc_A2F4
 		AND		#$0F
 		CLC
-		ADC		_apu_mus_wave
+		ADC		_apu_mus_tempo					; no custom codes for tri channel
 		TAY
-		LDA		_apu_mus_wave_tbl,Y
+		LDA		_apu_mus_duration_table,Y
 		STA		_apu_mus_tri_delay
 		LDY		_apu_mus_tri_data_pos
 		INC		_apu_mus_tri_data_pos
@@ -465,9 +482,9 @@ loc_A318:
 		STA		_apu_tmpF6
 		AND		#$0F
 		CLC
-		ADC		_apu_mus_wave					; no special codes, data combined with wave info
+		ADC		_apu_mus_tempo					; no custom codes for dmc channel as well
 		TAY
-		LDA		_apu_mus_wave_tbl,Y
+		LDA		_apu_mus_duration_table,Y
 		STA		_apu_mus_dmc_delay
 		LDX		_apu_se_loop_idx+1				; test for any other SE are active now
 		BNE		.mus_dmc_load_skip				; then skip DMC load
@@ -508,11 +525,13 @@ loc_A375:
 .mus_exit:
 		RTS
 
+; OPTIMIZED
 ;_mus_fade_require_list:
 ;		.BYTE	$00,$01,$00,$01,$01,$01,$01,$01,$01,$01,$01,$00,$01,$00,$01
+; -
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_mus_env_delta_calc:
+_apu_mus_tempo_delta_calc:
 		CLC
 		CMP		#$13
 		BCS		loc_A391
@@ -567,7 +586,7 @@ locret_A3CE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_mus_p_time_recalcA:
+_apu_mus_p_releaseA:
 		SEC
 		CMP		#$19
 		BCC		locret_A3DE
@@ -584,7 +603,7 @@ locret_A3DE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_apu_mus_p_time_recalcB:
+_apu_mus_p_releaseB:
 		AND		#$08
 		BNE		loc_A3ED
 		TXA
@@ -605,7 +624,7 @@ loc_A3F5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_mus_p_fade_out:
-		LDY		_mus_fade_out_timer
+		LDY		_apu_mus_fade_out_timer
 		BEQ		locret_A41E
 		TAX
 		TYA
@@ -656,11 +675,11 @@ _apu_p1_time_load:
 ; =============== S U B	R O U T	I N E =======================================
 _apu_time_load:
 		TAY
-		LDA		_apu_freq_tbl+1,Y				; low 8-bit nibble of frequency
+		LDA		_apu_note_tbl-1,Y				; low 8-bit nibble of frequency
 		STA		_apu_mus_p1_time_lo,X			; store shadow value to RAM
 		BEQ		_apu_mute_load					; if zero, mute note instead
 		STA		_APU_PULSE1_TIME,X				; load APU with value
-		LDA		_apu_freq_tbl,Y					; high 3-bit nibble of frequency
+		LDA		_apu_note_tbl-2,Y				; high 3-bit nibble of frequency
 
 ; !FALLTHROUGH!
 
@@ -881,7 +900,7 @@ _apu_se1_done:
 ;_j_apu_se40_loop:
 ;		JMP		_apu_se40_loop
 ;
-; FIX: re-enabled, TODO: find where may be used
+; FIX: re-enabled, TODO: find where it may be used
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_j_apu_se80_start:
@@ -953,6 +972,7 @@ loc_A507:
 		JMP		_apu_p2_reset
 locret_A51B:
 		RTS
+
 byte_A51C:
 		.BYTE	$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$00,$00,$00,$00
 		.BYTE	$00,$00,$D4,$D4,$D4,$D4,$D4,$D4
@@ -983,6 +1003,9 @@ _apu_se4_loop:
 		JMP		_apu_p2_reset
 locret_A5A2:
 		RTS
+
+byte_A5A3:
+		.BYTE	$30,$32,$30,$2E
 
 ; =============== S U B	R O U T	I N E =======================================
 _apu_se8_start:
@@ -1143,78 +1166,78 @@ loc_195861:
 locret_195876:
 		RTS
 
-byte_A5A3:
-		.BYTE	$30,$32,$30,$2E
-_apu_freq_tbl:
-		.BYTE	$07,$F0
-		.BYTE	$00,$00
-		.BYTE	$00,$D4
-		.BYTE	$00,$C8
-		.BYTE	$00,$BD
-		.BYTE	$00,$B2
-		.BYTE	$00,$A8
-		.BYTE	$00,$9F
-		.BYTE	$00,$96
-		.BYTE	$00,$8D
-		.BYTE	$00,$85
-		.BYTE	$00,$7E
-		.BYTE	$00,$76
-		.BYTE	$00,$70
-		.BYTE	$01,$AB
-		.BYTE	$01,$93
-		.BYTE	$01,$7C
-		.BYTE	$01,$67
-		.BYTE	$01,$52
-		.BYTE	$01,$3F
-		.BYTE	$01,$2D
-		.BYTE	$01,$1C
-		.BYTE	$01,$0C
-		.BYTE	$00,$FD
-		.BYTE	$00,$EE
-		.BYTE	$00,$E1
-		.BYTE	$03,$57
-		.BYTE	$03,$27
-		.BYTE	$02,$F9
-		.BYTE	$02,$CF
-		.BYTE	$02,$A6
-		.BYTE	$02,$80
-		.BYTE	$02,$5C
-		.BYTE	$02,$3A
-		.BYTE	$02,$1A
-		.BYTE	$01,$FC
-		.BYTE	$01,$DF
-		.BYTE	$01,$C4
-		.BYTE	$06,$AE
-		.BYTE	$06,$4E
-		.BYTE	$05,$F3
-		.BYTE	$05,$9E
-		.BYTE	$05,$4D
-		.BYTE	$05,$01
-		.BYTE	$04,$B9
-		.BYTE	$04,$75
-		.BYTE	$04,$35
-		.BYTE	$03,$F8
-		.BYTE	$03,$BF
-		.BYTE	$03,$89
-		.BYTE	$00,$69
-		.BYTE	$00,$63
-		.BYTE	$00,$5E
-		.BYTE	$00,$58
-		.BYTE	$00,$53
-		.BYTE	$00,$4F
-		.BYTE	$00,$4A
-		.BYTE	$00,$46
-		.BYTE	$00,$42
-		.BYTE	$00,$3E
-_apu_mus_wave_tbl:
-		.BYTE	$03,$06,$0C,$18,$30,$12,$24,$09,$01	; 00
-		.BYTE	$04,$08,$10,$20,$40,$18,$30,$0C,$00 ; 09
-		.BYTE	$05,$0A,$14,$28,$50,$1E,$3C,$0F,$08 ; 12
-		.BYTE	$06,$0C,$18,$30,$60,$24,$48,$12,$08 ; 1B
-		.BYTE	$07,$0E,$1C,$38,$70,$2A,$54,$15,$0C ; 24
-		.BYTE	$09,$12,$24,$48,$90,$36,$6C,$1B,$03 ; 2D
-		.BYTE	$0A,$14,$28,$50,$A0,$3C,$78,$1E,$11 ; 36
+_apu_note_tbl:
+;		.BYTE	$07,$F0		; REDUNDANT, unused
+		.BYTE	$00,$00		; 02 MUTE
+		.BYTE	$00,$D4		; 04
+		.BYTE	$00,$C8		; 06
+		.BYTE	$00,$BD		; 08
+		.BYTE	$00,$B2		; 0A
+		.BYTE	$00,$A8		; 0C
+		.BYTE	$00,$9F		; 0E
+		.BYTE	$00,$96		; 10
+		.BYTE	$00,$8D		; 12
+		.BYTE	$00,$85		; 14
+		.BYTE	$00,$7E		; 16
+		.BYTE	$00,$76		; 18
+		.BYTE	$00,$70		; 1A
+		.BYTE	$01,$AB		; 1C
+		.BYTE	$01,$93		; 1E
+		.BYTE	$01,$7C		; 20
+		.BYTE	$01,$67		; 22
+		.BYTE	$01,$52		; 24
+		.BYTE	$01,$3F		; 26
+		.BYTE	$01,$2D		; 28
+		.BYTE	$01,$1C		; 2A
+		.BYTE	$01,$0C		; 2C
+		.BYTE	$00,$FD		; 2E
+		.BYTE	$00,$EE		; 30
+		.BYTE	$00,$E1		; 32
+		.BYTE	$03,$57		; 34
+		.BYTE	$03,$27		; 36
+		.BYTE	$02,$F9		; 38
+		.BYTE	$02,$CF		; 3A
+		.BYTE	$02,$A6		; 3C
+		.BYTE	$02,$80		; 3E
+		.BYTE	$02,$5C		; 40
+		.BYTE	$02,$3A		; 42
+		.BYTE	$02,$1A		; 44
+		.BYTE	$01,$FC		; 46
+		.BYTE	$01,$DF		; 48
+		.BYTE	$01,$C4		; 4A
+		.BYTE	$06,$AE		; 4C
+		.BYTE	$06,$4E		; 4E
+		.BYTE	$05,$F3		; 50
+		.BYTE	$05,$9E		; 52
+		.BYTE	$05,$4D		; 54
+		.BYTE	$05,$01		; 56
+		.BYTE	$04,$B9		; 58
+		.BYTE	$04,$75		; 5A
+		.BYTE	$04,$35		; 5C
+		.BYTE	$03,$F8		; 5E
+		.BYTE	$03,$BF		; 60
+		.BYTE	$03,$89		; 62
+		.BYTE	$00,$69		; 64
+		.BYTE	$00,$63		; 66
+		.BYTE	$00,$5E		; 68
+		.BYTE	$00,$58		; 6A
+		.BYTE	$00,$53		; 6C
+		.BYTE	$00,$4F		; 6E
+		.BYTE	$00,$4A		; 70
+		.BYTE	$00,$46		; 72
+		.BYTE	$00,$42		; 74
+		.BYTE	$00,$3E		; 76
 
+_apu_mus_duration_table:
+		.BYTE	 3,  6, 12, 24,  48,   18,  36,    9,  1	; 00 *unused*
+		.BYTE	 4,  8, 16, 32,  64,   24,  48,   12,  0	; 09 *unused*
+		.BYTE	 5, 10, 20, 40,  80,   30,  60,   15,  8	; 12
+		.BYTE	 6, 12, 24, 48,  96,   36,  72,   18,  8	; 1B
+		.BYTE	 7, 14, 28, 56, 112,   42,  84,   21, 12	; 24
+		.BYTE	 9, 18, 36, 72, 144,   54, 108,   27,  3	; 2D
+		.BYTE	10, 20, 40, 80, 160,   60, 120,   30, 17	; 36
+;			   1/4 1/2   1   2    4   3/2  6/2   3/4
+;			   $80 $81 $82 $83  $84   $85  $86   $87 $88
 _mus_p_sweep_tbl0:
 		.BYTE	$D0,$D0,$D0,$D1,$D1,$D1,$D1,$D2,$D2,$D2,$D2,$D3,$D3,$D3,$D4,$D5
 		.BYTE	$D6,$D7,$D6,$D6,$D6,$D5,$D5,$D4,$90,$90,$90,$91,$91,$91,$92,$92
@@ -1359,15 +1382,15 @@ _seqE:
 
 	MAC	_TTRK
 {1}		SET	.
-{1}._env:	.BYTE	{2}
+{1}._tempo:	.BYTE	{2}
 {1}._ptr:	.WORD	{3}
-{1}._var0:	.BYTE	{4}
-{1}._var1:	.BYTE	{5}
-{1}._var2:	.BYTE	{6}
-{1}._var3:	.BYTE	{7}
+{1}._p2:	.BYTE	{4}
+{1}._tri:	.BYTE	{5}
+{1}._env:	.BYTE	{6}
+{1}._dmc:	.BYTE	{7}
 	ENDM
 
-;			    name    chl         ptr      v0   v1   v2   v3
+;			    name  tempo      ptr/p1      p2  tri  env  dmc
 		_TTRK _trk00,	$1B,_trk00_data,	$52, $A5, $D3, $00
 		_TTRK _trk01,	$1B,_trk01_data,	$3A, $75, $D3, $A2
 		_TTRK _trk02,	$1B,_trk02_data,	$42, $85, $C6, $B1
@@ -1404,20 +1427,67 @@ _seqE:
 		_TTRK _trk21,	$24,_trk21_data,	$05, $09, $00, $0D
 		_TTRK _trk22,	$24,_trk22_data,	$1E, $3B, $22, $49
 _trk00_data:
-		.BYTE	$81,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08
-		.BYTE	$2A,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08
-		.BYTE	$2A,$08,$2E,$06,$24,$08,$2E,$06,$24,$08,$2E,$06,$24,$08,$2E,$06
-		.BYTE	$24,$08,$2C,$04,$26,$08,$2C,$04,$26,$08,$2C,$04,$26,$08,$2C,$04
-		.BYTE	$26,$08,$2A,$04,$24,$08,$2A,$04,$24,$08,$2A,$04,$24,$08,$2A,$04
-		.BYTE	$24,$00,$88,$02,$81,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08
-		.BYTE	$2A,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08,$2A,$0A,$30,$08
-		.BYTE	$2A,$0A,$30,$08,$2A,$08,$2E,$06,$24,$08,$2E,$06,$24,$08,$2E,$06
-		.BYTE	$24,$08,$2E,$06,$24,$08,$2C,$04,$26,$08,$2C,$04,$26,$08,$2C,$04
-		.BYTE	$26,$08,$2C,$04,$26,$08,$2A,$04,$24,$08,$2A,$04,$24,$08,$2A,$04
-		.BYTE	$24,$08,$2A,$04,$24,$84,$02,$02,$81,$12,$14,$18,$82,$6A,$18,$81
-		.BYTE	$14,$12,$14,$18,$82,$6A,$18,$81,$12,$10,$12,$16,$84,$68,$83,$02
-		.BYTE	$81,$02,$0E,$12,$14,$82,$68,$14,$81,$12,$0E,$12,$14,$82,$68,$14
-		.BYTE	$81,$0E,$0C,$0E,$12,$84,$64,$83,$02,$81,$02
+_trk00_p1_data:
+		.BYTE	$81,$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$00
+_trk00_p2_data:
+		.BYTE	$88,$02
+		.BYTE	$81,$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$0A,$30,$08,$2A
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2E,$06,$24
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2C,$04,$26
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$08,$2A,$04,$24
+		.BYTE	$08,$2A,$04,$24
+_trk00_tri_data:
+		.BYTE	$84,$02,$02
+		.BYTE	$81,$12,$14,$18
+		.BYTE	$82,$6A,$18
+		.BYTE	$81,$14,$12,$14,$18
+		.BYTE	$82,$6A,$18
+		.BYTE	$81,$12,$10,$12,$16
+		.BYTE	$84,$68
+		.BYTE	$83,$02
+		.BYTE	$81,$02,$0E,$12,$14
+		.BYTE	$82,$68,$14
+		.BYTE	$81,$12,$0E,$12,$14
+		.BYTE	$82,$68,$14
+		.BYTE	$81,$0E,$0C,$0E,$12
+		.BYTE	$84,$64
+		.BYTE	$83,$02
+		.BYTE	$81,$02
 _trk01_data:
 		.BYTE	$81,$08,$28,$04,$22,$08,$28,$04,$22,$08,$28,$04,$22,$08,$28,$04
 		.BYTE	$22,$04,$26,$30,$20,$04,$26,$30,$20,$04,$26,$30,$20,$04,$26,$30

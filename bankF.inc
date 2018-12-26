@@ -86,7 +86,7 @@ loc_18A053:
 ;		LDA		#$00							; unknown register, probably debug leftover
 ;		STA		byte_4084+$F8C
 		FJSRA	_apu_init,SRAM,PRG0
-		LDA		#$80
+		LDA		#_MUS_IDX_STOP
 		STA		_apu_mus_idx_req
 		LDX		#$1F
 		LDA		#$0F
@@ -3960,7 +3960,12 @@ _months_lib:
 		.BYTE	_D,_E,_C,$80
 
 _bg_music_list:
-		.BYTE	$08,$20,$41,$42,$44,$48
+		.BYTE	_MUS_IDX_VILLAGE0
+		.BYTE	_MUS_IDX_TOWN
+		.BYTE	_MUS_IDX_CITY
+		.BYTE	_MUS_IDX_CAPITAL
+		.BYTE	_MUS_IDX_METROPOLIS
+		.BYTE	_MUS_IDX_MEGAPOLIS0
 
 _dec_digit_tbl0:
 		.BYTE	[[1 >> 0] & $FF]		; $01
