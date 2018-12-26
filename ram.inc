@@ -126,11 +126,13 @@ _pad1_prev_held:
 
 		_tsprarg	_spr_insert_args
 
-_spr_prgF_args_idx:
-		.BYTE	0
+		_tsprargraw	_spr_insert_raw_args
 
-		_tpos	_spr_prgF_args_pos
-
+;_spr_insert_raw_args._idx:
+;		.BYTE	0
+;
+;		_tpos	_spr_insert_raw_args._pos
+;
 		_tpos	_cur_map_wnd_pos
 
 byte_53:
@@ -362,18 +364,22 @@ _unref_11:
 		.BYTE	0,0,0,0,0,0,0
 byte_E5:
 		.BYTE	0
-_tmpE6:
-		.BYTE	0
-_tmpE7:
-		.BYTE	0
-_tmpE8:
-		.BYTE	0
-_tmpE9:
-		.BYTE	0
-_tmpEA:
-		.BYTE	0
-_tmpEB:
-		.BYTE	0
+
+_tmpE6	EQU		.
+_tmpE7	EQU		_tmpE6+1
+_tmpE8	EQU		_tmpE6+2
+_tmpE9	EQU		_tmpE6+3
+
+_quot.FRAC	EQU	_tmpE6
+_quot.INT	EQU	_tmpE7
+
+		_tfix16_16	_dvdn
+
+_tmpEA	EQU		.
+_tmpEB	EQU		_tmpEA+1
+
+		_tfix8_8	_dvdr
+
 word_EC:
 		.BYTE	0,0
 word_EE:
@@ -613,10 +619,8 @@ _screen_pal_cur_bg_idx:
 
 		_tpos _prev_constr_cursor_tile
 
-byte_50F:
-		.BYTE	0
-byte_510:
-		.BYTE	0
+		_tpos	_cur_constr_cursor_map_pos
+
 byte_511:
 		.BYTE	0
 byte_512:
@@ -805,12 +809,10 @@ _mmc5_mul0_shadow:
 		.BYTE	0
 _backup_var:
 		.BYTE	0
-_mmc5_mtmp_mul_result:
+_mmc5_tmp_mul_result:
 		.BYTE	0
-byte_5A6:
-		.BYTE	0
-byte_5A7:
-		.BYTE	0
+_mmc5_tmp_mul_data:
+		.WORD	0
 _has_saved_city_data_flag:
 		.BYTE	0
 word_5A9:
@@ -891,8 +893,9 @@ _worst_problem_list:
 		.BYTE	0,0,0,0
 _worst_problem_percents:
 		.BYTE	0,0,0,0
-_cur_RCI_levels_sum:
-		.BYTE	0,0
+
+		_tfix8_8	_cur_RCI_levels_sum
+
 byte_674:
 		.BYTE	0
 _total_RIC_areas:
@@ -920,7 +923,7 @@ _sea_ports_count:
 		.BYTE	0
 _airports_count:
 		.BYTE	0
-_roads_counter:
+_roads_count:
 		.BYTE	0,0
 _rails_count:
 		.BYTE	0,0
@@ -963,8 +966,9 @@ _tmp6AC:
 
 _cur_R_area_develop_state:
 		.BYTE	0
-_prev_RCI_levels_sum:
-		.BYTE	0,0
+
+		_tfix8_8	_prev_RCI_levels_sum
+
 		.BYTE	0
 		.BYTE	0
 _popul_last_year:

@@ -1,7 +1,7 @@
 
 		ORG $8000
 
-		BANK_START $05
+		BANK_START $F5
 
 ; =============== S U B	R O U T	I N E =======================================
 _obj_handlers:
@@ -89,7 +89,7 @@ _airplane_crash_start:
 		PUSHB	_tmp4
 		PUSHB	_tmp5
 		LDY		#$08
-		FJSRA	_city_history_write,$00,$FA
+		FJSRA	_city_history_write,SRAM,PRGA
 		POPB	_tmp5
 		POPB	_tmp4
 		POPB	_tmp3
@@ -1839,7 +1839,7 @@ _far_fire_or_destroy_map_tile_ex:
 		PUSHB	_tmp3
 		PUSHB	_tmp4
 		PUSHB	_tmp5
-		FJSRA	_fire_or_destroy_map_tile_ex,$00,$FB
+		FJSRA	_fire_or_destroy_map_tile_ex,SRAM,PRGB
 		POPB	_tmp5
 		POPB	_tmp4
 		POPB	_tmp3
@@ -1849,13 +1849,16 @@ _far_fire_or_destroy_map_tile_ex:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: merge _spr_lib_prg8_insert, _spr_lib_prg2_insert, _spr_lib_prgF_insert
+; functions, reduce duplicated code.
+;
 _spr_lib_prgF_insert:
-		LDX		_spr_prgF_args_idx
+		LDX		_spr_insert_raw_args._idx
 		LDA		_spr_lib_lo,X
 		STA		_tmp15
 		LDA		_spr_lib_hi,X
 		STA		_tmp15+1
-		DEC		_spr_prgF_args_pos._Y
+		DEC		_spr_insert_raw_args._pos._Y
 		LDX		_spr_buf_pos
 		LDY		#$00
 loc_88C9C:
@@ -1864,7 +1867,7 @@ loc_88C9C:
 		BEQ		loc_88CC5
 		INY
 		CLC
-		ADC		_spr_prgF_args_pos._Y
+		ADC		_spr_insert_raw_args._pos._Y
 		STA		_spr_buf,X
 		INX
 		LDA		(_tmp15),Y
@@ -1878,7 +1881,7 @@ loc_88C9C:
 		LDA		(_tmp15),Y
 		INY
 		CLC
-		ADC		_spr_prgF_args_pos._X
+		ADC		_spr_insert_raw_args._pos._X
 		STA		_spr_buf,X
 		INX
 		JMP		loc_88C9C
@@ -1894,11 +1897,11 @@ _spr_game_interface_cursor_draw:
 		BNE		loc_88CE0
 loc_88CD1:
 		LDA		#$00
-		STA		_spr_prgF_args_idx
+		STA		_spr_insert_raw_args._idx
 		LDA		_cur_game_cursor_scr_pos._X
-		STA		_spr_prgF_args_pos._X
+		STA		_spr_insert_raw_args._pos._X
 		LDA		_cur_game_cursor_scr_pos._Y
-		STA		_spr_prgF_args_pos._Y
+		STA		_spr_insert_raw_args._pos._Y
 		JMP		_spr_lib_prgF_insert
 loc_88CE0:
 		LDX		_prev_constr_palette_press_idx
@@ -1908,13 +1911,13 @@ loc_88CE0:
 		CLC
 		ADC		_cur_port_type_select_idx
 loc_88CEC:
-		STA		_spr_prgF_args_idx
+		STA		_spr_insert_raw_args._idx
 		LDA		_cur_game_cursor_scr_pos._X
 		AND		#$F8
-		STA		_spr_prgF_args_pos._X
+		STA		_spr_insert_raw_args._pos._X
 		LDA		_cur_game_cursor_scr_pos._Y
 		AND		#$F8
-		STA		_spr_prgF_args_pos._Y
+		STA		_spr_insert_raw_args._pos._Y
 		JMP		_spr_lib_prgF_insert
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3298,4 +3301,4 @@ byte_89ED6:
 		.BYTE	$00,$FF,$FF,$01,$01,$00,$FF,$FF
 		.BYTE	$01,$01,$00,$FF,$FF,$01,$01,$00,$FF
 
-		BANK_END 5,$A000
+		BANK_END F5,$A000

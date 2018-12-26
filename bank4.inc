@@ -1,7 +1,7 @@
 
 		ORG $8000
 
-		BANK_START $04
+		BANK_START $F4
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_pal_select:
@@ -1926,4 +1926,4 @@ aWhileItDestroysEvery:
 aThingInItSPath_:
 		.BYTE	"thing in it*s path.",$F
 
-		BANK_END 4,$A000
+		BANK_END F4,$A000

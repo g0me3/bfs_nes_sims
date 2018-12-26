@@ -1,7 +1,7 @@
 
 		ORG $A000
 
-		BANK_START $03
+		BANK_START $F3
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_draw:
@@ -218,7 +218,7 @@ loc_58144:
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSRA	_game_msg_chr_setup,$F2,$F2
+		FJSRA	_game_msg_chr_setup,PRG2,PRG2
 		LDA		#$00
 		STA		_ptr0
 		JSR		_game_msg_display
@@ -326,7 +326,7 @@ _game_msg_apu_types_list:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_display:
 		PUSHB	_ptr0
-		JSR		_far_wnd_header_draw
+		JSR		_far_wnd_header_draw			; TODO: optimize me! call to far call
 		POPB	_ptr0
 		LDA		#$00
 		STA		_ptr0+1
@@ -354,7 +354,7 @@ loc_5829C:
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_wnd_header_draw:
-		FJSRA	_wnd_header_draw,$F0,$F0
+		FJSRA	_wnd_header_draw,PRG0,PRG0
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1987,24 +1987,24 @@ _game_menu_exec:
 		BNE		loc_58F72
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSRA	_game_save_menu,$00,$F3
+		FJSRA	_game_save_menu,SRAM,PRG3
 		JMP		_game_menu_break
 loc_58F72:
 		DEX
 		BNE		loc_58F7F
-		FJSRA	_game_load_menu,$00,$F3
+		FJSRA	_game_load_menu,SRAM,PRG3
 		JMP		_game_menu_break
 loc_58F7F:
 		DEX
 		BNE		loc_58F90
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSRA	_game_title_return,$00,$F3
+		FJSRA	_game_title_return,SRAM,PRG3
 		JMP		_game_menu_break
 loc_58F90:
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSRA	_game_quit,$00,$F3
+		FJSRA	_game_quit,SRAM,PRG3
 _game_menu_break:
 		LDA		#$00
 		STA		_scr_mode_idx
@@ -2017,7 +2017,7 @@ _game_save_menu:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,PRGC,PRGD
 		JSR		_game_msg_chr_common_load
 		SEC
 		RTS
@@ -2093,7 +2093,7 @@ _common_yes_no_question_menu:
 		STA		_mmc5_operation_in_progress_flag
 		LDA		#$00
 		STA		_common_yes_no_menu_cursor_pos
-		FJSRA	_wnd_draw,$FC,$FD
+		FJSRA	_wnd_draw,PRGC,PRGD
 loc_59047:
 		LDA		#$00
 		STA		_spr_buf_pos
@@ -2148,7 +2148,7 @@ loc_5909F:
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,PRGC,PRGD
 		JSR		_game_msg_chr_common_load
 		PLA
 		SEC
@@ -2211,7 +2211,7 @@ loc_59103:
 		JSR		_sram_data_load
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,PRGC,PRGD
 		JSR		_game_msg_chr_common_load
 		JSR		_pal_fade_out
 		TSX
@@ -2290,7 +2290,7 @@ loc_591A1:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,PRGC,PRGD
 		JSR		_game_msg_chr_common_load
 		JSR		_pal_fade_out
 loc_591B7:
@@ -2308,7 +2308,7 @@ loc_591C5:
 		JSR		_sram_data_save
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_erase,$FC,$FD
+		FJSRA	_wnd_erase,PRGC,PRGD
 		JSR		_game_msg_chr_common_load
 loc_591D8:
 		LDA		#$00
@@ -3815,4 +3815,4 @@ _scroll_txt18_heavy_traffic_repotrted:
 		.BYTE	$11,$0E,$0A,$1F,$22,$DF,$1D,$1B,$0A,$0F,$0F,$12,$0C,$DF,$1B,$0E
 		.BYTE	$19,$18,$1B,$1D,$0E,$0D,$FF
 
-		BANK_END 3,$C000
+		BANK_END F3,$C000

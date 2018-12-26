@@ -2,7 +2,36 @@
 
 DEBUG	EQU		1
 
+PRG0	EQU		$F0
+PRG1	EQU		$F1
+PRG2	EQU		$F2
+PRG3	EQU		$F3
+PRG4	EQU		$F4
+PRG5	EQU		$F5
+PRG6	EQU		$F6
+PRG7	EQU		$F7
+PRG8	EQU		$F8
+PRG9	EQU		$F9
+PRGA	EQU		$FA
+PRGB	EQU		$FB
+PRGC	EQU		$FC
+PRGD	EQU		$FD
+SRAM	EQU		$00
+
 ;------------S-T-R-U-C-T-U-R-E-S----------------
+
+	MAC	_tfix16_16
+{1}		SET	.
+{1}.FRAC	.WORD	0
+{1}.INT		.WORD	0
+	ENDM
+
+	MAC	_tfix8_8
+{1}		SET	.
+{1}.FRAC	.BYTE	0
+{1}.INT		.BYTE	0
+	ENDM
+
 
 	MAC	_tpos
 {1}		SET	.
@@ -17,11 +46,24 @@ DEBUG	EQU		1
 {1}._I:		.BYTE	0
 	ENDM
 
+R_AREA_WIDX	EQU	0
+C_AREA_WIDX	EQU 2
+I_AREA_WIDX	EQU 4
+
 	MAC	_trciw
 {1}		SET	.
 {1}._R:		.WORD	0
 {1}._C:		.WORD	0
 {1}._I:		.WORD	0
+	ENDM
+
+	MAC	_trcifix8_8
+{1}			SET	.
+{1}.FRAC	SET	.
+{1}.INT		SET [.+1]
+		_tfix8_8	{1}._R
+		_tfix8_8	{1}._C
+		_tfix8_8	{1}._I
 	ENDM
 
 	MAC	_tapu
@@ -34,12 +76,6 @@ DEBUG	EQU		1
 {1}._var3:	.BYTE	{7}
 	ENDM
 
-; _game_flags
-; bit0 - auto buldozer
-; bit1 - auto budget
-; bit2 - auto goto
-; bit3 - music on
-
 	MAC	_tcity
 {1}		SET	.
 {1}._name:								.BYTE	0,0,0,0,0,0,0,0,0,0,0
@@ -49,7 +85,7 @@ DEBUG	EQU		1
 {1}._unused_name4:						.BYTE	0,0,0,0,0,0,0,0,0,0,0
 {1}._scenarios_clear_flags:				.BYTE	0
 {1}._all_scenarios_are_clear_ram_flag:	.BYTE	0
-		_trciw							{1}._level
+		_trcifix8_8						{1}._level
 		_trci							{1}._delta
 {1}._var_5F6:							.BYTE	0
 {1}._var_5F7:							.BYTE	0
@@ -66,6 +102,10 @@ DEBUG	EQU		1
 {1}._cur_week:							.BYTE	0
 {1}._tax_rate:							.BYTE	0
 {1}._game_flags:						.BYTE	0
+	; bit0 - auto buldozer
+	; bit1 - auto budget
+	; bit2 - auto goto
+	; bit3 - music on
 {1}._game_speed:						.BYTE	0
 {1}._events_used_flags:					.BYTE	0,0,0,0
 {1}._year_to_build_bank:				.WORD	0
@@ -74,6 +114,14 @@ DEBUG	EQU		1
 {1}._special_buildings_list:			.BYTE	0,0,0,0
 {1}._history_list:						.BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 {1}._bank_flags:						.BYTE	0
+	; bit0 - bank built, wait for loan message
+	; -
+	; -
+	; -
+	; -
+	; -
+	; bit6 - money loaned, wait for end of period
+	; bit7 - loan message enabled, may loan now
 {1}._tax_year_rate:						.WORD	0
 {1}._bank_loan_period:					.BYTE	0
 {1}._unused:							.BYTE	0
@@ -85,6 +133,10 @@ DEBUG	EQU		1
 {1}._seaport:	.BYTE	0
 {1}._airport:	.BYTE	0
 	ENDM
+
+DEVELOPED_WIDX		EQU 0
+UNDEVELOPED_WIDX	EQU	2
+OTHER_WIDX			EQU 4
 
 	MAC	_tdev
 {1}		SET	.
@@ -141,6 +193,12 @@ DEBUG	EQU		1
 {1}._flip:		.BYTE	0
 	ENDM
 
+	MAC	_tsprargraw
+{1}		SET	.
+{1}._idx:		.BYTE	0
+		_tpos	{1}._pos
+	ENDM
+
 	MAC	_tgraph
 {1}		SET	.
 	.BYTE	0,0,0,0,0,0,0,0,0,0
@@ -185,10 +243,27 @@ DEBUG	EQU		1
 		JSR		{1}
 	ENDM
 
+	; \t\tLDX\t\t#<\[(.*)\]\n\t\tLDY\t\t#>\[\1\]\n\t\tJSR\t\t(.*)\n
+	; \t\tJSRXY\t\2,\1\n
+	;
+	MAC JMPXY
+		LDX		#<[{2}]
+		LDY		#>[{2}]
+		JMP		{1}
+	ENDM
+
+	; \t\tLDX\t\t#<\[(.*)\]\n\t\tLDY\t\t#>\[\1\]\n
+	; \t\tLDXY\t\1\n
+	;
+	MAC	LDXY
+		LDX		#<[{1}]
+		LDY		#>[{1}]
+	ENDM
+
 	; \t\tPUSHB\t(.*)\n\t\tPUSHB\t(.*)\n\t\tJSR\t\t_mmc5_mul8to8\n\t\tPOPB\t(.*)\n\t\tPOPB\t\3\+1\n
 	; \t\tMMULB8\t\3,\1,\2\n
 	;
-	; multyply 8bit arguments, store result in 16bit buffer
+	; store-multiply, input args are 8bit, result is 16bit
 	;
 	MAC	MMULB8
 		PUSHB	{2}
@@ -203,20 +278,20 @@ DEBUG	EQU		1
 	MAC BANK_START
 CUR_PRG_BANK	SET {1}
 CUR_BANK_START	SET .
-		ECHO	"bank",{1},"start ["
+;		ECHO	"bank",{1},"start ["
 	ENDM
 
 	MAC	BANK_END
 _bank{1}_free	SET	[{2}-.]
-	#if ${1}==$0
+	#if ${1}==$F0
 _total_free	SET	_bank{1}_free
 	#else
 _total_free	SET _total_free+_bank{1}_free
 	#endif
 	#if .>{2}
-		ECHO	"]","exceeded by=",[0-_bank{1}_free]
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
 	#else
-		ECHO	"]","free =",_bank{1}_free
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
 	#endif
 	#if .<{2}-1
 		ORG		{2}-1
@@ -236,7 +311,11 @@ _{1}_end	SET .
 	MAC	LAST_BANK_END
 _bank{1}_free	SET	[{2}-.-6]
 _total_free	SET _total_free+_bank{1}_free
-		ECHO	"]","free =",_bank{1}_free
+	#if .>[{2}-6]
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
+	#else
+		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
+	#endif
 		ECHO	"-------------";
 		ECHO	"total free =",_total_free
 		ECHO	""
@@ -275,7 +354,7 @@ _total_free	SET _total_free+_bank{1}_free
 		PUSHB	#[[{1}>>0]&$FF]
 	ENDM
 
-	MAC PUSHWM
+	MAC PUSHW
 		PUSHB	{1}+1
 		PUSHB	{1}
 	ENDM
@@ -286,6 +365,17 @@ _total_free	SET _total_free+_bank{1}_free
 	MAC	POPB
 		PLA
 		STA		{1}
+	ENDM
+
+	MAC	POPW
+		POPB	{1}
+		POPB	{1}+1
+	ENDM
+
+	MAC	POPD
+		POPB	{1}
+		POPB	{1}+1
+		POPB	{1}+2
 	ENDM
 
 	; \t\tLDA\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t\1\+1\n\t\tSTA\t\t\2\+1\n
@@ -317,9 +407,9 @@ _total_free	SET _total_free+_bank{1}_free
 		STA		{1}
 		STA		{1}+1
 	#else
-		LDA		#[[{2}>>0 ]&$FF]
+		LDA		#[[{2}>>0]&$FF]
 		STA		{1}
-		LDA		#[[{2}>>8 ]&$FF]
+		LDA		#[[{2}>>8]&$FF]
 		STA		{1}+1
 	#endif
 	ENDM
@@ -357,4 +447,61 @@ _total_free	SET _total_free+_bank{1}_free
 		BCC		.1
 		INC		{1}+1
 .1:
+	ENDM
+
+	; Add two 16-bit integer or fixed point values and put it
+	; in third arg.
+	;
+	MAC	MADDW
+		LDA		{2}
+		CLC
+		ADC		{3}
+		STA		{1}
+		LDA		{2}+1
+		ADC		{3}+1
+		STA		{1}+1
+	ENDM
+
+	; Add two 16-bit integer or fixed point values, shift the
+	; result left, then store to third arg
+	;
+	MAC	LSADDW
+		LDA		{2}
+		CLC
+		ADC		{3}
+		STA		{1}
+		LDA		{2}+1
+		ADC		{3}+1
+		REPEAT	{4}
+		ASL		{1}
+		ROL
+		REPEND
+		STA		{1}+1
+	ENDM
+
+	; Shift right 16bit or 8x8 fixed point value, store arg
+	;
+	MAC	RSMOVW
+		LDA		{2}
+		STA		{1}
+		LDA		{2}+1
+		REPEAT	{3}
+		LSR
+		ROR		{1}
+		REPEND
+		STA		{1}+1
+	ENDM
+
+	MAC CMPW
+		LDA		{1}
+		CMP		{2}
+		LDA		{1}+1
+		SBC		{2}+1
+	ENDM
+
+	MAC CMPWI
+		LDA		{1}
+		CMP		#[[{2}>>0]&$FF]
+		LDA		{1}+1
+		SBC		#[[{2}>>8]&$FF]
 	ENDM

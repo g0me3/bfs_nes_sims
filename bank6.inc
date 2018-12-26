@@ -1,7 +1,7 @@
 
 		ORG $8000
 
-		BANK_START $06
+		BANK_START $F6
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_chr_vars_init:
@@ -861,12 +861,10 @@ _scr_res6_draw:
 		STA		_MMC5_NT_MODE
 		BIT		_city._bank_flags
 		BVC		loc_A0B5E
-		LDX		#<[_tlm_res_scr6A]
-		LDY		#>[_tlm_res_scr6A]
+		LDXY	_tlm_res_scr6A
 		BNE		loc_A0B62
 loc_A0B5E:
-		LDX		#<[_tlm_res_scr6B]
-		LDY		#>[_tlm_res_scr6B]
+		LDXY	_tlm_res_scr6B
 loc_A0B62:
 		JSR		_tlm_res_unpack
 		POPB	_MMC5_NT_MODE
@@ -1187,4 +1185,4 @@ byte_A1A1A:
 		.BYTE	$04,$9F,$3E,$58,$3F,$00,$02,$38,$44,$08,$83,$07,$DF,$28,$00,$87
 		.BYTE	$03,$F0,$27,$00,$FF
 
-		BANK_END 6,$A000
+		BANK_END F6,$A000

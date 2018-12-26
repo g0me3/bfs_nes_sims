@@ -4,7 +4,7 @@
 		ECHO "PROGRAM BEGIN"
 		ECHO "-------------"
 
-		BANK_START $00
+		BANK_START $F0
 
 		SECTION_START	0
 
@@ -1671,4 +1671,4 @@ byte_BF1B:
 
 		SECTION_END	1
 
-		BANK_END 0,$C000
+		BANK_END F0,$C000

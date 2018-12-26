@@ -1,7 +1,7 @@
 
 		ORG $8000
 
-		BANK_START $07
+		BANK_START $F7
 
 ; =============== S U B	R O U T	I N E =======================================
 _city_name_draw:
@@ -798,7 +798,7 @@ loc_B8514:
 		AND		#$CA
 		CMP		#$CA
 		BNE		loc_B8526
-		FJSRA	_sram_reset,$00,$F3
+		FJSRA	_sram_reset,SRAM,PRG3
 loc_B8526:
 		JSR		_title_sub_exec
 		BIT		_title_sub_idx
@@ -854,12 +854,10 @@ _title_sub2_menu_draw:
 		LDA		#$03
 		STA		_MMC5_CHR_BANKSA+3
 		STA		_mmc5_chr_banks_shadow+3
-		LDX		#<[_tlm_res_title_menu_default]
-		LDY		#>[_tlm_res_title_menu_default]
+		LDXY	_tlm_res_title_menu_default
 		LDA		_has_saved_city_data_flag
 		BNE		loc_B858C
-		LDX		#<[_tlm_res_title_menu_continue]
-		LDY		#>[_tlm_res_title_menu_continue]
+		LDXY	_tlm_res_title_menu_continue
 loc_B858C:
 		JSR		_tlm_res_unpack
 		LDA		_has_saved_city_data_flag
@@ -1666,7 +1664,7 @@ loc_B8EB4:
 		STA		_graphs_scr_period_mode
 		LDA		#$80
 		STA		_scr_res_control_flags
-		FJSRA	sub_A021E,$F6,$F7
+		FJSRA	sub_A021E,PRG6,PRG7
 		JMP		_scr_res_hndl1_A_graphs1
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1679,7 +1677,7 @@ sub_B8ED8:
 		STX		byte_598
 		LDA		#$80
 		STA		_scr_res_control_flags
-		FJSRA	sub_A01BF,$F6,$F7
+		FJSRA	sub_A01BF,PRG6,PRG7
 		LDA		#$00
 		STA		byte_59B
 
@@ -2167,7 +2165,7 @@ loc_B9221:
 		LDA		_tmp584
 		CMP		#$0A
 		BCS		loc_B9238
-		FJSRA	_budget_funds_recalc,$F7,$F9
+		FJSRA	_budget_funds_recalc,PRG7,PRG9
 		RTS
 loc_B9238:
 		BNE		loc_B9243
@@ -2558,8 +2556,8 @@ loc_B958B:
 		LDA		_tmp118+$A
 		CLC
 		ADC		#$06
-		FJSRA	_txt_lib_printf,$F7,$F9
-		FJSRA	_history_year_printf,$F7,$F9
+		FJSRA	_txt_lib_printf,PRG7,PRG9
+		FJSRA	_history_year_printf,PRG7,PRG9
 		JSR		_buffers_force_flush
 		LDX		_ppu_queue_pos_head
 		LDY		_tmp118+9
@@ -2865,4 +2863,4 @@ loc_B97FC:
 		BPL		loc_B97FC
 		RTS
 
-		BANK_END 7,$A000
+		BANK_END F7,$A000

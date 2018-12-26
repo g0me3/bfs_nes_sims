@@ -1,7 +1,7 @@
 
 		ORG $C000
 
-		BANK_START $0E
+		BANK_START $FE
 
 _pcm_sample0:
 		.BYTE	$55,$55,$55,$67,$89,$AB,$CD,$EF,$B5,$54,$D5,$AA,$9A,$04,$54,$FD
@@ -437,4 +437,4 @@ _pcm_sample2:
 		.BYTE	$BE,$EB,$FF,$05,$00,$FF,$8B,$42,$18,$A5,$7F,$D7,$09,$80,$D5,$2F
 		.BYTE	$1D,$40,$B7,$FF,$07,$C0,$4E,$2F,$45,$96,$64,$BB,$8B,$C4,$AA,$72
 
-		BANK_END E,$E000
+		BANK_END FE,$E000

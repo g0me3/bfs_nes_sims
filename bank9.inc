@@ -1,7 +1,7 @@
 
 		ORG $A000
 
-		BANK_START $09
+		BANK_START $F9
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_common:
@@ -9,11 +9,11 @@ _scr_res_common:
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		FJSRA	_scr_chr_vars_init,$F6,$F9
+		FJSRA	_scr_chr_vars_init,PRG6,PRG9
 		JSR		_wait_for_nmi
-		FJSRA	_scr_pal_bg_load,$F6,$F9
+		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_wait_for_nmi
-		FJSRA	_scr_common_draw,$F6,$F9
+		FJSRA	_scr_common_draw,PRG6,PRG9
 		JSR		_scr_res_hndl2_A_budget_draw
 		JSR		_scr_res_hndl3_A_city_eval_draw
 		JSR		_far_scr_res_hndl5_A_history_draw
@@ -32,16 +32,16 @@ _scr_res_common:
 		JSR		_pal_fade_in
 loc_EA050:
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_common_cursor_spr_clear,$F7,$F9
+		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9
 		JSR		_spr_finish
-		FJSRA	_scr_res_cursor_pos_clamp,$F6,$F9
-		FJSRA	_scr_res_cursor_draw,$F6,$F9
+		FJSRA	_scr_res_cursor_pos_clamp,PRG6,PRG9
+		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
 		JSR		_scr_res_hndl_common_exec
 		BIT		_scr_res_control_flags
 		BVC		loc_EA07F
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSRA	_scr_res_wnd_close,$F6,$F9
+		FJSRA	_scr_res_wnd_close,PRG6,PRG9
 		RTS
 loc_EA07F:
 		LDA		_scr_res_control_flags
@@ -224,7 +224,7 @@ loc_EA19F:
 		STA		_tmp6CE
 		LDA		byte_EA1B5+1,Y
 		STA		_tmp6CC
-		FJSRA	_common_select_cursor_draw,$00,$F1
+		FJSRA	_common_select_cursor_draw,SRAM,PRG1
 		RTS
 byte_EA1B5:
 		.BYTE	$48,$E0
@@ -278,7 +278,7 @@ loc_EA203:
 		LDA		#$80
 		STA		byte_15C
 		STA		byte_15B
-		FJSRA	sub_B96A1,$F7,$F9
+		FJSRA	sub_B96A1,PRG7,PRG9
 		MOVW	_ptr0,_new_map_number
 		JSR		_hex_to_dec9999
 		LDY		byte_141
@@ -334,17 +334,17 @@ loc_EA289:
 		BPL		loc_EA295
 		LDA		#$F6
 loc_EA295:
-		FJSRA	sub_B96A1,$F7,$F9
+		FJSRA	sub_B96A1,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA29D:
 		JSR		sub_EA405
 		JSR		sub_EACE4
-		FJSRA	sub_B966E,$F7,$F9
+		FJSRA	sub_B966E,PRG7,PRG9
 		JSR		_wait_for_nmi
 		JSR		_sram_on
-		FJSRA	_generate_new_map,$00,$F3
+		FJSRA	_generate_new_map,SRAM,PRG3
 		LDA		#$80
 		STA		_scr_res_control_flags
 		LDA		#$00
@@ -703,7 +703,7 @@ loc_EA5BA:
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 _scr_res_hndl0_AB_info_maps_redraw:
-		FJSRA	sub_A0183,$F6,$F9
+		FJSRA	sub_A0183,PRG6,PRG9
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw_ex:
@@ -713,8 +713,8 @@ _scr_res_hndl0_AB_info_maps_redraw_ex:
 		BEQ		_wait_for_key
 		JSR		sub_EACD9
 		JSR		_wait_for_nmi
-		FJSRA	_scr_pal_bg_load,$F6,$F9
-		FJSRA	_info_maps_header_and_menu_draw,$F6,$F9
+		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
 		JMP		_maps_info_draw
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -776,7 +776,7 @@ loc_EA637:
 		STA		byte_114
 		LDA		_ptr0
 		STA		_maps_info_mode_idx
-		FJSRA	sub_A0183,$F6,$F9
+		FJSRA	sub_A0183,PRG6,PRG9
 		POPB	byte_114
 		POPB	_maps_info_mode_idx
 loc_EA65F:
@@ -1587,8 +1587,8 @@ loc_EABCF:
 		AND		#$03
 		STA		byte_12E,Y
 loc_EABF6:
-		FJSRA	sub_B962F,$F7,$F9
-		FJSRA	_scr_res_cursor_draw,$F6,$F9
+		FJSRA	sub_B962F,PRG7,PRG9
+		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
 		JSR		_spr_finish
 		JMP		loc_EABCF
 loc_EAC0A:
@@ -1602,9 +1602,9 @@ loc_EAC0A:
 		LDA		_maps_info_mode_idx
 		STA		byte_114
 		STY		_maps_info_mode_idx
-		FJSRA	sub_A0183,$F6,$F9
-		FJSRA	_scr_pal_bg_load,$F6,$F9
-		FJSRA	_info_maps_header_and_menu_draw,$F6,$F9
+		FJSRA	sub_A0183,PRG6,PRG9
+		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
 		RTS
 loc_EAC3C:
 		LDY		_maps_info_mode_idx
@@ -1622,7 +1622,7 @@ loc_EAC51:
 loc_EAC56:
 		LDA		#$20
 		STA		_apu_se_flags
-		FJSRA	_wnd_erase,$FC,$F9
+		FJSRA	_wnd_erase,PRGC,PRG9
 		LDA		_maps_info_mode_idx
 		AND		#$FE
 		TAY
@@ -1644,11 +1644,11 @@ sub_EAC82:
 		LDA		#$10
 		STA		_spr_buf_pos
 		JSR		_spr_finish
-		FJSRA	_scr_pal_bg_load,$F6,$F9
+		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		PUSHB	_maps_info_mode_idx
 		LDA		#$0D
 		STA		_maps_info_mode_idx
-		FJSRA	_info_maps_header_and_menu_draw,$F6,$F9
+		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
 		POPB	_maps_info_mode_idx
 		LDY		_maps_info_mode_idx
 		LDA		byte_EB6A9,Y
@@ -1665,7 +1665,7 @@ sub_EAC82:
 		STA		_wnd_left_tile
 		LDA		byte_EB6B2+1,X
 		STA		_wnd_top_tile
-		FJSRA	_wnd_draw,$FC,$F9
+		FJSRA	_wnd_draw,PRGC,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1738,7 +1738,7 @@ loc_EAD3A:
 		LDA		_info_maps_cur_row
 		CMP		#$08
 		BCC		loc_EAD58
-		FJSRA	sub_B966E,$F7,$F9
+		FJSRA	sub_B966E,PRG7,PRG9
 loc_EAD58:
 		JSR		_wait_for_nmi
 		INC		_info_maps_cur_row
@@ -1803,7 +1803,7 @@ sub_EADB2:
 sub_EADC9:
 		LDX		#$10
 		STX		_spr_buf_pos
-		FJSRA	_map_info_spr_rect_draw,$F7,$F9
+		FJSRA	_map_info_spr_rect_draw,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1838,7 +1838,7 @@ loc_EADF4:
 loc_EAE02:
 		JSR		sub_EAE0D
 loc_EAE05:
-		FJSRA	_map_info_spr_arrows_draw,$F7,$F9
+		FJSRA	_map_info_spr_arrows_draw,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1928,8 +1928,8 @@ _far_scr_res_hndl1_A_graphs_draw:
 		LDA		#$00
 		STA		_MMC5_PRG_PAGES
 		INC		_scr_res_idx
-		FJSRA	_scr_res_hndl1_A_graphs_draw_init,$F6,$F9
-		FJSRA	_scr_res_hndl1_A_graphs_draw,$F7,$F9
+		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9
+		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		RTS
@@ -1938,7 +1938,7 @@ _far_scr_res_hndl1_A_graphs_draw:
 _far_scr_res_hndl1_B_graphs_input:
 		LDA		#$00
 		STA		_MMC5_PRG_PAGES
-		FJSRA	_scr_res_hndl1_B_graphs_input,$F7,$F9
+		FJSRA	_scr_res_hndl1_B_graphs_input,PRG7,PRG9
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		RTS
@@ -2053,19 +2053,19 @@ loc_EAFFD:
 		JSR		_buffers_force_flush
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
-		FJSRA	_wnd_header_year_draw,$F7,$F9
+		FJSRA	_wnd_header_year_draw,PRG7,PRG9
 		INC		_scr_res_idx
 		LDA		#$00
 		STA		byte_596
 		STA		byte_597
 		STA		_tmp584
-		FJSRA	_budget_wnd_cursor_pos_set,$F7,$F9
-		FJSRA	_budget_wnd_cursor_draw,$F7,$F9
+		FJSRA	_budget_wnd_cursor_pos_set,PRG7,PRG9
+		FJSRA	_budget_wnd_cursor_draw,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl2_B_budget_input:
-		FJSRA	_scr_res_hndl2_B_budget_input,$F7,$F9
+		FJSRA	_scr_res_hndl2_B_budget_input,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2090,7 +2090,7 @@ _scr_res_hndl3_A_city_eval_draw:
 loc_EB05B:
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		FJSRA	_wnd_header_year_draw,$F7,$F9
+		FJSRA	_wnd_header_year_draw,PRG7,PRG9
 		LDA		#$00
 		STA		_tmp13D
 		LDA		#$80
@@ -2378,15 +2378,15 @@ off_EB26C:
 		.WORD	_police_stations_count
 		.WORD	_airports_count
 		.WORD	_sea_ports_count
-		.WORD	_roads_counter
-		.WORD	_roads_counter
-		.WORD	_roads_counter
+		.WORD	_roads_count
+		.WORD	_roads_count
+		.WORD	_roads_count
 		.WORD	_rails_count
 		.WORD	_electrics_count
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl5_A_history_draw:
-		FJSRA	_scr_res_hndl5_A_history_draw,$F7,$F9
+		FJSRA	_scr_res_hndl5_A_history_draw,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -2417,19 +2417,19 @@ _far_scr_res_hndl6_A_bank_draw:
 		LDA		_scr_res_idx
 		CMP		#$0C
 		BNE		locret_EB2D0
-		FJSRA	_scr_res_hndl6_A_bank_draw,$F7,$F9
+		FJSRA	_scr_res_hndl6_A_bank_draw,PRG7,PRG9
 		INC		_scr_res_idx
 locret_EB2D0:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl6_B_bank_input:
-		FJSRA	_scr_res_hndl6_B_bank_input,$F7,$F9
+		FJSRA	_scr_res_hndl6_B_bank_input,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_funds_recalc:
-		FJSRA	_budget_scr_tax_adjust,$F6,$F9
+		FJSRA	_budget_scr_tax_adjust,PRG6,PRG9
 		JSR		_total_funds_calc
 		JSR		_current_funds_calc_0
 		BCS		_taxes_alloc_draw
@@ -2462,7 +2462,7 @@ _taxes_alloc_draw:
 		JSR		_printf
 		JSR		_cash_flow_draw
 loc_EB328:
-		FJSRA	_save_taxes_data,$F7,$F9
+		FJSRA	_save_taxes_data,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -3298,6 +3298,7 @@ byte_EBA77:
 ; =============== S U B	R O U T	I N E =======================================
 ; unsafe with no stack version of mul16to8 on MMC5 hw
 ; input args: 16bit _ptr0 * reg X, store 24bit _ptr0/tmp2
+;
 _mmc5_mul16to8_unsafe:
 		LDA		_ptr0+1
 		STA		_MMC5_MUL0
@@ -3607,4 +3608,4 @@ _fund_reqest_ofs_list:
 		.WORD	_fund_request_trans
 		.WORD	_fund_request_education
 
-		BANK_END 9,$C000
+		BANK_END F9,$C000

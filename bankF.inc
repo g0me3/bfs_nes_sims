@@ -1,7 +1,7 @@
 
 		ORG $E000
 
-		BANK_START $F
+		BANK_START $FF
 
 		INCBIN "..\copyrights.txt"
 
@@ -82,7 +82,7 @@ loc_18A053:
 		STA		_PAD1_REG
 		LDA		#$00
 		STA		byte_4084+$F8C
-		FJSRA	_apu_init,$00,$F0
+		FJSRA	_apu_init,SRAM,PRG0
 		LDA		#$80
 		STA		_apu_mus_idx_req
 		LDX		#$1F
@@ -129,7 +129,7 @@ loc_18A0F0:
 		DEX
 		BPL		loc_18A0F0
 		JSR		_sram_on
-		FJSRA	_sram_init,$00,$F3
+		FJSRA	_sram_init,SRAM,PRG3
 		JSR		_sram_off
 		LDA		#$FF
 		STA		_game_core_state
@@ -155,20 +155,20 @@ _THREAD0_MAIN:
 		LDA		#$00
 		STA		_scr_res_idx
 		JSR		_ppu_queues_reset
-		FJSRA	_title_screen,$F7,$F9
+		FJSRA	_title_screen,PRG7,PRG9
 		INC		_main_sub_idx
 		RTS
 _game_setup_mode:
 		DEX
 		BNE		_ingame_mode
 		JSR		_ppu_queues_reset
-		FJSRA	_game_setup,$00,$F1
+		FJSRA	_game_setup,SRAM,PRG1
 		RTS
 _ingame_mode:
 		JSR		_ppu_queues_reset
-		FJSRA	_game_vars_init,$00,$FA
+		FJSRA	_game_vars_init,SRAM,PRGA
 		JSR		_thread1_init
-		FJSRA	_game_start,$FC,$FD
+		FJSRA	_game_start,PRGC,PRGD
 		RTS
 aIshi:
 		.BYTE	"ISHI",$FF
@@ -785,6 +785,9 @@ loc_18A5D9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: merge _spr_lib_prg8_insert, _spr_lib_prg2_insert, _spr_lib_prgF_insert
+; functions, reduce duplicated code.
+;
 _spr_lib_prg2_insert:
 		PUSHB	_prg_prgA000_shadow
 		LDA		#$F2
@@ -843,6 +846,9 @@ loc_18A643:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: merge _spr_lib_prg8_insert, _spr_lib_prg2_insert, _spr_lib_prgF_insert
+; functions, reduce duplicated code.
+;
 _spr_lib_prg8_insert:
 		PUSHB	_prg_prg8000_shadow
 		LDA		#$F8
@@ -3362,8 +3368,11 @@ _rand_clamp:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; input  32bit tmpE6/E7/E8/E9, divider 16bittmpEA/EB
-; result 16bit tmpE6/E7
+; input:
+; dividend fixed point 16.16 (integer E8/E9, fraction E6/E7)
+; divider  fixed point 8.8   (integer EB, fraction EA)
+; result:
+; fixed point 8.8 (integer E7, fraction E6)
 ;
 _div_32to16:
 		LDA		_tmpEB
@@ -3403,6 +3412,8 @@ loc_18BE32:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; integer multiply 8bit args, result 16 bit
+;
 _mmc5_mul8to8:
 		STX		_backup_var
 		TSX
@@ -3432,13 +3443,13 @@ _mmc5_mul16to8:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$105,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
@@ -3459,33 +3470,33 @@ _mmc5_mul32to8:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$105,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$105,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$107,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$106,X
 		LDA		_MMC5_MUL1
 		ADC		#$00
@@ -3506,17 +3517,17 @@ _mmc5_mul16to16:
 		LDA		_MMC5_MUL0
 		STA		$103,X
 		LDA		_MMC5_MUL1
-		STA		_mmc5_mtmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
-		STA		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
+		STA		_mmc5_tmp_mul_result
 		LDA		_MMC5_MUL1
 		ADC		#$00
-		STA		byte_5A6
+		STA		_mmc5_tmp_mul_data
 		LDA		$104,X
 		STA		_mmc5_mul1_shadow
 		STA		_MMC5_MUL1
@@ -3525,23 +3536,23 @@ _mmc5_mul16to16:
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		_mmc5_mtmp_mul_result
+		ADC		_mmc5_tmp_mul_result
 		STA		$104,X
 		LDA		_MMC5_MUL1
-		ADC		byte_5A6
-		STA		byte_5A6
+		ADC		_mmc5_tmp_mul_data
+		STA		_mmc5_tmp_mul_data
 		LDA		#$00
 		ADC		#$00
-		STA		byte_5A7
+		STA		_mmc5_tmp_mul_data+1
 		LDA		$106,X
 		STA		_mmc5_mul0_shadow
 		STA		_MMC5_MUL0
 		LDA		_MMC5_MUL0
 		CLC
-		ADC		byte_5A6
+		ADC		_mmc5_tmp_mul_data
 		STA		$105,X
 		LDA		_MMC5_MUL1
-		ADC		byte_5A7
+		ADC		_mmc5_tmp_mul_data+1
 		STA		$106,X
 		LDX		_backup_var
 		RTS
@@ -3549,7 +3560,7 @@ _mmc5_mul16to16:
 _bg_music_list:
 		.BYTE	$08,$20,$41,$42,$44,$48
 
-		LAST_BANK_END F,$10000
+		LAST_BANK_END FF,$10000
 
 total_banks	= 16
 total_size	= 16*8192

@@ -1,22 +1,22 @@
 
 		ORG $A000
 
-		BANK_START $0B
+		BANK_START $FB
 
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD1_MAIN:
-		FJSR	_RCI_meters_recalc,$00,$FA
+		FJSR	_RCI_meters_recalc,SRAM,PRGA
 		JSR		_overall_stats_clear
 		JSR		_overall_stats_recalc
 		JSR		_interpolate_police_fire_maps
-		FJSR	_power_grid_recalc,$00,$FA
+		FJSR	_power_grid_recalc,SRAM,PRGA
 		JSR		_land_value_pollution_recalc
 		JSR		_crime_level_recalc
 		JSR		_population_dencity_recalc
 		LDA		#$FF
 		STA		_thread1_flags
 		STA		_thread1_flags+1
-		FJSR	_city_stats_recalc,$00,$FA
+		FJSR	_city_stats_recalc,SRAM,PRGA
 		LDA		#$00
 		STA		_city._cur_week
 
@@ -27,7 +27,7 @@ _THREAD1_LOOP:
 		LDA		_city._cur_week
 		LSR
 		BCC		loc_11E047
-		FJSR	_RCI_meters_recalc,$00,$FA
+		FJSR	_RCI_meters_recalc,SRAM,PRGA
 loc_11E047:
 		JSR		_map_corruption_tiles_animate
 		LDA		_frames_counter
@@ -64,21 +64,21 @@ loc_11E047:
 loc_11E0A9:
 		INCW	_city._cur_year
 loc_11E0B1:
-		FJSR	_graphs_10_year_data_update,$00,$FA
-		FJSR	_fiscal_year_over_calculations,$00,$FA
-		FJSR	_city_stats_recalc,$00,$FA
+		FJSR	_graphs_10_year_data_update,SRAM,PRGA
+		FJSR	_fiscal_year_over_calculations,SRAM,PRGA
+		FJSR	_city_stats_recalc,SRAM,PRGA
 		JSR		_map_corruption_tiles_animate
-		FJSR	_year_to_str,$00,$FA
+		FJSR	_year_to_str,SRAM,PRGA
 		LDA		_tmpE6
 		BNE		loc_11E0DB
-		FJSR	_graphs_100_year_data_update,$00,$FA
+		FJSR	_graphs_100_year_data_update,SRAM,PRGA
 loc_11E0DB:
 		JSR		_population_growth_map_recalc
 		JSR		_map_corruption_tiles_animate
 loc_11E0E1:
 		JSR		_traffic_dencity_recalc
 		JSR		_map_corruption_tiles_animate
-		FJSR	_events_manager,$00,$FA
+		FJSR	_events_manager,SRAM,PRGA
 _game_stop_loop:
 		LDY		_city._game_speed
 		CPY		#$03
@@ -91,7 +91,7 @@ _game_core_calc:
 		BNE		loc_11E117
 		LDA		#$02
 		JSR		_critical_section_enter
-		FJSR	_power_grid_recalc,$00,$FA
+		FJSR	_power_grid_recalc,SRAM,PRGA
 		LDA		#$02
 		JSR		_critical_section_leave
 		JSR		_map_corruption_tiles_animate
@@ -135,6 +135,7 @@ loc_11E171:
 		JSR		_disasters_handlers_select
 		JSR		_map_corruption_tiles_animate
 		JMP		_THREAD1_LOOP
+
 _game_core_recalcA_delay_list:
 		.BYTE	$03,$00,$00,$00
 _game_core_recalc_delay_mask_list:
@@ -159,7 +160,7 @@ loc_11E198:
 
 ; =============== S U B	R O U T	I N E =======================================
 _overall_stats_recalc:
-		LDY		#$00
+		LDY		#$00							; collect info about city
 loc_11E1A0:
 		LDX		#$00
 loc_11E1A2:
@@ -169,29 +170,29 @@ loc_11E1A2:
 		PHA
 		STX		_tmp_map_pos._X
 		STY		_tmp_map_pos._Y
-		JSR		_get_building_map_tile
-		JSR		_collect_map_tiles_stats
-		PLA
-		TAY
-		PLA
-		TAX
+		JSR		_get_building_map_tile			; all 76x76 map tiles are
+		JSR		_collect_map_tiles_stats		; collected
+		PLA										; now we have stats about
+		TAY										; how much buildings/transport etc.
+		PLA										; and ready to calculate next
+		TAX										; city state and stats
 		INX
 		CPX		#$4C
 		BNE		loc_11E1A2
 		INY
 		CPY		#$4C
 		BNE		loc_11E1A0
-		LDY		_airports_count
-		BEQ		loc_11E228
-		LDA		_obj_active_flags
+		LDY		_airports_count					; if any airport built
+		BEQ		.no_airports
+		LDA		_obj_active_flags				; test if obj already deployed
 		STA		_tmpE6
 		LSR		_tmpE6
 		BCS		loc_11E1F2
-		ORA		#$01
+		ORA		#$01							; init deploy of helicopter object
 		STA		_obj_active_flags
-		LDY		_last_airport_pos._X
-		INY
-		INY
+		LDY		_last_airport_pos._X			; starting point is last checked
+		INY										; airport on map (so it will be always
+		INY										; bottom-rightmost airport)
 		STY		_obj_pos._heli._X
 		INY
 		STY		_obj_next_pos._heli._X
@@ -206,11 +207,11 @@ loc_11E1A2:
 		BNE		loc_11E230
 loc_11E1F2:
 		LSR		_tmpE6
-		BCS		loc_11E230
+		BCS		loc_11E230						; test if airplane in flight as well
 		LDY		_airports_count
-		BEQ		loc_11E228
+		BEQ		.no_airports
 		ORA		#$02
-		STA		_obj_active_flags
+		STA		_obj_active_flags				; start to take off animation
 		LDA		#$84
 		STA		_obj_plane_anim_idx
 		LDA		#$20
@@ -228,35 +229,32 @@ loc_11E1F2:
 		LDA		#$06
 		STA		_obj_spr_idx._plane
 		BNE		loc_11E230
-loc_11E228:
-		LDA		_obj_active_flags
-		AND		#$FC
+.no_airports:
+		LDA		_obj_active_flags				; no airports - no flying objects
+		AND		#$FC							; remove existing if airport destroyed
 		STA		_obj_active_flags
 loc_11E230:
-		LDA		_city._bank_flags
+		LDA		_city._bank_flags				; test for bank states
 		BPL		loc_11E23D
 		AND		#$01
-		BNE		loc_11E24F
+		BNE		.bank_break						; if bank built and message displayed, skip
 		LDA		#$00
-		BEQ		loc_11E24C
+		BEQ		.bank_re_set					; if bank destroyed, clean flags
 loc_11E23D:
 		AND		#$01
-		BEQ		loc_11E24F
+		BEQ		.bank_break						; bank no set, no acctivated, exit
 		LDA		#$1F
-		STA		_game_msg_idx
-		LDA		#$01
+		STA		_game_msg_idx					; when bank built, enable loans and display msg
+		LDA		#$01							; this may take seconds to appear if town is huge
 		STA		_game_msg_awaits_flag
-		LDA		#$80
-loc_11E24C:
+		LDA		#$80							; set loan enable flag
+.bank_re_set:
 		STA		_city._bank_flags
-loc_11E24F:
-		LDA		_RIC_areas._R
-		CLC
-		ADC		_RIC_areas._C
-		STA		_tmpE6
-		LDA		_RIC_areas._R+1
-		ADC		_RIC_areas._C+1
-		STA		_tmpE7
+.bank_break:
+		MADDW	_tmpE6,_RIC_areas._R,_RIC_areas._C
+;
+; BUG! seems copy-paste, second CLC seems wrong here!
+;-
 		LDA		_tmpE6
 		CLC
 		ADC		_RIC_areas._I
@@ -265,58 +263,29 @@ loc_11E24F:
 		CLC
 		ADC		_RIC_areas._I+1
 		STA		_total_RIC_areas+1
+;-
+;		MADDW	_total_RIC_areas,_tmpE6, _RIC_areas._I
+;-
 		LDA		_nuke_power_station_count
 		CLC
 		ADC		_coal_power_station_count
 		STA		_tmp6CC
-		LDA		_city._level._C
-		CLC
-		ADC		_city._level._I
-		STA		_tmpE6
-		LDA		_city._level._C+1
-		ADC		_city._level._I+1
-		ASL		_tmpE6
-		ROL
-		ASL		_tmpE6
-		ROL
-		ASL		_tmpE6
-		ROL
-		STA		_tmpE7
-		LDA		_tmpE6
-		CLC
-		ADC		_city._level._R
-		STA		_tmpE6
-		LDA		_tmpE7
-		ADC		_city._level._R+1
-		STA		_tmpE7
-		PHA
-		PUSHB	_tmpE6
+		LSADDW	_tmpE6,_city._level._C,_city._level._I,3
+		MADDW	_tmpE6,_tmpE6,_city._level._R	; CAUTION! optimized code
+		PHA										; PHA here pushes INT part of E6
+		PUSHB	_tmpE6							; after MADDW instruction.
 		PUSHB	#$14
-		JSR		_mmc5_mul16to8
-		POPB	_popul_cur
-		POPB	_popul_cur+1
-		POPB	_popul_cur+2
-		LDA		_stats._developed
-		CLC
-		ADC		_stats._undeveloped
-		STA		_stats._total
-		LDA		_stats._developed+1
-		ADC		_stats._undeveloped+1
-		STA		_stats._total+1
-		LDA		_stats._total
-		CLC
-		ADC		_stats._other
-		STA		_stats._total
-		LDA		_stats._total+1
-		ADC		_stats._other+1
-		STA		_stats._total+1
+		JSR		_mmc5_mul16to8					; fp8_8 mul to int result fp16_8, but threated as an integer, so
+		POPD	_popul_cur						; 16_8 with shifted mantissa popul_cur = ((L_C+L_I)*8 + L_R) * 20 * 256
+		MADDW	_stats._total,_stats._developed,_stats._undeveloped
+		MADDW	_stats._total,_stats._total,_stats._other
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _collect_map_tiles_stats:
 		LDY		_last_map_tile_read
-		CPY		#$EB
-		BNE		loc_11E2EA
+		CPY		#$EB							; TODO: fix me, tile unused,
+		BNE		loc_11E2EA						; there is no code, so may remove this
 		NOP
 loc_11E2EA:
 		CPY		#$90
@@ -473,7 +442,7 @@ _polluted_tile_collect:
 locret_11E423:
 		RTS
 _road_tile_collect:
-		INCW	_roads_counter
+		INCW	_roads_count
 loc_11E42C:
 		LDA		_map_tiles_flags_tbl,Y
 		BMI		locret_11E456
@@ -566,7 +535,7 @@ loc_11E4F1:
 		LDA		_last_map_tile_read
 		CMP		#$50
 		BCC		_collect_RCI_buildings_stats
-		LDX		#$04
+		LDX		#OTHER_WIDX
 		JSR		_inc_areas_stats
 		JMP		_collect_other_buildings_stats
 _collect_RCI_buildings_stats:
@@ -574,13 +543,13 @@ _collect_RCI_buildings_stats:
 		BCS		loc_11E51F
 		CMP		#$19
 		BNE		loc_11E510
-		LDX		#$04
+		LDX		#OTHER_WIDX
 		JSR		_inc_areas_stats
 		JMP		_inc_hospital
 loc_11E510:
 		CMP		#$1A
 		BNE		loc_11E51C
-		LDX		#$04
+		LDX		#OTHER_WIDX
 		JSR		_inc_areas_stats
 		JMP		_inc_school
 loc_11E51C:
@@ -614,16 +583,16 @@ locret_11E558:
 
 ; =============== S U B	R O U T	I N E =======================================
 _R_areas_develop:
-		LDX		#$00
+		LDX		#R_AREA_WIDX
 		JSR		_inc_RCI_areas
 		LDY		_last_map_tile_read
 		LDA		_R_area_develop_states_list,Y
 		STA		_cur_R_area_develop_state
 		JSR		_adc_RCI_level
-		LDX		#$00
+		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
 		BNE		loc_11E573
-		INX
+		INX										; TODO LDX #UNDEVELOPED_WIDX
 		INX
 loc_11E573:
 		JSR		_inc_areas_stats
@@ -717,7 +686,7 @@ locret_11E623:
 
 ; =============== S U B	R O U T	I N E =======================================
 _C_areas_develop:
-		LDX		#$02
+		LDX		#C_AREA_WIDX
 		JSR		_inc_RCI_areas
 		LDA		_last_map_tile_read
 		SEC
@@ -726,11 +695,11 @@ _C_areas_develop:
 		LDA		_C_area_develop_states_list,Y
 		STA		_cur_R_area_develop_state
 		JSR		_adc_RCI_level
-		LDX		#$00
+		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
 		CMP		#$20
 		BNE		loc_11E644
-		INX
+		INX										; TODO: LDX UNDEVELOPED_WIDX
 		INX
 loc_11E644:
 		JSR		_inc_areas_stats
@@ -865,7 +834,7 @@ _R_twin_idx_test_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _I_areas_develop:
-		LDX		#$04
+		LDX		#I_AREA_WIDX
 		JSR		_inc_RCI_areas
 		LDA		_last_map_tile_read
 		SEC
@@ -874,11 +843,11 @@ _I_areas_develop:
 		LDA		_I_area_develop_states_list,Y
 		STA		_cur_R_area_develop_state
 		JSR		_adc_RCI_level
-		LDX		#$00
+		LDX		#DEVELOPED_WIDX
 		LDA		_last_map_tile_read
 		CMP		#$40
 		BNE		loc_11E75C
-		INX
+		INX										; TODO: LDX UNDEVELOPED_WIDX
 		INX
 loc_11E75C:
 		JSR		_inc_areas_stats
@@ -934,7 +903,7 @@ _collect_other_buildings_stats:
 		BMI		loc_11E7C4
 		INC		_coal_power_station_count
 loc_11E7C4:
-		FJSR	_power_stations_map_pos_list_insert,$00,$FA
+		FJSR	_power_stations_map_pos_list_insert,SRAM,PRGA
 		RTS
 loc_11E7CC:
 		CMP		#$61
@@ -943,7 +912,7 @@ loc_11E7CC:
 		BMI		loc_11E7D8
 		INC		_nuke_power_station_count
 loc_11E7D8:
-		FJSR	_power_stations_map_pos_list_insert,$00,$FA
+		FJSR	_power_stations_map_pos_list_insert,SRAM,PRGA
 		RTS
 loc_11E7E0:
 		CMP		#$50
@@ -1063,6 +1032,7 @@ loc_11E8AD:
 locret_11E8B9:
 		RTS
 
+
 ; =============== S U B	R O U T	I N E =======================================
 _inc_RCI_areas:
 		INC		_RIC_areas,X
@@ -1080,18 +1050,18 @@ locret_11E8CB:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; add fixed point value < 0 to livel meters
+;
 _adc_RCI_level:
 		CLC
-		ADC		_city._level,X
-		STA		_city._level,X
+		ADC		_city._level.FRAC,X
+		STA		_city._level.FRAC,X
 		BCC		locret_11E8D8
-		INC		_city._level+1,X
+		INC		_city._level.INT,X
 locret_11E8D8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; BUGBUGBUG
-;$0A3B6	is a inv_bitflags array	at BANKA
 _test_power_grid_map_bit:
 		PUSHB	_tmp_map_pos._Y
 		PUSHB	#$4C
@@ -1122,7 +1092,9 @@ _test_power_grid_map_bit:
 		TAX
 		LDY		#$00
 		LDA		(_tmpE6),Y
-		AND		_inv_bitmasks,X
+; BUG!
+; here $0A3B6 is a inv_bitmasks array at BANKA
+		AND		_inv_bitmasks,X					; FIXED: all bitmasks now in system bank
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1489,20 +1461,11 @@ loc_11EB9A:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_tmp6CC
-		STA		_tmpE7
-		LDA		_tmp6CC+1
-		STA		_tmpE8
-		LDA		_tmp6CE
-		STA		_tmpEA
-		LDA		_tmp6CE+1
-		STA		_tmpEB
+		MOVW	_tmpE7,_tmp6CC
+		MOVW	_tmpEA,_tmp6CE
 		JSR		_div_32to16
 loc_11EBB7:
-		LDA		_tmpE6
-		STA		_city._var_5F8
-		LDA		_tmpE7
-		STA		_city._var_5F8+1
+		MOVW	_city._var_5F8,_tmpE6
 		LDA		#$00
 		STA		_tmp6C4
 		STA		_tmp6D0
@@ -1543,24 +1506,13 @@ loc_11EBFE:
 		LDA		#$00
 		STA		_tmpE6
 		STA		_tmpE9
-		LDA		_tmp6D2
-		STA		_tmpE7
-		LDA		_tmp6D3
-		STA		_tmpE8
-		LDA		_tmp6D0
-		STA		_tmpEA
-		LDA		_tmp6D0+1
-		STA		_tmpEB
+		MOVW	_tmpE7,_tmp6D2
+		MOVW	_tmpEA,_tmp6D0
 		JSR		_div_32to16
 		BCC		loc_11EC3B
-		LDA		#$00
-		STA		_tmpE6
-		STA		_tmpE7
+		MOVWI	_tmpE6,$0000
 loc_11EC3B:
-		LDA		_tmpE6
-		STA		_city._var_5FC
-		LDA		_tmpE7
-		STA		_city._var_5FD
+		MOVW	_city._var_5FC,_tmpE6
 		LDA		#$A0
 		JMP		_critical_section_leave
 
@@ -1650,7 +1602,7 @@ loc_11ECF4:
 		JSR		_interpolate_recalc_with_select_poll_popg_popd_crime_land_to_recalc_map
 		JSR		_interpolate_recalc_to_select_poll_popg_popd_crime_land_maps
 		LDA		#$04
-		JSR		_critical_section_leave
+		JSR		_critical_section_leave			; BUG! this section set and leave outside of this proc
 		LDA		_tmp6D0
 		ORA		_tmp6D0+1
 		BEQ		loc_11ED64
@@ -2404,12 +2356,12 @@ loc_11F242:
 		INX
 		CPX		#$2C
 		BNE		loc_11F242
-		STA		_city._level._R
-		STA		_city._level._R+1
-		STA		_city._level._C
-		STA		_city._level._C+1
-		STA		_city._level._I
-		STA		_city._level._I+1
+		STA		_city._level._R.FRAC
+		STA		_city._level._R.INT
+		STA		_city._level._C.FRAC
+		STA		_city._level._C.INT
+		STA		_city._level._I.FRAC
+		STA		_city._level._I.INT
 		LDA		_city._bank_flags
 		AND		#$C0
 		STA		_city._bank_flags
@@ -2977,11 +2929,11 @@ sub_11F647:
 		JMP		_write_pop_growth_map_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
-; POLLUTION-LAND_VALUE
-;  if <	2      ratio 0
-;  if 2	to 4   ratio 1
-;  if 5	to 8   ratio 2
-;  if >	8      ratio 3
+; a = POLLUTION - LAND_VALUE
+;  if a < 2    ratio 0
+;  if a 2 to 4 ratio 1
+;  if a 5 to 8 ratio 2
+;  if a > 8    ratio 3
 ;
 _get_area_pollution_to_land_value_ratio:
 		JSR		_read_pollution_map_nibble
@@ -3019,38 +2971,32 @@ _read_select_pol_popg_popd_crime_land_recalc_maps_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pollution_map_nibble:
-		LDX		#<[_pollution_map_buf]
-		LDY		#>[_pollution_map_buf]
+		LDXY	_pollution_map_buf
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pop_growth_map_nibble:
-		LDX		#<[_pop_growth_map_buf]
-		LDY		#>[_pop_growth_map_buf]
+		LDXY	_pop_growth_map_buf
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_pop_dencity_map_nibble:
-		LDX		#<[_pop_dencity_map_buf]
-		LDY		#>[_pop_dencity_map_buf]
+		LDXY	_pop_dencity_map_buf
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_crime_level_map_nibble:
-		LDX		#<[_crime_level_map_buf]
-		LDY		#>[_crime_level_map_buf]
+		LDXY	_crime_level_map_buf
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_land_value_map_nibble:
-		LDX		#<[_land_value_map_buf]
-		LDY		#>[_land_value_map_buf]
+		LDXY	_land_value_map_buf
 		BNE		_read_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_tmp_recalc_div4_mul13_map_nibble:
-		LDX		#<[_tmp_recalc_bufs]
-		LDY		#>[_tmp_recalc_bufs]
+		LDXY	_tmp_recalc_bufs
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_buf_pos_div4_mul13_4bit_nibble:
@@ -3073,8 +3019,7 @@ _read_buf_pos_div4_mul13_4bit_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_traffic_dencity_map_nibble:
-		LDX		#<[_traffic_density_map_buf]
-		LDY		#>[_traffic_density_map_buf]
+		LDXY	_traffic_density_map_buf
 		TYA
 		PHA
 		TXA
@@ -3099,20 +3044,17 @@ _read_select_police_fire_recalc_map_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_tmp_recalc_div8_mulA_nibble:
-		LDX		#<[_tmp_recalc_bufs]
-		LDY		#>[_tmp_recalc_bufs]
+		LDXY	_tmp_recalc_bufs
 		BNE		_read_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_police_radius_map_nibble:
-		LDX		#<[_police_radius_map_buf]
-		LDY		#>[_police_radius_map_buf]
+		LDXY	_police_radius_map_buf
 		BNE		_read_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_fire_radius_map_nibble:
-		LDX		#<[_fire_radius_map_buf]
-		LDY		#>[_fire_radius_map_buf]
+		LDXY	_fire_radius_map_buf
 
 ; =============== S U B	R O U T	I N E =======================================
 _read_buf_pos_div8_mulA_4bit_nibble:
@@ -3244,38 +3186,32 @@ _write_select_poll_popg_popd_crime_land_recalc_maps_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pollution_map_nibble:
-		LDX		#<[_pollution_map_buf]
-		LDY		#>[_pollution_map_buf]
+		LDXY	_pollution_map_buf
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pop_growth_map_nibble:
-		LDX		#<[_pop_growth_map_buf]
-		LDY		#>[_pop_growth_map_buf]
+		LDXY	_pop_growth_map_buf
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_pop_dencity_map_nibble:
-		LDX		#<[_pop_dencity_map_buf]
-		LDY		#>[_pop_dencity_map_buf]
+		LDXY	_pop_dencity_map_buf
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_crime_level_map_nibble:
-		LDX		#<[_crime_level_map_buf]
-		LDY		#>[_crime_level_map_buf]
+		LDXY	_crime_level_map_buf
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_land_value_map_nibble:
-		LDX		#<[_land_value_map_buf]
-		LDY		#>[_land_value_map_buf]
+		LDXY	_land_value_map_buf
 		BNE		_write_buf_pos_div4_mul13_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_tmp_recalc_div4_mul13_map_nibble:
-		LDX		#<[_tmp_recalc_bufs]
-		LDY		#>[_tmp_recalc_bufs]
+		LDXY	_tmp_recalc_bufs
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_buf_pos_div4_mul13_4bit_nibble:
@@ -3303,8 +3239,7 @@ loc_11F801:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_traffic_dencity_map_nibble:
-		LDX		#<[_traffic_density_map_buf]
-		LDY		#>[_traffic_density_map_buf]
+		LDXY	_traffic_density_map_buf
 		CMP		#$10
 		BCC		loc_11F82C
 		LDA		#$0F
@@ -3334,20 +3269,17 @@ _write_select_police_fire_recalc_maps_nibble:
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_tmp_recalc_div8_mulA_map_nibble:
-		LDX		#<[_tmp_recalc_bufs]
-		LDY		#>[_tmp_recalc_bufs]
+		LDXY	_tmp_recalc_bufs
 		BNE		_write_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_police_radius_map_nibble:
-		LDX		#<[_police_radius_map_buf]
-		LDY		#>[_police_radius_map_buf]
+		LDXY	_police_radius_map_buf
 		BNE		_write_buf_pos_div8_mulA_4bit_nibble
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_fire_radius_map_nibble:
-		LDX		#<[_fire_radius_map_buf]
-		LDY		#>[_fire_radius_map_buf]
+		LDXY	_fire_radius_map_buf
 
 ; =============== S U B	R O U T	I N E =======================================
 _write_buf_pos_div8_mulA_4bit_nibble:
@@ -3649,7 +3581,7 @@ loc_11FB73:
 		AND		#$FE
 		STA		_disasters_flags
 		LDY		#$06
-		FJSR	_city_history_write,$00,$FA
+		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$20
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3719,7 +3651,7 @@ loc_11FC04:
 		BNE		loc_11FB9A
 loc_11FC0E:
 		LDY		#$07
-		FJSR	_city_history_write,$00,$FA
+		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$21
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3770,7 +3702,7 @@ loc_11FC6E:
 		LDA		byte_674
 		BNE		loc_11FC6E
 		LDY		#$0A
-		FJSR	_city_history_write,$00,$FA
+		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$0A
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3818,7 +3750,7 @@ _tornado_disaster_start:
 		AND		#$F7
 		STA		_disasters_flags
 		LDY		#$09
-		FJSR	_city_history_write,$00,$FA
+		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$23
 		STA		_game_msg_idx
 		LDA		#$01
@@ -3878,7 +3810,7 @@ _force_monster_disaster:
 		LDA		#$01
 		STA		byte_6CA
 		LDY		#$0B
-		FJSR	_city_history_write,$00,$FA
+		FJSR	_city_history_write,SRAM,PRGA
 		LDA		#$09
 		STA		_game_msg_idx
 		LDA		#$01
@@ -4089,7 +4021,7 @@ loc_11FEEA:
 		CPX		#$50
 		BNE		loc_11FEB9
 		LDY		#$0C
-		FJSR	_city_history_write,$00,$FA
+		FJSR	_city_history_write,SRAM,PRGA
 
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
@@ -4208,10 +4140,8 @@ loc_11FFBB:
 		LDA		_tmp6CC+1
 		STA		_tmpE8
 		JSR		_div_32to16
-		PUSHB	#$02
-		PUSHB	#$66
-		PUSHB	_tmpE7
-		PUSHB	_tmpE6
+		PUSHWI	$0266
+		PUSHW	_tmpE6
 		JSR		_mmc5_mul16to16
 		PLA
 		POPB	_traffic_level_value
@@ -4219,4 +4149,4 @@ loc_11FFBB:
 		PLA
 		RTS
 
-		BANK_END B,$C000
+		BANK_END FB,$C000

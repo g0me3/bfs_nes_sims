@@ -1,7 +1,7 @@
 
 		ORG $A000
 
-		BANK_START $01
+		BANK_START $F1
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup:
@@ -102,9 +102,8 @@ _game_setup05_scenario_init:
 		LDY		#$03
 		BNE		loc_240B2
 loc_240A5:
-		LDX		#<[_tlm_res_scenario_complete]
-		LDY		#>[_tlm_res_scenario_complete]
-		FJSRA	_tlm_res_unpack,$00,$FA
+		LDXY	_tlm_res_scenario_complete
+		FJSRA	_tlm_res_unpack,SRAM,PRGA
 		LDY		#$04
 loc_240B2:
 		STY		_tmp6D4
@@ -658,9 +657,8 @@ _game_setup01_name_input_init:
 		STY		_scr_res_idx
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		LDX		#<[_tlm_res_name_init]
-		LDY		#>[_tlm_res_name_init]
-		FJSRA	_tlm_res_unpack,$00,$FA
+		LDXY	_tlm_res_name_init
+		FJSRA	_tlm_res_unpack,SRAM,PRGA
 		LDA		#$00
 		STA		byte_6DC+2
 		LDA		#$02
@@ -805,23 +803,17 @@ _name_input_button_push_draw:
 		CPY		#$20
 		BNE		loc_24676
 		JSRXY	_rle_nt_res_queue,byte_24C5D
-		LDX		#<[byte_24C6A]
-		LDY		#>[byte_24C6A]
-		JMP		_rle_extnt_res_queue
+		JMPXY	_rle_extnt_res_queue,byte_24C6A
 loc_24676:
 		CPY		#$0C
 		BNE		locret_246DB
 		JSRXY	_rle_nt_res_queue,byte_24C45
-		LDX		#<[byte_24C51]
-		LDY		#>[byte_24C51]
-		JMP		_rle_extnt_res_queue
+		JMPXY	_rle_extnt_res_queue,byte_24C51
 loc_24688:
 		CMP		#$01
 		BNE		locret_246DB
 		JSRXY	_rle_nt_res_queue,byte_24CA5
-		LDX		#<[byte_24CD1]
-		LDY		#>[byte_24CD1]
-		JMP		_rle_extnt_res_queue
+		JMPXY	_rle_extnt_res_queue,byte_24CD1
 loc_2469A:
 		CMP		#$10
 		BNE		loc_246AC
@@ -1281,7 +1273,7 @@ _game_setup00_new_city_gen:
 		STA		_scr_res_idx
 		LDA		#$00
 		STA		_scr_res_control_flags
-		FJSRA	_scr_res_common,$00,$F9
+		FJSRA	_scr_res_common,SRAM,PRG9
 		LDA		_title_sub_idx
 		BEQ		loc_249F4
 		DEC		_main_sub_idx
@@ -1478,7 +1470,7 @@ loc_24B49:
 		ORA		_bitmasks,Y
 		STA		_city._scenarios_clear_flags
 		STA		_sram_vars._scenarios_clear_flags
-		FJSRA	_sram_sum_reinit,$00,$F3
+		FJSRA	_sram_sum_reinit,SRAM,PRG3
 		JSR		_sram_off
 loc_24B6C:
 		LDY		_scenario_result_idx
@@ -1548,7 +1540,7 @@ _game_setup0F_all_complete_init:
 		LDA		#$01
 		STA		_city._all_scenarios_are_clear_ram_flag
 		STA		_sram_vars._all_scenarios_are_clear_ram_flag
-		FJSRA	_sram_sum_reinit,$00,$F3
+		FJSRA	_sram_sum_reinit,SRAM,PRG3
 		JSR		_sram_off
 		JSR		_render_on
 		INC		_mmc5_operation_in_progress_flag
@@ -1969,7 +1961,7 @@ _practice_msg0:
 		.BYTE	"adjust ",_the," budget,",$A
 		.BYTE	"lower skyrocket",_in,"g  crime",$A
 		.BYTE	"rates, iron out traffic",$A
-		.BYTE	"snarls",_con,"trol enviro-",$A
+		.BYTE	"snarls",_con,"trol enviro-",$A					; BUG! snarls[, ]control
 		.BYTE	"nmental pollution, ",_and,$A
 		.BYTE	"many o",_the,"r elements that",$A
 		.BYTE	"require ",_your," attention.",$A
@@ -2070,4 +2062,4 @@ _pak_tlm_game_play_level0:
 		.BYTE	$FF,$2B,$00,$87,$03,$D8,$2B,$00,$03,$FF,$FF,$FF,$FF,$8F,$07,$E0
 		.BYTE	$FF
 
-		BANK_END 1,$C000
+		BANK_END F1,$C000

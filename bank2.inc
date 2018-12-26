@@ -1,7 +1,7 @@
 
 		ORG $A000
 
-		BANK_START $02
+		BANK_START $F2
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_chr_setup:
@@ -1195,4 +1195,4 @@ byte_3FDE7:
 		.BYTE	$E4,$EF,$00,$E8
 		.BYTE	$80
 
-		BANK_END 2,$C000
+		BANK_END F2,$C000

@@ -1,7 +1,7 @@
 
 		ORG $8000
 
-		BANK_START $0C
+		BANK_START $FC
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_start:
@@ -53,7 +53,7 @@ _game_state_common:
 		JSR		_game_cursor_input_control
 		JSR		_spr_finish
 		JSR		_auto_goto_test
-		FJSRA	_constr_palette_state_update,$F7,$F3
+		FJSRA	_constr_palette_state_update,PRG7,PRG3
 		LDA		_ppu_queue_pos_tail
 		SEC
 		SBC		_ppu_queue_pos_head
@@ -375,7 +375,7 @@ loc_1362A9:
 		CPX		#$0D
 		BNE		_j_game_state_common
 		STA		_special_build_menu_req
-		FJSRA	_special_items_wnd_draw,$FC,$F2
+		FJSRA	_special_items_wnd_draw,PRGC,PRG2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -407,7 +407,7 @@ loc_1362DC:
 		LDA		#$FF
 		STA		_special_constr_palette_redraw_req
 		STA		_special_build_menu_req
-		FJSRA	_special_items_wnd_draw,$FC,$F2
+		FJSRA	_special_items_wnd_draw,PRGC,PRG2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -464,7 +464,7 @@ loc_13632C:
 loc_136346:
 		JSR		sub_150498
 		JSR		sub_1504FD
-		FJSRA	sub_B8183,$F7,$FD
+		FJSRA	sub_B8183,PRG7,PRGD
 		BCC		loc_136358
 		JMP		loc_1363EF
 loc_136358:
@@ -493,7 +493,7 @@ loc_136375:
 loc_136389:
 		JSR		sub_150498
 		JSR		sub_1504FD
-		FJSRA	sub_B83A7,$F7,$FD
+		FJSRA	sub_B83A7,PRG7,PRGD
 		BCS		loc_1363EF
 		JSR		sub_15050A
 		JSR		sub_15055A
@@ -515,7 +515,7 @@ loc_1363AE:
 loc_1363BE:
 		JSR		sub_150498
 		JSR		sub_1504FD
-		FJSRA	sub_B83A7,$F7,$FD
+		FJSRA	sub_B83A7,PRG7,PRGD
 		BCS		loc_1363EF
 		JSR		sub_15050A
 		JSR		sub_15055A
@@ -661,7 +661,7 @@ loc_1364DA:
 		LDA		#$02
 		STA		_scr_mode_idx
 		JSR		_pal_fade_out
-		FJSRA	_scr_res_common,$00,$F9
+		FJSRA	_scr_res_common,SRAM,PRG9
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
 		JSR		_game_msg_chr_common_load
@@ -685,7 +685,7 @@ _game_msg_wnd_display:
 		LDA		#$05
 		STA		_gui_ctrl_menu_press_idx
 		JSR		_draw_wnd_header_nt
-		FJSRA	_game_msg_handler,$F4,$F3
+		FJSRA	_game_msg_handler,PRG4,PRG3
 		JSR		_draw_wnd_header_extnt
 		JSR		_scroll_msg_reset
 		LDA		_debug_scroll_msg_flags
@@ -712,7 +712,7 @@ loc_136548:
 _game_state0D_cur_date_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_13655C
-		FJSRA	_cur_date_draw,$F7,$F3
+		FJSRA	_cur_date_draw,PRG7,PRG3
 		LDA		#$00
 		STA		_cur_date_redraw_req
 loc_13655C:
@@ -744,7 +744,7 @@ loc_136582:
 _game_state0F_cur_money_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136595
-		FJSRA	_cur_money_draw,$FC,$F3
+		FJSRA	_cur_money_draw,PRGC,PRG3
 		LDA		#$00
 		STA		_cur_money_redraw_req
 loc_136595:
@@ -758,7 +758,7 @@ _game_state10_fiscal_year_draw:
 		STA		_scr_res_idx
 		STA		_scr_mode_idx
 		JSR		_pal_fade_out
-		FJSRA	_scr_res_common,$00,$F9
+		FJSRA	_scr_res_common,SRAM,PRG9
 		JSR		_game_hud_full_draw
 		LDA		#$00
 		STA		_scr_mode_idx
@@ -776,7 +776,7 @@ loc_1365C8:
 _game_state11_cur_popul_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_1365DC
-		FJSRA	_cur_popul_draw,$F7,$F3
+		FJSRA	_cur_popul_draw,PRG7,PRG3
 		LDA		#$00
 		STA		_cur_popul_redraw_req
 loc_1365DC:
@@ -796,7 +796,7 @@ loc_1365EC:
 _game_state16_city_name_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136600
-		FJSRA	_city_name_draw,$F7,$F3
+		FJSRA	_city_name_draw,PRG7,PRG3
 		LDA		#$00
 		STA		_city_name_redraw_req
 loc_136600:
@@ -2741,7 +2741,7 @@ loc_137326:
 		RTS
 loc_137331:
 		LDX		_tmp5
-		FJSRA	_game_menu_exec,$F7,$F3
+		FJSRA	_game_menu_exec,PRG7,PRG3
 		LDA		#$00
 		STA		_wnd_lvl_idx
 		RTS
@@ -4214,6 +4214,8 @@ sub_137D0B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: there are a couple of similar functions throught the files, otimize
+;
 _ppu_queue_empty_test_0:
 		LDA		_ppu_queue_pos_tail
 		CMP		_ppu_queue_pos_head
@@ -4652,4 +4654,4 @@ _seasonal_pal_load:
 _seasonal_pal_list:
 		.BYTE	$0E,$0E,$00,$00,$00,$0C,$0C,$0C,$0D,$0D,$0D,$0E
 
-		BANK_END C,$A000
+		BANK_END FC,$A000
