@@ -550,12 +550,12 @@ loc_B83B6:
 		LDY		_ptr0
 		INY
 		BCC		loc_B83B6
-locret_B83C9:
+;locret_B83C9:
 		RTS
 loc_B83CA:
-		JSR		_money_subtract
-		BCS		locret_B83C9
-		RTS
+		JMP		_money_subtract					; OPTIMIZED
+;		BCS		locret_B83C9					; REDUNDANT, it will exit anyway with correct C
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B83D0:
@@ -570,7 +570,7 @@ sub_B83D0:
 loc_B83E1:
 		PLA
 		CMP		#_MAP_GROUND0
-		BCC		loc_B843F
+		BCC		.true
 		CMP		#_MAP_GROUND0
 		BEQ		loc_B842C
 		PHA
@@ -591,7 +591,7 @@ loc_B8402:
 		CPY		#$04
 		BEQ		loc_B8410
 		CMP		#_MAP_ELECTRO_LR
-		BCC		loc_B843F
+		BCC		.true
 		CMP		#_MAP_GRASS
 		BCC		loc_B8436
 loc_B8410:
@@ -599,13 +599,13 @@ loc_B8410:
 		BCC		loc_B842E
 		BEQ		loc_B8426
 		CMP		#_MAP_SHORE0
-		BCC		loc_B843F
+		BCC		.true
 		CMP		#_MAP_WATER_ROAD_LR
 		BCC		loc_B8426
 		CMP		#_MAP_CORRUPT0
-		BCC		loc_B843F
+		BCC		.true
 		CMP		#_MAP_BRIDGE_WATER_LR
-		BCS		loc_B843F
+		BCS		.true
 loc_B8426:
 		INCW	_cur_building_price
 loc_B842C:
@@ -615,15 +615,15 @@ loc_B842E:
 		LDA		_const_palette_selected_idx
 		CMP		#$04
 		BNE		loc_B8426
-		BEQ		loc_B843F
+		BEQ		.true
 loc_B8436:
 		LDA		_const_palette_selected_idx
 		CMP		#$02
 		BNE		loc_B8426
-		BEQ		loc_B843F
+		BEQ		.true
 loc_B843E:
 		PLA
-loc_B843F:
+.true:
 		SEC
 		RTS
 loc_B8441:
@@ -631,11 +631,11 @@ loc_B8441:
 		CMP		#_MAP_WATER
 		BCC		loc_B8450
 		CMP		#_MAP_GROUND01
-		BCC		loc_B844E
+		BCC		.false
 		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B8450
-loc_B844E:
-		CLC
+.false:
+;		CLC										; REDUNDANT, C=0 already here
 		RTS
 loc_B8450:
 		JMP		loc_B8402
@@ -645,7 +645,7 @@ loc_B8453:
 		BCC		loc_B845E
 		CMP		#_MAP_ELECTRO_LR
 		BCS		loc_B845E
-		CLC
+;		CLC										; REDUNDANT, C=0 already here
 		RTS
 loc_B845E:
 		JMP		loc_B8402

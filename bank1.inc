@@ -136,7 +136,7 @@ _scenario_closed_screen_update:
 		LDA		_city._all_scenarios_are_clear_ram_flag
 		BNE		locret_2411B					; FIX: lets just exit here
 ;		BEQ		loc_240FA
-; BUG: by this logic, when you complete all scenarios, the extra scenario
+; REDUNDANT: by this logic, when you complete all scenarios, the extra scenario
 ; screen reset all cleared pictures and planned to draw a new ones only for
 ; two extra scenarios lol, BUT, there are no offsets not only for a rearranged
 ; icons set (4x2 instead of 3x2), but there are no 7th and 8th offsets in

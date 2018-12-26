@@ -430,8 +430,8 @@ loc_136325:
 		JMP		_bulldoze_area
 .other_builds:
 		CMP		#$04
-		BEQ		_garden_area
-		BCS		.large_buildings
+		BEQ		_build_garden_area
+		BCS		_bulid_large_buildings
 		LDA		_pad0_held						; here we start to build 1-tile
 		CMP		_pad0_prev_held					; areas - roads, rails, electrics
 		BNE		.something_changed				; buttons changes, test if we need to do something
@@ -462,7 +462,7 @@ loc_136358:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_garden_area:
+_build_garden_area:
 		LDA		_pad0_held
 		CMP		_pad0_prev_held
 		BNE		loc_136389
@@ -485,7 +485,9 @@ loc_136389:
 		JSR		_apu_se_small_build
 		JSR		_save_constr_cursor_pos
 		JMP		_game_state_common
-.large_buildings:
+
+; =============== S U B	R O U T	I N E =======================================
+_build_large_buildings:
 		LDA		_pad0_autorep_press
 		BPL		loc_1363F5
 		LDA		_const_palette_selected_idx
@@ -521,27 +523,30 @@ loc_1363F5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bulldoze_area:
-		JSR		_get_cur_building_price
-		JSR		sub_1508BC
-		BCS		loc_13641E
+; REDUNDANT, this routine is actually redundant, because the bulldoze price
+; is calculated later in _bulldoze_a_building routine and overwrites these ones
+;
+;		JSR		_get_cur_building_price			; bulldoze price ($1)
+		JSR		_bulldoze_a_building
+		BCS		.fail
 		JSR		sub_150551
 		JSR		sub_1509CF
 		LDA		#$FF
 		STA		_hud_money_redraw_req
 		LDX		byte_CC
 		DEX
-		BEQ		loc_136418
+		BEQ		.ok
 		INC		_corruption_anim_flag
 		JSR		_apu_se_destroy
 		JMP		_game_state_common
-loc_136418:
+.ok:
 		JSR		_apu_se_bulldozer
 		JMP		_game_state_common
-loc_13641E:
+.fail:
 		LDA		byte_CD
-		BNE		loc_136425
+		BNE		.skip							; with error sound or without
 		JSR		_apu_se_error
-loc_136425:
+.skip:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================

@@ -590,14 +590,18 @@ sub_150551:
 		JSR		_sram_on
 		LDX		byte_CC
 		DEX
-		JMP		loc_150560
+		JMP		sub_150560
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_15055A:
 		JSR		_sram_on
 		LDX		_cur_selected_buildings_size
 		DEX
-loc_150560:
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+sub_150560:
 		LDA		off_150585,X
 		STA		word_D0
 		LDA		off_150589,X
@@ -1082,19 +1086,19 @@ loc_1508BA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1508BC:
+_bulldoze_a_building:
 		JSR		_get_cur_constr_cursor_map_ofs
-		JSR		sub_1508E6
-		JSR		sub_15096E
+		JSR		_get_price_to_bulldoze_a_building	; once again we calculate price of bulldozing
+		JSR		_test_valid_buildings_to_bulldoze
 		BCS		locret_1508E5
 		JSR		_get_building_scheme_ex
 		JSR		_sram_on
 		LDY		#$00
 loc_1508CF:
-		STY		_ptr0
+		STY		_ptr0								; erase building by scheme for all tiles inside
 		LDA		(_tmp_ptrC5),Y
 		CMP		#$80
-		BEQ		loc_1508E1
+		BEQ		loc_1508E1							; end of scheme list
 		TAY
 		LDA		byte_CB
 		STA		(_tmp_ptrC1),Y
@@ -1108,23 +1112,23 @@ locret_1508E5:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1508E6:
+_get_price_to_bulldoze_a_building:
 		LDA		#$00
 		STA		byte_CE
 		STA		byte_CF
 		LDY		#$00
-		LDA		(_tmp_ptrC1),Y
-		BPL		loc_150918
-		CMP		#$90
-		BCS		loc_150918
-		SEC
-		SBC		#$80
+		LDA		(_tmp_ptrC1),Y					; read map tile sample
+		BPL		.do_instant_bulldoze
+		CMP		#_MAP_GROUND0
+		BCS		.do_instant_bulldoze			; anything but the buildings no need to additional work here
+		SEC										; get inside the building special tiles
+		SBC		#_MAP_INTERNAL_BUILD0
 		TAX
-		LDA		byte_15094C,X
-		STA		byte_CE
-		LDA		byte_15095B,X
+		LDA		_special_build_tile_delta_ROW_list,X
+		STA		byte_CE							; get tile deltas
+		LDA		_special_build_tile_delta_COL_list,X
 		STA		byte_CF
-		LDA		_special_tiles_ofs_list,X
+		LDA		_special_tiles_ofs_list,X		; get tile Y idx for fetch opcode
 		STA		_ptr0
 		LDA		_tmp_ptrC1
 		SEC
@@ -1133,26 +1137,26 @@ sub_1508E6:
 		LDA		_tmp_ptrC1+1
 		SBC		#$00
 		STA		_tmp_ptrC1+1
-		LDA		(_tmp_ptrC1),Y
-loc_150918:
+		LDA		(_tmp_ptrC1),Y					; read actual building tile idx
+.do_instant_bulldoze:
 		LDX		#$01
 		STA		byte_CB
 		AND		#$FF
 		BMI		loc_150930
 		INX
-		CMP		#$52
+		CMP		#_MAP_FIRE_STATION+1			; case for 2x2 buildings
 		BCC		loc_150930
 		INX
-		CMP		#$64
+		CMP		#_MAP_AIR_PORT					; case for 3x3 buildings
 		BCC		loc_150930
 		INX
-		CMP		#$70
+		CMP		#_MAP_BANK						; test for nonbreakable buildings
 		BCC		loc_150930
 		DEX
 loc_150930:
-		STX		byte_CC
+		STX		byte_CC							; tmp building size type idx
 		DEX
-		LDA		byte_15096A,X
+		LDA		_bulldoze_building_price_list,X
 		STA		_cur_building_price
 		LDA		#$00
 		STA		_cur_building_price+1
@@ -1160,65 +1164,65 @@ loc_150930:
 ; REDUNDANT
 ;_special_tiles_ofs_list:
 ;		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
-byte_15094C:
+_special_build_tile_delta_ROW_list:
 		.BYTE	$00,$01,$01,$00,$01,$02,$02,$02,$00,$01,$02,$03,$03,$03,$03
-byte_15095B:
+_special_build_tile_delta_COL_list:
 		.BYTE	$01,$01,$00,$02,$02,$02,$01,$00,$03,$03,$03,$03,$02,$01,$00
-byte_15096A:
+_bulldoze_building_price_list:
 		.BYTE	$01,$04,$09,$10
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_15096E:
-		LDA		_city._game_flags
+_test_valid_buildings_to_bulldoze:
+		LDA		_city._game_flags				; cheat for forced bulldozing a sigle tile
 		AND		#$10
-		BEQ		loc_150979
-		LDX		#$90
-		BNE		loc_1509B7
-loc_150979:
-		LDX		#$E7
+		BEQ		.no_bulldoze_cheat
+		LDX		#_MAP_GROUND0
+		BNE		.large_bulldoze_area_test		; force to bulldoze anything
+.no_bulldoze_cheat:
+		LDX		#_MAP_CORRUPT0					; start corruption animation with this tile
 		LDA		byte_CC
 		CMP		#$02
-		BCS		loc_1509B7
+		BCS		.large_bulldoze_area_test		; for single tiled bulldoze areas
 		LDA		byte_CB
-		CMP		#$B5
-		BEQ		loc_1509C3
-		CMP		#$B6
-		BEQ		loc_1509C3
-		CMP		#$E6
-		BEQ		loc_1509C3
-		CMP		#$ED
+		CMP		#_MAP_FLOOD
+		BEQ		.cant_bulldoze_that0
+		CMP		#_MAP_POLLUTION
+		BEQ		.cant_bulldoze_that0
+		CMP		#_MAP_FIRE
+		BEQ		.cant_bulldoze_that0
+		CMP		#_MAP_ROAD_DIAG0
 		BCC		loc_150997
-		CMP		#$FD
-		BCC		loc_1509C3
+		CMP		#_MAP_ROAD_DIAGF+1
+		BCC		.cant_bulldoze_that0
 loc_150997:
-		CMP		#$FE
-		BEQ		loc_1509C9
-		CMP		#$90
-		BEQ		loc_1509C9
-		CMP		#$BD
-		BEQ		loc_1509C9
-		LDX		#$90
-		CMP		#$E0
-		BCC		loc_1509B7
-		CMP		#$E7
+		CMP		#_MAP_WATER_ROUTE
+		BEQ		.cant_bulldoze_that1
+		CMP		#_MAP_GROUND0
+		BEQ		.cant_bulldoze_that1
+		CMP		#_MAP_WATER
+		BEQ		.cant_bulldoze_that1
+		LDX		#_MAP_GROUND0
+		CMP		#_MAP_WATER_ROAD_LR
+		BCC		.large_bulldoze_area_test
+		CMP		#_MAP_CORRUPT0
 		BCC		loc_1509B5
-		CMP		#$EB
-		BCC		loc_1509B7
-		CMP		#$ED
-		BCS		loc_1509C3
+		CMP		#_MAP_BRIDGE_WATER_LR
+		BCC		.large_bulldoze_area_test
+		CMP		#_MAP_ROAD_DIAG0
+		BCS		.cant_bulldoze_that0
 loc_1509B5:
-		LDX		#$BD
-loc_1509B7:
+		LDX		#_MAP_WATER
+.large_bulldoze_area_test:
 		STX		byte_CB
 		FJSRA	_money_subtract,PRG7,PRG3
-		BCS		loc_1509C3
+		BCS		.cant_bulldoze_that0
 		RTS
-loc_1509C3:
+.cant_bulldoze_that0:
 		LDA		#$00
 		STA		byte_CD
 		SEC
 		RTS
-loc_1509C9:
+.cant_bulldoze_that1:
 		LDA		#$FF
 		STA		byte_CD
 		SEC

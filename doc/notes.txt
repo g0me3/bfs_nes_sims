@@ -29,7 +29,7 @@
 - TODO	BUGS#18
 - Fixed	BUGS#19
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
-- TODO  Make ship able to sail under the bridges and road/wires with some hiding animations, etc.
+- TODO  Make ship able to sail under the bridges and road/wires with hiding animations.
 - TODO  Reuse the actual FE water tile for those scenarios which use it.
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#9 4-frame animation for Helicopter. Have no idea wether it was removed on purpose or by accident. 4-frame looks much more blinking, maybe epilepsy issues?
