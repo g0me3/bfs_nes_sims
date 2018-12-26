@@ -3671,7 +3671,7 @@ _test_map_tile_if_powered_up:
 		AND		#7
 		TAX
 		LDY		#0
-		LDA		_inv_bitmasks_0,X
+		LDA		_inv_bitmasks,X
 		AND		(_tmpE6),Y
 		BNE		loc_11F9DA
 		CLC
@@ -3679,8 +3679,6 @@ _test_map_tile_if_powered_up:
 loc_11F9DA:
 		SEC
 		RTS
-_inv_bitmasks_0:
-		.BYTE	$80,$40,$20,$10,$08,$04,$02,$01
 _map_tiles_flags_tbl:
 		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
 		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00

@@ -2752,7 +2752,7 @@ loc_1372FD:
 loc_137304:
 		LDX		_tmp5
 		LDA		_city._game_flags
-		EOR		byte_137345,X
+		EOR		_bitmasks,X
 		STA		_city._game_flags
 		AND		#8
 		BNE		loc_137317
@@ -2760,7 +2760,7 @@ loc_137304:
 		BNE		loc_13731D
 loc_137317:
 		LDY		_city._city_type
-		LDA		byte_13733F,Y
+		LDA		_bg_music_list,Y
 loc_13731D:
 		CMP		_apu_mus_pulse2_shadow+2
 		BEQ		loc_137324
@@ -2771,7 +2771,7 @@ loc_137324:
 loc_137326:
 		LDX		_tmp5
 		LDA		_disasters_flags
-		EOR		byte_137345,X
+		EOR		_bitmasks,X
 		STA		_disasters_flags
 		CLC
 		RTS
@@ -2783,10 +2783,7 @@ loc_137331:
 		LDA		#0
 		STA		_wnd_lvl_idx
 		RTS
-byte_13733F:
-		.BYTE	$08,$20,$41,$42,$44,$48
-byte_137345:
-		.BYTE	$01,$02,$04,$08,$10,$20
+
 byte_13734B:
 		.BYTE	$04,$04,$06,$06,$04,$01
 off_137351:

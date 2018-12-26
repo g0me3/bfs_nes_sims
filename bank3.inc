@@ -314,7 +314,7 @@ _game_msg_music_restore:
 		STA		_apu_mus_idx_req
 		JSR		_wait_for_nmi
 		LDX		_city._city_type
-		LDY		byte_58289,X
+		LDY		_bg_music_list,X
 		LDA		_city._game_flags
 		AND		#8
 		BNE		loc_58262
@@ -326,8 +326,6 @@ _game_msg_apu_types_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$02,$01
 		.BYTE	$02,$02,$02,$02
-byte_58289:
-		.BYTE	$08,$20,$41,$42,$44,$48
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_display:

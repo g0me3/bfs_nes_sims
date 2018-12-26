@@ -505,8 +505,6 @@ _power_grid_map_bit_set:
 		JSR		_sram_on
 		STA		(_tmpE6),Y
 		JMP		_sram_off
-_inv_bitmasks:
-		.BYTE	$80,$40,$20,$10,$08,$04,$02,$01
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_vars_init:
@@ -666,8 +664,6 @@ loc_1044F8:
 		BNE		loc_1044F8
 		JSR		_sram_off
 		JMP		_city_stats_reset
-_bg_music_list:
-		.BYTE	$08,$20,$41,$42,$44,$48
 _difficult_money_list_lo:
 		.BYTE	$20,$10,$88
 _difficult_money_list_hi:
@@ -2286,8 +2282,7 @@ _popul_compare:
 		LDA		_popul_cur+2
 		SBC		_popul_vals_lib2,X
 		RTS
-_bitmasks:
-		.BYTE	$01,$02,$04,$08,$10,$20,$40,$80
+
 _special_events_lib_lo:
 		.BYTE	<[nullsub_1]
 		.BYTE	<[_event01_city_growt]

@@ -183,8 +183,7 @@ _ingame_mode:
 		.WORD	_game_start
 		RTS
 aIshi:
-		.BYTE	"ISHI"
-		.BYTE	$FF
+		.BYTE	"ISHI",$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 NMI:
@@ -376,7 +375,7 @@ loc_18A2D6:
 		BCC		loc_18A2E5
 		INX
 loc_18A2E5:
-		LDA		_thread_flags_masks,Y
+		LDA		_bitmasks,Y
 		AND		_thread0_flags,X
 		BNE		_switch_to_thread1
 		LDA		_thread_priority_req
@@ -395,7 +394,7 @@ loc_18A2FC:
 		BCC		loc_18A30D
 		INX
 loc_18A30D:
-		LDA		_thread_flags_masks,Y
+		LDA		_bitmasks,Y
 		AND		_thread1_flags,X
 		BEQ		_switch_to_thread1
 		LDY		#0
@@ -501,8 +500,10 @@ _pal_anim_table:
 		.BYTE	$06,$06,$06,$06,$06,$06
 		.BYTE	$16,$16,$16,$16,$16,$16,$16,$16
 		.BYTE	$26,$26,$26,$26,$26,$26
-_thread_flags_masks:
+_bitmasks:
 		.BYTE	$01,$02,$04,$08,$10,$20,$40,$80,$01,$02,$04
+_inv_bitmasks:
+		.BYTE	$80,$40,$20,$10,$08,$04,$02,$01
 
 ; =============== S U B	R O U T	I N E =======================================
 _ppu_scrolls_reload:
@@ -3603,6 +3604,9 @@ _mmc5_mul16to16:
 		STA		$106,X
 		LDX		_backup_var
 		RTS
+
+_bg_music_list:
+		.BYTE	$08,$20,$41,$42,$44,$48
 
 		LAST_BANK_END F,$10000
 

@@ -2801,7 +2801,7 @@ loc_1512B3:
 		STA		_ptr0+1
 		LDY		#0
 		LDA		(_ptr0),Y
-		AND		_inv_bitmasks_1,X
+		AND		_inv_bitmasks,X
 		BEQ		loc_1512D9
 loc_1512D7:
 		CLC
@@ -2809,8 +2809,6 @@ loc_1512D7:
 loc_1512D9:
 		SEC
 		RTS
-_inv_bitmasks_1:
-		.BYTE	$80,$40,$20,$10,$08,$04,$02,$01
 
 ; =============== S U B	R O U T	I N E =======================================
 _traffic_dencity_area_read:

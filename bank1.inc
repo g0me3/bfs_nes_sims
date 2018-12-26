@@ -1045,7 +1045,7 @@ loc_247BD:
 		STA		byte_6DC+1
 		RTS
 _input_chars_tbl:
-		.BYTE	$31,$32,$33,$34,$35,$36,$37,$38,$39,$30, $08,$0C
+		.BYTE	$31,$32,$33,$34,$35,$36,$37,$38,$39,$30,$08,$0C
 		.BYTE	$51,$57,$45,$52,$54,$59,$55,$49,$4F,$50,$00,$20
 		.BYTE	$41,$53,$44,$46,$47,$48,$4A,$4B,$4C,$3A,$00,$00
 		.BYTE	$5A,$58,$43,$56,$42,$4E,$4D,$2C,$2E,$2D,$00,$FF
@@ -1544,7 +1544,7 @@ loc_24B49:
 		JSR		_sram_on
 		LDY		_scenario_idx
 		LDA		_city._scenarios_clear_flags
-		ORA		_bit_flags,Y
+		ORA		_bitmasks,Y
 		STA		_city._scenarios_clear_flags
 		STA		_sram_vars._scenarios_clear_flags
 		JSR		_farcall_argsAXY_safe
@@ -1569,8 +1569,6 @@ loc_24B6C:
 		STA		_screen_pal_cur_bg_idx
 		INC		_game_setup_sub_idx
 		JMP		_pal_fade_in
-_bit_flags:
-		.BYTE	$01,$02,$04,$08,$10,$20,$40,$80
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0C_scenario_over_input:
@@ -1652,6 +1650,7 @@ _game_setup10_all_complete_input:
 		STA		_game_setup_sub_idx
 locret_24C44:
 		RTS
+
 byte_24C45:
 		.BYTE	$0A,$1A,$22,$02,$C0,$C0,$3A,$22,$02,$C4,$DA,$00
 byte_24C51:
