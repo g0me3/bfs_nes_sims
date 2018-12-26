@@ -1,6 +1,11 @@
+	TODO
+
+- PRG1 _rle_nt_res_queue, _rle_extnt_res_queue routines are similar to above ones. merge
+
 	NEW BUGS
 
 - Ship object can stuck in a pond or at the map side forever sometimes. Also may be invisible because of that.
+- Presents messages animation does not clear present area properly, leave garbage.
 
 	WHAT DONE
 
@@ -10,7 +15,7 @@
 - Commented as much as possible code and data which i clearly understand what it does and sometimes some thoughts about how those people wrote this program.
 - Optimized redundant or duplicated code chunks, similar routines merged and used as common system routines. Overall reducing of the code more than 4Kb without any changes to the game's logic (except maybe timings and sometimes RNG as a result of this).
 - Fixed BUGS#1
-- Fixed BUGS#2.1
+- Fixed BUGS#2.1, put the nmi wait calls to force buffers flush after any ppu queue. This also makes the turbo button work slower, but no more buffers overflows there.
 - TODO BUGS#2.2
 - Fixed BUGS#3
 - TODO BUGS#4

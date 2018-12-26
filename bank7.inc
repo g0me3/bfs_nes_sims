@@ -1205,43 +1205,9 @@ loc_B8AF7:
 		INC		_tmp118+2
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan_def
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan_def
-;		JMP		_bank_loan_anim_send
+;		JMP		_tlm_lib_queue
 		LDX		#$10							; clear "$10000" from curtain!
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_bank_loan_anim_send:
-		LDA		_tlm_loan_anim_lib,X
-		STA		_ptr0
-		LDA		_tlm_loan_anim_lib+1,X
-		STA		_ptr0+1
-		LDA		_tlm_loan_anim_lib+2,X
-		STA		_ptr2
-		LDA		_tlm_loan_anim_lib+3,X
-		STA		_ptr2+1
-		LDY		#$00
-		PPUQSTART
-loc_B8CE4:
-		LDA		(_ptr0),Y
-		BEQ		loc_B8CF7
-		PPUQMOVA
-		INY
-		BNE		loc_B8CE4
-loc_B8CF7:
-		PPUQEND
-		LDY		#$00
-		EXTQSTART
-loc_B8CFD:
-		LDA		(_ptr2),Y
-		BEQ		loc_B8D10
-		EXTQMOVA
-		INY
-		BNE		loc_B8CFD
-loc_B8D10:
-		EXTQEND
-locret_B8B91:
-		RTS
+		JMP		_tlm_lib_queue
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub4_loan_done_animate:
@@ -1261,26 +1227,26 @@ _bank_scr_sub4_loan_done_animate:
 		CPX		#$32
 		BEQ		loc_B8B50
 		CPX		#$42
-		BNE		locret_B8B91
+		BNE		locret_B8AA7
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan3
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan3
 		LDX		#$0C
-		BNE		_bank_loan_anim_send
+		JMP		_tlm_lib_queue
 loc_B8B50:
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan2
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan2
 		LDX		#$08
-		BNE		_bank_loan_anim_send
+		JMP		_tlm_lib_queue
 loc_B8B63:
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan0
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan0
 		LDX		#$00
-		BEQ		_bank_loan_anim_send
+		JMP		_tlm_lib_queue
 loc_B8B76:
 ;		MOVWO	_ptr0,_tlm_nt_bank_loan1
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan1
 		LDX		#$04
-		BNE		_bank_loan_anim_send
+		JMP		_tlm_lib_queue
 loc_B8B89:
 		INC		_tmp118+2
 ;		LDA		#$3F							; REDUNDANT
@@ -1300,34 +1266,27 @@ _spr_loan_anim_pos_list:
 		.BYTE	$43,$42,$41,$40
 		.BYTE	$FF
 
-_tlm_loan_anim_lib:
-		.WORD	_tlm_nt_bank_loan0,_tlm_extnt_bank_loan0
-		.WORD	_tlm_nt_bank_loan1,_tlm_extnt_bank_loan1
-		.WORD	_tlm_nt_bank_loan2,_tlm_extnt_bank_loan2
-		.WORD	_tlm_nt_bank_loan3,_tlm_extnt_bank_loan3
-		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def
-
 _tlm_nt_bank_loan3:
-		.BYTE	$ED,$24,$06,$35,$DF,$DF,$DF,$DF,$3A,$00	;	,$00
+		.BYTE	$ED,$24,$06,$35,$DF,$DF,$DF,$DF,$3A,$FF	;	,$00
 _tlm_nt_bank_loan2:
-		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$00	;	,$00
+		.BYTE	$0D,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF,$FF	;	,$00
 _tlm_nt_bank_loan_def:
-		.BYTE	$0D,$25,$06,$DC,$DC,$DC,$DC,$DC,$DC,$00	;	,$00
+		.BYTE	$0D,$25,$06,$DC,$DC,$DC,$DC,$DC,$DC,$FF	;	,$00
 _tlm_nt_bank_loan1:
-		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$00	;	,$00
+		.BYTE	$2D,$25,$06,$DF,$B8,$B9,$BA,$BB,$DF,$FF	;	,$00
 _tlm_nt_bank_loan0:
-		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$00	;	,$00
+		.BYTE	$4D,$25,$06,$DF,$DF,$C9,$CA,$CB,$5A,$FF	;	,$00
 
 _tlm_extnt_bank_loan3:
-		.BYTE	$ED,$5C,$06,$48,$01,$01,$01,$01,$48,$00	;	,$00
+		.BYTE	$ED,$5C,$06,$48,$01,$01,$01,$01,$48,$FF	;	,$00
 _tlm_extnt_bank_loan2:
-		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
+		.BYTE	$0D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$FF	;	,$00
 _tlm_extnt_bank_loan_def:
-		.BYTE	$0D,$5D,$06,$C8,$C8,$C8,$C8,$C8,$C8,$00	;	,$00
+		.BYTE	$0D,$5D,$06,$C8,$C8,$C8,$C8,$C8,$C8,$FF	;	,$00
 _tlm_extnt_bank_loan1:
-		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$00	;	,$00
+		.BYTE	$2D,$5D,$06,$01,$C8,$C8,$C8,$C8,$01,$FF	;	,$00
 _tlm_extnt_bank_loan0:
-		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$00	;	,$00
+		.BYTE	$4D,$5D,$06,$01,$01,$C8,$C8,$C8,$08,$FF	;	,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_loan_yes_no_push_spr_draw:
@@ -1451,7 +1410,7 @@ _bank_scr_sub8_already_load_input:
 ; REDUNDANT, optimized with library function
 ;
 ; =============== S U B	R O U T	I N E =======================================
-;_bank_loan_anim_send:
+;_tlm_lib_queue:
 ;		LDY		#$00
 ;		PPUQSTART
 ;loc_B8CE4:

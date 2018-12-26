@@ -788,7 +788,7 @@ loc_58540:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58541:
-		EXTQMOVB	#$20,OP_NOP,0
+		PPUQMOVB	#$20,OP_NOP,0
 		DEC		_tmp4
 		BNE		loc_58541
 		DO_WRAP	_tmp4,_tmp5,loc_5856D
@@ -1495,14 +1495,14 @@ loc_58A60:
 loc_58A69:
 ;		PLA
 		LDY		_game_msg_idx				; OPTIMIZED
-		LDA		_presents_list-1,Y
+		LDA		_presents_list,Y
 		BMI		locret_58A6D
 		STA		_city._presents_list,X
 locret_58A6D:
 		RTS
 
 _presents_list:
-		.BYTE	$FF,$0F,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$01,$FF,$02,$03,$04
+		.BYTE	$FF,$FF,$0F,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$01,$FF,$02,$03,$04
 		.BYTE	$05,$06,$07,$08,$09,$FF,$0A,$0B,$0C,$0D,$0E
 
 ; =============== S U B	R O U T	I N E =======================================

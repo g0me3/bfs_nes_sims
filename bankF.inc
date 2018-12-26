@@ -2085,6 +2085,53 @@ loc_18AE56:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+_tlm_lib_queue:
+		LDA		_tlm_lib,X
+		STA		_ptr0
+		LDA		_tlm_lib+1,X
+		STA		_ptr0+1
+		LDA		_tlm_lib+2,X
+		STA		_ptr2
+		LDA		_tlm_lib+3,X
+		STA		_ptr2+1
+		LDY		#$00
+		PPUQSTART
+loc_B8CE4:
+		LDA		(_ptr0),Y
+		CMP		#$FF
+		BEQ		loc_B8CF7
+		PPUQMOVA
+		INY
+		BNE		loc_B8CE4
+loc_B8CF7:
+		PPUQEND
+		LDY		#$00
+		EXTQSTART
+loc_B8CFD:
+		LDA		(_ptr2),Y
+		CMP		#$FF
+		BEQ		loc_B8D10
+		EXTQMOVA
+		INY
+		BNE		loc_B8CFD
+loc_B8D10:
+		EXTQEND
+		RTS
+
+_tlm_lib:
+		.WORD	_tlm_nt_bank_loan0,_tlm_extnt_bank_loan0			; 00 PRG7
+		.WORD	_tlm_nt_bank_loan1,_tlm_extnt_bank_loan1			; 04 PRG7
+		.WORD	_tlm_nt_bank_loan2,_tlm_extnt_bank_loan2			; 08 PRG7
+		.WORD	_tlm_nt_bank_loan3,_tlm_extnt_bank_loan3			; 0C PRG7
+		.WORD	_tlm_nt_bank_loan_def,_tlm_extnt_bank_loan_def		; 10 PRG7
+		.WORD	_tlm_nt_new_game_push,_tlm_extnt_new_game_push		; 14 PRG9
+		.WORD	_tlm_nt_next_map_push,_tlm_extnt_next_map_push		; 18 PRG9
+		.WORD	_tlm_nt_netx_map_release,_tlm_extnt_netx_map_release; 1C PRG9
+		.WORD	_tlm_nt_bank_icon,_tlm_extnt_bank_icon				; 20 PRG9
+		.WORD	_tlm_nt_bank_loan,_tlm_extnt_bank_loan				; 24 PRG9
+		.WORD	_tlm_nt_bank_no_loan,_tlm_extnt_bank_no_loan		; 28 PRG9
+
+; =============== S U B	R O U T	I N E =======================================
 _goto_alert_spr_draw:
 		LDA		_goto_alert_req
 		BNE		loc_18AE69
@@ -3550,17 +3597,18 @@ loc_18BB97:
 		BNE		loc_18BB97
 		JMP		_ppu_reset
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-_ppu_increment_select:
-		PHA
-		LDA		_ppu_ctrl_shadow
-		ORA		#$04
-		BCS		loc_18BBAC
-		AND		#$FB
-loc_18BBAC:
-		STA		_PPU_CTRL
-		PLA
-		RTS
+;_ppu_increment_select:
+;		PHA
+;		LDA		_ppu_ctrl_shadow
+;		ORA		#$04
+;		BCS		loc_18BBAC
+;		AND		#$FB
+;loc_18BBAC:
+;		STA		_PPU_CTRL
+;		PLA
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _tlm_send:
@@ -3569,43 +3617,61 @@ _tlm_send:
 		LDA		(_ptr0),Y
 		STA		_PPU_ADDR
 		INY
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y						; extrack higher bit - vertical store flag
 		ASL
-		JSR		_ppu_increment_select
-		ASL
-		LDA		(_ptr0),Y
-		AND		#$3F
-		TAX
-		BCC		loc_18BBCA
-		INY
-loc_18BBCA:
-		BCS		loc_18BBCD
-		INY
-loc_18BBCD:
+;		JSR		_ppu_increment_select			; REDUNDANT
+		PHA										; OPTIMIZED
+		LDA		_ppu_ctrl_shadow
+		ORA		#$04
+		BCS		loc_18BBAC						; setup the ppu increment bit accordingly
+		AND		#$FB
+loc_18BBAC:
+		STA		_PPU_CTRL
+		PLA
+		ASL										; restore code, extract another control bit
+		LDA		(_ptr0),Y						; reload command
+		AND		#$3F							; extract repeat counter
+		TAX										; now C=0 is copy mode, C=1 is repeat mode
+		BCC		.send_loop						; very tricky, increment Y if C=1
+		INY										; as well as increment Y if C=0 lol
+.send_loop:										; the same time being a increment Y for loop
+		BCS		.inc_skip						; or not being for loop
+		INY										; GENIUS! the same code for repeat and copy data!
+.inc_skip:
 		LDA		(_ptr0),Y
 		STA		_PPU_DATA
 		DEX
-		BNE		loc_18BBCA
+		BNE		.send_loop
 		INY
-		JSR		_adc_ptr0
-
-; =============== S U B	R O U T	I N E =======================================
-_tlm_transfer:
-		LDY		#$00
-		LDA		(_ptr0),Y
-		BNE		_tlm_send
-		JMP		_ppu_reset
-
-; =============== S U B	R O U T	I N E =======================================
-_adc_ptr0:
-		TYA
+;		JSR		_adc_ptr0						; REDUNDANT
+		TYA										; OPTIMIZED
 		CLC
 		ADC		_ptr0
 		STA		_ptr0
 		BCC		locret_18BBEC
 		INC		_ptr0+1
 locret_18BBEC:
-		RTS
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_tlm_transfer:
+		LDY		#$00
+		LDA		(_ptr0),Y						; 00 - ent of stream code
+		BNE		_tlm_send
+		JMP		_ppu_reset
+
+; REDUNDANT
+; =============== S U B	R O U T	I N E =======================================
+;_adc_ptr0:
+;		TYA
+;		CLC
+;		ADC		_ptr0
+;		STA		_ptr0
+;		BCC		locret_18BBEC
+;		INC		_ptr0+1
+;locret_18BBEC:
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_adc_tmp2_unref:

@@ -552,7 +552,7 @@ _new_city_map_regen_delay:
 		.BYTE	0
 _new_city_digit_spr_y_pos:
 		.BYTE	0
-_new_city_button_idx:
+_new_city_button_to_change_flags:
 		.BYTE	0
 byte_15F:
 		.BYTE	0

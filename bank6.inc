@@ -600,8 +600,8 @@ loc_A0A9A:
 		LDA		#$10
 loc_A0A9B:
 		TAY
-		LDX		_tlm_res_lib-2,Y
-		LDA		_tlm_res_lib-1,Y
+		LDX		_scr_tlm_lib-2,Y
+		LDA		_scr_tlm_lib-1,Y
 		TAY
 		PUSHB	_mmc5_nt_mode_shadow
 		LDA		#$24
@@ -698,7 +698,7 @@ loc_A0A9B:
 ;		RTS
 ; -
 
-_tlm_res_lib:
+_scr_tlm_lib:
 		.WORD	_tlm_res_scr1
 		.WORD	_tlm_res_scr2
 		.WORD	_tlm_res_scr3

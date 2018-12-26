@@ -214,9 +214,15 @@ loc_B97FC:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-; handles 2, 3, 5, 6 are called once before tha main loop
-; once, handles 2, 3, 5 are unrefrenced here, 6 refrenced anyway
-; BUT WHY?!
+; there are two handlers for every event. one is for init/draw, the second is
+; for input and interact. some init/draw routines doesn't call from this array
+; they call from the main code instead, because they draw only when render is
+; off and flushes its buffers directly to PPU.
+; this probably were done in order to draw the screen at once without waiting
+; but some other screens don't do that for some unknown reasons too, like
+; overall info screen. unless other screens where all the numbers should be
+; drawn before the screen shows, this one draw numbers one by one after the
+; screen shown...
 ;
 _scr_res_hndl_common_exec:
 		LDA		_scr_res_idx
@@ -314,16 +320,16 @@ loc_EA138:
 		JMP		_new_city_screen_spr_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_new_city_screen_cursor_draw:						; draws a cursor at a fixed
-		LDA		_new_city_screen_cur_row_idx		; positions on the screen controls
+_new_city_screen_cursor_draw:					; draws a cursor at a fixed
+		LDA		_new_city_screen_cur_row_idx	; positions on the screen controls
 		CMP		#$02
-		BCC		.get_spr_pos						; upper buttons, fixed pos
-		BEQ		.get_up_arrow_pos					; idx=A=2 already
-		CLC											; A>2, then idx = A+2
+		BCC		.get_spr_pos					; upper buttons, fixed pos
+		BEQ		.get_up_arrow_pos				; idx=A=2 already
+		CLC										; A>2, then idx = A+2
 		ADC		#$02
 .get_up_arrow_pos:
 		CLC
-		ADC		_new_city_screen_cur_col_idx		; get col idx
+		ADC		_new_city_screen_cur_col_idx	; get col idx
 .get_spr_pos:
 		ASL
 		TAY
@@ -397,10 +403,12 @@ _new_city_start_new_game_push:
 		STA		_apu_se_flags+1					; play se
 		LDA		_new_city_map_regen_req			; wait for map fully redrawn
 		BNE		locret_EA1F3					; actually dows not need here
-		MOVWO	_ptr0,_tlm_nt_new_game_push
-		MOVWO	_tmp2,_tlm_extnt_new_game_push
+;		MOVWO	_ptr0,_tlm_nt_new_game_push
+;		MOVWO	_tmp2,_tlm_extnt_new_game_push
 ;		LDA		#$FF
-		JSR		_tlm_queue						; queue push button tilemaps
+;		JSR		_tlm_queue						; queue push button tilemaps
+		LDX		#$14
+		JSR		_tlm_lib_queue
 		JSR		_new_city_screen_spr_draw
 		LDX		#$08							; delay for 8 frames
 loc_EA1E8:
@@ -422,11 +430,11 @@ _new_city_map_num_change_push:
 		BEQ		loc_EA203						; change what, up or...
 		LDX		#$80							; change down
 loc_EA203:
-		STX		_new_city_button_idx
+		STX		_new_city_button_to_change_flags
 		LDY		_new_city_screen_cur_col_idx
 		LDA		_new_city_map_change_idx_list,Y
-		ORA		_new_city_button_idx			; generate idx of button to change
-		STA		_new_city_button_idx
+		ORA		_new_city_button_to_change_flags; generate mask of button to change
+		STA		_new_city_button_to_change_flags
 		LDA		#$80
 		STA		_new_city_map_regen_delay		; reload delay, map number is changed
 		STA		_new_city_map_regen_req			; set flag to redraw map
@@ -434,7 +442,7 @@ loc_EA203:
 		MOVW	_ptr0,_new_map_number			; hex to dec
 		JSR		_hex_to_dec9999
 		LDY		_new_city_screen_cur_col_idx	; do map number change decimally
-		BIT		_new_city_button_idx			; by decimal digit, Y=digit idx
+		BIT		_new_city_button_to_change_flags; by decimal digit, Y=digit idx
 		BPL		loc_EA242						; _ptr0-1-2 contains a decimal number
 		LDA		_ptr0,Y
 		BNE		loc_EA23D
@@ -474,16 +482,23 @@ loc_EA24E:
 		STA		_ptr0+1							; now _tmp1 full hight nibble, _ptr0 - 16bit hex
 		STA		_new_map_number+1				; update hex map number hi nibble
 		JSR		_hex_to_dec9999					; now CONVERT TO DECIMAL ONE MORE TIME LOL
-		JSR		_new_city_map_def_spr_insert	; because we need to draw decimal but we erase it already
+		JSR		_new_city_map_num_spr_insert	; because we need to draw decimal but we erase it already
 		LDA		#$F2							; BUG, see, this is tiles for pressed
-		BIT		_new_city_button_idx			; number selection arrows, but
+		BIT		_new_city_button_to_change_flags			; number selection arrows, but
 		BPL		loc_EA289						; ...
 		LDA		#$F7							; here is NO button update code!
 loc_EA289:
-		JSR		_new_city_map_num_button_update	; FIX. now buttons animated!
+; FIX. now arrow buttons are animated! they probably haven't enabled it here
+; because of previously it was an FJSRA call (see below) which is changes
+; content of ram vars _tmp0 to _tmp6 (saves the temporary vars there)
+; since we moved this routine here and made it local, there is no more
+; var changes, so we can use it now and all working as intended
+; -
+		JSR		_new_city_map_num_button_update
+; -
 		JSR		_new_city_map_num_roll_anim		; after press we do rolling number anim here
 		LDA		#$F1							; and restore button back, unpush!
-		BIT		_new_city_button_idx
+		BIT		_new_city_button_to_change_flags
 		BPL		loc_EA295
 		LDA		#$F6
 loc_EA295:
@@ -494,18 +509,9 @@ loc_EA295:
 _new_city_map_change_idx_list:
 		.BYTE	$01,$02,$04
 _num_hundreds:
-		.WORD	0
-		.WORD	100
-		.WORD	200
-		.WORD	300
-		.WORD	400
-		.WORD	500
-		.WORD	600
-		.WORD	700
-		.WORD	800
-		.WORD	900
+		.WORD	0,100,200,300,400,500,600,700,800,900
 _num_decals:
-		.BYTE	0,10,20,30,40,50,60,70,80,90
+		.BYTE	0, 10, 20, 30, 40, 50, 60, 70, 80, 90
 
 ; =============== S U B	R O U T	I N E =======================================
 ; updates one particular button tile with a custom one. seems planned to animate
@@ -515,11 +521,11 @@ _num_decals:
 _new_city_map_num_button_update:
 		PHA
 		LDY		#$FF							; valid indexes 04 02 01
-		BIT		_new_city_button_idx			;               84 82 81
+		BIT		_new_city_button_to_change_flags;               84 82 81
 		BPL		loc_B96AB
 		LDY		#$02
 loc_B96AB:
-		LDA		_new_city_button_idx
+		LDA		_new_city_button_to_change_flags
 loc_B96AE:
 		LSR										; calc spr buf pos idx
 		INY
@@ -537,100 +543,78 @@ _new_city_ctrl_spr_pos_list:
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_next_map_push:
 		LDA		#$40
-		STA		_apu_se_flags+1
-		LDA		_new_city_map_regen_req
-		BNE		loc_EA363
-		MOVWO	_ptr0,byte_EA392
-		MOVWO	_tmp2,byte_EA3A7
+		STA		_apu_se_flags+1					; play se
+		LDA		_new_city_map_regen_req			; if we already pending a new map
+		BNE		.next_skip						; skip this part
+;		MOVWO	_ptr0,_tlm_nt_next_map_push
+;		MOVWO	_tmp2,_tlm_extnt_next_map_push
 ;		LDA		#$FF
-		JSR		_tlm_queue
-		JSR		_wait_for_nmi
-		LDA		_new_map_number
-		CLC
+;		JSR		_tlm_queue						; draw push button
+		LDX		#$18
+		JSR		_tlm_lib_queue
+; BUG, here we have a problem, after push we wait for nmi and
+; at least for one frame we have no sprites shown here. so
+; when you press the button, the bottom controls will blink
+; FIX, if we remove this frame, then the buffers will flush on the
+; number roll animations below without blinking the sprites itself
+;
+;		JSR		_wait_for_nmi
+		LDA		_new_map_number					; now increment map number,
+		CLC										; store it to tmp0
 		ADC		#$01
 		STA		_ptr0
 		LDA		_new_map_number+1
 		ADC		#$00
 		STA		_ptr0+1
 		CMP		#$03
-		BCC		loc_EA327
-		BNE		loc_EA321
-		LDA		_ptr0
+		BCC		.do_next_map					; check rough if less than 999
+		BNE		loc_EA321						; REDUNDANT, more than 1024, never possible here actually
+		LDA		_ptr0							; more than exactly 999
 		CMP		#$E8
-		BCC		loc_EA327
+		BCC		.do_next_map
 loc_EA321:
-		LDA		#$00
+		LDA		#$00							; clamp back to 0
 		STA		_ptr0+1
 		STA		_ptr0
-loc_EA327:
-		MOVW	_new_map_number,_ptr0
-		JSR		_hex_to_dec9999
-		LDA		#$01
-		LDX		_ptr0
+.do_next_map:
+		MOVW	_new_map_number,_ptr0			; store map number
+		JSR		_hex_to_dec9999					; also hex to dec it
+		LDA		#$01							; masks for buttons to roll
+		LDX		_ptr0							; all positive because increment only
 		BNE		loc_EA342
 		LDA		#$03
 		LDX		_ptr0+1
 		BNE		loc_EA342
 		LDA		#$07
 loc_EA342:
-		STA		_new_city_button_idx
-		JSR		_new_city_map_def_spr_insert
-		JSR		_new_city_map_num_roll_anim
+		STA		_new_city_button_to_change_flags
+		JSR		_new_city_map_num_spr_insert
+		JSR		_new_city_map_num_roll_anim		; animate change
 		JSR		_new_city_map_generate
-		MOVWO	_ptr0,byte_EA3B5
-		MOVWO	_tmp2,byte_EA3CA
+;		MOVWO	_ptr0,_tlm_nt_netx_map_release
+;		MOVWO	_tmp2,_tlm_extnt_netx_map_release
 ;		LDA		#$FF
-		JMP		_tlm_queue
-loc_EA363:
+;		JMP		_tlm_queue						; draw release button again
+		LDX		#$1C
+		JMP		_tlm_lib_queue
+.next_skip:
 		JMP		_new_city_screen_spr_draw
 
-; =============== S U B	R O U T	I N E =======================================
-; args: _ptr0 - nt data
-;       _tmp2 - extnt data
-;       A - stop byte for data
-_tlm_queue:
-;		STA		byte_15F						; REDUNDANT, custom stop byte stored here
-		PPUQSTART
-		LDY		#$00
-loc_EA36D:
-		LDA		(_ptr0),Y						; first queue nt data
-;		CMP		byte_15F						; REDUNDANT, now all data uses the same stop-byte
-		CMP		#$FF
-		BEQ		loc_EA37B
-		PPUQMOVA
-		INY
-		BNE		loc_EA36D
-loc_EA37B:
-		PPUQEND
-		EXTQSTART
-		LDY		#$00
-loc_EA381:
-		LDA		(_tmp2),Y						; then queue extnt data
-;		CMP		byte_15F
-		CMP		#$FF
-		BEQ		loc_EA38F
-		EXTQMOVA
-		INY
-		BNE		loc_EA381
-loc_EA38F:
-		EXTQEND
-		RTS
-
-byte_EA392:
+_tlm_nt_next_map_push:
 		.BYTE	$F9,$24,$04,$AF,$AF,$AF,$AF
 		.BYTE	$19,$25,$04,$ED,$DE,$EE,$FD
 		.BYTE	$39,$25,$03,$FE,$AD,$B9
 		.BYTE	$FF
-byte_EA3A7:
+_tlm_extnt_next_map_push:
 		.BYTE	$19,$5D,$04,$0A,$0A,$0A,$0A
 		.BYTE	$39,$5D,$03,$0A,$0A,$0A
 		.BYTE	$FF
-byte_EA3B5:
+_tlm_nt_netx_map_release:
 		.BYTE	$F9,$24,$04,$A9,$A9,$A9,$A9
 		.BYTE	$19,$25,$04,$4E,$45,$58,$54
 		.BYTE	$39,$25,$03,$4D,$41,$50
 		.BYTE	$FF
-byte_EA3CA:
+_tlm_extnt_netx_map_release:
 		.BYTE	$19,$5D,$04,$8B,$8B,$8B,$8B
 		.BYTE	$39,$5D,$03,$8B,$8B,$8B
 		.BYTE	$FF
@@ -644,13 +628,49 @@ _tlm_extnt_new_game_push:
 		.BYTE	$B9,$5D,$04,$0A,$0A,$0A,$0A
 		.BYTE	$FF
 
+; REDUNDANT, merged with similar routine in PRG7, then moved it to the system bank
+; and converted all calls to the library calls by its indexes
+; now we have much shorter calls and all tlm are in one table in system bank
+;
+; =============== S U B	R O U T	I N E =======================================
+; args: _ptr0 - nt data
+;       _tmp2 - extnt data
+;       A - stop byte for data
+;_tlm_queue:
+;		STA		byte_15F						; REDUNDANT, custom stop byte stored here
+;		PPUQSTART
+;		LDY		#$00
+;loc_EA36D:
+;		LDA		(_ptr0),Y						; first queue nt data
+;		CMP		byte_15F						; REDUNDANT, now all data uses the same stop-byte
+;		CMP		#$FF
+;		BEQ		loc_EA37B
+;		PPUQMOVA
+;		INY
+;		BNE		loc_EA36D
+;loc_EA37B:
+;		PPUQEND
+;		EXTQSTART
+;		LDY		#$00
+;loc_EA381:
+;		LDA		(_tmp2),Y						; then queue extnt data
+;		CMP		byte_15F
+;		CMP		#$FF
+;		BEQ		loc_EA38F
+;		EXTQMOVA
+;		INY
+;		BNE		loc_EA381
+;loc_EA38F:
+;		EXTQEND
+;		RTS
+
 ; REDUNDANT, unused
 ;		.BYTE	$01,$00,$0A,$00,$64,$00,$64,$00
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_screen_spr_draw:
-		JSR		_new_city_map_def_spr_insert
-		MOVW	_ptr0,_new_map_number
+		JSR		_new_city_map_num_spr_insert		; insert regular num frame
+		MOVW	_ptr0,_new_map_number				; insert actual map number
 		JSR		_hex_to_dec9999
 		LDX		#$50
 		LDY		#$02
@@ -662,11 +682,11 @@ loc_EA419:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_new_city_map_def_spr_insert:
+_new_city_map_num_spr_insert:
 		LDX		#$10
 		LDY		#$3B
 loc_EA426:
-		LDA		_spr_new_city_map_def,Y
+		LDA		_spr_new_city_map_def,Y				; default map number frame sprites
 		STA		_spr_buf,X
 		INX
 		DEY
@@ -687,8 +707,8 @@ _new_city_map_num_roll_anim:
 		LDY		#$02
 		LDX		#$50
 loc_EA43C:
-		LDA		_new_city_button_idx
-		AND		_new_city_map_num_bitmasks,Y
+		LDA		_new_city_button_to_change_flags; check if button need to be drawn
+		AND		_new_city_map_num_bitmasks,Y	; by masking its bit
 		BNE		loc_EA44F
 		LDA		_new_city_digit_spr_y_pos
 		JSR		_new_city_map_num_digit_spr_draw
@@ -700,7 +720,7 @@ loc_EA44F:
 		JSR		sub_EA4EA
 		PLA
 		STA		_ptr0,Y
-		BIT		_new_city_button_idx
+		BIT		_new_city_button_to_change_flags; roll direction
 		BPL		loc_EA467
 		LDA		_new_city_digit_spr_y_pos
 		SEC
@@ -715,7 +735,7 @@ loc_EA46D:
 		DEY
 		BPL		loc_EA43C
 		STX		_spr_buf_pos
-		BIT		_new_city_button_idx
+		BIT		_new_city_button_to_change_flags
 		BPL		loc_EA489
 loc_EA47A:
 		JSR		_wait_for_nmi
@@ -731,13 +751,13 @@ loc_EA489:
 		CMP		#$B1
 		BEQ		loc_EA4C3
 loc_EA496:
-		LDA		_new_city_button_idx
+		LDA		_new_city_button_to_change_flags
 		LDY		#$02
 		LDX		#$10
 loc_EA49D:
 		LSR
 		BCC		loc_EA4B3
-		BIT		_new_city_button_idx
+		BIT		_new_city_button_to_change_flags
 		BMI		loc_EA4AD
 		DEC		_spr_buf+$50,X
 		DEC		_spr_buf+$54,X
@@ -752,7 +772,7 @@ loc_EA4B3:
 		PLA
 		DEY
 		BPL		loc_EA49D
-		BIT		_new_city_button_idx
+		BIT		_new_city_button_to_change_flags
 		BPL		loc_EA489
 		BMI		loc_EA47A
 loc_EA4C3:
@@ -787,7 +807,7 @@ _new_city_map_num_digit_pos_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA4EA:
-		BIT		_new_city_button_idx
+		BIT		_new_city_button_to_change_flags
 		BPL		loc_EA4FD
 		LDA		_ptr0,Y
 		CMP		#$09
@@ -2192,22 +2212,27 @@ loc_EAEEC:
 		JSR		_printf_num_lib
 		BIT		_city._bank_flags
 		BPL		loc_EAFD0
-		MOVWO	_ptr0,_tlm_nt_bank_icon
-		MOVWO	_tmp2,_tlm_extnt_bank_icon
+;		MOVWO	_ptr0,_tlm_nt_bank_icon
+;		MOVWO	_tmp2,_tlm_extnt_bank_icon
 ;		LDA		#$FF
-		JSR		_tlm_queue
+;		JSR		_tlm_queue
+		LDX		#$20
+		JSR		_tlm_lib_queue
 		JSR		_buffers_force_flush
 		BIT		_city._bank_flags
 		BVC		loc_EAFBB
-		MOVWO	_ptr0,_tlm_nt_bank_loan
-		MOVWO	_tmp2,_tlm_extnt_bank_loan
-		JMP		loc_EAFCB
+;		MOVWO	_ptr0,_tlm_nt_bank_loan
+;		MOVWO	_tmp2,_tlm_extnt_bank_loan
+		LDX		#$24
+		BNE		loc_EAFCB
 loc_EAFBB:
-		MOVWO	_ptr0,_tlm_nt_bank_no_loan
-		MOVWO	_tmp2,_tlm_extnt_bank_no_loan
+;		MOVWO	_ptr0,_tlm_nt_bank_no_loan
+;		MOVWO	_tmp2,_tlm_extnt_bank_no_loan
+		LDX		#$28
 loc_EAFCB:
 ;		LDA		#$FF
-		JSR		_tlm_queue
+;		JSR		_tlm_queue
+		JSR		_tlm_lib_queue
 loc_EAFD0:
 		LDY		#$00
 		LDX		#$03
@@ -2251,6 +2276,41 @@ loc_EAFFD:
 		FJSRA	_budget_screen_clock_spr_animate,PRG7,PRG9
 		INC		_mmc5_operation_in_progress_flag
 		RTS
+
+_tlm_nt_bank_icon:
+		.BYTE	$84,$26,$04,$7B,$7C,$7D,$7E
+		.BYTE	$90,$26,$01,$24
+		.BYTE	$79,$26,$03,$10,$11,$12
+		.BYTE	$99,$26,$03,$20,$21,$22
+		.BYTE	$B9,$26,$03,$30,$31,$32
+		.BYTE	$D8,$26,$06,$13,$14,$15,$16,$17,$18
+		.BYTE	$F8,$26,$06,$23,$24,$25,$26,$27,$28
+		.BYTE	$18,$27,$06,$33,$34,$35,$36,$37,$38
+		.BYTE	$FF
+_tlm_nt_bank_no_loan:
+		.BYTE	$96,$26,$01,$00
+		.BYTE	$FF
+_tlm_nt_bank_loan:
+		.BYTE	$8F,$26,$01,$7F
+		.BYTE	$94,$26,$03,$05,$00,$00
+		.BYTE	$FF
+_tlm_extnt_bank_icon:
+		.BYTE	$84,$5E,$04,$45,$45,$45,$45
+		.BYTE	$90,$5E,$01,$0B
+		.BYTE	$79,$5E,$03,$D7,$D7,$D7
+		.BYTE	$99,$5E,$03,$D7,$D7,$D7
+		.BYTE	$B9,$5E,$03,$D7,$D7,$D7
+		.BYTE	$D8,$5E,$06,$17,$17,$17,$17,$17,$17
+		.BYTE	$F8,$5E,$06,$17,$17,$17,$17,$17,$17
+		.BYTE	$18,$5F,$06,$17,$17,$17,$17,$17,$17
+		.BYTE	$FF
+_tlm_extnt_bank_no_loan:
+		.BYTE	$96,$5E,$01,$05
+		.BYTE	$FF
+_tlm_extnt_bank_loan:
+		.BYTE	$8F,$5E,$01,$05
+		.BYTE	$94,$5E,$03,$05,$05,$05
+		.BYTE	$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl2_B_budget_input:
@@ -3174,49 +3234,6 @@ byte_EB76C:
 		.BYTE	$00,$00,$07,$07,$08,$08,$09,$09,$0A,$0A,$0B,$0B
 byte_EB778:
 		.BYTE	$00,$00,$0C,$0C,$0D,$0D,$0E,$0E,$0F,$0F,$10,$10
-_tlm_nt_bank_icon:
-		.BYTE	$84,$26,$04,$7B,$7C,$7D,$7E,$90,$26,$01,$24,$79,$26,$03,$10,$11
-		.BYTE	$12,$99,$26,$03,$20,$21,$22,$B9,$26,$03,$30,$31,$32,$D8,$26,$06
-		.BYTE	$13,$14,$15,$16,$17,$18,$F8,$26,$06,$23,$24,$25,$26,$27,$28,$18
-		.BYTE	$27,$06,$33,$34,$35,$36,$37,$38,$FF
-_tlm_nt_bank_no_loan:
-		.WORD	$2696
-		.BYTE	$01,$00
-		.BYTE	$FF
-_tlm_nt_bank_loan:
-		.WORD	$268F
-		.BYTE	$01,$7F
-		.WORD	$2694
-		.BYTE	$03,$05,$00,$00
-		.BYTE	$FF
-_tlm_extnt_bank_icon:
-		.WORD	$5E84
-		.BYTE	$04,$45,$45,$45,$45
-		.WORD	$5E90
-		.BYTE	$01,$0B
-		.WORD	$5E79
-		.BYTE	$03,$D7,$D7,$D7
-		.WORD	$5E99
-		.BYTE	$03,$D7,$D7,$D7
-		.WORD	$5EB9
-		.BYTE	$03,$D7,$D7,$D7
-		.WORD	$5ED8
-		.BYTE	$06,$17,$17,$17,$17,$17,$17
-		.WORD	$5EF8
-		.BYTE	$06,$17,$17,$17,$17,$17,$17
-		.WORD	$5F18
-		.BYTE	$06,$17,$17,$17,$17,$17,$17
-		.BYTE	$FF
-_tlm_extnt_bank_no_loan:
-		.WORD	$5E96
-		.BYTE	$01,$05
-		.BYTE	$FF
-_tlm_extnt_bank_loan:
-		.WORD	$5E8F
-		.BYTE	$01,$05
-		.WORD	$5E94
-		.BYTE	$03,$05,$05,$05
-		.BYTE	$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 _printf_txt_lib:
