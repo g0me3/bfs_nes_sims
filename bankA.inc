@@ -117,15 +117,15 @@ loc_10415F:
 ; for C proportion = ((L_r/L_CI)*(L_CI+L_r)*256*0.27)/(L_C*256)
 ; for I proportion = (L_r/L_CI)*1.2), default 1.2, max 1.56
 ;
+; NOTE, RCI levels here are depending on people requirements, if no requirements,
+; then calc as usual if any requirement is set, then delta will be always 0 forced,
+; .ignore_requirements delta already bad enough, so no need to force it to zero.
+; for R meter it depending on stadium requirement, for C meter - on seaport
+; requirement and for I meter - on airport requirement
+;
 _RCI_meter_recalc:
 		LDA		_city._delta,X					; read area development level delta value
 		BMI		.ignore_requirements
-; NOTE, RCI levels are depending on people requirements, if no requirements, then calc as usual
-; if any requirement is set, then delta will be always 0 forced, .ignore_requirements delta already
-; bad enough, so no need to force it to zero.
-; for R meter it depending on stadium requirement, for C meter - on seaport requirement
-; and for I meter - on airport requirement
-;
 		LDA		#$00
 		LDY		_required,X
 		BNE		.delta_update
@@ -202,84 +202,100 @@ _rci_meters_accel_tax_list:
 		.BYTE	$E6,$E3,$E0,$DD,$DA
 
 ; =============== S U B	R O U T	I N E =======================================
+; consumption calculated on the tile-basis. every building (includnig the power
+; station itself and all power lines) consume 1 point for one tile used plus
+; additional value depending on how much conjunctions it has with other powerable
+; tiles details are below.
+;
 _power_grid_recalc:
-		JSR		_sram_on
-		LDA		#$00
-		TAY
-loc_104203:
-		STA		_power_grid_map_buf,Y			; clear power grid map
-		STA		_power_grid_map_buf+$100,Y		; TODO: merge clear code in one proc
-		INY
-		BNE		loc_104203
-		LDA		#$00
-		TAY
-loc_10420F:
-		STA		_power_grid_map_buf+$200,Y
-		INY
-		CPY		#$D2
-		BNE		loc_10420F
+		JSR		_sram_on						; set game buffers to read
+; REDUNDANT
+;		LDA		#$00
+;		TAY
+;loc_104203:
+;		STA		_power_grid_map_buf,Y			; clear power grid map
+;		STA		_power_grid_map_buf+$100,Y		; TODO: merge clear code in one proc
+;		INY
+;		BNE		loc_104203
+;		LDA		#$00
+;		TAY
+;loc_10420F:
+;		STA		_power_grid_map_buf+$200,Y
+;		INY
+;		CPY		#$D2
+;		BNE		loc_10420F
+; -
+; OPTIMIZED
+		MOVWO	_tmpE6,_power_grid_map_buf		; clear power grid map
+		LDX		#$02							; 76*76/8 = 722
+		LDY		#$D2
+		JSR		_clear_buffer
+; -
 		JSR		_sram_off
-		PUSHWI	$02BC							; E6 = COL * 700
+		PUSHWI	700								; calculate power generation
 		PUSHB	_coal_power_station_count
-		JSR		_mmc5_mul16to8
+		JSR		_mmc5_mul16to8					; E6 = COL * 700
 		POPD	_tmpE6
-		PUSHWI	$07D0
-		PUSHB	_nuke_power_station_count		; E6 = E6 + NUCLEAR * 2000
+		PUSHWI	2000
+		PUSHB	_nuke_power_station_count		; TMP = NUCLEAR * 2000
 		JSR		_mmc5_mul16to8
 		PLA
 		CLC
-		ADC		_tmpE6
+		ADC		_tmpE6							; E6 = E6 + TMP
 		STA		_tmpE6
 		PLA
 		ADC		_tmpE7
 		STA		_tmpE7
 		PLA
 		ADC		_tmpE8
-		BEQ		loc_104253						; if E6 > $FFFF
-		LDA		#$FF							; E6 = E6 | $FFFF
+		BEQ		loc_104253						; if result > $FFFF
+		LDA		#$FF							; then clamp to $FFFF
 		STA		_tmpE6
 		STA		_tmpE7
 loc_104253:
-		MOVW	_tmp6CC,_tmpE6
-		MOVWI	_tmp6CE,0
-loc_104265:
-		LDA		_power_stations_list_pos
-		ORA		_power_stations_list_pos+1
+		MOVW	_tmp6CC,_tmpE6					; _tmp6CC here is full power generation value
+		MOVWI	_tmp6CE,0						; _tmp6CE current consumtion counter, initial value 0
+.power_grid_recalc_loop:
+		LDA		_power_stations_list_pos		; here must be already collected list of power stations
+		ORA		_power_stations_list_pos+1		; if not, skip calcs.
 		BNE		loc_10426E
 		RTS
 loc_10426E:
-		LDY		_power_stations_list_pos
-		LDA		_power_stations_list_pos+1
+		LDY		_power_stations_list_pos		; load counter
+		LDA		_power_stations_list_pos+1		; to start with list0 or list1 test higher counter byte
 		BEQ		loc_10427F
-		LDX		_tmp_recalc_bufs,Y
+		LDX		_tmp_recalc_bufs,Y				; list 1 read
 		LDA		_tmp_recalc_bufs+$300,Y
 		JMP		loc_104285
 loc_10427F:
-		LDX		_tmp_recalc_bufs+$100,Y
+		LDX		_tmp_recalc_bufs+$100,Y			; list 0 read
 		LDA		_tmp_recalc_bufs+$200,Y
 loc_104285:
-		STX		_tmp_map_pos._COL
+		STX		_tmp_map_pos._COL				; fetch last power station position on map
 		STA		_tmp_map_pos._ROW
-		DEY
+		DEY										; decrement power stations list counter
 		STY		_power_stations_list_pos
 		CPY		#$FF
 		BNE		loc_104296
 		DEC		_power_stations_list_pos+1
 loc_104296:
 		LDA		#$04
-		STA		_tmp6D0
-loc_10429B:
-		INCW	_tmp6CE
-		CMPW	_tmp6CE,_tmp6CC
+		STA		_tmp6D0							; default nearest tile position idx, see below
+.power_search_loop0:
+		INCW	_tmp6CE							; for every tile we test, increment consumption counter
+		CMPW	_tmp6CE,_tmp6CC					; compare with max possible according to power stations number
 		BCS		locret_1042F9
 		LDX		_tmp6D0
-		JSR		_tmp_map_surrounding_tile_pos_select
-		JSR		_power_grid_map_bit_set
+		JSR		_tmp_map_pos_near_tile_select	; read current conjuncted tile
+; NOTE, this algo mark as powered not only the buildings and wires, but
+; a subset of cunjuncted tiles near the powerable tiles.
+;
+		JSR		_power_grid_map_bit_set			; mark nearest tile as powered
 		LDA		#$00
 		STA		_tmp6D2
-		STA		_tmp6D0+1
-loc_1042C2:
-		LDA		_tmp6D0+1
+		STA		_tmp6D1							; loop1 counter
+.power_search_loop1:
+		LDA		_tmp6D1							; test all 4 nearest tiles for current nearest to power station
 		CMP		#$04
 		BCS		loc_1042E7
 		LDA		_tmp6D2
@@ -288,11 +304,11 @@ loc_1042C2:
 		FJSR	_test_select_map_tile_if_powered_up,SRAM,PRGB
 		BCS		loc_1042E2
 		INC		_tmp6D2
-		LDA		_tmp6D0+1
+		LDA		_tmp6D1
 		STA		_tmp6D0
 loc_1042E2:
-		INC		_tmp6D0+1
-		BNE		loc_1042C2
+		INC		_tmp6D1
+		BNE		.power_search_loop1
 loc_1042E7:
 		LDA		_tmp6D2
 		CMP		#$02
@@ -300,18 +316,22 @@ loc_1042E7:
 		JSR		_power_stations_map_pos_list_insert
 loc_1042F1:
 		LDA		_tmp6D2
-		BNE		loc_10429B
-		JMP		loc_104265						; TODO: optimize me
+		BNE		.power_search_loop0
+		JMP		.power_grid_recalc_loop						; TODO: optimize me
 locret_1042F9:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tmp_map_surrounding_tile_pos_select:
-		CPX		#$00
-		BNE		loc_104307
-		LDA		_tmp_map_pos._ROW
-		BEQ		locret_10432E
-		DEC		_tmp_map_pos._ROW
+; this is a copy of similar routine in bank which cannot be used
+; also _back_from_near_tmp_map_pos_tile cannot be optimized like this routine
+; because we need to keep X there
+;
+_tmp_map_pos_near_tile_select:
+		CPX		#$00							; input arg - one of the select direction
+		BNE		loc_104307						; -0-
+		LDA		_tmp_map_pos._ROW				; 3*1
+		BEQ		locret_10432E					; -2-
+		DEC		_tmp_map_pos._ROW				; if at the map edge, use the same tile
 		RTS
 loc_104307:
 		DEX
@@ -341,25 +361,35 @@ locret_10432E:
 ; =============== S U B	R O U T	I N E =======================================
 _power_stations_map_pos_list_insert:
 		JSR		_sram_on
+; REDUNDANT
+;		LDY		_power_stations_list_pos		; get counter 16-bit value
+;		LDX		_power_stations_list_pos+1		; increment by 1
+;		INY										; X/Y = list_pos+1 now
+;		BNE		loc_10433C
+;		INX
+;loc_10433C:
+;		CPX		#$02
+;		BEQ		loc_104368						; maximum entries in list 512
+;		STY		_power_stations_list_pos		; save value
+;		STX		_power_stations_list_pos+1
+;		LDY		_power_stations_list_pos
+;		CPX		#$00
+;		BEQ		.power_grid_list0_store
+; -
+; OPTIMIZED
+		INCW	_power_stations_list_pos
 		LDY		_power_stations_list_pos
 		LDX		_power_stations_list_pos+1
-		INY
-		BNE		loc_10433C
-		INX
-loc_10433C:
+		BEQ		.power_grid_list0_store			; less than 256 entries, store list 0
 		CPX		#$02
-		BEQ		loc_104368
-		STY		_power_stations_list_pos
-		STX		_power_stations_list_pos+1
-		LDY		_power_stations_list_pos
-		CPX		#$00
-		BEQ		loc_10435C
-		LDA		_tmp_map_pos._COL
+		BEQ		loc_104368						; maximum entries in list 512
+; -
+		LDA		_tmp_map_pos._COL				; other entries stored in list 1
 		STA		_tmp_recalc_bufs,Y
 		LDA		_tmp_map_pos._ROW
 		STA		_tmp_recalc_bufs+$300,Y
 		JMP		loc_104368						; optimize me
-loc_10435C:
+.power_grid_list0_store:
 		LDA		_tmp_map_pos._COL
 		STA		_tmp_recalc_bufs+$100,Y
 		LDA		_tmp_map_pos._ROW
@@ -369,37 +399,37 @@ loc_104368:
 
 ; =============== S U B	R O U T	I N E =======================================
 _power_grid_map_bit_set:
-		LDA		_tmp_map_pos._ROW
+		LDA		_tmp_map_pos._ROW				; calculate map buf offset
 		MULAI	#$4C
 		LDA		_MMC5_MUL0
 		CLC
 		ADC		_tmp_map_pos._COL
-		STA		_tmpE6
-		PHA
-		LDA		_MMC5_MUL1
+		STA		_tmpE6							; store low nibble
+		PHA										; backup it for now
+		LDA		_MMC5_MUL1						; adjust high nibble in A
 		ADC		#$00
+		LSR										; div 8, since every tile uses
+		ROR		_tmpE6							; one bit in power grid map
 		LSR
 		ROR		_tmpE6
 		LSR
 		ROR		_tmpE6
-		LSR
-		ROR		_tmpE6
-		STA		_tmpE7
-		LDA		_tmpE6
+		STA		_tmpE7							; store shifted high nibble
+		LDA		_tmpE6							; lower already shifted, load
 		CLC
-		ADC		#<[_power_grid_map_buf]
+		ADC		#<[_power_grid_map_buf]			; add buffer offset to get full ptr
 		STA		_tmpE6
 		LDA		_tmpE7
 		ADC		#>[_power_grid_map_buf]
 		STA		_tmpE7
 		PLA
-		AND		#$07
-		TAX
+		AND		#$07							; extract lower 3 bits for number of
+		TAX										; selected bit in current byte of grid map
 		LDY		#$00
-		LDA		(_tmpE6),Y
-		ORA		_inv_bitmasks,X
+		LDA		(_tmpE6),Y						; load it
+		ORA		_inv_bitmasks,X					; set flag
 		JSR		_sram_on
-		STA		(_tmpE6),Y
+		STA		(_tmpE6),Y						; store byte back
 		JMP		_sram_off
 
 		SECTION_ENDS B01, "PRGB RCI METERS POWER GRID RECALC"
@@ -1004,7 +1034,7 @@ _city_problems_list_recalc:
 		STA		_tmp6D0
 		LDA		_city._var_5FD
 		AND		#$7F
-		STA		_tmp6D0+1
+		STA		_tmp6D1
 		PUSHW	_city._overall_land_value
 		PUSHB	#$A0
 		JSR		_mmc5_mul16to8
@@ -2196,24 +2226,24 @@ nullsub_5:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg_start:
-		PLA									; odd thing, if any new scroll msg is pending
-		PLA									; and not currently displayed, then we do break
-		LDA		_tmpEA						; from test loop and show this message
-		CMP		_scroll_msg_idx				; prevents from resetting the currently displayed
-		BEQ		locret_105124				; scroll message
+		PLA									; if any new scroll msg is pending while other
+		PLA									; currently is displayed, then we just break
+		LDA		_tmpEA						; and reattempt to display this message on the
+		CMP		_scroll_msg_idx				; next loop.
+		BEQ		locret_105124
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 ;
 _scroll_msg_force_start:
-		STA		_scroll_msg_idx				; but for "required" messages we will continue
-		LDY		#$00						; search and if next message is triggered,
-		STY		_scroll_msg_start_pos		; we will for sure not see the required one
-		DEY									; lowest priority messages? see if no other
-		STY		_scroll_msg_active_flag		; events happens? yes, but it should STOP
-locret_105124:								; any currently displayed one but seems this never
-		RTS									; happens just because of long checking period.
+		STA		_scroll_msg_idx				; however, there are some events that can
+		LDY		#$00						; break current scroll message display a new one
+		STY		_scroll_msg_start_pos		;
+		DEY									; theoretically this may lead to garbage data
+		STY		_scroll_msg_active_flag		; of the previous scroller on the screen
+locret_105124:								; but due to long duration period between tests
+		RTS									; this won't happen most of the time
 
 		SECTION_START	100
 

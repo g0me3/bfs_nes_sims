@@ -20,6 +20,8 @@ _THREAD1_MAIN:
 		LDA		#$00
 		STA		_city._cur_week
 
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
 _THREAD1_LOOP:
 		JSR		_wait_for_hud_redraw
@@ -30,10 +32,10 @@ _THREAD1_LOOP:
 		FJSR	_RCI_meters_recalc,SRAM,PRGA
 loc_11E047:
 		JSR		_map_corruption_tiles_animate
-		LDA		_frames_counter
+		LDA		_frames_counter					; adjust random seed
 		STA		_rand_seed
 		ADDWB	_city._tax_year_rate,_city._tax_rate
-		MOVWI	_power_stations_list_pos,$0000
+		MOVWI	_power_stations_list_pos,0
 		LDA		#$07
 		STA		_thread0_flags+1
 		JSR		_overall_stats_clear
@@ -286,8 +288,8 @@ loc_11E23D:
 ;		ADC		_RCI_counts._I+1
 ;		STA		_total_RCI_counts+1
 ; -
-		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I
-; BUG! will change after end of the fiscal year, but used in some further calcs
+		MADDW	_total_RCI_counts,_tmpE6,_RCI_counts._I	; FIX
+; REDUNDANT, will change after end of the fiscal year, but used in some further calcs
 ; in event manager. not used anywhere near here after all, can be freely removed
 ; -
 ;		LDA		_nuke_power_station_count
@@ -409,7 +411,7 @@ _fire_tile_collect:
 loc_11E394:
 		LDX		#$03
 loc_11E396:
-		JSR		_set_tmp_map_pos_to_surrounding_tile
+		JSR		_jump_to_near_to_tmp_map_pos_tile
 		BCS		loc_11E3B5
 		JSR		_get_building_map_tile
 		LDY		_last_map_tile_read
@@ -421,7 +423,7 @@ loc_11E396:
 		BCC		loc_11E3B2
 		JSR		_fire_cur_map_tile
 loc_11E3B2:
-		JSR		_restore_tmp_map_pos_from_surrounding_tile
+		JSR		_back_from_near_tmp_map_pos_tile
 loc_11E3B5:
 		DEX
 		BPL		loc_11E396
@@ -1231,7 +1233,7 @@ loc_11E97E:
 		AND		#$30
 		BEQ		loc_11E9B4
 		LDX		_tmp6CE
-		JSR		_set_tmp_map_pos_to_surrounding_tile
+		JSR		_jump_to_near_to_tmp_map_pos_tile
 		LDA		_tmp6CE
 		CLC
 		ADC		#$02
@@ -1268,7 +1270,7 @@ sub_11E9CD:
 		TAX
 		CPX		#$04
 		BCS		loc_11E9E8
-		JSR		_set_tmp_map_pos_to_surrounding_tile
+		JSR		_jump_to_near_to_tmp_map_pos_tile
 		BCS		loc_11E9E8
 		JSR		_get_building_map_tile
 		LDX		#$02
@@ -2293,16 +2295,29 @@ _internal_building_tile_deltaY_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_tile_read:
-		PUSHB	_tmp_map_pos._ROW
-		PUSHB	#$4C
-		JSR		_mmc5_mul8to8
-		PLA
+; REDUNDANT, too slow for such frequently used routine
+;		PUSHB	_tmp_map_pos._ROW
+;		PUSHB	#$4C
+;		JSR		_mmc5_mul8to8
+;		PLA
+;		CLC
+;		ADC		#<[_wram_map_buf]
+;		STA		word_EC
+;		PLA
+;		ADC		#>[_wram_map_buf]
+;		STA		word_EC+1
+; -
+; OPTIMIZED, FASTER!
+		LDA		_tmp_map_pos._ROW
+		MULAI	#$4C
+		LDA		#<[_wram_map_buf]
 		CLC
-		ADC		#<[_wram_map_buf]
+		ADC		_MMC5_MUL0
 		STA		word_EC
-		PLA
-		ADC		#>[_wram_map_buf]
+		LDA		#>[_wram_map_buf]
+		ADC		_MMC5_MUL1
 		STA		word_EC+1
+; -
 		LDY		_tmp_map_pos._COL
 		LDA		(word_EC),Y
 		RTS
@@ -2327,28 +2342,35 @@ _map_tile_write:
 		JMP		_sram_off
 
 ; =============== S U B	R O U T	I N E =======================================
-_restore_tmp_map_pos_from_surrounding_tile:
-		CPX		#$00
-		BEQ		_tmp_map_inc_pos_Y
+; same as _tmp_map_pos_near_tile_select routine
+; -0-
+; 3*1
+; -2-
+; also this routine returns C=1 if couldn't set a near tile idx due to
+; current value is on the map edge
+;
+_jump_to_near_to_tmp_map_pos_tile:
+		CPX		#$00						; we must keep X here, some routines
+		BEQ		_tmp_map_dec_pos_Y			; depends on it
 		CPX		#$01
-		BEQ		_tmp_map_dec_pos_X
-		CPX		#$02
-		BEQ		_tmp_map_dec_pos_Y
-		CPX		#$03
 		BEQ		_tmp_map_inc_pos_X
+		CPX		#$02
+		BEQ		_tmp_map_inc_pos_Y
+		CPX		#$03
+		BEQ		_tmp_map_dec_pos_X
 		CLC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_set_tmp_map_pos_to_surrounding_tile:
-		CPX		#$00
-		BEQ		_tmp_map_dec_pos_Y
-		CPX		#$01
-		BEQ		_tmp_map_inc_pos_X
-		CPX		#$02
+_back_from_near_tmp_map_pos_tile:
+		CPX		#$00						; same here
 		BEQ		_tmp_map_inc_pos_Y
-		CPX		#$03
+		CPX		#$01
 		BEQ		_tmp_map_dec_pos_X
+		CPX		#$02
+		BEQ		_tmp_map_dec_pos_Y
+		CPX		#$03
+		BEQ		_tmp_map_inc_pos_X
 		CLC
 		RTS
 
@@ -2527,10 +2549,8 @@ _map_corruption_tiles_animate:
 		LDA		_corruption_anim_flag
 		BEQ		loc_11F33A
 		JSR		_sram_on
-		LDY		#>[_wram_map_buf]				; TODO: rearrange to macrocify
-		STY		_tmpE7
-		LDY		#<[_wram_map_buf]
-		STY		_tmpE6
+		MOVWO	_tmpE6,_wram_map_buf
+		LDY		#$00
 		STY		_corruption_anim_flag
 loc_11F310:
 		LDA		(_tmpE6),Y
@@ -2544,19 +2564,14 @@ loc_11F310:
 		STA		(_tmpE6),Y
 		STA		_corruption_anim_flag
 loc_11F324:
-		INC		_tmpE6
-		BNE		loc_11F32A
-		INC		_tmpE7
-loc_11F32A:
-		LDA		_tmpE6
-		CMP		#<[_power_grid_map_buf]
-		LDA		_tmpE7
-		SBC		#>[_power_grid_map_buf]
+		INCW	_tmpE6
+		CMPWI	_tmpE6,_power_grid_map_buf
 		BNE		loc_11F310
 		JSR		_wait_for_hud_redraw
 		JMP		_map_corruption_tiles_animate
 loc_11F33A:
 		JMP		_sram_off
+
 _corrupt_ground_tiles_list:
 		.BYTE	$E8,$E9,$EA,$B4
 
@@ -3461,38 +3476,41 @@ loc_11F93E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; called only from PRGA in power grind map generating routine
+; however, this one uses _map_tiles_flags_tbl from PRGB so cannot be
+; moved into PRGA just now.
+;
 _test_select_map_tile_if_powered_up:
-		PUSHB	_tmp_map_pos._COL
-		PUSHB	_tmp_map_pos._ROW
-		LDX		_tmp6D0+1
-		JSR		_set_tmp_map_pos_to_surrounding_tile
-		BCS		loc_11F977
+		PUSHW	_tmp_map_pos					; backup current _tmp_map_pos
+		LDX		_tmp6D1
+		JSR		_jump_to_near_to_tmp_map_pos_tile	; select
+		BCS		.cant_test_power_map_tile
 		JSR		_test_map_tile_if_powered_up
-		BCS		loc_11F977
-		POPB	_tmp_map_pos._ROW
-		POPB	_tmp_map_pos._COL
+		BCS		.cant_test_power_map_tile
+		POPW	_tmp_map_pos
 		CLC
 		RTS
-loc_11F977:
-		POPB	_tmp_map_pos._ROW
-		POPB	_tmp_map_pos._COL
+.cant_test_power_map_tile:
+		POPW	_tmp_map_pos
 		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; return C=1 if not powerable tile or already powered.
+;
 _test_map_tile_if_powered_up:
-		JSR		_map_tile_read
+		JSR		_map_tile_read					; read nearest tile
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
-		BPL		loc_11F9DA
+		BPL		.nothing_to_power				; test if powerable
 		TYA
-		CMP		#$60
-		BEQ		loc_11F9DA
-		CMP		#$61
-		BEQ		loc_11F9DA
-		LDA		_tmp_map_pos._ROW
-		MULAI	#$4C
-		LDA		_MMC5_MUL0
+		CMP		#_MAP_COAL_POWER				; also test for power stations we
+		BEQ		.nothing_to_power				; already have in our list
+		CMP		#_MAP_NUCLEAR_POWER
+		BEQ		.nothing_to_power
+		LDA		_tmp_map_pos._ROW				; now calc the power map grid idx again
+		MULAI	#$4C							; as done in power map set routine before
+		LDA		_MMC5_MUL0						; TODO: optimize me!
 		CLC
 		ADC		_tmp_map_pos._COL
 		STA		_tmpE6
@@ -3517,14 +3535,15 @@ _test_map_tile_if_powered_up:
 		AND		#$07
 		TAX
 		LDY		#$00
-		LDA		_inv_bitmasks,X
-		AND		(_tmpE6),Y
-		BNE		loc_11F9DA
+		LDA		_inv_bitmasks,X					; test if selected tile is powered already
+		AND		(_tmpE6),Y						; return C=0 need power up
+		BNE		.nothing_to_power
 		CLC
 		RTS
-loc_11F9DA:
+.nothing_to_power:
 		SEC
 		RTS
+
 _map_tiles_flags_tbl:
 		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA
 		.BYTE	$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$CA,$00,$00,$00,$00,$00

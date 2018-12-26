@@ -1844,37 +1844,51 @@ loc_1044A3:
 		STA		_cur_population_dencity+1
 		JSR		_sram_on
 		MOVWO	_tmpE6,_power_grid_map_buf			; clear power grid + traffic maps
-		LDX		#$05								; for some reason, the size of clear here is
-		LDY		#$00								; 1392, when both bufs should be 1444
-		TYA
-loc_1044D0:
-		STA		(_tmpE6),Y
-		INY
-		BNE		loc_1044D0
-		INC		_tmpE7
-		DEX
-		BNE		loc_1044D0
-loc_1044DA:
-		STA		(_tmpE6),Y
-		INY
-		CPY		#$70
-		BNE		loc_1044DA
+; REDUNDANT, for some reason they clear $570 instead of full $5A4
+;		LDX		#$05
+;		LDY		#$00
+;		TYA
+;loc_1044D0:
+;		STA		(_tmpE6),Y
+;		INY
+;		BNE		loc_1044D0
+;		INC		_tmpE7
+;		DEX
+;		BNE		loc_1044D0
+;loc_1044DA:
+;		STA		(_tmpE6),Y
+;		INY
+;		CPY		#$70
+;		BNE		loc_1044DA
+; -
+; OPTIMIZED
+		LDX		#$05
+		LDY		#$A4
+		JSR		_clear_buffer
 		MOVWO	_tmpE6,_land_value_map_buf			; clear the rest of the statistic maps
+; -
+; REDUNDANT
+;		LDX		#$03
+;		LDY		#$00
+;		TYA
+;loc_1044EE:
+;		STA		(_tmpE6),Y
+;		INY
+;		BNE		loc_1044EE
+;		INC		_tmpE7
+;		DEX
+;		BNE		loc_1044EE
+;loc_1044F8:
+;		STA		(_tmpE6),Y
+;		INY
+;		CPY		#$ED
+;		BNE		loc_1044F8
+; -
+; OPTIMIZED
 		LDX		#$03								; size is correct this time
-		LDY		#$00
-		TYA
-loc_1044EE:
-		STA		(_tmpE6),Y
-		INY
-		BNE		loc_1044EE
-		INC		_tmpE7
-		DEX
-		BNE		loc_1044EE
-loc_1044F8:
-		STA		(_tmpE6),Y
-		INY
-		CPY		#$ED
-		BNE		loc_1044F8
+		LDY		#$ED
+		JSR		_clear_buffer
+; -
 		JSR		_sram_off
 		JMP		_city_stats_reset					; ALERT! _city_stats_reset used here from PRGB as well!
 

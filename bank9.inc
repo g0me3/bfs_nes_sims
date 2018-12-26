@@ -3431,9 +3431,11 @@ off_EB5A0:
 		.WORD	_land_value_map_buf
 		.WORD	_fire_radius_map_buf
 		.WORD	_police_radius_map_buf
+
 ; REDUNDANT, merged, moved to system bank
 ;_special_tiles_ofs_list:
 ;		.BYTE	$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
+
 byte_EB5C3:
 		.BYTE	$51,$52,$55,$B1,$54,$FF,$FF,$FF,$57,$FF,$FF,$FF,$B3,$FF,$FF,$FF
 		.BYTE	$5C,$5C,$5C,$5C,$5E,$FF,$FF,$FF,$5E,$FF,$FF,$FF,$5E,$FF,$FF,$FF

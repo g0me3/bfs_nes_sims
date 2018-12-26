@@ -225,6 +225,27 @@ _city_stats_reset:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; clear RAM area from _tmpE6 ptr X/Y size
+;
+_clear_buffer:
+		STY		_tmp9
+		LDY		#$00
+		TYA
+loc_1044D0:
+		STA		(_tmpE6),Y
+		INY
+		BNE		loc_1044D0
+		INC		_tmpE7
+		DEX
+		BNE		loc_1044D0
+loc_1044DA:
+		STA		(_tmpE6),Y
+		INY
+		CPY		_tmp9
+		BNE		loc_1044DA
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
 NMI:
 		PHA
 		TXA

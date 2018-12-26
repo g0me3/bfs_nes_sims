@@ -1062,7 +1062,9 @@ _tmp6CC:
 _tmp6CE:
 		.BYTE	0,0
 _tmp6D0:
-		.BYTE	0,0
+		.BYTE	0
+_tmp6D1:
+		.BYTE	0
 _tmp6D2:
 		.BYTE	0
 _tmp6D3:
