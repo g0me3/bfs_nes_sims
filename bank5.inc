@@ -232,6 +232,7 @@ loc_881A6:
 loc_881B3:
 		JSR		_obj_spr_draw
 		JMP		_obj_flush
+
 _obj_plane_takoff_anim_list:
 		.BYTE	$00,$08,$09,$0A,$0B,$0F,$0E,$0D,$0C
 
@@ -523,8 +524,8 @@ _obj_ship_look_for_new_dir:
 loc_882FB:
 		LDA		(_tmp15),Y						; get the corresponding map tile
 loc_882FD:
-;		CMP		#$FE							; test if it is a special sea tile only
-		CMP		#$BD							; NEW: let's use regular sea tile
+;		CMP		#_MAP_WATER_ROUTE				; test if it is a special sea tile only
+		CMP		#_MAP_WATER						; NEW: let's use regular sea tile
 		BNE		loc_8830B
 		JSR		_obj_ship_max_range_test
 		BCC		loc_8830B
@@ -688,12 +689,24 @@ loc_883BA:
 		BCS		.search_cross_path				; 10
 		BCC		.search_t_cross_path			; 0C-0F
 
-_rail_tiles_allowed:
-		.BYTE	$9C,$E2,$BB,$B7					; 00 horizontal rails
-		.BYTE	$9D,$E3,$BC,$B8					; 04 vertical rails
-		.BYTE	$9E,$9F,$A0,$A1					; 08 bend rails
-		.BYTE	$A2,$A3,$A4,$A5					; 0C t-cross rails
-		.BYTE	$A6								; 10 cross rails
+_rail_tiles_allowed:							; 00 horizontal rails
+		.BYTE	_MAP_RAIL_LR
+		.BYTE	_MAP_WATER_RAIL_LR
+		.BYTE	_MAP_ELECTRO_RAIL_LR
+		.BYTE	_MAP_ROAD_RAIL_LR
+		.BYTE	_MAP_RAIL_UD					; 04 vertical rails
+		.BYTE	_MAP_WATER_RAIL_UD
+		.BYTE	_MAP_ELECTRO_RAIL_UD
+		.BYTE	_MAP_ROAD_RAIL_UD
+		.BYTE	_MAP_RAIL_BEND_RD				; 08 bend rails
+		.BYTE	_MAP_RAIL_BEND_LD
+		.BYTE	_MAP_RAIL_BEND_RU
+		.BYTE	_MAP_RAIL_BEND_LU
+		.BYTE	_MAP_RAIL_TCROSS_R				; 0C t-cross rails
+		.BYTE	_MAP_RAIL_TCROSS_L
+		.BYTE	_MAP_RAIL_TCORSS_D
+		.BYTE	_MAP_RAIL_TCROSS_U
+		.BYTE	_MAP_RAIL_CROSS					; 10 cross rails
 
 .search_cross_path:
 		INC		_train_turns_counter			; can turn any direction, select next one
@@ -852,29 +865,29 @@ _obj_train_near_tile_test:
 loc_884F3:
 		LDA		(_tmp15),Y
 loc_884F5:
-		CMP		#$7D							; lucky! run straigth into the rail station!
+		CMP		#_MAP_TRAIN_STATION				; lucky! run straigth into the rail station!
 		BNE		loc_884FC
 		JMP		.rail_station_ride
 loc_884FC:
-		CMP		#$80							; run into top-left corner of any building
+		CMP		#_MAP_INTERNAL_BUILD0			; run into top-left corner of any building
 		BCC		.stop_move						; we know it is not the rail station for sure
-		CMP		#$88							; this time it's harder, we know this is
+		CMP		#_MAP_INTERNAL_BUILD8			; this time it's harder, we know this is
 		BCC		.rail_station_ride_test			; a building, but need to check which one
-		CMP		#$9C							; run into buldozered ground and roads,
+		CMP		#_MAP_RAIL_LR					; run into buldozered ground and roads,
 		BCC		.stop_move						; stop
-		CMP		#$A7							; all kind of rails here,
+		CMP		#_MAP_ELECTRO_LR				; all kind of rails here,
 		BCC		.continue_move					; move along
-		CMP		#$B7							; the rest of not rideable grounds here
+		CMP		#_MAP_ROAD_RAIL_LR				; the rest of not rideable grounds here
 		BCC		.stop_move						; stop
-		CMP		#$B9							; special road/rail crosses
+		CMP		#_MAP_ELECTRO_ROAD_LR			; special road/rail crosses
 		BCC		.continue_move					; move along
-		CMP		#$BB							; skip again
+		CMP		#_MAP_ELECTRO_RAIL_LR			; skip again
 		BCC		.stop_move
-		CMP		#$BD							; electric/rail crosses
+		CMP		#_MAP_WATER						; electric/rail crosses
 		BCC		.continue_move					; move further
-		CMP		#$E2							; test for two special tiles, rails on water
+		CMP		#_MAP_WATER_RAIL_LR				; test for two special tiles, rails on water
 		BCC		.stop_move						; it seems they planned some special
-		CMP		#$E4							; behavior for this, but currently no matter what
+		CMP		#_MAP_WATER_ELECTRIC_LR			; behavior for this, but currently no matter what
 		BCS		.stop_move						; value in _train_hide_mode, it always just hiding
 		LDA		#$03							; the train if non-zero, so here train will be
 		BNE		.continue_move_set				; hidden the same way as in train station while ride
@@ -928,7 +941,7 @@ loc_88570:
 		TAX
 		POPB	_ptr18
 		LDA		_ptr18+1
-		CMP		#$7D
+		CMP		#_MAP_TRAIN_STATION
 ;		BEQ		.rail_station_ride
 ;		CLC
 ;		RTS
@@ -1406,7 +1419,7 @@ loc_88110:
 _obj_spr_draw:
 		LDY		#$00							; OPTIMIZED size
 		JSR		_out_of_screen_test
-;		LDA		_cur_obj_pos._COL					; out-of-screen test for X
+;		LDA		_cur_obj_pos._COL				; out-of-screen test for X
 ;		SEC
 ;		SBC		_cur_map_wnd_pos._COL
 ;		BCS		loc_889F7
@@ -1419,7 +1432,7 @@ _obj_spr_draw:
 ;loc_889FB:
 		LDY		#$01
 		JSR		_out_of_screen_test
-;		LDA		_cur_obj_pos._ROW					; the same for Y
+;		LDA		_cur_obj_pos._ROW				; the same for Y
 ;		SEC
 ;		SBC		_cur_map_wnd_pos._ROW
 ;		BCS		loc_88A09

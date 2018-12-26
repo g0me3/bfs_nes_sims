@@ -136,11 +136,11 @@ loc_B815F:
 ;
 _get_valid_1X1_building_tile:
 		LDA		_cur_build_sample_tile_idx
-		CMP		#$90
+		CMP		#_MAP_GROUND0
 		BEQ		.do_money_sub				; regular buldozered ground at this point
-		CMP		#$BD
+		CMP		#_MAP_WATER
 		BEQ		.j_water_tile_build_select	; special case water, no need to bulldozer
-		CMP		#$FE
+		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B8194					; special water tile HERE!
 ;		SEC									; water roads! should be something special
 ;		BCS		.j_water_tile_build_select	; but C=1 means nothing currently there
@@ -152,17 +152,17 @@ loc_B8194:
 		LSR
 		BCC		.no_auto_bulldoze
 		LDA		_cur_build_sample_tile_idx	; check for what we can bulldoze
-		CMP		#$B2
+		CMP		#_MAP_GRASS
 		BCC		.no_auto_bulldoze			; can't autobulldoze any normal buildings
-		CMP		#$B5
+		CMP		#_MAP_FLOOD
 		BCC		.do_auto_bulldoze			; can autobulldoze parks or corrupted grounds
-		CMP		#$BE
+		CMP		#_MAP_SHORE0
 		BCC		.no_auto_bulldoze			; can't autobulldoze flood/pollution, other transport systems
-		CMP		#$E0
+		CMP		#_MAP_WATER_ROAD_LR
 		BCC		.do_auto_bulldoze			; can autobulldoze sea shores
-		CMP		#$E7
+		CMP		#_MAP_CORRUPT0
 		BCC		.no_auto_bulldoze			; more transport tiles
-		CMP		#$EB
+		CMP		#_MAP_BRIDGE_WATER_LR
 		BCS		.no_auto_bulldoze			; the rest of transport tiles
 .do_auto_bulldoze:
 		INCW	_cur_building_price			; yes, autobulldoze it
@@ -189,99 +189,99 @@ loc_B81D8:
 ; =============== S U B	R O U T	I N E =======================================
 _select_road_intersection_tile:
 		LDA		_cur_build_sample_tile_idx	; special intersection tiles select
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BEQ		.build_storeB8
 ;		BNE		loc_B81E5					; REDUNDANT
-;		LDA		#$B8						; road+rail horizontal
+;		LDA		#_MAP_ROAD_RAIL_UD			; road+rail horizontal
 ;		BNE		.build_store1
 loc_B81E5:
-		CMP		#$9D
+		CMP		#_MAP_RAIL_UD
 		BEQ		.build_storeB7				; OPTIMIZED
 ;		BNE		loc_B81ED					; REDUNDANT
-;		LDA		#$B7						; road+rail vertical
+;		LDA		#_MAP_ROAD_RAIL_LR			; road+rail vertical
 ;		BNE		.build_store1
 loc_B81ED:
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BEQ		.build_storeB9				; OPTIMIZED
 ;		BNE		loc_B81F5					; REDUNDANT
-;		LDA		#$B9						; road+electric horizontal
+;		LDA		#_MAP_ELECTRO_ROAD_LR		; road+electric horizontal
 ;		BNE		.build_store1
 loc_B81F5:
-		CMP		#$A8
+		CMP		#_MAP_ELECTRO_UD
 		BEQ		.build_storeBA				; OPTIMIZED
 ;		BEQ		loc_B81FC					; REDUNDANT
 		BNE		.build_forbidden0			; nothing to build
 ;loc_B81FC:
-;		LDA		#$BA						; road+electric vertical
+;		LDA		#_MAP_ELECTRO_ROAD_UD		; road+electric vertical
 ;		BNE		.build_store1
 
 ; =============== S U B	R O U T	I N E =======================================
 _select_rails_intersection_tile:
 		LDA		_cur_build_sample_tile_idx
-		CMP		#$91
+		CMP		#_MAP_ROAD_LR
 		BEQ		.build_storeB7				; OPTIMIZED
 ;		BNE		loc_B820A					; REDUNDANT
-;		LDA		#$B7						; rail+road horizontal
+;		LDA		#_MAP_ROAD_RAIL_LR			; rail+road horizontal
 ;		BNE		.build_store1
 loc_B820A:
-		CMP		#$92
+		CMP		#_MAP_ROAD_UD
 		BEQ		.build_storeB8				; OPTIMIZED
 ;		BNE		loc_B8212					; REDUNDANT
-;		LDA		#$B8						; rail+road vertical
+;		LDA		#_MAP_ROAD_RAIL_UD			; rail+road vertical
 ;		BNE		.build_store1
 loc_B8212:
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BEQ		.build_storeBB				; OPTIMIZED
 ;		BNE		loc_B821A					; REDUNDANT
-;		LDA		#$BB						; rail+electro horizontal
+;		LDA		#_MAP_ELECTRO_RAIL_LR		; rail+electro horizontal
 ;		BNE		.build_store1
 loc_B821A:
-		CMP		#$A8
+		CMP		#_MAP_ELECTRO_UD
 		BEQ		.build_storeBC
 		BNE		.build_forbidden0
-;		LDA		#$BC						; rail+electro vertical
+;		LDA		#_MAP_ELECTRO_RAIL_UD		; rail+electro vertical
 ;		BNE		.build_store1
 
 ; =============== S U B	R O U T	I N E =======================================
 _select_electro_intersection_tile:
 		LDA		_cur_build_sample_tile_idx
-		CMP		#$91
+		CMP		#_MAP_ROAD_LR
 		BEQ		.build_storeBA				; OPTIMIZED
 ;		BNE		loc_B822F					; REDUNDANT
-;		LDA		#$BA						; electro+road horizontal
+;		LDA		#_MAP_ELECTRO_ROAD_UD		; electro+road horizontal
 ;		BNE		.build_store1
 loc_B822F:
-		CMP		#$92
+		CMP		#_MAP_ROAD_UD
 		BEQ		.build_storeB9				; OPTIMIZED
 ;		BNE		loc_B8237					; REDUNDANT
-;		LDA		#$B9						; electro+road vertical
+;		LDA		#_MAP_ELECTRO_ROAD_LR		; electro+road vertical
 ;		BNE		.build_store1
 loc_B8237:
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BEQ		.build_storeBC				; OPTIMIZED
 ;		BNE		loc_B823F					; REDUNDANT
-;		LDA		#$BC						; electro+rail horizontal
+;		LDA		#_MAP_ELECTRO_RAIL_UD		; electro+rail horizontal
 ;		BNE		.build_store1
 loc_B823F:
-		CMP		#$9D
+		CMP		#_MAP_RAIL_UD
 		BNE		.build_forbidden0
 .build_storeBB:
-		LDA		#$BB						; electro+rail vertical
+		LDA		#_MAP_ELECTRO_RAIL_LR		; electro+rail vertical
 		.BYTE	$2C
 .build_storeB7:
-		LDA		#$B7						; rail+road horizontal
+		LDA		#_MAP_ROAD_RAIL_LR			; rail+road horizontal
 		.BYTE	$2C
 .build_storeB8:
-		LDA		#$B8						; rail+road vertical
+		LDA		#_MAP_ROAD_RAIL_UD			; rail+road vertical
 		.BYTE	$2C
 .build_storeB9:
-		LDA		#$B9						; road+electric horizontal
+		LDA		#_MAP_ELECTRO_ROAD_LR		; road+electric horizontal
 		.BYTE	$2C
 .build_storeBA:
-		LDA		#$BA						; road+electric vertical
+		LDA		#_MAP_ELECTRO_ROAD_UD		; road+electric vertical
 		.BYTE	$2C
 .build_storeBC:
-		LDA		#$BC						; electro+rail horizontal
+		LDA		#_MAP_ELECTRO_RAIL_UD		; electro+rail horizontal
 		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
 
@@ -361,12 +361,12 @@ _water_tile_build_select:
 		PLA
 		PLA
 		LDA		_cur_build_sample_tile_idx		; special water tiles
-		CMP		#$FE
+		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B82CA
-		LDA		#$EB							; set the special "bridge" road tile
+		LDA		#_MAP_BRIDGE_WATER_LR			; set the special "bridge" road tile
 		BNE		loc_B82CC
 loc_B82CA:
-		LDA		#$E0							; let's build a regular hor road
+		LDA		#_MAP_WATER_ROAD_LR				; let's build a regular hor road
 loc_B82CC:
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
@@ -375,12 +375,12 @@ loc_B82CC:
 		PLA
 .valid_upper_road_water_joint:
 		LDA		_cur_build_sample_tile_idx
-		CMP		#$FE
+		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B82DD
-		LDA		#$EC							; another bridge road
+		LDA		#_MAP_BRIDGE_WATER_UD			; another bridge road
 		BNE		loc_B82DF
 loc_B82DD:
-		LDA		#$E1
+		LDA		#_MAP_WATER_ROAD_UD
 loc_B82DF:
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
@@ -392,14 +392,14 @@ loc_B82DF:
 .valid_right_electro_water_joint:
 		PLA										; there is no special bridger nor for a electrics...
 		PLA
-		LDA		#$E2
+		LDA		#_MAP_WATER_RAIL_LR
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
 .valid_bottom_electro_water_joint:
 		PLA
 .valid_upper_electro_water_joint:
-		LDA		#$E3
+		LDA		#_MAP_WATER_RAIL_UD
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
@@ -408,14 +408,14 @@ loc_B82DF:
 .valid_right_rail_water_joint:
 		PLA										; ...nor for a rail lines on the water
 		PLA
-		LDA		#$E4
+		LDA		#_MAP_WATER_ELECTRIC_LR
 ;		STA		_cur_build_store_tile_idx
 ;		JMP		_money_subtract
 		BNE		.build_store					; OPTIMIZED
 .valid_bottom_rail_water_joint:
 		PLA
 .valid_upper_rail_water_joint:
-		LDA		#$E5
+		LDA		#_MAP_WATER_ELECTRIC_UD
 .build_store:
 		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
@@ -423,17 +423,17 @@ loc_B82DF:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_road_water_joint:
-		CMP		#$91
+		CMP		#_MAP_ROAD_LR
 		BCC		.invalid_water_joint			; bulldozered ground and all other buildings
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BCC		.valid_water_joint				; all roads here
-		CMP		#$B7
+		CMP		#_MAP_ROAD_RAIL_LR
 		BEQ		.valid_water_joint				; hor road+rail
-		CMP		#$BA
+		CMP		#_MAP_ELECTRO_ROAD_UD
 		BEQ		.valid_water_joint				; hor road+electric
-		CMP		#$E0
+		CMP		#_MAP_WATER_ROAD_LR
 		BEQ		.valid_water_joint				; hor road+water
-		CMP		#$EB
+		CMP		#_MAP_BRIDGE_WATER_LR
 		BEQ		.valid_water_joint				; hor road+water copy, unused
 .invalid_water_joint:
 		CLC
@@ -444,31 +444,31 @@ _test_for_valid_hor_road_water_joint:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_vert_road_water_joint:
-		CMP		#$91
+		CMP		#_MAP_ROAD_LR
 		BCC		.invalid_water_joint			; the same for vert tiles here
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BCC		.valid_water_joint				; regular roards are valid all
-		CMP		#$B8
+		CMP		#_MAP_ROAD_RAIL_UD
 		BEQ		.valid_water_joint
-		CMP		#$B9
+		CMP		#_MAP_ELECTRO_ROAD_LR
 		BEQ		.valid_water_joint
-		CMP		#$E1
+		CMP		#_MAP_WATER_ROAD_UD
 		BEQ		.valid_water_joint
-		CMP		#$EC
+		CMP		#_MAP_BRIDGE_WATER_UD
 		BEQ		.valid_water_joint
 		BNE		.invalid_water_joint
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_electric_water_joint:
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BCC		loc_B8357
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_B8359
-		CMP		#$B8
+		CMP		#_MAP_ROAD_RAIL_UD
 		BEQ		loc_B8359
-		CMP		#$BC
+		CMP		#_MAP_ELECTRO_RAIL_UD
 		BEQ		loc_B8359
-		CMP		#$E2
+		CMP		#_MAP_WATER_RAIL_LR
 		BEQ		loc_B8359
 loc_B8357:
 		CLC
@@ -479,31 +479,31 @@ loc_B8359:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_vert_electric_water_joint:
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BCC		loc_B8357
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_B8359
-		CMP		#$B7
+		CMP		#_MAP_ROAD_RAIL_LR
 		BEQ		loc_B8359
-		CMP		#$BB
+		CMP		#_MAP_ELECTRO_RAIL_LR
 		BEQ		loc_B8359
-		CMP		#$E3
+		CMP		#_MAP_WATER_RAIL_UD
 		BEQ		loc_B8359
 		BNE		loc_B8357
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_hor_rail_water_joint:
-		CMP		#$90
+		CMP		#_MAP_GROUND0
 		BCC		loc_B838B
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_B8389
-		CMP		#$B2
+		CMP		#_MAP_GRASS
 		BCC		loc_B838B
-		CMP		#$B9
+		CMP		#_MAP_ELECTRO_ROAD_LR
 		BEQ		loc_B838B
-		CMP		#$BB
+		CMP		#_MAP_ELECTRO_RAIL_LR
 		BEQ		loc_B838B
-		CMP		#$E4
+		CMP		#_MAP_WATER_ELECTRIC_LR
 		BEQ		loc_B838B
 loc_B8389:
 		CLC
@@ -514,17 +514,17 @@ loc_B838B:
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_for_valid_vert_rail_water_joint:
-		CMP		#$90
+		CMP		#_MAP_GROUND0
 		BCC		loc_B838B
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_B8389
-		CMP		#$B2
+		CMP		#_MAP_GRASS
 		BCC		loc_B838B
-		CMP		#$BA
+		CMP		#_MAP_ELECTRO_ROAD_UD
 		BEQ		loc_B838B
-		CMP		#$BC
+		CMP		#_MAP_ELECTRO_RAIL_UD
 		BEQ		loc_B838B
-		CMP		#$E5
+		CMP		#_MAP_WATER_ELECTRIC_UD
 		BEQ		loc_B838B
 		BNE		loc_B8389
 
@@ -569,9 +569,9 @@ sub_B83D0:
 		BEQ		loc_B8441
 loc_B83E1:
 		PLA
-		CMP		#$90
+		CMP		#_MAP_GROUND0
 		BCC		loc_B843F
-		CMP		#$90
+		CMP		#_MAP_GROUND0
 		BEQ		loc_B842C
 		PHA
 		LDA		_city._game_flags
@@ -590,21 +590,21 @@ loc_B8402:
 		LDY		_const_palette_selected_idx
 		CPY		#$04
 		BEQ		loc_B8410
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCC		loc_B843F
-		CMP		#$B2
+		CMP		#_MAP_GRASS
 		BCC		loc_B8436
 loc_B8410:
-		CMP		#$B4
+		CMP		#_MAP_CORRUPTED
 		BCC		loc_B842E
 		BEQ		loc_B8426
-		CMP		#$BE
+		CMP		#_MAP_SHORE0
 		BCC		loc_B843F
-		CMP		#$E0
+		CMP		#_MAP_WATER_ROAD_LR
 		BCC		loc_B8426
-		CMP		#$E7
+		CMP		#_MAP_CORRUPT0
 		BCC		loc_B843F
-		CMP		#$EB
+		CMP		#_MAP_BRIDGE_WATER_LR
 		BCS		loc_B843F
 loc_B8426:
 		INCW	_cur_building_price
@@ -628,11 +628,11 @@ loc_B843F:
 		RTS
 loc_B8441:
 		PLA
-		CMP		#$BD
+		CMP		#_MAP_WATER
 		BCC		loc_B8450
-		CMP		#$CE
+		CMP		#_MAP_GROUND01
 		BCC		loc_B844E
-		CMP		#$FE
+		CMP		#_MAP_WATER_ROUTE
 		BNE		loc_B8450
 loc_B844E:
 		CLC
@@ -641,9 +641,9 @@ loc_B8450:
 		JMP		loc_B8402
 loc_B8453:
 		PLA
-		CMP		#$9C
+		CMP		#_MAP_RAIL_LR
 		BCC		loc_B845E
-		CMP		#$A7
+		CMP		#_MAP_ELECTRO_LR
 		BCS		loc_B845E
 		CLC
 		RTS

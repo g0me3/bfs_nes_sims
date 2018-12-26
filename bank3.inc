@@ -2833,7 +2833,7 @@ loc_5957F:
 		JSR		_mul_rand
 		STA		byte_57E
 		JSR		_generate_new_mapF_0A
-		JSR		_generate_new_map_sub2
+		JSR		_generate_map_buf_end_test
 		BCS		locret_595BA
 		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
 		BNE		loc_595B5
@@ -3028,7 +3028,7 @@ byte_59781:
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_map_sub1:
 		PHA
-		JSR		_generate_new_map_sub2
+		JSR		_generate_map_buf_end_test
 		BCS		loc_597C7
 		JSR		_isle_map_tile_read577_0				; OPTIMIZED: size
 		BEQ		loc_597C9
@@ -3050,7 +3050,7 @@ loc_597CA:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_map_sub2:
+_generate_map_buf_end_test:
 		LDA		byte_577
 		CMP		#$4C
 		BCS		loc_597DD
@@ -3107,13 +3107,13 @@ loc_59835:
 		BCS		loc_59883
 		LDA		byte_575
 		CLC
-		ADC		_prev_graphs_button_press_idxB1,Y
+		ADC		byte_599B1,Y
 		STA		byte_577
 		LDA		byte_576
 		CLC
-		ADC		_prev_graphs_button_press_idxB5,Y
+		ADC		byte_599B5,Y
 		STA		byte_578
-		JSR		_generate_new_map_sub2
+		JSR		_generate_map_buf_end_test
 		BCS		loc_5987B
 		JSR		_isle_map_tile_read572_2			; OPTIMIZED size
 		BMI		loc_5987B
@@ -3176,23 +3176,23 @@ loc_598F3:
 loc_598FC:
 		LDA		byte_575
 		CLC
-		ADC		_prev_graphs_button_press_idxB1,Y
+		ADC		byte_599B1,Y
 		STA		byte_577
 		LDA		byte_576
 		CLC
-		ADC		_prev_graphs_button_press_idxB5,Y
+		ADC		byte_599B5,Y
 		STA		byte_578
-		JSR		_generate_new_map_sub2
+		JSR		_generate_map_buf_end_test
 		BCC		loc_59957
 		LDY		_tmp4
-		LDA		_prev_graphs_button_press_idxB1,Y
+		LDA		byte_599B1,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		CLC
 		ADC		byte_575
 		STA		byte_577
-		LDA		_prev_graphs_button_press_idxB5,Y
+		LDA		byte_599B5,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
@@ -3226,7 +3226,7 @@ loc_5997D:
 		JMP		loc_598F3
 loc_59987:
 		LDX		byte_57B
-		LDA		_prev_graphs_button_press_idxB9,X
+		LDA		byte_599B9,X
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_59991:
@@ -3246,11 +3246,11 @@ loc_5999E:
 locret_599B0:
 		RTS
 
-_prev_graphs_button_press_idxB1:
+byte_599B1:
 		.BYTE	$FF,$01,$00,$00
-_prev_graphs_button_press_idxB5:
+byte_599B5:
 		.BYTE	$00,$00,$01,$FF
-_prev_graphs_button_press_idxB9:
+byte_599B9:
 		.BYTE	$00,$00,$00,$07
 		.BYTE	$00,$15,$10,$13
 		.BYTE	$00,$17,$12,$14
@@ -3284,12 +3284,14 @@ loc_599E8:
 		BCC		loc_599D3
 		RTS
 loc_599FB:
-		LDA		#$90
+		LDA		#_MAP_GROUND0
 		STA		(_ptr0),Y
 		BNE		loc_599E8
-		LDA		#$D2
-		STA		(_ptr0),Y
-		BNE		loc_599E8
+; REDUNDANT, never executes, the previous BNE is unconditional branch
+;
+;		LDA		#_MAP_GROUND05
+;		STA		(_ptr0),Y
+;		BNE		loc_599E8
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_new_mapE:
@@ -3324,14 +3326,14 @@ loc_59A30:
 		BCC		loc_59A11
 		RTS
 loc_59A43:
-		LDA		#$90
+		LDA		#_MAP_GROUND0
 		BNE		loc_59A30
 loc_59A47:
-		LDA		#$BD
+		LDA		#_MAP_WATER
 		STA		(_ptr0),Y
 		BNE		loc_59A30
 loc_59A4D:
-		LDA		#$FE
+		LDA		#_MAP_WATER_ROUTE
 		STA		(_ptr0),Y
 		BNE		loc_59A30
 
