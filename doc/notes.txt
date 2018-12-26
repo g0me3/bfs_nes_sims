@@ -109,6 +109,7 @@
   	15.3 Overall Tax Collected value calculated as (R_L+C_L+I_L)*overall_city_value*coeff*0.71*tax_rate. coeff = 1.4 for Easy, 1.2 for Norman and 0.8 for Hard. ((exactly from Micropolis sources, see s_sim.c, line 641, CollectTax(void)))
 	15.4 However, unless the SNES version, the NES does not explode Nuclear Power stations randomly for Normal/Hard modes. The Nuclear Meltdown only available for BOSTON scenario and even has no Alert message corresponding to it. Nuclear meltdown occurs with only a sound and "GOTO" button activated.
 16. There is an unused unreferenced type of Fire disaster which fires half of the Fire disaster tiles on the map at once. In the original Amiga/DOS/C64 versions there was a Scenario for Hamburg Germany 1944 Bombing. There is no such disaster in later version of this game (but there were screens on earliest versions), but such unreferenced type of didsaster clearly evidence that they planned it somehow at some point.
+17. There is an unused music command in a music engine code that adds a different type of envelope calculation to the note. If you replace all regular notes with such alt enveloped this will sounds like under water or maybe like in UFO-style. No music sequences are using it at all. Probably this is a leftover of the unimplemented UFO object?
 
 	BUGS
 
@@ -143,7 +144,7 @@
 3. For some reason until you get the City Status and build a Bank, you have only 3 free Special events slots. The rest of the game you'll have 4 slots. However, if all your slots are full, any pending event will wait until any empty slot appears.
 4. The word "ISHI" is used as a RAM signature for Soft/Hard Reset test.
 5. All music tracks are used in the game. Most of tracks used to highlight the town population value. some tracks are "paired" and consists of two conjuncted parts. An intro and looped main track (01/02 title, 08/10 practice, 48/50, 60/40 information).
-6. Sound engine tables the same as in Nintendo games: Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All has similar way to play SE by setting flag bits and so on.
+6. Sound engine tables the same as in Nintendo games: Baloon Fight, Duck Hunt, Gumshoe, Gyromite, Hogan's Alley, Stack Up, Wrecking Crew. Definitely, the sound engine was based on the engines for these games. All has similar way to play SE by setting flag bits and so on. However, as against the Sound Engine for Wrecking Crew for example, this one written highly briefly, unoptimal. There is no channel data and code unification, has a different set of commands, lack the loop commands at all, so music data and code are largely oversized.
 
 	APPEND. A - EVENTS/PRESENTS
 

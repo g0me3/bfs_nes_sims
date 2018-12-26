@@ -931,16 +931,9 @@ loc_B864D:
 		LDA		#$00
 		STA		_tmp3
 		STA		_tmp4
-		MOVWO	_ptr0,_spr_raw_title_cursor
+;		MOVWO	_ptr0,_spr_raw_title_cursor		; REDUNDANT
+		LDY		#$08							; OPTIMIZED
 		JMP		_spr_raw_insert
-
-_spr_raw_title_cursor:
-		.BYTE	$00,$F4,$03,$20
-		.BYTE	$00,$F5,$03,$28
-		.BYTE	$00,$F6,$03,$30
-		.BYTE	$08,$F7,$03,$20
-		.BYTE	$08,$F8,$03,$28
-		.BYTE	$FF
 
 _title_cursor_pos_list:
 		.BYTE	$68,$A8,$C8,$88
@@ -1294,32 +1287,13 @@ _bank_loan_yes_no_push_spr_draw:
 		STA		_tmp3
 		LDA		_tmp118+4
 		BNE		loc_B8BAA
-		MOVWO	_ptr0,_spr_loan_yes
+;		MOVWO	_ptr0,_spr_loan_yes				; REDUNDANT
+		LDY		#$04							; OPTIMIZED
 		JMP		_spr_raw_insert
 loc_B8BAA:
-		MOVWO	_ptr0,_spr_loan_no
+;		MOVWO	_ptr0,_spr_loan_no
+		LDY		#$06							; OPTIMIZED
 		JMP		_spr_raw_insert
-
-_spr_loan_yes:
-		.BYTE	$CF,$D0,$02,$88
-		.BYTE	$CF,$D1,$02,$90
-		.BYTE	$CF,$D2,$02,$98
-		.BYTE	$CF,$D3,$02,$A0
-		.BYTE	$D7,$D4,$02,$88
-		.BYTE	$D7,$D5,$02,$90
-		.BYTE	$D7,$D6,$02,$98
-		.BYTE	$D7,$D7,$02,$A0
-		.BYTE	$FF
-_spr_loan_no:
-		.BYTE	$CF,$D8,$02,$B8
-		.BYTE	$CF,$D9,$02,$C0
-		.BYTE	$CF,$DA,$02,$C8
-		.BYTE	$CF,$DB,$02,$D0
-		.BYTE	$D7,$DC,$02,$B8
-		.BYTE	$D7,$DD,$02,$C0
-		.BYTE	$D7,$DE,$02,$C8
-		.BYTE	$D7,$DF,$02,$D0
-		.BYTE	$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub5_exit_wait_init:
@@ -1460,11 +1434,13 @@ _bank_spr_curtain_draw:
 		LDX		#$20
 loc_B8D1F:
 		STX		_tmp3							; common attrib override
-		MOVWO	_ptr0,_spr_bank_curtain_body
+;		MOVWO	_ptr0,_spr_bank_curtain_body
+		LDY		#$0E							; OPTIMIZED
 		JSR		_spr_raw_insert
 		LDA		#$00
 		STA		_tmp3
-		MOVWO	_ptr0,_spr_bank_curtain_handle	; curtain drawn
+;		MOVWO	_ptr0,_spr_bank_curtain_handle	; curtain drawn
+		LDY		#$10							; OPTIMIZED
 		JSR		_spr_raw_insert
 		LDA		_tmp2
 		CMP		#$47
@@ -1485,18 +1461,6 @@ loc_B8D51:
 _spr_bank_hair:
 		.BYTE	$37,$F4,$00,$80
 		.BYTE	$37,$F5,$00,$88
-_spr_bank_curtain_body:
-		.BYTE	$F0,$FD,$23,$68
-		.BYTE	$F0,$FD,$03,$70
-		.BYTE	$F0,$FD,$03,$78
-		.BYTE	$F0,$FD,$03,$80
-		.BYTE	$F0,$FD,$03,$88
-		.BYTE	$F0,$FD,$23,$90
-		.BYTE	$FF
-_spr_bank_curtain_handle:
-		.BYTE	$F8,$FB,$00,$78
-		.BYTE	$F8,$FC,$00,$80
-		.BYTE	$FF
 
 ; ---------------------------------------------------------------------------
 ; -----------------G-R-A-P-H-S--S-C-R-E-E-N--H-A-N-D-L-E-R-------------------
@@ -1998,7 +1962,7 @@ _scr_res_hndl2_B_budget_input:
 		LDA		#$00							; reset timer upon pressings
 		STA		_budget_display_timer
 		STA		_budget_display_timer+1
-		JSR		_budget_screen_clock_spr_animate		; not sure why animated once here
+		JSR		_budget_screen_clock_spr_animate; not sure why animated once here
 		LDA		_pad0_autorep_release			; test for d-pan press
 		AND		#$0F
 		BEQ		.budget_buttons_test
@@ -2007,7 +1971,7 @@ _scr_res_hndl2_B_budget_input:
 .budget_buttons_test:
 		BIT		_pad0_autorep_release
 		BPL		.budget_screen_animate
-		APUA_SE	_SE_IDX_CLICK								; A button pressed
+		APUA_SE	_SE_IDX_CLICK					; A button pressed
 		LDA		_budget_tax_cur_pos				; check cursor position
 		CMP		#$0A							; all above or equal $A are exits
 		BCS		.budget_screen_exit_test		; the rest are budget adjustments
@@ -2035,7 +1999,7 @@ _scr_res_hndl2_B_budget_input:
 		JSR		_pal_fade_out					; exit from budget screen to info maps screen
 		LDA		#$00							; occurs when budget triggered at info maps mode
 		STA		_scr_res_idx					; set the info maps index, NOT CLEAR IT HERE!
-		STA		_fiscal_year_results_draw_req
+		STA		_budget_scr_draw_req
 		STA		_budget_screen_return_to_info_maps_flag
 		LDA		#$48
 		STA		_cur_game_cursor_scr_pos._ROW
@@ -2046,7 +2010,7 @@ _scr_res_hndl2_B_budget_input:
 		RTS
 .budget_normal_exit:
 		LDA		#$00
-		STA		_fiscal_year_results_draw_req
+		STA		_budget_scr_draw_req
 		LDA		#$40
 		STA		_scr_res_control_flags
 		RTS
@@ -2297,22 +2261,16 @@ loc_B948A:
 		BEQ		loc_B94A9
 		CPX		#$06
 		BEQ		loc_B94A9
-		MOVWO	_ptr0,_spr_arrow0				; change sprites, total 4 color changes
+;		MOVWO	_ptr0,_spr_arrow0				; change sprites, total 4 color changes
+		LDY		#$0A							; OPTIMIZED
 		JMP		_spr_raw_insert
 loc_B94A9:
-		MOVWO	_ptr0,_spr_arrow1
+;		MOVWO	_ptr0,_spr_arrow1
+		LDY		#$0C							; OPTIMIZED
 		JMP		_spr_raw_insert
 locret_B94B4:
 		RTS
 
-_spr_arrow0:
-		.BYTE	$A0,$43,$00,$BB
-		.BYTE	$A0,$44,$00,$C3
-		.BYTE	$FF
-_spr_arrow1:
-		.BYTE	$A0,$41,$00,$BB
-		.BYTE	$A0,$42,$00,$C3
-		.BYTE	$FF
 _arrow_attribs_list:
 		.BYTE	$02,$02,$02,$00,$00,$02
 
@@ -2347,17 +2305,17 @@ loc_B958B:
 		LDA		_tmp118+$A
 		CLC
 		ADC		#$06
-; OPTIMIZED, all functions here are in one CPU area as well
-; -
-		JSR		_printf_txt_lib
-		JSR		_printf_history_year
-; -
 ; REDUNDANT
 ; -
 ;		FJSRA	_printf_txt_lib,PRG7,PRG9		; this sub were called from PRG9 as PRG7/PRG9
 ;		FJSRA	_printf_history_year,PRG7,PRG9	; here we call back PRG9 routine as far call
 ; -
-		JSR		_buffers_force_flush			; but this call - not! they know it!
+; OPTIMIZED, all functions here are in one CPU area as well
+; -
+		JSR		_printf_txt_lib
+		JSR		_printf_history_year
+; -
+		JSR		_buffers_force_flush			; but this call - not! they kewn it!
 		PPUQSTART
 		LDY		_tmp118+9
 		LDA		_history_delimiter_pos_list,Y	; put ':' between date and text record
@@ -2388,6 +2346,7 @@ _history_delimiter_pos_list:
 		.WORD	$2648
 		.WORD	$26A8
 		.WORD	$2708
+
 ;_unused_10:
 ;		.BYTE	$00,$06,$07,$08,$09,$0A,$0B,$0C
 
@@ -2547,19 +2506,21 @@ _history_delimiter_pos_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_spr_rect_draw:
-		MOVWO	_ptr0,_spr_map_info_rect
-		JMP		_info_maps_spr_draw
+;		MOVWO	_ptr0,_spr_map_info_rect		; draw rect around map selected area
+		LDY		#$00							; OPTIMIZED
+		BEQ		_info_maps_spr_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_spr_arrows_draw:
-		MOVWO	_ptr0,_spr_map_info_arrows
+;		MOVWO	_ptr0,_spr_map_info_arrows		; draw arrows at the same position
+		LDY		#$02							; OPTIMIZED
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_spr_draw:
-		LDA		_info_maps_rect_pos._ROW
-		STA		_tmp2
+		LDA		_info_maps_rect_pos._ROW		; add offsets to the sprites
+		STA		_tmp2							; attr override = 0
 		LDA		#$00
 		STA		_tmp3
 		LDA		_info_maps_rect_pos._COL
@@ -2569,8 +2530,12 @@ _info_maps_spr_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _spr_raw_insert:
-		LDY		#$00
-		LDX		_spr_buf_pos
+		LDA		_spr_raw_lib,Y					; OPTIMIZED, librarification
+		STA		_ptr0
+		LDA		_spr_raw_lib+1,Y
+		STA		_ptr0+1
+		LDY		#$00							; raw sprite insert routine,
+		LDX		_spr_buf_pos					; not used anywhere outside this bank
 loc_B9500:
 		LDA		(_ptr0),Y
 		CMP		#$FF
@@ -2600,6 +2565,17 @@ loc_B952A:
 		STX		_spr_buf_pos
 		RTS
 
+_spr_raw_lib:
+		.WORD	_spr_map_info_rect				; 00
+		.WORD	_spr_map_info_arrows			; 02
+		.WORD	_spr_loan_yes					; 04
+		.WORD	_spr_loan_no					; 06
+		.WORD	_spr_raw_title_cursor			; 08
+		.WORD	_spr_arrow0						; 0A
+		.WORD	_spr_arrow1						; 0C
+		.WORD	_spr_bank_curtain_body			; 0E
+		.WORD	_spr_bank_curtain_handle		; 10
+
 _spr_map_info_rect:
 		.BYTE	$00,$04,$00,$00
 		.BYTE	$00,$05,$00,$2F
@@ -2620,40 +2596,53 @@ _spr_map_info_arrows:
 		.BYTE	$18,$9F,$43,$F0
 		.BYTE	$14,$8E,$43,$F8
 		.BYTE	$FF
-
-; =============== S U B	R O U T	I N E =======================================
-; set fixed menu positions for extra menu windows for selecting the
-; detailed map information type for city overall, population and police/fire
-; map modes
-;
-_get_info_maps_wnd_menu_cursor_pos:
-		LDY		_cur_info_maps_button_idx		; for info maps with multiple
-		LDA		_info_maps_options_list,Y		; options, get the ram ofs of
-		TAY										; option idx var
-		LDA		_info_maps_city_map_modes_idx,Y	; now get the actual value
-		STA		_ptr0
-		TYA
-		ASL										; we may have 4 options for all menus
-		ASL										; but two of three uses only 2
-		CLC										; so we have some redundancy
-		ADC		_ptr0							; in data here
-		TAX										; X = map idx * 4 + sub menu idx
-		LDA		_info_maps_sub_menu_pos_row_list,X
-		STA		_cur_game_cursor_scr_pos._ROW	; set cursor pos to corresponding
-		LDA		_info_maps_sub_menu_pos_col_list,X	; position
-		STA		_cur_game_cursor_scr_pos._COL
-		RTS
-
-_info_maps_sub_menu_pos_col_list:
-		.BYTE	$60,$90,$60,$90	; 4 menu options
-		.BYTE	$60,$98,$60,$98	; 2 menu options, NOTE, last two bytes *unused* as well
-		.BYTE	$60,$90			; 2 menu options ,$60,$90 REDUNDANT, *unused*
-_info_maps_sub_menu_pos_row_list:
-		.BYTE	$50,$50,$78,$78	; 4 menu options
-		.BYTE	$80,$80,$80,$80 ; 2 menu options NOTE, last two bytes *unused* as well
-		.BYTE	$B8,$B8			; 2 menu options ,$B8,$B8 REDUNDANT, *unused*
-_info_maps_options_list:
-		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
+_spr_loan_yes:
+		.BYTE	$CF,$D0,$02,$88
+		.BYTE	$CF,$D1,$02,$90
+		.BYTE	$CF,$D2,$02,$98
+		.BYTE	$CF,$D3,$02,$A0
+		.BYTE	$D7,$D4,$02,$88
+		.BYTE	$D7,$D5,$02,$90
+		.BYTE	$D7,$D6,$02,$98
+		.BYTE	$D7,$D7,$02,$A0
+		.BYTE	$FF
+_spr_loan_no:
+		.BYTE	$CF,$D8,$02,$B8
+		.BYTE	$CF,$D9,$02,$C0
+		.BYTE	$CF,$DA,$02,$C8
+		.BYTE	$CF,$DB,$02,$D0
+		.BYTE	$D7,$DC,$02,$B8
+		.BYTE	$D7,$DD,$02,$C0
+		.BYTE	$D7,$DE,$02,$C8
+		.BYTE	$D7,$DF,$02,$D0
+		.BYTE	$FF
+_spr_raw_title_cursor:
+		.BYTE	$00,$F4,$03,$20
+		.BYTE	$00,$F5,$03,$28
+		.BYTE	$00,$F6,$03,$30
+		.BYTE	$08,$F7,$03,$20
+		.BYTE	$08,$F8,$03,$28
+		.BYTE	$FF
+_spr_arrow0:
+		.BYTE	$A0,$43,$00,$BB
+		.BYTE	$A0,$44,$00,$C3
+		.BYTE	$FF
+_spr_arrow1:
+		.BYTE	$A0,$41,$00,$BB
+		.BYTE	$A0,$42,$00,$C3
+		.BYTE	$FF
+_spr_bank_curtain_body:
+		.BYTE	$F0,$FD,$23,$68
+		.BYTE	$F0,$FD,$03,$70
+		.BYTE	$F0,$FD,$03,$78
+		.BYTE	$F0,$FD,$03,$80
+		.BYTE	$F0,$FD,$03,$88
+		.BYTE	$F0,$FD,$23,$90
+		.BYTE	$FF
+_spr_bank_curtain_handle:
+		.BYTE	$F8,$FB,$00,$78
+		.BYTE	$F8,$FC,$00,$80
+		.BYTE	$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_year_draw:
@@ -2667,11 +2656,11 @@ _wnd_header_year_draw:
 		LDA		#$A1							; 16x8 character, draw two lines
 		STA		_tmp4
 		LDA		#$67
-		JSR		_info_wnd_year_nt_queue1		; draw numbers AS-IS
+		JSR		_info_wnd_year_nt_queue0		; draw numbers AS-IS
 		LDA		#$B1
 		STA		_tmp4
 		LDA		#$87
-		JSR		_info_wnd_year_nt_queue1
+		JSR		_info_wnd_year_nt_queue0
 		PPUQEND
 		MOVWO	_tmp2,_tlm_extnt_year_header0	; draw extnt data
 		JMP		_info_wnd_year_extnt_queue
@@ -2679,11 +2668,11 @@ _wnd_header_year_draw:
 		LDA		#$00
 		STA		_tmp4
 		LDA		#$66
-		JSR		_info_wnd_year_nt_queue0		; draw numbers with conversion
+		JSR		_info_wnd_year_nt_queue1		; draw numbers with conversion
 		LDA		#$40
 		STA		_tmp4
 		LDA		#$86
-		JSR		_info_wnd_year_nt_queue0
+		JSR		_info_wnd_year_nt_queue1
 		PPUQEND
 		MOVWO	_tmp2,_tlm_extnt_year_header1
 ;		JMP		_info_wnd_year_extnt_queue		; REDUNDANT
@@ -2692,8 +2681,8 @@ _wnd_header_year_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_wnd_year_extnt_queue:
-		EXTQSTART
-		LDY		#$00
+		EXTQSTART								; common extnt function, uses
+		LDY		#$00							; different data as well
 loc_B9787:
 		LDA		(_tmp2),Y
 		BEQ		loc_B9792
@@ -2705,14 +2694,14 @@ loc_B9792:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_wnd_year_nt_queue0:
-		PPUQMOVA
+_info_wnd_year_nt_queue1:
+		PPUQMOVA								; send year number with adjust to font location
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	#$04,OP_NOP,0
 		LDY		#$03
 loc_B972B:
-		LDA		_ptr0,Y
-		CLC
+		LDA		_ptr0,Y							; all this only because font with different color
+		CLC										; located differently and not linear
 		ADC		#$1B
 		CMP		#$20
 		BCC		loc_B973B
@@ -2727,8 +2716,8 @@ loc_B973B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_wnd_year_nt_queue1:
-		PPUQMOVA
+_info_wnd_year_nt_queue0:
+		PPUQMOVA								; send year number buffer as-is
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	#$04,OP_NOP,0
 		LDY		#$03
@@ -2741,17 +2730,17 @@ loc_B9766:
 		BPL		loc_B9766
 		RTS
 
-_tlm_extnt_year_header1:
-		.WORD	_MMC5_EXRAM+$66
-		.BYTE	$04,$98,$98,$98,$98
-		.WORD	_MMC5_EXRAM+$86
-		.BYTE	$04,$98,$98,$98,$98
-		.BYTE	$00
 _tlm_extnt_year_header0:
 		.WORD	_MMC5_EXRAM+$67
 		.BYTE	$04,$4B,$4B,$4B,$4B
 		.WORD	_MMC5_EXRAM+$87
 		.BYTE	$04,$4B,$4B,$4B,$4B
+		.BYTE	$00
+_tlm_extnt_year_header1:
+		.WORD	_MMC5_EXRAM+$66
+		.BYTE	$04,$98,$98,$98,$98
+		.WORD	_MMC5_EXRAM+$86
+		.BYTE	$04,$98,$98,$98,$98
 		.BYTE	$00
 
 		SECTION_END 903

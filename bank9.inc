@@ -183,8 +183,10 @@ _scr_res_common:
 ;		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9	; REDUNDANT
 		JSR		_wnd_common_cursor_spr_clear	; OPTIMIZED, now local
 		JSR		_spr_finish
-		FJSRA	_scr_res_cursor_move,PRG6,PRG9	; common cursor handlers
-		FJSRA	_scr_res_cursor_draw,PRG6,PRG9	; common cursor draw
+;		FJSRA	_scr_res_cursor_move,PRG6,PRG9	; REDUNDANT, common cursor handlers
+		JSR		_scr_res_cursor_move			; OPTIMIZED, now local
+;		FJSRA	_scr_res_cursor_draw,PRG6,PRG9	; REDUNDANT, common cursor draw
+		JSR		_scr_res_cursor_draw			; OPTIMIZED, now local
 		JSR		_scr_res_hndl_common_exec		; execure screen handler
 		BIT		_scr_res_control_flags
 		BVC		.scr_res_quick_warp_test		; cancel command test
@@ -200,6 +202,85 @@ _scr_res_common:
 
 _scr_res_ctlr_flag_list:
 		.BYTE	$00,$00,$20,$08,$08,$08,$08,$A8
+
+; OPTIMIZED, local now
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_cursor_move:
+		LDA		_scr_res_control_flags			; for resources with a free cursor
+		AND		#$20							; like graphs and info maps
+		BNE		locret_A0323
+		LDA		_pad0_held						; test for D-Pad movements only
+		AND		#$0F
+		BNE		loc_A0324
+locret_A0323:
+		RTS
+loc_A0324:
+		LDX		#$00
+		LDY		#$03
+		LDA		_pad0_held						; fetch held buttons, keep in A
+loc_A032A:
+		LSR
+		BCC		loc_A0341						; shift d-pad bits in order R, L, U, D
+		PHA										; save d-pad bits for now
+		LDA		_cur_game_cursor_scr_pos,X		; get cur pos
+		CLC
+		ADC		_scr_res_cursor_speed,Y			; increment position for 4 directions
+		CMP		_scr_res_cursor_min_pos_list,X	; test for limits
+		BCC		loc_A0340
+		CMP		_scr_res_cursor_max_pos_list,X
+		BCS		loc_A0340
+		STA		_cur_game_cursor_scr_pos,X		; if not at the side of the screen, store
+loc_A0340:
+		PLA										; restore d-pad bits
+loc_A0341:
+		CPY		#$02							; Y is dpad pos idx, 0,1 - hor, 2,3 - vert
+		BNE		loc_A0346						; so test if we should switch X to Y
+		INX										; switch once at Y 02
+loc_A0346:
+		DEY
+		BPL		loc_A032A						; loop until all 4 dpad tested
+		LDA		#$00
+		STA		_cur_game_cursor_area			; not used the same way as ingame
+		RTS
+
+; all directions has it's own speed just for convinience to correspond
+; to the d-pad index counter
+;
+_scr_res_cursor_speed:
+		.BYTE	$FE,$02,$FE,$02
+_scr_res_cursor_min_pos_list:
+		.BYTE	$08,$18
+_scr_res_cursor_max_pos_list:
+		.BYTE	$E9,$D9
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_cursor_draw:
+		LDA		_scr_res_control_flags
+		AND		#$08
+		BNE		locret_A0360
+		LDA		_spr_buf_pos					; draw new cursor always from 0
+		BEQ		_scr_res_cursor_spr_insert_ex	; if already 0, jump directly
+		PHA										; if no, save old position
+		JSR		_scr_res_cursor_spr_insert_ex_0	; draw and return here
+		POPB	_spr_buf_pos					; then restore
+locret_A0360:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_cursor_spr_insert_ex_0:
+		LDA		#$00
+		STA		_spr_buf_pos					; FIX if already 0, no need to store
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_cursor_spr_insert_ex:
+		STA		_spr_insert_args._idx			; in any cases A here is 0
+		STA		_spr_insert_args._attr
+		LDA		_cur_game_cursor_scr_pos._COL
+		STA		_spr_insert_args._pos._COL
+		LDA		_cur_game_cursor_scr_pos._ROW
+		STA		_spr_insert_args._pos._ROW
+		JMP		_spr_lib_attr_insert
+; -
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_common_cursor_spr_clear:
@@ -241,7 +322,7 @@ _scr_res_hndl7_A_new_city_gen_init:
 		STA		_new_city_screen_cur_row_idx
 		STA		_new_city_screen_cur_col_idx
 		STA		_cur_info_maps_button_idx
-		STA		_info_maps_city_map_modes_idx
+		STA		_info_maps_menu_extra_idx
 		STA		_tmp6D0+1
 		INC		_scr_res_idx
 		LDA		#$10
@@ -275,8 +356,8 @@ _scr_res_hndl7_B_new_city_gen_input:
 		BPL		.no_mimi_map_redraw
 		JSR		_new_city_screen_spr_draw		; draw cur sprite while we busy
 loc_EA0EC:
-		JSR		_wait_for_nmi					; draw mini-map line by line
-		JSR		_mini_map_draw
+;		JSR		_wait_for_nmi					; actually there is already such test inside
+		JSR		_mini_map_fill_block			; draw mini-map block by block
 		BIT		_scr_res_control_flags			; while flag is set
 		BMI		loc_EA0EC
 		LDA		#$20
@@ -334,7 +415,7 @@ _new_city_screen_cursor_draw:					; draws a cursor at a fixed
 		STA		_tmp6CE
 		LDA		_new_city_cur_pos_list+1,Y
 		STA		_tmp6CC
-		FJSRA	_common_select_cursor_draw,SRAM,PRG1
+		FJSRA	_common_select_cursor_control,SRAM,PRG1
 		RTS
 
 _new_city_cur_pos_list:
@@ -676,7 +757,7 @@ loc_EA419:
 
 ; =============== S U B	R O U T	I N E =======================================
 _new_city_map_num_spr_insert:
-		LDX		#$10
+		LDX		#$10								; draws map number control
 		LDY		#$3B
 loc_EA426:
 		LDA		_spr_new_city_map_def,Y				; default map number frame sprites
@@ -848,7 +929,7 @@ _scr_res_hndl0_A_info_maps_draw:
 		CLC
 		ADC		#$45
 		STA		_info_maps_rect_pos._COL
-		JSR		_info_maps_city_name_hud_draw	; draw hud names, same as in-game, but
+		JSR		_info_maps_city_name_hud_draw	; force draw hud names, same as in-game, but
 		JSR		_info_maps_date_hud_draw_ex		; without need to recalc ppu offsets
 		JSR		_info_maps_popul_hud_draw
 		LDA		#$00
@@ -861,10 +942,18 @@ _scr_res_hndl0_A_info_maps_draw:
 		STA		_prev_info_maps_button_idx		; to prevent button release draw at start
 		JMP		_scr_res_hndl0_AB_info_maps_redraw
 
+; NOTE, for some reasons, original logic for this screen allows the cursor
+; movements and even the button pushes while current map is drawn, in this
+; case the new button number is pending and will be redrawn after the map draw
+; process is complete.
+; however, when THREAD1 set flag when map is changes, the info map lock
+; all controls until it redraw the map again.
+; that's weird somehow.
+;
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_B_info_maps_input:
-		JSR		_info_maps_date_hud_draw		; date/popul update
-		JSR		_info_maps_popul_hud_draw
+		JSR		_info_maps_date_hud_draw		; date update if needed (when requested)
+		JSR		_info_maps_popul_hud_draw		; update popul all the time
 ;		JSR		sub_EADC9						; REDUNDANT
 ; OPTIMIZED
 		LDX		#$10
@@ -895,7 +984,7 @@ _scr_res_hndl0_B_info_maps_input:
 		STX		_cur_info_maps_button_idx		; redraw without buttons, they're already drawn
 		JMP		_scr_res_hndl0_AB_info_maps_redraw_ex
 .no_buttons_pending:
-		LDA		_fiscal_year_results_draw_req	; city engine still active, so fiscal year over
+		LDA		_budget_scr_draw_req			; city engine still active, so fiscal year over
 		BEQ		loc_EA588						; may occurs at info screen, do special jump to it
 		JMP		_budget_screen_force
 loc_EA588:
@@ -934,15 +1023,15 @@ _scr_res_hndl0_AB_info_maps_redraw:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw_ex:
 		JSR		_thread_lock_flag_set
-		JSR		sub_EABC3
-		LDA		_scr_res_control_flags
-		BEQ		_info_maps_idle
-		JSR		_mini_map_clear_draw_request
+		JSR		_info_maps_menu_handler			; shows and control menu if needed
+		LDA		_scr_res_control_flags			; control flags changes if some action
+		BEQ		_info_maps_idle					; on the map were made, so it need to
+		JSR		_mini_map_clear_draw_request	; be updated
 		JSR		_wait_for_nmi
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
 		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
-		JMP		_mini_map_draw
+		JMP		_mini_map_fill_block
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_idle:
@@ -1008,7 +1097,7 @@ loc_EA637:
 		POPB	_prev_info_maps_button_idx		; restore previous parameters
 		POPB	_cur_info_maps_button_idx
 .no_buttons_redraw:
-		JMP		_mini_map_draw					; redraw mini-map
+		JMP		_mini_map_fill_block					; redraw mini-map
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_get_hover_button_idx:
@@ -1060,17 +1149,17 @@ _mini_map_ppu_pos_queue:
 		ASL
 		TAY
 		LDA		_mini_map_ppu_col_ofs_list,Y
-		LDX		_scr_res_idx
+		LDX		_scr_res_idx					; adjust mini-map pos for new city gen screen
 		CPX		#$0A
 		BCC		loc_EA702
 		SBC		#$06
 		CLC
 loc_EA702:
-		ADC		_mini_map_cur_col
+		ADC		_mini_map_cur_col				; adjust column position of minimap to draw
 		STA		_tmp2
 		LDA		_mini_map_ppu_col_ofs_list+1,Y
 		STA		_tmp3
-		PPUQSTART
+		PPUQSTART								; push offsets into NT/EXTNT bufs at the same time
 		LDY		_extnt_queue_pos_head
 		LDA		_tmp2
 		STA		_ppu_queue_buf,X
@@ -1085,18 +1174,18 @@ loc_EA702:
 		INX
 		INY
 		PLA
-		STA		_ppu_queue_buf,X
+		STA		_ppu_queue_buf,X				; push count of bytes, as arg in A
 		STA		_extnt_queue_buf,Y
-		STA		_tmp4
+		STA		_tmp4							; save counter
 		INX
 		INY
-		STX		_tmp2
+		STX		_tmp2							; save queue pos by now in tmp vars for further use
 		STY		_tmp3
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_mini_map_line_draw:
-		LDA		_cur_info_maps_button_idx
+_mini_map_fill_tile:
+		LDA		_cur_info_maps_button_idx		; every type of maps will get its own type of blocks
 		JSR		_switch
 		.WORD	_mini_map0_draw
 		.WORD	_mini_map1_draw
@@ -1111,19 +1200,90 @@ _mini_map_line_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _mini_map0_draw:
-		LDA		_mini_map_cur_row
-		ASL
+		LDA		_mini_map_cur_row				; calc the wram map offset for
+		ASL										; calculated block 4x4
 		TAY
 		LDA		_mini_map_cur_col
 		ASL
 		ASL
-		ADC		_mini_map_wram_ofs_list,Y
+		ADC		_mini_map_wram_ofs_list,Y		; table calc for multiply
 		STA		_ptr0
 		LDA		_mini_map_wram_ofs_list+1,Y
 		ADC		#$00
-		STA		_ptr0+1
-		JSR		sub_EAA8B
-		JMP		sub_EA94A
+		STA		_ptr0+1							; now we have ofs to left-top corner of 4x4 area
+		JSR		_mini_map_area_info_collect
+;		JMP		sub_EA94A						; REDUNDANT
+; =============== S U B	R O U T	I N E =======================================
+;sub_EA94A:
+		LDY		#$00
+		JSR		sub_EAA5E
+		INY
+		JSR		sub_EAA5E
+		LDA		_tmp118
+		BEQ		loc_EA964
+		CMP		#$02
+		BCC		loc_EA964
+		LDA		#$00
+		STA		byte_12A
+		JMP		loc_EA992
+loc_EA964:
+		LDA		byte_128
+		CMP		#$02
+		BCC		loc_EA9A1
+		LDA		byte_127
+		CMP		byte_128
+		BEQ		loc_EA98A
+		LSR
+		STA		_ptr0
+		LDA		byte_127
+		SEC
+		SBC		byte_128
+		CMP		_ptr0
+		BCC		loc_EA9A7
+		LSR		_ptr0
+		LDA		byte_128
+		CMP		_ptr0
+		BCC		loc_EA992
+loc_EA98A:
+		LDA		#<[byte_EB5E3]
+		STA		_ptr0
+		LDA		#>[byte_EB5E3]
+		BNE		loc_EA9AD
+loc_EA992:
+		LDA		byte_129
+		LDX		byte_12A
+		STX		byte_129
+		STA		byte_12A
+		JMP		loc_EA9A7
+loc_EA9A1:
+		LDX		byte_129
+		STX		byte_12A
+loc_EA9A7:
+		LDA		#<[byte_EB5C3]
+		STA		_ptr0
+		LDA		#>[byte_EB5C3]
+loc_EA9AD:
+		JSR		sub_EAA49
+		CMP		#$FF
+		BNE		loc_EA9CA
+		JSR		sub_EA9D9
+		LDX		#<[_wram_map_buf+$D0]
+		LDA		_ptr0
+		LDY		_cur_info_maps_button_idx
+		BEQ		loc_EA9C5
+		LDX		#<[_wram_map_buf+$50]
+		CLC
+		ADC		#>[_wram_map_buf+$50]
+loc_EA9C5:
+		STA		_tmp4
+		STX		_tmp5
+		RTS
+loc_EA9CA:
+		STA		_tmp4
+		MOVWO	_ptr0,byte_EB603
+		LDA		(_ptr0),Y
+		STA		_tmp5
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _mini_map1_draw:
@@ -1155,7 +1315,7 @@ loc_EA789:
 		STA		_ptr0+1
 		LDA		_mini_map_cur_col
 		LSR
-		JSR		_adc_ptr0_0
+		JSR		_adc_ptr0
 		JSR		sub_EA8DF
 		LDY		#$90
 		LDA		byte_131
@@ -1194,7 +1354,7 @@ _mini_map2356_draw:
 loc_EA7F4:
 		TXA
 		LSR
-		JSR		_adc_ptr0_0
+		JSR		_adc_ptr0
 		LDY		#$00
 		LDA		_mini_map_cur_col
 		AND		#$01
@@ -1257,7 +1417,7 @@ _mini_map4_draw:
 		ADC		word_EB57A+1,Y
 		STA		_ptr0+1
 		LDA		_mini_map_cur_col
-		JSR		_adc_ptr0_0
+		JSR		_adc_ptr0
 		JSR		_get_info_map_block_sum
 		LSR		_tmp5
 		LSR		_tmp5
@@ -1291,7 +1451,7 @@ _mini_map89_draw:
 		LDA		_mini_map_cur_col
 		LSR
 		LSR
-		JSR		_adc_ptr0_0
+		JSR		_adc_ptr0
 		LDY		#$00
 		LDA		_mini_map_cur_col
 		AND		#$02
@@ -1390,78 +1550,6 @@ _get_two_nibbles_sum:
 		LSR
 		CLC
 		ADC		_tmp5
-		STA		_tmp5
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_EA94A:
-		LDY		#$00
-		JSR		sub_EAA5E
-		INY
-		JSR		sub_EAA5E
-		LDA		_tmp118
-		BEQ		loc_EA964
-		CMP		#$02
-		BCC		loc_EA964
-		LDA		#$00
-		STA		byte_12A
-		JMP		loc_EA992
-loc_EA964:
-		LDA		byte_128
-		CMP		#$02
-		BCC		loc_EA9A1
-		LDA		byte_127
-		CMP		byte_128
-		BEQ		loc_EA98A
-		LSR
-		STA		_ptr0
-		LDA		byte_127
-		SEC
-		SBC		byte_128
-		CMP		_ptr0
-		BCC		loc_EA9A7
-		LSR		_ptr0
-		LDA		byte_128
-		CMP		_ptr0
-		BCC		loc_EA992
-loc_EA98A:
-		LDA		#<[byte_EB5E3]
-		STA		_ptr0
-		LDA		#>[byte_EB5E3]
-		BNE		loc_EA9AD
-loc_EA992:
-		LDA		byte_129
-		LDX		byte_12A
-		STX		byte_129
-		STA		byte_12A
-		JMP		loc_EA9A7
-loc_EA9A1:
-		LDX		byte_129
-		STX		byte_12A
-loc_EA9A7:
-		LDA		#<[byte_EB5C3]
-		STA		_ptr0
-		LDA		#>[byte_EB5C3]
-loc_EA9AD:
-		JSR		sub_EAA49
-		CMP		#$FF
-		BNE		loc_EA9CA
-		JSR		sub_EA9D9
-		LDX		#<[_wram_map_buf+$D0]
-		LDA		_ptr0
-		LDY		_cur_info_maps_button_idx
-		BEQ		loc_EA9C5
-		LDX		#<[_wram_map_buf+$50]
-		CLC
-		ADC		#>[_wram_map_buf+$50]
-loc_EA9C5:
-		STA		_tmp4
-		STX		_tmp5
-		RTS
-loc_EA9CA:
-		STA		_tmp4
-		MOVWO	_ptr0,byte_EB603
-		LDA		(_ptr0),Y
 		STA		_tmp5
 		RTS
 
@@ -1569,56 +1657,56 @@ loc_EAA7F:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EAA8B:
+_mini_map_area_info_collect:
 		LDA		#$00
 		LDY		#$0E
 loc_EAA8F:
-		STA		_tmp118,Y
+		STA		_tmp118,Y						; prepare tmp buffer for stats
 		DEY
 		BPL		loc_EAA8F
 		STA		byte_131
 		TAY
-loc_EAA99:
-		LDA		(_ptr0),Y
-loc_EAA9B:
+.area_collect_loop:
+		LDA		(_ptr0),Y						; collect map tiles
+.area_lookup:
 		LDX		#$00
-loc_EAA9D:
-		CMP		_mini_map_building_types_list0,X
+.area_type_search_loop:
+		CMP		_mini_map_building_types_list,X	; detect its types
 		BCC		loc_EAAA9
 		INX
 		CPX		#$12
-		BCC		loc_EAA9D
-loc_EAAA7:
-		BCS		loc_EAAA7
+		BCC		.area_type_search_loop			; up to 18 block
+.debug_assert:
+		BCS		.debug_assert					; here we have debug assert, shouldnt be executed
 loc_EAAA9:
-		LDA		_mini_map_building_types_list1,X
-		CMP		#$0E
-		BNE		loc_EAAB6
-		JSR		sub_EAB64
-		JMP		loc_EAA9B
+		LDA		_mini_map_building_colors_list,X; found an area, get the tile color
+		CMP		#$0E							; all tiles except special building tiles goes
+		BNE		loc_EAAB6						; directly to buf calc
+		JSR		_map_get_building_type			; or else we need to calc an actual building idx here
+		JMP		.area_lookup					; make an actual area search again
 loc_EAAB6:
 		CMP		#$80
-		BCC		loc_EAABF
-		INC		byte_131
-		AND		#$0F
+		BCC		loc_EAABF						; buildings has 80 bit set in list, skip if other obstacles
+		INC		byte_131						; or increment building tiles counter
+		AND		#$0F							; and extract type of building color
 loc_EAABF:
 		TAX
-		LDA		_tmp118,X
+		LDA		_tmp118,X						; increment stat counter
 		CLC
 		ADC		#$01
 		STA		_tmp118,X
 		TXA
 		AND		#$03
 		TAX
-		LDA		byte_EAE86,X
-		PHA
+		LDA		_mini_map_weights_list,X		; calc weight value for current tile
+		PHA										;
 		TXA
 		PHA
 		TYA
 		AND		#$0F
 		LSR
 		TAX
-		LDA		byte_EAE8A,X
+		LDA		byte_EAE8A,X					; as well as stat sum value
 		TAX
 		PLA
 		LSR
@@ -1627,59 +1715,59 @@ loc_EAABF:
 loc_EAAE1:
 		PLA
 		CLC
-		ADC		_tmp118+7,X
+		ADC		_tmp118+7,X						; adding stat sum
 		STA		_tmp118+7,X
 		INY
-		CPY		#$E8
-		BEQ		loc_EAB04
+		CPY		#$E8							; end conditions for 4 lines below, E8 in Y
+		BEQ		.area_collect_done				; A loads with new Y value for ptr0 indexed load
 		LDA		#$E4
 		CPY		#$9C
-		BEQ		loc_EAB00
+		BEQ		.area_next_row
 		LDA		#$98
 		CPY		#$50
-		BEQ		loc_EAB00
+		BEQ		.area_next_row					; line 4C-4F, start 98
 		LDA		#$4C
 		CPY		#$04
-		BNE		loc_EAA99
-loc_EAB00:
+		BNE		.area_collect_loop				; line 0-3, start 4C, or continue for a line
+.area_next_row:
 		TAY
-		JMP		loc_EAA99
-loc_EAB04:
-		LDA		_cur_info_maps_button_idx
-		BNE		loc_EAB53
-		LDX		_info_maps_city_map_modes_idx
-		BEQ		loc_EAB53
+		JMP		.area_collect_loop
+.area_collect_done:
+		LDA		_cur_info_maps_button_idx		; now we have stats for kind of ground tile, its
+		BNE		.area_simple_sum				; nubers, weighted sum as well as number of
+		LDX		_info_maps_menu_extra_idx	; buildings inside area
+		BEQ		.area_simple_sum				; for all kinds of maps except overall map, use simple summing
 		DEX
-		BEQ		loc_EAB3E
-		DEX
+		BEQ		loc_EAB3E						; for overall maps use three different types of summing
+		DEX										; according to current overall map type
 		BEQ		loc_EAB29
 		CLC
-		LDA		_tmp118+4
-		ADC		_tmp118
-		ADC		_tmp118+6
+		LDA		_tmp118
 		ADC		_tmp118+1
+		ADC		_tmp118+4
+		ADC		_tmp118+6
 		STA		_tmp118+1
 		LDA		_tmp118+5
 		BPL		loc_EAB60
 loc_EAB29:
 		CLC
-		LDA		_tmp118+5
-		ADC		_tmp118
-		ADC		_tmp118+4
+		LDA		_tmp118
 		ADC		_tmp118+1
+		ADC		_tmp118+4
+		ADC		_tmp118+5
 		STA		_tmp118+1
 		LDA		_tmp118+6
 		BPL		loc_EAB60
 loc_EAB3E:
 		CLC
-		LDA		_tmp118+5
-		ADC		_tmp118
-		ADC		_tmp118+6
+		LDA		_tmp118
 		ADC		_tmp118+1
+		ADC		_tmp118+5
+		ADC		_tmp118+6
 		STA		_tmp118+1
 		LDA		_tmp118+4
 		BPL		loc_EAB60
-loc_EAB53:
+.area_simple_sum:
 		LDA		_tmp118
 		CLC
 		ADC		_tmp118+4
@@ -1689,86 +1777,103 @@ loc_EAB60:
 		STA		_tmp118
 		RTS
 
-byte_EAE86:
+_mini_map_weights_list:
 		.BYTE	$10,$01,$10,$01
 byte_EAE8A:
 		.BYTE	$00,$02,$04,$06,$04,$06,$00,$02
-_mini_map_building_types_list0:
-		.BYTE	$20,$40,$50,$80,$90,$91,$A7,$B2,$B4,$B5,$B6,$B9,$BD,$CE,$E0,$E2,$E6,$FF
-_mini_map_building_types_list1:
+_mini_map_building_types_list:
+		.BYTE	_MAP_C_AREA_DEF				; range for R areas
+		.BYTE	_MAP_I_AREA_DEF				; ...C
+		.BYTE	_MAP_POLICE_STATION			; ...I
+		.BYTE	_MAP_INTERNAL_BUILD0		; for all other buildings
+		.BYTE	_MAP_GROUND0
+		.BYTE	_MAP_ROAD_LR
+		.BYTE	_MAP_ELECTRO_LR
+		.BYTE	_MAP_GRASS
+		.BYTE	_MAP_CORRUPTED
+		.BYTE	_MAP_FLOOD
+		.BYTE	_MAP_POLLUTION
+		.BYTE	_MAP_ELECTRO_ROAD_LR
+		.BYTE	_MAP_WATER
+		.BYTE	_MAP_GROUND01
+		.BYTE	_MAP_WATER_ROAD_LR
+		.BYTE	_MAP_WATER_RAIL_LR
+		.BYTE	_MAP_FIRE
+		.BYTE	$FF
+_mini_map_building_colors_list:
 		.BYTE	$84,$86,$85,$80,$0E,$01,$00,$80,$02,$01,$03,$00,$80,$03,$02,$00,$03,$01
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EAB64:
-		LDA		(_ptr0),Y
-		AND		#$0F
-		TAX
-		LDA		_ptr0
+_map_get_building_type:
+		LDA		(_ptr0),Y						; we read special building tle number
+		AND		#$0F							; which determines the actual building idx
+		TAX										; tile position on the map
+		LDA		_ptr0							; relative to current offset
 		SEC
-		SBC		_special_tiles_ofs_list,X
+		SBC		_special_tiles_ofs_list,X		; adjust ptr for this value
 		STA		_tmp4
 		LDA		_ptr0+1
 		SBC		#$00
-		STA		_tmp5
-		LDA		(_tmp4),Y
+		STA		_tmp5							; store ptr to temp var
+		LDA		(_tmp4),Y						; and now we could read the tile
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_mini_map_draw:
-		JSR		_buffers_test_wait_flush
-		DEC		_mmc5_operation_in_progress_flag
-		LDA		_mini_map_cur_col
-		LSR
-		LSR
-		TAY
-		LDA		byte_EB753,Y
+_mini_map_fill_block:
+		JSR		_buffers_test_wait_flush		; wait for flush
+		DEC		_mmc5_operation_in_progress_flag; enter critical section
+		LDA		_mini_map_cur_col				; the mini-map width is 19 tiles
+		LSR										; so we can draw 4 blocks by 4
+		LSR										; 4 tiles and one last block
+		TAY										; 3 tiles, here table calc for it
+		LDA		_mini_map_block_size_list,Y
 		JSR		_mini_map_ppu_pos_queue
 loc_EAB8B:
-		JSR		_mini_map_line_draw
-		LDX		_tmp2
+		JSR		_mini_map_fill_tile				; fills single mini-map tile with corresponding value
+		LDX		_tmp2							; put them to queue buf
 		LDA		_tmp4
-		STA		_ppu_queue_buf,X
+		STA		_ppu_queue_buf,X				; nt and extnt as well
 		INC		_tmp2
 		LDX		_tmp3
 		LDA		_tmp5
 		STA		_extnt_queue_buf,X
-		INC		_tmp3
-		INC		_mini_map_cur_col
-		LDY		_mini_map_cur_col
+		INC		_tmp3							; do this for all 4 tiles in block
+		INC		_mini_map_cur_col				; here we have a list of columns where
+		LDY		_mini_map_cur_col				; tile fill is over for current block
 		TYA
-		CMP		byte_EB758,Y
+		CMP		_mini_map_stop_col_list,Y		; block end test
 		BCC		loc_EAB8B
 		CMP		#$13
-		BNE		loc_EABB8
+		BNE		loc_EABB8						; line end test
 		LDA		#$00
-		STA		_mini_map_cur_col
-		JSR		sub_EA6A4
+		STA		_mini_map_cur_col				; new line init here
+		JSR		_mini_map_set_new_line
 loc_EABB8:
-		LDX		_tmp2
+		LDX		_tmp2							; backup queue counters
 		PPUQEND
 		LDX		_tmp3
 		EXTQEND
-		INC		_mmc5_operation_in_progress_flag
+		INC		_mmc5_operation_in_progress_flag; exit critical section
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA6A4:
-		INC		_mini_map_cur_row
+_mini_map_set_new_line:
+		INC		_mini_map_cur_row				; while draw, just increment counters
 		LDA		_mini_map_cur_row
 		CMP		#$13
-		BNE		locret_EA6EE
-		LDA		#$00
-		STA		_scr_res_control_flags
+		BNE		locret_EA6EE					; as soon all lines are drawn
+		LDA		#$00							; do finishing setup
+		STA		_scr_res_control_flags			; reset counters
 		STA		_mini_map_cur_row
 		STA		_mini_map_cur_col
 		LDX		_scr_res_idx
 		CPX		#$0A
 		BCS		loc_EA6C3
-		STA		_game_core_state
+		STA		_game_core_state				; reset core state for all except new city map gen
 loc_EA6C3:
-		LDA		_thread_priority_req
-		AND		#$FF
-		STA		_thread_priority_req
+;		LDA		_thread_priority_req			; REDUNDANT, this code does nothing, all calues are
+;		AND		#$FF							; the same, no flags test here as well
+;		STA		_thread_priority_req
 		LDA		_mini_map_need_redraw_flag
 		BNE		locret_EA6EE
 		LDA		_info_maps_button_pending
@@ -1777,55 +1882,57 @@ loc_EA6C3:
 		STA		_scr_res_control_flags
 		LDA		#$80
 		STA		_game_core_state
-		BNE		locret_EA6EE
-		LDA		#$00
-		STA		_mini_map_need_redraw_flag
-		LDA		#$80
-		STA		_scr_res_control_flags
-		STA		_game_core_state
+;		BNE		locret_EA6EE					; REDUNDANT, here we have some remnants of old code
+;		LDA		#$00							; never executed, BNE here is unconditional
+;		STA		_mini_map_need_redraw_flag
+;		LDA		#$80
+;		STA		_scr_res_control_flags
+;		STA		_game_core_state
 locret_EA6EE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EABC3:
-		LDA		_scr_res_control_flags
-		BEQ		loc_EABC9
+_info_maps_menu_handler:
+		LDA		_scr_res_control_flags			; menu if for buttons with flag 0
+		BEQ		.do_info_menu
 		RTS
-loc_EABC9:
-		JSR		sub_EAC82
-		JMP		loc_EABF6
-loc_EABCF:
-		JSR		_wait_for_nmi
+.do_info_menu:
+		JSR		_info_maps_menu_draw			; draws an actual menu
+		JMP		.info_menu_spr_update
+.info_menu_loop:
+		JSR		_wait_for_nmi					; menu idle loop
 		BIT		_pad0_autorep_press
-		BMI		loc_EAC3C
-		BVS		loc_EAC0A
+		BMI		.info_menu_A_press				; test for A/B buttons
+		BVS		.info_menu_B_press
 		LDA		_pad0_autorep_press
 		AND		#$0F
-		BEQ		loc_EABCF
-		TAX
-		APUA_SE	_SE_IDX_CLICK
-		LDY		_cur_info_maps_button_idx
-		LDA		byte_EB6A9,Y
+		BEQ		.info_menu_loop					; cursor movement test
+		TAX										; X = d-pad buttons pressed value
+		APUA_SE	_SE_IDX_CLICK					; jump to next option
+		LDY		_cur_info_maps_button_idx		; according to current selected menu type
+		LDA		_info_maps_menu_var_ofs_list,Y	; idxes of extra menu pos vars
 		TAY
-		LDA		_info_maps_city_map_modes_idx,Y
-		CLC
-		ADC		byte_EAC79,X
+		LDA		_info_maps_menu_extra_idx,Y		; load var
+		CLC										; good optimization here! instead of using a lot of
+		ADC		_info_maps_menu_var_delta_list,X; conditions, just read the delta to adjust value
 		AND		#$03
-		STA		_info_maps_city_map_modes_idx,Y
-loc_EABF6:
-		FJSRA	_get_info_maps_wnd_menu_cursor_pos,PRG7,PRG9
-		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
+		STA		_info_maps_menu_extra_idx,Y		; adjust, wrap around 3 - max value here
+.info_menu_spr_update:
+;		FJSRA	_get_info_maps_wnd_menu_cursor_pos,PRG7,PRG9	; REDUNDANT
+		JSR		_get_info_maps_wnd_menu_cursor_pos	; OPTIMIZED, now local
+;		FJSRA	_scr_res_cursor_draw,PRG6,PRG9	; REDUNDANT
+		JSR		_scr_res_cursor_draw			; OPTIMIZED, now local
 		JSR		_spr_finish
-		JMP		loc_EABCF
-loc_EAC0A:
-		LDY		_cur_info_maps_button_idx
-		LDA		byte_EB6A9,Y
+		JMP		.info_menu_loop
+.info_menu_B_press:
+		LDY		_cur_info_maps_button_idx		; B button - cancel current selection
+		LDA		_info_maps_menu_var_ofs_list,Y
 		TAY
-		LDA		byte_13A
-		STA		_info_maps_city_map_modes_idx,Y
-		JSR		loc_EAC56
-		LDY		_prev_info_maps_button_idx
-		LDA		_cur_info_maps_button_idx
+		LDA		_info_maps_menu_extra_value_backup
+		STA		_info_maps_menu_extra_idx,Y		; restore previously saved extra map idx value
+		JSR		_info_maps_menu_erase				; close window
+		LDY		_prev_info_maps_button_idx		; restore previously pressed button numbers
+		LDA		_cur_info_maps_button_idx		; draw back to previous state all buttons and headers
 		STA		_prev_info_maps_button_idx
 		STY		_cur_info_maps_button_idx
 		FJSRA	_info_maps_button_redraw,PRG6,PRG9
@@ -1833,12 +1940,12 @@ loc_EAC0A:
 		JSR		_scr_pal_bg_load				; FIX, now local
 		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
 		RTS
-loc_EAC3C:
-		LDY		_cur_info_maps_button_idx
-		BEQ		loc_EAC51
-		LDA		byte_EB6A9,Y
+.info_menu_A_press:
+		LDY		_cur_info_maps_button_idx		; press A, selection made, update vars
+		BEQ		loc_EAC51						; overall map is 4-items and will be calc separately
+		LDA		_info_maps_menu_var_ofs_list,Y	; adjust map button idx accordingly
 		TAY
-		LDA		_info_maps_city_map_modes_idx,Y
+		LDA		_info_maps_menu_extra_idx,Y		; the rest of menus are 2-items only
 		AND		#$01
 		CLC
 		ADC		_cur_info_maps_button_idx
@@ -1846,62 +1953,121 @@ loc_EAC3C:
 loc_EAC51:
 		LDA		#$80
 		STA		_scr_res_control_flags
-loc_EAC56:
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_menu_erase:
 		APUA_SE	_SE_IDX_ROLLOUT
-		FJSRA	_wnd_erase,PRGC,PRG9
-		LDA		_cur_info_maps_button_idx
+		FJSRA	_wnd_erase,PRGC,PRG9			; restore nt and extng line by line, erasing wnd
+		LDA		_cur_info_maps_button_idx		; set cursor position for corresponding button
 		AND		#$FE
 		TAY
-		LDA		byte_EB69F,Y
+		LDA		_info_maps_def_return_cursor_pos_list,Y
 		STA		_cur_game_cursor_scr_pos._COL
-		LDA		byte_EB69F+1,Y
+		LDA		_info_maps_def_return_cursor_pos_list+1,Y
 		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$00
 		STA		_game_msg_wnd_active_flag
-		JMP		_wait_for_nmi
-byte_EAC79:
+		JMP		_wait_for_nmi					; exit
+
+_info_maps_def_return_cursor_pos_list:
+		.BYTE	$24,$48
+		.BYTE	$24,$68
+		.BYTE	$00,$00
+		.BYTE	$00,$00
+		.BYTE	$24,$B8
+_info_maps_menu_var_delta_list:
 		.BYTE	$00,$01,$FF,$00,$02,$00,$00,$00,$FE
 
+; OPTIMIZED, now local
 ; =============== S U B	R O U T	I N E =======================================
-sub_EAC82:
+; set fixed menu positions for extra menu windows for selecting the
+; detailed map information type for city overall, population and police/fire
+; map modes
+;
+_get_info_maps_wnd_menu_cursor_pos:
+		LDY		_cur_info_maps_button_idx		; for info maps with multiple
+		LDA		_info_maps_options_list,Y		; options, get the ram ofs of
+		TAY										; option idx var
+		LDA		_info_maps_menu_extra_idx,Y	; now get the actual value
+		STA		_ptr0
+		TYA
+		ASL										; we may have 4 options for all menus
+		ASL										; but two of three uses only 2
+		CLC										; so we have some redundancy
+		ADC		_ptr0							; in data here
+		TAX										; X = map idx * 4 + sub menu idx
+		LDA		_info_maps_sub_menu_pos_row_list,X
+		STA		_cur_game_cursor_scr_pos._ROW	; set cursor pos to corresponding
+		LDA		_info_maps_sub_menu_pos_col_list,X	; position
+		STA		_cur_game_cursor_scr_pos._COL
+		RTS
+
+_info_maps_sub_menu_pos_col_list:
+		.BYTE	$60,$90,$60,$90	; 4 menu options
+		.BYTE	$60,$98,$60,$98	; 2 menu options, NOTE, last two bytes *unused* as well
+		.BYTE	$60,$90			; 2 menu options ,$60,$90 REDUNDANT, *unused*
+_info_maps_sub_menu_pos_row_list:
+		.BYTE	$50,$50,$78,$78	; 4 menu options
+		.BYTE	$80,$80,$80,$80 ; 2 menu options NOTE, last two bytes *unused* as well
+		.BYTE	$B8,$B8			; 2 menu options ,$B8,$B8 REDUNDANT, *unused*
+_info_maps_options_list:
+		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_menu_draw:
 		APUA_SE	_SE_IDX_ROLLIN
-		STA		_game_msg_wnd_active_flag
+		LDA		#$40							; FIX, since we have idxes changed
+		STA		_game_msg_wnd_active_flag		; may interfer with something in future
 		LDA		#$10
-		STA		_spr_buf_pos
+		STA		_spr_buf_pos					; reserve the cursor buffer, not sure why
 		JSR		_spr_finish
 ;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
 		JSR		_scr_pal_bg_load				; FIX, now local
 		PUSHB	_cur_info_maps_button_idx
-		LDA		#$0D
-		STA		_cur_info_maps_button_idx
+		LDA		#$0D							; idx for dummy header and legend data
+		STA		_cur_info_maps_button_idx		; erase current headers, prepare to redraw it
 		FJSRA	_info_maps_header_and_legend_redraw,PRG6,PRG9
 		POPB	_cur_info_maps_button_idx
 		LDY		_cur_info_maps_button_idx
-		LDA		byte_EB6A9,Y
+		LDA		_info_maps_menu_var_ofs_list,Y
 		TAY
-		LDA		_info_maps_city_map_modes_idx,Y
-		STA		byte_13A
+		LDA		_info_maps_menu_extra_idx,Y		; backup current value in case we cancel selection
+		STA		_info_maps_menu_extra_value_backup
 		LDA		#$00
 		STA		_wnd_lvl_idx
 		LDY		_cur_info_maps_button_idx
-		LDA		byte_EB695,Y
+		LDA		info_maps_menu_wnd_idx_list,Y	; get the wnd resource values
 		STA		_wnd_idx
-		LDX		byte_EB695+1,Y
-		LDA		byte_EB6B2,X
+		LDX		info_maps_menu_wnd_idx_list+1,Y
+		LDA		info_maps_menu_wnd_pos_list,X
 		STA		_wnd_left_tile
-		LDA		byte_EB6B2+1,X
+		LDA		info_maps_menu_wnd_pos_list+1,X
 		STA		_wnd_top_tile
-		FJSRA	_wnd_draw,PRGC,PRG9
+		FJSRA	_wnd_draw,PRGC,PRG9				; draw window
 		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_mini_map_clear_draw_request:
+info_maps_menu_wnd_idx_list:
+		.BYTE	$09,$00
+		.BYTE	$07,$02
+		.BYTE	$00,$00
+		.BYTE	$00,$00
+		.BYTE	$08,$04
+info_maps_menu_wnd_pos_list:
+		.BYTE	$07,$04
+		.BYTE	$07,$0A
+		.BYTE	$07,$11
+
 ; NOTE, this prevents the mini-map clear at the info screens when you not change
 ; the info map mode, but the THREAD1 signaling it changes, then code here
 ; should redraw the info map while doing it yor cursor is locked and all you
 ; see if the map is changed somehow, but most of the time it not!
 ; so it looks like you get some hang up for a couple of seconds
 ; so, why they doesn't wanted to clear map in this case? that's odd
+;
+; =============== S U B	R O U T	I N E =======================================
+_mini_map_clear_draw_request:
 ; FIX, lets clear it all the time
 ;		LDA		_mini_map_need_redraw_flag
 ;		BEQ		_mini_map_clear_draw
@@ -1994,129 +2160,6 @@ _spr_please_wait:
 		.BYTE	$80,$A2,$00,$78
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_maps_date_hud_draw:
-		LDA		_hud_redraw_req
-		BEQ		locret_EADB1
-		LDA		#$00
-		STA		_hud_redraw_req
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_date_hud_draw_ex:
-		MOVW	_ptr0,_city._cur_year
-		JSR		_hex_to_dec9999
-		LDA		#$15
-		JSR		_printf_num_lib
-		PPUQSTART
-		PPUQMOVB	#$7B,OP_NOP,0
-		PPUQMOVB	#$24,OP_NOP,0
-		PPUQMOVB	#$03,OP_NOP,0
-		LDA		_city._cur_month
-		ASL
-		ASL
-		TAY
-loc_EADA1:
-		LDA		_months_lib,Y
-		CMP		#$80
-		BEQ		loc_EADAF
-		PPUQMOVA
-		INY
-		BNE		loc_EADA1
-loc_EADAF:
-		PPUQEND
-locret_EADB1:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_popul_hud_draw:
-		MOVD	_ptr0,_popul_cur
-		JSR		_hex_to_dec9999999
-		LDA		#$16
-		JMP		_printf_num_lib
-
-; REDUNDANT
-; =============== S U B	R O U T	I N E =======================================
-;sub_EADC9:
-;		LDX		#$10
-;		STX		_spr_buf_pos
-;		FJSRA	_info_maps_spr_rect_draw,PRG7,PRG9
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_spr_arrows_hide:
-		LDX		#$2F
-loc_EADD7:
-;		LDA		#$00						; ORIGINAL: hides sprites to upper left corner
-		LDA		#$FA						; FIX: hides sprites out of screen
-		STA		_spr_buf+$20,X
-		DEX
-		BPL		loc_EADD7
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_info_maps_arrows_move:
-		LDA		#$28
-		STA		_scr_res_control_flags
-		STA		_game_core_state
-		LDA		_pad0_autorep_press
-		AND		#$0F
-		BEQ		loc_EADF4
-		LDX		#$04
-		STX		_pad0_dpad_autorep_delay
-		BNE		.arrows_move
-loc_EADF4:
-		LDA		_pad0_held
-		AND		#$0F
-		BEQ		.arrows_draw
-		LDX		_pad0_dpad_autorep_delay
-		BEQ		.arrows_move
-		DEC		_pad0_dpad_autorep_delay
-		BNE		.arrows_draw
-.arrows_move:
-		JSR		_info_maps_rect_pos_adjust
-.arrows_draw:
-		FJSRA	_info_maps_spr_arrows_draw,PRG7,PRG9
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; A = d-pad button on start
-;
-_info_maps_rect_pos_adjust:
-;		LDX		#$01							; REDUNDANT
-		LDX		#$00							; FIX, when using the _tpos macro
-		LSR										; col/row addresses here are swapped!
-		BCS		.arrows_move_right				; hor movements
-		LSR
-		BCS		.arrows_move_left
-		INX										; switch to vert mvements var
-		LSR
-		BCC		.arrows_move_left				; now this is not right, but up
-.arrows_move_right:
-		LDA		_info_maps_rect_pos,X
-		CMP		_info_maps_rect_limits_right_bottom,X
-		BCS		locret_EAE36
-		CLC
-		ADC		#$02
-		STA		_info_maps_rect_pos,X
-		RTS
-.arrows_move_left:
-		LDA		_info_maps_rect_pos,X
-		CMP		_info_maps_rect_limits_left_top,X
-		BEQ		locret_EAE36
-		SEC
-		SBC		#$02
-		STA		_info_maps_rect_pos,X			; adjust pos with clapm
-locret_EAE36:
-		RTS
-
-; FIX, also swapped because of changing pos vars order
-_info_maps_rect_limits_left_top:
-		.BYTE	$45,$3C
-_info_maps_rect_limits_right_bottom:
-		.BYTE	$AB,$AA
-
-; =============== S U B	R O U T	I N E =======================================
 _info_maps_city_name_hud_draw:
 		LDY		_city._name						; as against the ni-game routines
 		DEY										; this is single screen displays, no
@@ -2149,43 +2192,166 @@ locret_EAE85:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+_info_maps_date_hud_draw:
+		LDA		_hud_redraw_req					; wait for external redraw request
+		BEQ		locret_EADB1
+		LDA		#$00
+		STA		_hud_redraw_req
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_date_hud_draw_ex:
+		MOVW	_ptr0,_city._cur_year			; convert city year to ppu data
+		JSR		_hex_to_dec9999					; similar to regular hud, but
+		LDA		#$15							; without need to recalc ppu offset
+		JSR		_printf_num_lib					; use fixed position instead
+		PPUQSTART
+		PPUQMOVB	#$7B,OP_NOP,0				; the same with month
+		PPUQMOVB	#$24,OP_NOP,0
+		PPUQMOVB	#$03,OP_NOP,0
+		LDA		_city._cur_month
+		ASL
+		ASL
+		TAY
+loc_EADA1:
+		LDA		_months_lib,Y
+		CMP		#$80
+		BEQ		loc_EADAF
+		PPUQMOVA
+		INY
+		BNE		loc_EADA1
+loc_EADAF:
+		PPUQEND
+locret_EADB1:
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_popul_hud_draw:
+		MOVD	_ptr0,_popul_cur				; fixed popul count draw
+		JSR		_hex_to_dec9999999
+		LDA		#$16
+		JMP		_printf_num_lib
+
+; REDUNDANT
+; =============== S U B	R O U T	I N E =======================================
+;sub_EADC9:
+;		LDX		#$10
+;		STX		_spr_buf_pos
+;		FJSRA	_info_maps_spr_rect_draw,PRG7,PRG9
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_spr_arrows_hide:
+		LDX		#$2F
+loc_EADD7:
+;		LDA		#$00						; ORIGINAL: hides sprites to upper left corner
+		LDA		#$FA						; FIX: hides sprites out of screen
+		STA		_spr_buf+$20,X
+		DEX
+		BPL		loc_EADD7
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_info_maps_arrows_move:
+		LDA		#$28
+		STA		_scr_res_control_flags		; control flags are set to frame move mode
+		STA		_game_core_state			; THREAD0 takes control for now, THREAD1 suspended
+		LDA		_pad0_autorep_press			; d-pad autorep test
+		AND		#$0F
+		BEQ		.dpad_released
+		LDX		#$04
+		STX		_pad0_dpad_autorep_delay	; when press, reload dpad autorep counter
+		BNE		.arrows_move
+.dpad_released:
+		LDA		_pad0_held
+		AND		#$0F
+		BEQ		.arrows_draw				; now test an actual input
+		LDX		_pad0_dpad_autorep_delay
+		BEQ		.arrows_move
+		DEC		_pad0_dpad_autorep_delay
+		BNE		.arrows_draw
+.arrows_move:
+		JSR		_info_maps_rect_pos_adjust
+.arrows_draw:
+		FJSRA	_info_maps_spr_arrows_draw,PRG7,PRG9
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+; A = d-pad button on start
+;
+_info_maps_rect_pos_adjust:
+;		LDX		#$01							; REDUNDANT
+		LDX		#$00							; FIX, when using the _tpos macro
+		LSR										; col/row addresses here are swapped!
+		BCS		.arrows_move_right				; hor movements
+		LSR
+		BCS		.arrows_move_left
+		INX										; switch to vert movements var
+		LSR
+		BCC		.arrows_move_left				; now this is not right, but up
+.arrows_move_right:
+		LDA		_info_maps_rect_pos,X
+		CMP		_info_maps_rect_limits_right_bottom,X	; check limits not exceeded mini-map window
+		BCS		locret_EAE36
+		CLC
+		ADC		#$02
+		STA		_info_maps_rect_pos,X
+		RTS
+.arrows_move_left:
+		LDA		_info_maps_rect_pos,X
+		CMP		_info_maps_rect_limits_left_top,X
+		BEQ		locret_EAE36
+		SEC
+		SBC		#$02
+		STA		_info_maps_rect_pos,X			; adjust pos with clapm
+locret_EAE36:
+		RTS
+
+; FIX, also swapped because of changing pos vars order
+_info_maps_rect_limits_left_top:
+		.BYTE	$45,$3C
+_info_maps_rect_limits_right_bottom:
+		.BYTE	$AB,$AA
+
+; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_A_graphs_draw:
 		LDA		#$00
-		STA		_MMC5_PRG_PAGES
+		STA		_MMC5_PRG_PAGES									; switch WRAM bank mode
 		INC		_scr_res_idx
 ;		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9		; REDUNDANT SO MUCH!
 		LDY		#$FF											; OPTIMIZED, this is what
-		STY		_cur_graphs_button_press_idx										; to be far called lol
-		STY		_prev_graphs_button_press_idx										; -
-		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9
+		STY		_cur_graphs_button_press_idx					; to be far called lol
+		STY		_prev_graphs_button_press_idx					; -
+		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9			; graph draw is in external bank
 		LDA		#$04
-		STA		_MMC5_PRG_PAGES
+		STA		_MMC5_PRG_PAGES									; restore WRAM bank mode
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _far_scr_res_hndl1_B_graphs_input:
 		LDA		#$00
 		STA		_MMC5_PRG_PAGES
-		FJSRA	_scr_res_hndl1_B_graphs_input,PRG7,PRG9
+		FJSRA	_scr_res_hndl1_B_graphs_input,PRG7,PRG9			; external again
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl2_A_budget_draw:
-		LDA		_scr_res_idx
-		CMP		#$04
+		LDA		_scr_res_idx					; draw only if budget screen selected
+		CMP		#$04							; since called from the common code for all resources
 		BEQ		loc_EAEEC
 		RTS
 loc_EAEEC:
-		DEC		_mmc5_operation_in_progress_flag
+		DEC		_mmc5_operation_in_progress_flag; busy flag
 		LDA		#$02
-		STA		_MMC5_CHR_MODE
+		STA		_MMC5_CHR_MODE					; set chr mapping mode
 		LDA		#$80
-		STA		_fiscal_year_results_draw_req
-		STA		_game_core_state
+		STA		_budget_scr_draw_req			; in case we call budget manually, set flag manualy here
+		STA		_game_core_state				; and suspend THREAD1
 		LDA		#$AC
-		STA		_cur_game_cursor_scr_pos._COL
+		STA		_cur_game_cursor_scr_pos._COL	; set default pos of the cursor
 		LDA		#$34
 		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$00
@@ -2193,7 +2359,7 @@ loc_EAEEC:
 		STA		_pad0_autorep_press
 		STA		_tmp118+2
 		LDA		#$A0
-		STA		_scr_res_control_flags
+		STA		_scr_res_control_flags			; draw actual values for budget screen
 		MOVD	_ptr0,_taxes_collected
 		JSR		_hex_to_dec99999
 		LDA		#$01
@@ -2218,7 +2384,7 @@ loc_EAEEC:
 		JSR		_hex_to_dec9999
 		LDA		#$05
 		JSR		_printf_num_lib
-		BIT		_city._bank_flags
+		BIT		_city._bank_flags				; draw bank picture if available
 		BPL		loc_EAFD0
 ;		MOVWO	_ptr0,_tlm_nt_bank_icon
 ;		MOVWO	_tmp2,_tlm_extnt_bank_icon
@@ -2229,7 +2395,7 @@ loc_EAEEC:
 		JSR		_buffers_force_flush
 		BIT		_city._bank_flags
 		BVC		loc_EAFBB
-;		MOVWO	_ptr0,_tlm_nt_bank_loan
+;		MOVWO	_ptr0,_tlm_nt_bank_loan			; also draw additional LOAN text if needed
 ;		MOVWO	_tmp2,_tlm_extnt_bank_loan
 		LDX		#$24
 		BNE		loc_EAFCB
@@ -2246,25 +2412,25 @@ loc_EAFD0:
 		LDX		#$03
 		CLC
 loc_EAFD5:
-		LDA		_taxes_collected,Y
+		LDA		_taxes_collected,Y				; sum of DW values tax collected
 		ADC		_city._money,Y
 		STA		_money_plus_taxes_collected,Y
 		INY
 		DEX
 		BNE		loc_EAFD5
-		JSR		_tax_alloc_calc
-		JSR		_total_funds_calc
-		JSR		_test_if_money_for_funds_are_enough
-		BCS		loc_EAFF8
-		LDA		#$08
-		JSR		_tax_alloc_clamp
+		JSR		_funds_calc						; calc funding for all values
+		JSR		_total_funds_calc				; sum of all funds minus loaned money
+		JSR		_funds_amount_test				; test if funds are enough
+		BCS		loc_EAFF8						; if funding is enough, do additional
+		LDA		#$08							; education funding
+		JSR		_tax_subtract
 		JSR		_total_funds_calc
 		JSR		_funding_rates_recalc
 loc_EAFF8:
 		LDY		#$00
 		STY		_budget_tax_cur_pos
 loc_EAFFD:
-		JSR		_taxes_alloc_draw
+		JSR		_taxes_alloc_draw				; now draw calculated values
 		LDY		_budget_tax_cur_pos
 		INY
 		INY
@@ -2274,10 +2440,10 @@ loc_EAFFD:
 		JSR		_buffers_force_flush
 		LDA		#$01
 		STA		_MMC5_CHR_MODE
-		FJSRA	_wnd_header_year_draw,PRG7,PRG9
+		FJSRA	_wnd_header_year_draw,PRG7,PRG9	; finally draw current year in header
 		INC		_scr_res_idx
 		LDA		#$00
-		STA		_budget_display_timer
+		STA		_budget_display_timer			; sprites and animation init
 		STA		_budget_display_timer+1
 		STA		_budget_tax_cur_pos
 		FJSRA	_budget_screen_cursor_pos_set,PRG7,PRG9
@@ -2327,27 +2493,27 @@ _far_scr_res_hndl2_B_budget_input:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl3_A_city_eval_draw:
-		LDA		_scr_res_idx
+		LDA		_scr_res_idx					; same as budget, draws in common code
 		CMP		#$06
 		BEQ		loc_EB05B
 		RTS
 loc_EB05B:
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		FJSRA	_wnd_header_year_draw,PRG7,PRG9
+		FJSRA	_wnd_header_year_draw,PRG7,PRG9	; draw year in header first here
 		LDA		#$00
 		STA		_tmp13D
 		LDA		#$80
 		STA		_scr_res_control_flags
 		INC		_scr_res_idx
-		LDX		_city._city_type
+		LDX		_city._city_type				; draw city type string
 		LDA		#$04
 		JSR		_printf_txt_lib
-		LDX		_city._difficult
+		LDX		_city._difficult				; difficult string
 		LDA		#$05
 		JSR		_printf_txt_lib
 loc_EB084:
-		LDA		#$00
+		LDA		#$00							; draw other numeric values
 		STA		_ptr0+1
 		STA		_tmp2
 		LDA		_tmp13D
@@ -2358,28 +2524,28 @@ loc_EB084:
 		LDA		_city_eval_vars_list+1,X
 		STA		_tmp5
 		LDY		_tmp13D
-		LDX		_scr06_city_eval_len_list,Y
+		LDX		_city_eval_len_list,Y
 		LDY		#$00
 		CPX		#$01
 		BNE		loc_EB0A9
-		LDA		(_tmp4),Y
-		BMI		loc_EB0EA
+		LDA		(_tmp4),Y						; read one-byte value
+		BMI		.city_problem_txt_draw			; draw number if non-zero, or else draw only text
 loc_EB0A9:
-		LDA		(_tmp4),Y
+		LDA		(_tmp4),Y						; read the value for the rest parameters
 		STA		_ptr0,Y
 		INY
 		DEX
 		BNE		loc_EB0A9
 		DEY
-		LDA		(_tmp4),Y
-		BPL		loc_EB0D4
+		LDA		(_tmp4),Y						; continue if large value is positive
+		BPL		loc_EB0D4						; test if values threated as negative
 		LDY		_tmp13D
 		CPY		#$03
-		BEQ		loc_EB0C2
+		BEQ		loc_EB0C2						; values 3 and 6 are signed
 		CPY		#$06
-		BNE		loc_EB0D4
+		BNE		loc_EB0D4						; the rest is not
 loc_EB0C2:
-		LDX		_scr06_city_eval_len_list,Y
+		LDX		_city_eval_len_list,Y			; invert value
 		LDY		#$00
 		SEC
 loc_EB0C8:
@@ -2390,17 +2556,17 @@ loc_EB0C8:
 		DEX
 		BNE		loc_EB0C8
 loc_EB0D4:
-		JSR		_hex_to_dec999999
+		JSR		_hex_to_dec999999				; convert to a string
 		LDA		_tmp13D
 		CLC
 		ADC		#$17
-		JSR		_printf_num_lib
+		JSR		_printf_num_lib					; draw it
 		INC		_tmp13D
 		LDA		_tmp13D
 		CMP		#$0B
-		BCC		loc_EB084
-loc_EB0EA:
-		LDA		#$0B
+		BCC		loc_EB084						; continue for all 10 values
+.city_problem_txt_draw:
+		LDA		#$0B							; draw city problem list
 		STA		_tmp13D
 loc_EB0EF:
 		LDA		_tmp13D
@@ -2408,7 +2574,7 @@ loc_EB0EF:
 		SBC		#$0B
 		STA		_tmp7
 		TAX
-		LDA		_worst_problem_list,X
+		LDA		_worst_problem_list,X			; skip if no value
 		BMI		loc_EB10D
 		TAX
 		LDA		_tmp7
@@ -2671,10 +2837,10 @@ _budget_funds_recalc:
 ;		FJSRA	_budget_scr_tax_adjust,PRG6,PRG9
 		JSR		_budget_scr_tax_adjust			; FIX, now local
 		JSR		_total_funds_calc
-		JSR		_test_if_money_for_funds_are_enough
+		JSR		_funds_amount_test
 		BCS		_taxes_alloc_draw
 		LDA		_budget_tax_cur_pos
-		JSR		_tax_alloc_clamp
+		JSR		_tax_subtract
 		JSR		_total_funds_calc
 		JSR		_funding_rate_calc
 
@@ -2812,7 +2978,7 @@ _inc_table:
 ; -
 
 ; =============== S U B	R O U T	I N E =======================================
-_test_if_money_for_funds_are_enough:
+_funds_amount_test:
 		LDY		#$00
 		LDX		#$03
 		SEC
@@ -2825,7 +2991,7 @@ loc_EB335:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_tax_alloc_clamp:
+_tax_subtract:
 		AND		#$FE
 		PHA
 		LDX		#$03
@@ -2969,7 +3135,7 @@ _thread_lock_flag_set:
 		JMP		_wait_for_nmi
 
 ; =============== S U B	R O U T	I N E =======================================
-_tax_alloc_calc:
+_funds_calc:
 		LDA		#$02
 		STA		_budget_tax_cur_pos
 loc_EB450:
@@ -3091,7 +3257,7 @@ loc_EB4F8:
 ;		JMP		(_ptr0)
 
 ; =============== S U B	R O U T	I N E =======================================
-_adc_ptr0_0:
+_adc_ptr0:
 		CLC
 		ADC		_ptr0
 		STA		_ptr0
@@ -3199,26 +3365,14 @@ byte_EB66F:
 byte_EB682:
 		.BYTE	$00,$00,$05,$05,$0A,$0A,$0F,$0F,$14,$14,$19,$19,$1E,$1E,$23,$23
 		.BYTE	$28,$28,$2D
-byte_EB695:
-		.BYTE	$09,$00
-		.BYTE	$07,$02
-		.BYTE	$00,$00
-		.BYTE	$00,$00
-		.BYTE	$08,$04
-byte_EB69F:
-		.BYTE	$24,$48
-		.BYTE	$24,$68
-		.BYTE	$00,$00
-		.BYTE	$00,$00
-		.BYTE	$24,$B8
-byte_EB6A9:
+_info_maps_menu_var_ofs_list:
 		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
-byte_EB6B2:
-		.BYTE	$07,$04
-		.BYTE	$07,$0A
-		.BYTE	$07,$11
 
-; unused
+; UNUSED, this is an early copies of nt/extnt of Dr.Willy in bank window with
+; cash in its hand. the position values are lower and shifted to the left,
+; so it would be displayed under the left window. this may indicate that
+; there were another BANK screen layout
+;
 ;		.BYTE	$00,$07,$0E
 ;		.BYTE	$26,$25,$06,$35,$DF,$58,$AC,$AD,$3A
 ;		.BYTE	$46,$25,$06,$DF,$A8,$A9,$AA,$AB,$DF
@@ -3233,9 +3387,9 @@ byte_EB733:
 		.BYTE	$00,$01,$01,$02,$01,$02,$02,$03,$01,$02,$02,$03,$02,$03,$03,$04
 _scr_res_ctrl_flag_list:
 		.BYTE	$00,$80,$00,$00,$80,$80,$80,$80,$00,$00,$40,$40
-byte_EB753:
+_mini_map_block_size_list:
 		.BYTE	$04,$04,$04,$04,$03
-byte_EB758:
+_mini_map_stop_col_list:
 		.BYTE	$04,$04,$04,$04,$04,$08,$08,$08,$08,$0C,$0C,$0C,$0C,$10,$10,$10
 		.BYTE	$10,$13,$13,$13
 byte_EB76C:
@@ -3566,6 +3720,7 @@ loc_EBB19:
 		BCS		loc_EBB06
 locret_EBB2E:
 		RTS
+
 _txt_ppu_ofs_lib_lo:
 		.BYTE	<[$2687]
 		.BYTE	<[$26C7]
@@ -3871,7 +4026,7 @@ byte_EBE9F:
 		.BYTE	$05,$05,$05,$05,$8B,$01,$01,$05
 		.BYTE	$05,$05,$05,$05,$05,$05,$02,$02
 		.BYTE	$02,$02,$14,$14,$14,$14,$14,$14
-_scr06_city_eval_len_list:
+_city_eval_len_list:
 		.BYTE	$01,$01,$03,$03,$03,$02,$02,$01,$01,$01,$01,$01
 _city_eval_vars_list:
 		.WORD	_doing_a_good_job_votes

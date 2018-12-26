@@ -484,7 +484,7 @@ _new_map_number:
 		.BYTE	0,0
 _game_wnd_spr_mode_flag:
 		.BYTE	0
-_info_maps_city_map_modes_idx:
+_info_maps_menu_extra_idx:
 		.BYTE	0,0,0
 byte_131:
 		.BYTE	0
@@ -499,7 +499,7 @@ byte_137:
 
 		_tpos	_info_maps_rect_pos
 
-byte_13A:
+_info_maps_menu_extra_value_backup:
 		.BYTE	0
 _budget_screen_return_to_info_maps_flag:
 		.BYTE	0
@@ -859,7 +859,7 @@ _goto_transition_counter:
 
 _airplane_crash_req:
 		.BYTE	0
-_fiscal_year_results_draw_req:
+_budget_scr_draw_req:
 		.BYTE	0
 _taxes_collected:
 		.BYTE	0,0,0

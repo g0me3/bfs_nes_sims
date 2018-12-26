@@ -826,7 +826,7 @@ _fiscal_year_over_calculations:
 		STA		_taxes_income
 		MOVW	_tmp6CC,_city._tax_year_rate
 		MOVWI	_city._tax_year_rate,0
-		LDA		_fiscal_year_results_draw_req
+		LDA		_budget_scr_draw_req
 		BEQ		loc_1046EB
 		RTS
 loc_1046EB:
@@ -900,10 +900,10 @@ loc_1046EB:
 		RTS
 loc_1047BF:
 		LDA		#$01
-		STA		_fiscal_year_results_draw_req
+		STA		_budget_scr_draw_req
 		STA		_game_core_state
 loc_1047C7:
-		LDA		_fiscal_year_results_draw_req
+		LDA		_budget_scr_draw_req
 		BNE		loc_1047C7
 		LDA		_city._money
 		CLC

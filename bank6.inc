@@ -241,7 +241,7 @@ _graphs_period_buttons_extnt_hdrs:
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_header_and_legend_redraw:
-		JSR		_buffers_wait_flush						; routine from BANK9!
+		JSR		_buffers_wait_flush				; routine from BANK9!
 		LDA		_cur_info_maps_button_idx		; convert cur menu idx into
 		BEQ		loc_A0262						; if map header idx = 0
 		CMP		#$0D							; special case
@@ -251,7 +251,7 @@ _info_maps_header_and_legend_redraw:
 		BPL		loc_A0266
 loc_A0262:
 		CLC										; then select one of 4 maps idxes
-		ADC		_info_maps_city_map_modes_idx	; adding index of city map menu
+		ADC		_info_maps_menu_extra_idx		; adding index of city map menu
 loc_A0266:
 		PHA										; OPTIMIZED
 		MOVWO	_ptr0,_info_screen_header_nt_lib; OPTIMIZED
@@ -266,7 +266,7 @@ loc_A0266:
 		PPUQSTART								; because of additional list for nt idxes
 		JSR		_strcpy_lib
 		PPUQEND
-;		JSR		_buffers_wait_flush						; FIX, one wait just enough, or else you will see how it draw
+;		JSR		_buffers_wait_flush				; FIX, one wait just enough, or else you will see how it draw
 		MOVWO	_ptr0,_info_screen_header_extnt_lib
 		MOVWO	_tmp2,_extnt_queue_buf
 		PLA										; OPTIMIZED
@@ -313,83 +313,6 @@ loc_A02FD:
 		BNE		loc_A02F1						; send if not end of buf
 		LDX		_tmp4							; X = head pos of dst buf
 		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_scr_res_cursor_move:
-		LDA		_scr_res_control_flags			; for resources with a free cursor
-		AND		#$20							; like graphs and info maps
-		BNE		locret_A0323
-		LDA		_pad0_held						; test for D-Pad movements only
-		AND		#$0F
-		BNE		loc_A0324
-locret_A0323:
-		RTS
-loc_A0324:
-		LDX		#$00
-		LDY		#$03
-		LDA		_pad0_held						; fetch held buttons, keep in A
-loc_A032A:
-		LSR
-		BCC		loc_A0341						; shift d-pad bits in order R, L, U, D
-		PHA										; save d-pad bits for now
-		LDA		_cur_game_cursor_scr_pos,X		; get cur pos
-		CLC
-		ADC		_scr_res_cursor_speed,Y			; increment position for 4 directions
-		CMP		_scr_res_cursor_min_pos_list,X	; test for limits
-		BCC		loc_A0340
-		CMP		_scr_res_cursor_max_pos_list,X
-		BCS		loc_A0340
-		STA		_cur_game_cursor_scr_pos,X		; if not at the side of the screen, store
-loc_A0340:
-		PLA										; restore d-pad bits
-loc_A0341:
-		CPY		#$02							; Y is dpad pos idx, 0,1 - hor, 2,3 - vert
-		BNE		loc_A0346						; so test if we should switch X to Y
-		INX										; switch once at Y 02
-loc_A0346:
-		DEY
-		BPL		loc_A032A						; loop until all 4 dpad tested
-		LDA		#$00
-		STA		_cur_game_cursor_area			; not used the same way as ingame
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_scr_res_cursor_draw:
-		LDA		_scr_res_control_flags
-		AND		#$08
-		BNE		locret_A0360
-		LDA		_spr_buf_pos					; draw new cursor always from 0
-		BEQ		_scr_res_cursor_spr_insert_ex	; if already 0, jump directly
-		PHA										; if no, save old position
-		JSR		_scr_res_cursor_spr_insert_ex_0	; draw and return here
-		POPB	_spr_buf_pos					; then restore
-locret_A0360:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_scr_res_cursor_spr_insert_ex_0:
-		LDA		#$00
-		STA		_spr_buf_pos					; FIX if already 0, no need to store
-
-; =============== S U B	R O U T	I N E =======================================
-_scr_res_cursor_spr_insert_ex:
-		STA		_spr_insert_args._idx			; in any cases A here is 0
-		STA		_spr_insert_args._attr
-		LDA		_cur_game_cursor_scr_pos._COL
-		STA		_spr_insert_args._pos._COL
-		LDA		_cur_game_cursor_scr_pos._ROW
-		STA		_spr_insert_args._pos._ROW
-		JMP		_spr_lib_attr_insert
-
-; all directions has it's own speed just for convinience to correspond
-; to the d-pad index counter
-;
-_scr_res_cursor_speed:
-		.BYTE	$FE,$02,$FE,$02
-_scr_res_cursor_min_pos_list:
-		.BYTE	$08,$18
-_scr_res_cursor_max_pos_list:
-		.BYTE	$E9,$D9
 
 _info_screen_legends_idx_list:
 		.BYTE	$00,$01,$02,$03,$02,$02,$02,$02,$02,$02,$02,$02,$02,$04

@@ -584,9 +584,9 @@ _total_free	SET	_bank{1}_free
 _total_free	SET _total_free+_bank{1}_free
 	#endif
 	#if .>{2}
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
+		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
 	#else
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
+		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
 	#endif
 	#if .<{2}-1
 		ORG		{2}-1
@@ -600,21 +600,21 @@ _{1}_start	SET	.
 
 	MAC SECTION_END
 _{1}_end	SET .
-		ECHO	" > section",${1},"size =",_{1}_end-_{1}_start
+		ECHO	" > section s =",_{1}_end-_{1}_start,"[",${1},"]"
 	ENDM
 
 	MAC SECTION_ENDS
 _{1}_end	SET .
-		ECHO	" > section size =",_{1}_end-_{1}_start,"[",{2},"]"
+		ECHO	" > section s =",_{1}_end-_{1}_start,"[",{2},"]"
 	ENDM
 
 	MAC	LAST_BANK_END
 _bank{1}_free	SET	[{2}-.-6]
 _total_free	SET _total_free+_bank{1}_free
 	#if .>[{2}-6]
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","exceeded =",[0-_bank{1}_free]
+		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","EXCEEDED =",[0-_bank{1}_free]
 	#else
-		ECHO	"bank",CUR_PRG_BANK,"[ size =",[.-CUR_BANK_START],"]","free =",_bank{1}_free
+		ECHO	"BANK",CUR_PRG_BANK,"[ s =",[.-CUR_BANK_START],"]","FREE =",_bank{1}_free
 	#endif
 		ECHO	"-------------";
 		ECHO	"total free =",_total_free

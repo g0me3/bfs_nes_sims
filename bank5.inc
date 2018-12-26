@@ -1895,11 +1895,11 @@ _obj_flush:
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_obj_map_ptr:
 ;		LDY		_cur_obj_pos._ROW
-;		LDA		off_888F5,Y
+;		LDA		_wram_col_ofs_list_lo,Y
 ;		CLC
 ;		ADC		_cur_obj_pos._COL
 ;		STA		_tmp15
-;		LDA		off_88941,Y
+;		LDA		_wram_col_ofs_list_hi,Y
 ;		ADC		#$00
 ;		STA		_tmp15+1
 ; FIX: WRANING, make sure wram_map_buf is at the beginning of the page, instead
@@ -1921,7 +1921,10 @@ _obj_dir_delta_list:
 		.BYTE	$FF,$FF
 
 ; REDUNDANT: calcs used
-;off_888F5:
+; NOTE, the rest of map buffers pos calculations are calculated with
+; hardware MUL usage, however, to speed up we may use similar tables
+; to mul instead, need to check if it will be faster
+;_wram_col_ofs_list_lo:
 ;		.BYTE	<[_wram_map_buf]
 ;		.BYTE	<[_wram_map_buf+$4C]
 ;		.BYTE	<[_wram_map_buf+$98]
@@ -1998,7 +2001,7 @@ _obj_dir_delta_list:
 ;		.BYTE	<[_wram_map_buf+$15AC]
 ;		.BYTE	<[_wram_map_buf+$15F8]
 ;		.BYTE	<[_wram_map_buf+$1644]
-;off_88941:
+;_wram_col_ofs_list_hi:
 ;		.BYTE	>[_wram_map_buf]
 ;		.BYTE	>[_wram_map_buf+$4C]
 ;		.BYTE	>[_wram_map_buf+$98]

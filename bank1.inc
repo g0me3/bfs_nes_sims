@@ -303,7 +303,7 @@ _game_setup06_scenario_select_input:
 		DEC		_main_sub_idx
 		JMP		_pal_fade_out
 loc_2420C:
-		JMP		_common_select_cursor_draw		; or else draw regular cursor
+		JMP		_common_select_cursor_control		; or else draw regular cursor
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_select_input:
@@ -809,7 +809,7 @@ _game_setup01_name_input_init:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup02_name_input_input:
 		JSR		_name_input_cursor_move_control	; main name input handler
-		JSR		_common_select_cursor_draw		; calling all stuff for input handling
+		JSR		_common_select_cursor_control		; calling all stuff for input handling
 		JSR		_name_input_button_push_control	; printing and storing input data
 		JSR		_name_input_button_push_draw
 		JSR		_name_input_char_store
@@ -861,39 +861,39 @@ _name_input_clear_header_area:
 		JMP		_buffers_wait_flush
 
 ; =============== S U B	R O U T	I N E =======================================
-_common_select_cursor_draw:
-		LDA		_pad0_autorep_press
+_common_select_cursor_control:
+		LDA		_pad0_autorep_press				; test for any button press
 		BEQ		loc_24614
-		LDA		#$FF
-		STA		_tmp6D0+1
+		LDA		#$FF							; if any button pressed
+		STA		_tmp6D0+1						; stop blinking flag set
 loc_24614:
 		LDA		_tmp6D0+1
-		BMI		loc_24632
-		LDA		_tmp6D0
-		BNE		loc_2462F
-		LDY		#$08
-		LDA		_tmp6D0+1
-		EOR		#$01
+		BMI		.force_draw						; if 80 raized draw always
+		LDA		_tmp6D0							;
+		BNE		.timer_draw						; or draw while timer not zero
+		LDY		#$08							; reload hide time
+		LDA		_tmp6D0+1						; toggle draw allow flag low bit
+		EOR		#$01							; disable the cursor
 		STA		_tmp6D0+1
-		BEQ		loc_2462C
+		BEQ		.reload_draw					; delay for show -10, for hide -8
 		LDY		#$10
-loc_2462C:
-		STY		_tmp6D0
-loc_2462F:
-		DEC		_tmp6D0
-loc_24632:
+.reload_draw:
+		STY		_tmp6D0							; reload timer
+.timer_draw:
+		DEC		_tmp6D0							; do
+.force_draw:
 		LDA		#$00
-		STA		_spr_insert_args._idx
+		STA		_spr_insert_args._idx			; reset spr buf
 		STA		_spr_buf_pos
 		LDA		_tmp6D0+1
-		BEQ		loc_2464A
+		BEQ		loc_2464A						; check if we allow to show cursor
 		LDA		_tmp6CC
-		STA		_spr_insert_args._pos._COL
+		STA		_spr_insert_args._pos._COL		; draw actually
 		LDA		_tmp6CE
 		STA		_spr_insert_args._pos._ROW
 		JMP		_spr_lib_attr_insert
 loc_2464A:
-		JMP		_spr_finish
+		JMP		_spr_finish						; or close spr buffer for now
 
 ; =============== S U B	R O U T	I N E =======================================
 ; BUG: all tlm queue functions here when used frequently overflows the buffer
@@ -964,31 +964,31 @@ _all_buttons_release_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _name_input_cursor_move_control:
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep_release			; here is the calcs for selecting keyboard buttons on the screen
 		AND		#$0F
 		BEQ		loc_246E6
-		APUA_SE	_SE_IDX_SELECT
+		APUA_SE	_SE_IDX_SELECT					; if any button pressed, do sound
 loc_246E6:
-		LDX		_tmp6D2
+		LDX		_tmp6D2							; load cur button idx in X/Y
 		LDY		_tmp6D3
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep_release			; check the actual button pressed
 		LSR
-		BCC		loc_24706
-		INX
+		BCC		.name_cur_left
+		INX										; right pressed is here
 		CPX		#$0A
-		BNE		loc_24700
+		BNE		loc_24700						; test for max value 0-9
 		CPY		#$00
-		BEQ		loc_24700
+		BEQ		loc_24700						; the special cases for enter/space and clear
 		CPY		#$02
-		BNE		loc_246FF
-		INX
-loc_246FF:
-		INX
-loc_24700:
+		BNE		loc_246FF						;   0 1 2 3 4 5 6 7 8 9 A B
+		INX										; 0 x x x x x x x x x x x x	(0-B, wrap 0)
+loc_246FF:										; 1 x x x x x x x x x x - x (0-9,B, wrap 0)
+		INX										; 2 x x x x x x x x x x - - (0-9, wrap 0)
+loc_24700:										; 3 x x x x x x x x x x - x (0-9,B, wrap 0)
 		CPX		#$0C
-		BNE		loc_24706
+		BNE		.name_cur_left
 		LDX		#$00
-loc_24706:
+.name_cur_left:
 		LSR
 		BCC		loc_2471C
 		DEX
@@ -1038,7 +1038,7 @@ loc_24746:
 		STX		_tmp6D2
 		STY		_tmp6D3
 		TXA
-		ASL
+		ASL										; load cursor positions
 		ASL
 		ASL
 		ASL
@@ -1240,7 +1240,7 @@ _game_setup0D_difficult_init:
 ; =============== S U B	R O U T	I N E =======================================
 _game_setup0E_difficult_input:
 		JSR		_difficult_scr_cursor_move		; cursor movement input test
-		JSR		_common_select_cursor_draw		; cursor draw
+		JSR		_common_select_cursor_control	; cursor draw
 		BIT		_pad0_autorep_press
 		BPL		loc_2493D						; press A button
 		APUA_SE	_SE_IDX_CLICK
@@ -1339,7 +1339,7 @@ loc_24991:
 		STA		_tmp6CE
 		LDA		#$50
 		STA		_tmp6CC
-		JMP		_common_select_cursor_draw
+		JMP		_common_select_cursor_control
 
 off_249B0:
 		.BYTE	<[_MMC5_EXRAM+$1A6]

@@ -113,7 +113,7 @@ _apu_play_mus:
 ;		ASL										; 01 02 04 05 10 20 21 22 40 41 42 44 48 50 60
 ;		BMI		loc_A09D						; 00 01 02 03 04 05 0D 0E 0C 06 07 08 09 0A 0B
 ;		ASL										; &40!=0  + 6 (40<=X<=60 -> 06-0C)
-;		BPL		loc_A0A1						; &23!=0  + D (21<=X<=22 -> 21-22)
+;		BPL		loc_A0A1						; &23!=0  + D (21<=X<=22 -> 0D-0E)
 ;		ASL										; rest    + 0 (01<=X<=20 -> 00-05)
 ;		BEQ		loc_A0A1						; very criptic
 ;		LDY		#$0C
@@ -216,7 +216,7 @@ loc_A0BE:
 ; - start of SQUARE1 channel work
 .mus_p1_play:
 		DEC		_apu_mus_p1_timer
-		BNE		.mus_p1_do_tempoelope			; note loaded and played, do special envelope work
+		BNE		.mus_p1_do_envelope				; note loaded and played, do special envelope work
 		LDY		_apu_mus_p1_data_pos			; fetch track cmd, always present in data
 		INC		_apu_mus_p1_data_pos
 		LDA		(_apu_trk_data_ptr),Y			; CMD: ab--cccc
@@ -266,7 +266,7 @@ loc_A0BE:
 		STA		_apu_mus_p1_tempo_delta
 		LDA		#$00
 		STA		_apu_mus_p1_tempo_cnt			; reset env counter for SQIARE1
-.mus_p1_do_tempoelope:
+.mus_p1_do_envelope:
 		INC		_apu_mus_p1_tempo_cnt
 		LDY		_apu_mus_p1_tempo_delta
 		BEQ		loc_A1A6
@@ -303,7 +303,7 @@ loc_A1DC:
 ; - start of SQUARE2 channel work
 .mus_p2_play:
 		DEC		_apu_mus_p2_timer
-		BNE		.mus_p2_do_tempoelope
+		BNE		.mus_p2_do_envelope
 		LDY		_apu_mus_p2_data_pos
 		BNE		.mus_p2_continues				; if no SQAURE2 data (offset = 0)
 		LDA		#$50							; then force it to mute, skip to TRI
@@ -347,7 +347,6 @@ loc_A1DC:
 		BNE		.mus_p2_skip_load				; only if loop counter is active. for SE0 any can be
 		LDX		_apu_se_loop_idx				; SUARE2, so check the loop_idx is active
 		BNE		.mus_p2_skip_load				; SE have priority here, skip load music channel here
-
 ;		LDX		#$97							; BUG, makes SQUARE2 cracking sometimes
 		LDX		#$90							; FIX, for crackling sounds by Chris Covell
 		STX		_APU_PULSE2_ENV
@@ -361,7 +360,7 @@ loc_A1DC:
 		STA		_apu_mus_p2_tempo_delta
 		LDA		#$00
 		STA		_apu_mus_p2_tempo_cnt
-.mus_p2_do_tempoelope:
+.mus_p2_do_envelope:
 		INC		_apu_mus_p2_tempo_cnt
 		LDY		_apu_mus_p2_tempo_delta
 		BEQ		loc_A257

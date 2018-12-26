@@ -82,7 +82,7 @@ _game_state_common:
 		ORA		byte_5C
 		ORA		_hud_redraw_req
 		ORA		_game_msg_wnd_active_flag
-		ORA		_fiscal_year_results_draw_req
+		ORA		_budget_scr_draw_req
 		STA		_game_core_state				; any of these flags gives priority to this thread
 		JMP		_MAIN_LOOP
 
@@ -832,7 +832,7 @@ _game_state10_fiscal_year_draw:
 		JSR		_pal_fade_in
 		JSR		_scroll_msg_reset
 		LDA		#$00
-		STA		_fiscal_year_results_draw_req
+		STA		_budget_scr_draw_req
 		STA		_cur_game_cursor_area
 loc_1365C8:
 		JMP		_game_state_common
@@ -881,7 +881,7 @@ _game_state17_common:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_states_select:
-		LDA		_fiscal_year_results_draw_req
+		LDA		_budget_scr_draw_req
 		BEQ		loc_136610
 		LDA		#$10
 		JMP		_set_game_state_idx
