@@ -3,432 +3,297 @@
 
 		BANK_START $F6
 
-		SECTION_START 902
+		SECTION_START 7904
 
 ; =============== S U B	R O U T	I N E =======================================
-_scr_chr_vars_init:
-		LDA		_ppu_ctrl_shadow
-		ORA		#$01
-		STA		_ppu_ctrl_shadow
-		STA		_PPU_CTRL
-		LDA		#$84
-		STA		_mmc5_nt_mode_shadow
-		STA		_MMC5_NT_MODE
-		LDA		_scr_res_idx
-		ASL
-		STA		_scr_res_idx
-		ASL
-		TAX
-		LDY		#$00
-loc_A001C:
-		LDA		_screen_chr_banks_lib,X
-		BEQ		loc_A0024
-		STA		_MMC5_CHR_BANKSA,Y
-loc_A0024:
-		INX
-		INY
-		CPY		#$04
-		BNE		loc_A001C
-		LDA		#$00
-		STA		_info_maps_cur_row
-		STA		_info_maps_cur_col
-		STA		_fund_request_tax+1
-		STA		_game_msg_wnd_active_flag
-		LDA		#$14
-		STA		_fund_request_tax
-		LDA		#$80
-		STA		_game_wnd_spr_mode_flag
-		STA		_game_core_state
-		STA		_scr_res_control_flags
-;		JMP		_screen_pal_spr_init			; REDUNDANT
-;
+_info_maps_buttons_redraw:
+		EXTQSTART
+;		LDY		_cur_info_maps_button_idx				; REDUNDANT as fuck
+;		LDA		_info_maps_button_idx_list,Y			; special value for disabling
+;		TAY												; released button draw, never used
+;		CMP		#$08									; default value here is B, so we draw
+;		BEQ		loc_A0199								; dummy release always
+		LDY		_prev_info_maps_button_idx
+		CPY		#$FF									; FIX: let's fix logic, skip release here instead
+		BEQ		loc_A0199								; -
+		LDA		_info_maps_button_idx_list,Y
+		JSR		_button_released_extnt_queue			; draw released button
+loc_A0199:
+		LDY		_cur_info_maps_button_idx
+;		CPY		#$0B									; REDUNDANT, cur info never gets 0B value,
+;		BEQ		_button_press_exit						; never, here we have logic flaw or mistake
+		LDA		_info_maps_button_idx_list,Y			; now draw new pushed button or default 0
+
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
-;_screen_pal_spr_init:
-		LDA		_scr_res_idx
-		LSR
-		TAX
-		LDA		_screen_pal_spr_list,X
-		STA		_screen_pal_cur_spr_idx
+_button_pressed_extnt_queue:
+		ASL
+		PHA
+		TAY
+		LDA		_info_buttons_extnt_lib,Y				; get the released button extnt
+		AND		#$C0									; and change them to pressed extnt
+		ORA		#$04
+		STA		_tmp2
+		LDA		_info_buttons_extnt_lib+1,Y
+		AND		#$C0
+		ORA		#$04
+		STA		_tmp3
+		PLA
+		JSR		_button_extnt_data_queue				; send data
+_button_press_exit:
+		EXTQEND
 		RTS
 
-_screen_pal_spr_list:
-		.BYTE	$03,$08,$02,$02,$03,$03,$06,$04,$00
-_screen_chr_banks_lib:
-		.BYTE	$34,$00,$36,$00
-		.BYTE	$34,$00,$39,$00
-		.BYTE	$34,$5D,$36,$37
-		.BYTE	$34,$00,$00,$00
-		.BYTE	$34,$00,$00,$00
-		.BYTE	$34,$00,$00,$00
-		.BYTE	$34,$00,$00,$37
-		.BYTE	$34,$00,$1A,$37
+; =============== S U B	R O U T	I N E =======================================
+; as against the info maps buttons, graphs buttons are unpressed by default
+; and you may press two buttons at the same time
+;
+_graphs_buttons_redraw:
+		EXTQSTART
+		CPY		#$FF									; get index of redraw button in Y
+		BEQ		loc_A01CC								; skip release redraw on enter
+		TYA
+		CLC
+;		ADC		#$0A									; REDUNDANT, removed unused lines
+		ADC		#$08									; FIX, new lib offset
+		JSR		_button_released_extnt_queue			; use common functions
+loc_A01CC:
+		LDY		_cur_graphs_button_press_idx
+;		BPL		loc_A01D4								; the same for push button
+;		EXTQEND
+;		RTS
+		BMI		_button_press_exit						; OPTIMIZED
+;loc_A01D4:
+		TYA
+		CLC
+;		ADC		#$0A									; REDUNDANT
+		ADC		#$08									; FIX
+		JMP		_button_pressed_extnt_queue
 
 ; =============== S U B	R O U T	I N E =======================================
-;_screen_pal_bg_init_unref:
-;		LDA		_scr_res_idx
-;		AND		#$FE
-;		BNE		loc_A00A7
-;		LDY		_maps_info_mode_idx
-;		LDA		_screen_pal_extra_list,Y
-;		JMP		loc_A00AC
-;loc_A00A7:
-;		LSR
-;		TAY
-;		LDA		_screen_pal_list,Y
-;loc_A00AC:
-;		STA		_screen_pal_cur_bg_idx
+_button_released_extnt_queue:
+		ASL										; FIX: swap this, do one shift less later
+		PHA
+		TAY
+		LDA		_info_buttons_extnt_lib,Y		; get released button exnt pattern
+		STA		_tmp2
+		LDA		_info_buttons_extnt_lib+1,Y
+		STA		_tmp3
+		PLA
+
+; =============== S U B	R O U T	I N E =======================================
+_button_extnt_data_queue:
+;		ASL										; FIX one shift less here get extnt lib ofset
+		ASL
+		ASL
+		TAY
+		MOVWO	_ptr0,_info_buttons_extnt_hdr_lib
+		JSR		_button_extnt_line_queue
+
+; !FALLTHROUGH!
+
+; FIX
+; -
+; =============== S U B	R O U T	I N E =======================================
+_button_extnt_line_queue:
+		LDA		(_ptr0),Y						; header is over?
+		BNE		loc_A01FD
+		EXTQMOVB	_tmp2,OP_NOP,0				; send an actual data calculated
+		EXTQMOVB	_tmp3,OP_NOP,0				; before
+		INY
+		RTS
+loc_A01FD:
+		INY										; send header
+		EXTQMOVA
+		JMP		_button_extnt_line_queue
+; -
+; REDUNDANT
+; -
+; =============== S U B	R O U T	I N E =======================================
+;_button_extnt_line_queue:
+;		LDA		#$03
+;		STA		_tmp5
+;loc_A01FC:
+;		LDA		(_ptr0),Y						; send header, 3 bytes ofs+size
+;		INY										; predefined in the table below
+;		EXTQMOVA
+;		DEC		_tmp5
+;		BNE		loc_A01FC
+;		INY										; skip fourt byte
+;		EXTQMOVB	_tmp2,OP_NOP,0				; send an actual data calculated
+;		EXTQMOVB	_tmp3,OP_NOP,0				; before
 ;		RTS
 
-; =============== S U B	R O U T	I N E =======================================
-_scr_pal_bg_load:
-		LDA		#$02
-		STA		_ppu_pal_dequeue_req
-		LDA		_scr_res_idx
-		AND		#$FE
-		BNE		loc_A0080
-		LDY		_maps_info_mode_idx
-		LDA		_screen_pal_extra_list,Y
-		JMP		loc_A0085
-loc_A0080:
-		LSR
-		TAY
-		LDA		_screen_pal_list,Y
-loc_A0085:
-		STA		_screen_pal_cur_bg_idx
-		JMP		_pal_load_lib
+_info_maps_button_idx_list:
+		.BYTE	$00,$01,$02,$02,$03,$04,$05,$06,$07,$07	;,$08,$09	REDUNDANT
 
-_screen_pal_list:
-		.BYTE	$00,$04,$03,$02,$0B,$12,$06,$0A
-_screen_pal_extra_list:
-		.BYTE	$05,$05,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+; here some more redundancy in this lib. every button correspond to
+; 8 bytes of this lib, however, only first 3 bytes of every 4 are used
+; because this is dummy data only for easier calculation of lib offset
+;
+; actual data to store as extnt is in _info_buttons_extnt_lib table
+;
+;_info_buttons_extnt_hdr_lib:
+;			;	+	+	+	-	+	+	+	-
+;		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43		; 00 info map button 0
+;		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43		; 01 info map button 1
+;		.BYTE	$84,$5D,$02,$03,$A4,$5D,$02,$03		; 02 info map button 2
+;		.BYTE	$C4,$5D,$02,$03,$E4,$5D,$02,$03		; 03 info map button 3
+;		.BYTE	$04,$5E,$02,$03,$24,$5E,$02,$03		; 04 info map button 4
+;		.BYTE	$44,$5E,$02,$43,$64,$5E,$02,$43		; 05 info map button 5
+;		.BYTE	$84,$5E,$02,$43,$A4,$5E,$02,$43		; 06 info map button 6
+;		.BYTE	$C4,$5E,$02,$03,$E4,$5E,$02,$03		; 07 info map button 7
+;		.BYTE	$02,$5D,$02,$04,$22,$5D,$02,$04		; 08 info map dummy button push, *unused*
+;		.BYTE	$42,$5D,$02,$04,$62,$5D,$02,$04		; 09 info map dummy button release FIX, now *unused* too
+;		.BYTE	$23,$5D,$02,$83,$43,$5D,$02,$83		; 08 -0A graphs button 0
+;		.BYTE	$63,$5D,$02,$03,$83,$5D,$02,$03		; 09 -0B graphs button 1
+;		.BYTE	$A3,$5D,$02,$43,$C3,$5D,$02,$43		; 0A -0C graphs button 2
+;		.BYTE	$E3,$5D,$02,$83,$03,$5E,$02,$83		; 0B -0D graphs button 3
+;		.BYTE	$23,$5E,$02,$C3,$43,$5E,$02,$C3		; 0C -0E graphs button 4
+;		.BYTE	$63,$5E,$02,$03,$83,$5E,$02,$03		; 0D -0F graphs button 5
+;		.BYTE	$A3,$5E,$02,$03,$C3,$5E,$02,$03		; 10 graphs dummy button push, *unused*
+;		.BYTE	$E3,$5E,$02,$03,$03,$5F,$02,$03		; 11 graphs dummy button release, *unused*
 
-; =============== S U B	R O U T	I N E =======================================
-_scr_res_wnd_close:
-		LDX		#$FF
-		STX		byte_53
-		INX
-		STX		byte_3C
-		STX		byte_54
-		STX		byte_56
-		STX		_scr_res_control_flags
-		STX		_game_core_stop_flag
-		INX
-		LDA		#$18
-		STA		byte_55
-		LDA		#$14
-		STA		byte_57
-		LDA		#$44
-		STA		_cur_game_cursor_scr_pos._COL
-		LDA		#$30
-		STA		_cur_game_cursor_scr_pos._ROW
-		JSR		_flush_wait_0
-		JSR		_pal_fade_out
-		LDA		_ppu_ctrl_shadow
-		AND		#$FC
-		STA		_ppu_ctrl_shadow
-		STA		_PPU_CTRL
-		LDA		#$00
-		STA		_MMC5_NT_MODE
-		STA		_game_wnd_spr_mode_flag
-		STA		_scr_res_window_opened_flag
-		RTS
+; FIX
+; let's reuse them on purpose now.
+;
+_info_buttons_extnt_hdr_lib:
+		.BYTE	$04,$5D,$02,$00,$24,$5D,$02,$00		; 00 info map button 0
+		.BYTE	$44,$5D,$02,$00,$64,$5D,$02,$00		; 01 info map button 1
+		.BYTE	$84,$5D,$02,$00,$A4,$5D,$02,$00		; 02 info map button 2
+		.BYTE	$C4,$5D,$02,$00,$E4,$5D,$02,$00		; 03 info map button 3
+		.BYTE	$04,$5E,$02,$00,$24,$5E,$02,$00		; 04 info map button 4
+		.BYTE	$44,$5E,$02,$00,$64,$5E,$02,$00		; 05 info map button 5
+		.BYTE	$84,$5E,$02,$00,$A4,$5E,$02,$00		; 06 info map button 6
+		.BYTE	$C4,$5E,$02,$00,$E4,$5E,$02,$00		; 07 info map button 7
+		.BYTE	$23,$5D,$02,$00,$43,$5D,$02,$00		; 08 graphs button 0
+		.BYTE	$63,$5D,$02,$00,$83,$5D,$02,$00		; 09 graphs button 1
+		.BYTE	$A3,$5D,$02,$00,$C3,$5D,$02,$00		; 0A graphs button 2
+		.BYTE	$E3,$5D,$02,$00,$03,$5E,$02,$00		; 0B graphs button 3
+		.BYTE	$23,$5E,$02,$00,$43,$5E,$02,$00		; 0C graphs button 4
+		.BYTE	$63,$5E,$02,$00,$83,$5E,$02,$00		; 0D graphs button 5
 
-		SECTION_END 902
-
-		SECTION_START 903
-
-; =============== S U B	R O U T	I N E =======================================
-_budget_scr_tax_adjust:
-		LDA		_tmp584
-		AND		#$FE
-		TAX
-		LDA		_fund_reqest_vars_list,X
-		STA		_ptr0
-		LDA		_fund_reqest_vars_list+1,X
-		STA		_ptr0+1
-		LDY		#$00
-		LDA		(_ptr0),Y
-		STA		_tmp2
-		INY
-		LDA		(_ptr0),Y
-		STA		_tmp3
-		BNE		loc_A0118
-		LDA		_tmp2
-		BNE		loc_A0118
-		RTS
-loc_A0118:
-		LDA		_budget_tax_adjust_value
-		LSR
-		LSR
-		LSR
-		LSR
-		ASL
-		TAX
-		LDA		_tmp584
-		LSR
-		BCC		loc_A015E
-		ASL
-		TAY
-		LDA		_tax_alloc,Y
-		CLC
-		ADC		_hex_to_dec_9999_simple_tbl,X
-		STA		_ptr0
-		LDA		_tax_alloc+1,Y
-		ADC		_hex_to_dec_9999_simple_tbl+1,X
-		STA		_ptr0+1
-		CMP		_tmp3
-		BCC		loc_A0153
-		BNE		loc_A0148
-		LDA		_ptr0
-		CMP		_tmp2
-		BCC		loc_A0153
-		BEQ		loc_A0153
-loc_A0148:
-		LDA		_tmp2
-		STA		_tax_alloc,Y
-		LDA		_tmp3
-		STA		_tax_alloc+1,Y
-		RTS
-loc_A0153:
-		LDA		_ptr0+1
-		STA		_tax_alloc+1,Y
-		LDA		_ptr0
-		STA		_tax_alloc,Y
-		RTS
-loc_A015E:
-		ASL
-		TAY
-		LDA		_tax_alloc,Y
-		SEC
-		SBC		_hex_to_dec_9999_simple_tbl,X
-		STA		_ptr0
-		LDA		_tax_alloc+1,Y
-		SBC		_hex_to_dec_9999_simple_tbl+1,X
-		BCS		loc_A017A
-		LDA		#$00
-		STA		_tax_alloc,Y
-		STA		_tax_alloc+1,Y
-		RTS
-loc_A017A:
-		STA		_tax_alloc+1,Y
-		LDA		_ptr0
-		STA		_tax_alloc,Y
-		RTS
-
-_fund_reqest_vars_list:
-		.WORD	_fund_request_tax
-		.WORD	_fund_request_fire
-		.WORD	_fund_request_police
-		.WORD	_fund_request_trans
-		.WORD	_fund_request_education
-		.WORD	0
-_hex_to_dec_9999_simple_tbl:
-		.WORD	1
-		.WORD	10
-		.WORD	100
-		.WORD	1000
-
-		SECTION_END 903
-
-		SECTION_START 904
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A0183:
-		EXTQSTART
-		LDY		_maps_info_mode_idx
-		LDA		byte_A0435,Y
-		TAY
-		CMP		#$08
-		BEQ		loc_A0199
-		LDY		byte_114
-		LDA		byte_A0435,Y
-		JSR		sub_A01DB
-loc_A0199:
-		LDY		_maps_info_mode_idx
-		CPY		#$0B
-		BEQ		sub_A01BC
-		LDA		byte_A0435,Y
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A01A3:
-		PHA
-		ASL
-		TAY
-		LDA		byte_A0441,Y
-		AND		#$C0
-		ORA		#$04
-		STA		_tmp2
-		LDA		byte_A0441+1,Y
-		AND		#$C0
-		ORA		#$04
-		STA		_tmp3
-		PLA
-		JSR		sub_A01E9
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A01BC:
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A01BF:
-		EXTQSTART
-		CPY		#$FF
-		BEQ		loc_A01CC
-		TYA
-		CLC
-		ADC		#$0A
-		JSR		sub_A01DB
-loc_A01CC:
-		LDY		byte_598
-		BPL		loc_A01D4
-		EXTQEND
-		RTS
-loc_A01D4:
-		TYA
-		CLC
-		ADC		#$0A
-		JMP		sub_A01A3
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A01DB:
-		PHA
-		ASL
-		TAY
-		LDA		byte_A0441,Y
-		STA		_tmp2
-		LDA		byte_A0441+1,Y
-		STA		_tmp3
-		PLA
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A01E9:
-		LDY		#<[byte_A03A5]
-		STY		_ptr0
-		LDY		#>[byte_A03A5]
-		STY		_ptr0+1
-		ASL
-		ASL
-		ASL
-		TAY
-		JSR		sub_A01F8
-
-; !FALLTHROUGH!
-
-; =============== S U B	R O U T	I N E =======================================
-sub_A01F8:
-		LDA		#$03
-		STA		_tmp5
-loc_A01FC:
-		LDA		(_ptr0),Y
-		INY
-		EXTQMOVA
-		DEC		_tmp5
-		BNE		loc_A01FC
-		INY
-		EXTQMOVB	_tmp2,OP_NOP,0
-		EXTQMOVB	_tmp3,OP_NOP,0
-		RTS
+_info_buttons_extnt_lib:
+		.BYTE	$43,$43	; 00
+		.BYTE	$43,$43	; 01
+		.BYTE	$83,$43	; 02
+		.BYTE	$83,$83 ; 03
+		.BYTE	$83,$83 ; 04
+		.BYTE	$43,$43 ; 05
+		.BYTE	$43,$43 ; 06
+		.BYTE	$83,$83 ; 07
+		.BYTE	$43,$43 ; 08
+		.BYTE	$83,$83 ; 09
+		.BYTE	$83,$83 ; 0A
+		.BYTE	$03,$03 ; 0B
+		.BYTE	$43,$43 ; 0C
+		.BYTE	$83,$83 ; 0D
+		.BYTE	$C3,$C3 ; 0E
+		.BYTE	$03,$03 ; 0F
+		.BYTE	$03,$03 ; 10
+		.BYTE	$03,$83 ; 11
 
 ; REDUNDANT, returned back to bank 9 where it belongs
 ;
 ; =============== S U B	R O U T	I N E =======================================
 ;_scr_res_hndl1_A_graphs_draw_init:
 ;		LDY		#$FF
-;		STY		byte_598
-;		STY		byte_599
+;		STY		_cur_graphs_button_press_idx
+;		STY		_prev_graphs_button_press_idx
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_A021E:
-		LDY		_graphs_scr_period_mode
-		LDA		byte_A0465,Y
+_graphs_period_button_redraw:
+		LDY		_graphs_scr_period_mode			; swap two cmall buttons here
+		LDA		_graphs_period_buttons_extnt_data,Y
 		LDY		#$00
-		JSR		sub_A0234
+		JSR		_graphs_period_button_extnt_send
 		LDA		_graphs_scr_period_mode
 		EOR		#$01
 		TAY
-		LDA		byte_A0465,Y
+		LDA		_graphs_period_buttons_extnt_data,Y
 		LDY		#$04
 
 ; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_A0234:
+_graphs_period_button_extnt_send:
 		STA		_tmp2
 		EXTQSTART
 loc_A0238:
-		LDA		byte_A0467,Y
-		BNE		loc_A0245
+		LDA		_graphs_period_buttons_extnt_hdrs,Y	; very smart solution here
+		BNE		loc_A0245							; and very dumb before now
 		EXTQMOVB	_tmp2,OP_NOP,0
 		LDY		#$FE
 loc_A0245:
-		EXTQMOVA
-		INY
+		EXTQMOVA									; queue is 2 byte long
+		INY											; the second byte is 0
 		CPY		#$FF
 		BNE		loc_A0238
 		EXTQEND
 		RTS
 
+_graphs_period_buttons_extnt_data:
+		.BYTE	$84,$83
+_graphs_period_buttons_extnt_hdrs:
+		.BYTE	$C3,$5E,$02,$00,$03,$5F,$02,$00
+
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_header_and_menu_draw:
-		JSR		_flush_wait_0
-		LDA		_maps_info_mode_idx
-		BEQ		loc_A0262
-		CMP		#$0D
+		JSR		_flush_wait_0					; routine from BANK9!
+		LDA		_cur_info_maps_button_idx		; convert cur menu idx into
+		BEQ		loc_A0262						; if map header idx = 0
+		CMP		#$0D							; special case
 		BEQ		loc_A0266
-		CLC
+		CLC										; all bove 0 are 3 shifted now then
 		ADC		#$03
 		BPL		loc_A0266
 loc_A0262:
-		CLC
-		ADC		byte_12E
+		CLC										; then select one of 4 maps idxes
+		ADC		_info_maps_city_map_modes_idx	; adding index of city map menu
 loc_A0266:
 		ASL
 		TAX
-		LDA		_info_screen_header_nt_lib,X
+		LDA		_info_screen_header_nt_lib,X	; manual hacky put the queue buf data
 		STA		_ptr0
 		LDA		_info_screen_header_nt_lib+1,X
 		STA		_ptr0+1
 		MOVWO	_tmp2,_ppu_queue_buf
 		TXA
 		PHA
-		LDA		_ppu_queue_pos_head
-		STA		_tmp4
+		PPUQSTART
+		STX		_tmp4
 		JSR		_strcpy_ex
 		PPUQEND
-		PLA
+		PLA										; the same for extnt
 		TAX
 		LDA		_info_screen_header_extnt_lib,X
 		STA		_ptr0
 		LDA		_info_screen_header_extnt_lib+1,X
 		STA		_ptr0+1
 		MOVWO	_tmp2,_extnt_queue_buf
-		LDA		_extnt_queue_pos_head
-		STA		_tmp4
+		EXTQSTART
+		STX		_tmp4
 		JSR		_strcpy_ex
 		EXTQEND
 		JSR		_flush_wait_0
 		MOVWO	_ptr0,off_A046F
 		MOVWO	_tmp2,_ppu_queue_buf
-		LDA		_ppu_queue_pos_head
+		PPUQSTART
 		JSR		_strcpy_lib_ex
 		PPUQEND
 		MOVWO	_ptr0,off_A0479
 		MOVWO	_tmp2,_extnt_queue_buf
-		LDA		_extnt_queue_pos_head
+		EXTQSTART
 		JSR		_strcpy_lib_ex
 		EXTQEND
 		JMP		_flush_wait_0
 
 ; =============== S U B	R O U T	I N E =======================================
 _strcpy_lib_ex:
-		STA		_tmp4
-		LDX		_maps_info_mode_idx
+		STX		_tmp4
+		LDX		_cur_info_maps_button_idx
 		LDA		byte_A0308,X
 		ASL
 		TAY
@@ -534,50 +399,7 @@ byte_A0378:
 		.BYTE	$08,$18
 byte_A037A:
 		.BYTE	$E9,$D9
-byte_A03A5:
-		.BYTE	$04,$5D,$02,$43,$24,$5D,$02,$43
-		.BYTE	$44,$5D,$02,$43,$64,$5D,$02,$43
-		.BYTE	$84,$5D,$02,$03,$A4,$5D,$02,$03
-		.BYTE	$C4,$5D,$02,$03,$E4,$5D,$02,$03
-		.BYTE	$04,$5E,$02,$03,$24,$5E,$02,$03
-		.BYTE	$44,$5E,$02,$43,$64,$5E,$02,$43
-		.BYTE	$84,$5E,$02,$43,$A4,$5E,$02,$43
-		.BYTE	$C4,$5E,$02,$03,$E4,$5E,$02,$03
-		.BYTE	$02,$5D,$02,$04,$22,$5D,$02,$04
-		.BYTE	$42,$5D,$02,$04,$62,$5D,$02,$04
-		.BYTE	$23,$5D,$02,$83,$43,$5D,$02,$83
-		.BYTE	$63,$5D,$02,$03,$83,$5D,$02,$03
-		.BYTE	$A3,$5D,$02,$43,$C3,$5D,$02,$43
-		.BYTE	$E3,$5D,$02,$83,$03,$5E,$02,$83
-		.BYTE	$23,$5E,$02,$C3,$43,$5E,$02,$C3
-		.BYTE	$63,$5E,$02,$03,$83,$5E,$02,$03
-		.BYTE	$A3,$5E,$02,$03,$C3,$5E,$02,$03
-		.BYTE	$E3,$5E,$02,$03,$03,$5F,$02,$03
-byte_A0435:
-		.BYTE	$00,$01,$02,$02,$03,$04,$05,$06,$07,$07,$08,$09
-byte_A0441:
-		.BYTE	$43,$43
-		.BYTE	$43,$43
-		.BYTE	$83,$43
-		.BYTE	$83,$83
-		.BYTE	$83,$83
-		.BYTE	$43,$43
-		.BYTE	$43,$43
-		.BYTE	$83,$83
-		.BYTE	$43,$43
-		.BYTE	$83,$83
-		.BYTE	$83,$83
-		.BYTE	$03,$03
-		.BYTE	$43,$43
-		.BYTE	$83,$83
-		.BYTE	$C3,$C3
-		.BYTE	$03,$03
-		.BYTE	$03,$03
-		.BYTE	$03,$83
-byte_A0465:
-		.BYTE	$84,$83
-byte_A0467:
-		.BYTE	$C3,$5E,$02,$00,$03,$5F,$02,$00
+
 off_A046F:
 		.BYTE	>[byte_A04B9]
 		.BYTE	<[byte_A04B9]
@@ -1183,6 +1005,6 @@ byte_A1A1A:
 		.BYTE	$04,$9F,$3E,$58,$3F,$00,$02,$38,$44,$08,$83,$07,$DF,$28,$00,$87
 		.BYTE	$03,$F0,$27,$00,$FF
 
-		SECTION_END 904
+		SECTION_END 7904
 
 		BANK_END F6,$A000

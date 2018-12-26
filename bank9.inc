@@ -3,15 +3,148 @@
 
 		BANK_START $F9
 
+; FIX, moved from bank 7 to the local place
+; -
+; =============== S U B	R O U T	I N E =======================================
+_scr_chr_vars_init:
+		LDA		_ppu_ctrl_shadow
+		ORA		#$01
+		STA		_ppu_ctrl_shadow
+		STA		_PPU_CTRL
+		LDA		#$84
+		STA		_mmc5_nt_mode_shadow
+		STA		_MMC5_NT_MODE
+		LDA		_scr_res_idx
+		ASL
+		STA		_scr_res_idx
+		ASL
+		TAX
+		LDY		#$00
+loc_A001C:
+		LDA		_screen_chr_banks_lib,X
+		BEQ		loc_A0024
+		STA		_MMC5_CHR_BANKSA,Y
+loc_A0024:
+		INX
+		INY
+		CPY		#$04
+		BNE		loc_A001C
+		LDA		#$00
+		STA		_info_maps_cur_row
+		STA		_info_maps_cur_col
+		STA		_fund_request_tax+1
+		STA		_game_msg_wnd_active_flag
+		LDA		#$14
+		STA		_fund_request_tax
+		LDA		#$80
+		STA		_game_wnd_spr_mode_flag
+		STA		_game_core_state
+		STA		_scr_res_control_flags
+;		JMP		_screen_pal_spr_init			; REDUNDANT
+;
+; =============== S U B	R O U T	I N E =======================================
+;_screen_pal_spr_init:
+		LDA		_scr_res_idx
+		LSR
+		TAX
+		LDA		_screen_pal_spr_list,X
+		STA		_screen_pal_cur_spr_idx
+		RTS
+
+_screen_pal_spr_list:
+		.BYTE	$03,$08,$02,$02,$03,$03,$06,$04,$00
+_screen_chr_banks_lib:
+		.BYTE	$34,$00,$36,$00
+		.BYTE	$34,$00,$39,$00
+		.BYTE	$34,$5D,$36,$37
+		.BYTE	$34,$00,$00,$00
+		.BYTE	$34,$00,$00,$00
+		.BYTE	$34,$00,$00,$00
+		.BYTE	$34,$00,$00,$37
+		.BYTE	$34,$00,$1A,$37
+
+; =============== S U B	R O U T	I N E =======================================
+;_screen_pal_bg_init_unref:
+;		LDA		_scr_res_idx
+;		AND		#$FE
+;		BNE		loc_A00A7
+;		LDY		_cur_info_maps_button_idx
+;		LDA		_screen_pal_extra_list,Y
+;		JMP		loc_A00AC
+;loc_A00A7:
+;		LSR
+;		TAY
+;		LDA		_screen_pal_list,Y
+;loc_A00AC:
+;		STA		_screen_pal_cur_bg_idx
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_pal_bg_load:
+		LDA		#$02
+		STA		_ppu_pal_dequeue_req
+		LDA		_scr_res_idx
+		AND		#$FE
+		BNE		loc_A0080
+		LDY		_cur_info_maps_button_idx
+		LDA		_screen_pal_extra_list,Y
+		JMP		loc_A0085
+loc_A0080:
+		LSR
+		TAY
+		LDA		_screen_pal_list,Y
+loc_A0085:
+		STA		_screen_pal_cur_bg_idx
+		JMP		_pal_load_lib
+
+_screen_pal_list:
+		.BYTE	$00,$04,$03,$02,$0B,$12,$06,$0A
+_screen_pal_extra_list:
+		.BYTE	$05,$05,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
+
+; =============== S U B	R O U T	I N E =======================================
+_scr_res_wnd_close:
+		LDX		#$FF
+		STX		byte_53
+		INX
+		STX		byte_3C
+		STX		byte_54
+		STX		byte_56
+		STX		_scr_res_control_flags
+		STX		_game_core_stop_flag
+		INX
+		LDA		#$18
+		STA		byte_55
+		LDA		#$14
+		STA		byte_57
+		LDA		#$44
+		STA		_cur_game_cursor_scr_pos._COL
+		LDA		#$30
+		STA		_cur_game_cursor_scr_pos._ROW
+		JSR		_flush_wait_0
+		JSR		_pal_fade_out
+		LDA		_ppu_ctrl_shadow
+		AND		#$FC
+		STA		_ppu_ctrl_shadow
+		STA		_PPU_CTRL
+		LDA		#$00
+		STA		_MMC5_NT_MODE
+		STA		_game_wnd_spr_mode_flag
+		STA		_scr_res_window_opened_flag
+		RTS
+;-
+
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_common:
 		JSR		_thread_lock_flag_set
 		JSR		_render_off
 		DEC		_mmc5_operation_in_progress_flag
 		JSR		_spr_clear
-		FJSRA	_scr_chr_vars_init,PRG6,PRG9
+;		FJSRA	_scr_chr_vars_init,PRG6,PRG9	; REDUNDANT
+		JSR		_scr_chr_vars_init				; FIX, now local
 		JSR		_wait_for_nmi
-		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		JSR		_scr_pal_bg_load				; FIX, now local
 		JSR		_wait_for_nmi
 		FJSRA	_scr_common_draw,PRG6,PRG9
 		JSR		_scr_res_hndl2_A_budget_draw
@@ -41,8 +174,9 @@ loc_EA050:
 		BVC		loc_EA07F
 		LDA		#$01
 		STA		_apu_se_flags
-		FJSRA	_scr_res_wnd_close,PRG6,PRG9
-		RTS
+;		FJSRA	_scr_res_wnd_close,PRG6,PRG9	; REDUNDANT
+;		RTS
+		JMP		_scr_res_wnd_close				; FIX, now local
 loc_EA07F:
 		LDA		_scr_res_control_flags
 		CMP		#$10
@@ -85,8 +219,8 @@ _scr_res_hndl7_A_new_city_gen_init:
 		STA		_info_maps_cur_row
 		STA		byte_140
 		STA		byte_141
-		STA		_maps_info_mode_idx
-		STA		byte_12E
+		STA		_cur_info_maps_button_idx
+		STA		_info_maps_city_map_modes_idx
 		STA		_tmp6D0+1
 		INC		_scr_res_idx
 		LDA		#$10
@@ -610,8 +744,9 @@ _scr_res_hndl0_A_info_maps_draw:
 		INC		_scr_res_idx
 		LDA		#$80
 		STA		_scr_res_control_flags
-		LDA		#$0B
-		STA		byte_114
+;		LDA		#$0B							; REDUNDANT
+		LDA		#$FF							; FIX, another special value on entry
+		STA		_prev_info_maps_button_idx		; to prevent button release draw at start
 		JMP		_scr_res_hndl0_AB_info_maps_redraw
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -638,9 +773,9 @@ loc_EA563:
 		STA		_scr_res_control_flags
 		LDA		#$00
 		STA		byte_13C
-		LDA		_maps_info_mode_idx
-		STA		byte_114
-		STX		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
+		STA		_prev_info_maps_button_idx
+		STX		_cur_info_maps_button_idx
 		JMP		_scr_res_hndl0_AB_info_maps_redraw_ex
 loc_EA580:
 		LDA		_fiscal_year_results_draw_req
@@ -664,9 +799,9 @@ loc_EA594:
 		STA		_game_core_state
 		JSR		sub_EA662
 		BCC		sub_EA5F2
-		LDA		_maps_info_mode_idx
-		STA		byte_114
-		STX		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
+		STA		_prev_info_maps_button_idx
+		STX		_cur_info_maps_button_idx
 		JMP		_scr_res_hndl0_AB_info_maps_redraw
 loc_EA5BA:
 		LDA		#$A0
@@ -675,7 +810,7 @@ loc_EA5BA:
 ; =============== S U B	R O U T	I N E =======================================
 ; !FALLTHROUGH!
 _scr_res_hndl0_AB_info_maps_redraw:
-		FJSRA	sub_A0183,PRG6,PRG9
+		FJSRA	_info_maps_buttons_redraw,PRG6,PRG9
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_AB_info_maps_redraw_ex:
@@ -685,7 +820,8 @@ _scr_res_hndl0_AB_info_maps_redraw_ex:
 		BEQ		_wait_for_key
 		JSR		sub_EACD9
 		JSR		_wait_for_nmi
-		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		JSR		_scr_pal_bg_load				; FIX, now local
 		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
 		JMP		_maps_info_draw
 
@@ -742,15 +878,15 @@ loc_EA637:
 		TXA
 		ORA		#$80
 		STA		byte_13C
-		PUSHB	_maps_info_mode_idx
-		PUSHB	byte_114
-		LDA		_maps_info_mode_idx
-		STA		byte_114
+		PUSHB	_cur_info_maps_button_idx
+		PUSHB	_prev_info_maps_button_idx
+		LDA		_cur_info_maps_button_idx
+		STA		_prev_info_maps_button_idx
 		LDA		_ptr0
-		STA		_maps_info_mode_idx
-		FJSRA	sub_A0183,PRG6,PRG9
-		POPB	byte_114
-		POPB	_maps_info_mode_idx
+		STA		_cur_info_maps_button_idx
+		FJSRA	_info_maps_buttons_redraw,PRG6,PRG9
+		POPB	_prev_info_maps_button_idx
+		POPB	_cur_info_maps_button_idx
 loc_EA65F:
 		JMP		_maps_info_draw
 
@@ -875,7 +1011,7 @@ loc_EA702:
 
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info_line_draw:
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		JSR		_switch
 		.WORD	_maps_info0_draw
 		.WORD	_maps_info1_draw
@@ -953,7 +1089,7 @@ locret_EA7B6:
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info2356_draw:
 		LDY		#$00
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		ASL
 		TAY
 		LDX		_info_maps_cur_row
@@ -990,7 +1126,7 @@ loc_EA80D:
 		AND		#$0F
 loc_EA811:
 		STA		_tmp6
-		LDX		_maps_info_mode_idx
+		LDX		_cur_info_maps_button_idx
 		CPX		#$03
 		BNE		loc_EA82B
 		LSR
@@ -1056,7 +1192,7 @@ loc_EA888:
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info89_draw:
 		LDY		#$00
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		ASL
 		TAY
 		LDX		_info_maps_cur_row
@@ -1228,7 +1364,7 @@ loc_EA9AD:
 		JSR		sub_EA9D9
 		LDX		#<[_wram_map_buf+$D0]
 		LDA		_ptr0
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		BEQ		loc_EA9C5
 		LDX		#<[_wram_map_buf+$50]
 		CLC
@@ -1313,7 +1449,7 @@ sub_EAA49:
 		ASL
 		ASL
 		ADC		byte_12A
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		BEQ		loc_EAA5A
 		ADC		#$10
 loc_EAA5A:
@@ -1424,9 +1560,9 @@ loc_EAB00:
 		TAY
 		JMP		loc_EAA99
 loc_EAB04:
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		BNE		loc_EAB53
-		LDX		byte_12E
+		LDX		_info_maps_city_map_modes_idx
 		BEQ		loc_EAB53
 		DEX
 		BEQ		loc_EAB3E
@@ -1540,44 +1676,45 @@ loc_EABCF:
 		TAX
 		LDA		#$01
 		STA		_apu_se_flags
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		LDA		byte_EB6A9,Y
 		TAY
-		LDA		byte_12E,Y
+		LDA		_info_maps_city_map_modes_idx,Y
 		CLC
 		ADC		byte_EAC79,X
 		AND		#$03
-		STA		byte_12E,Y
+		STA		_info_maps_city_map_modes_idx,Y
 loc_EABF6:
 		FJSRA	sub_B962F,PRG7,PRG9
 		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
 		JSR		_spr_finish
 		JMP		loc_EABCF
 loc_EAC0A:
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		LDA		byte_EB6A9,Y
 		TAY
 		LDA		byte_13A
-		STA		byte_12E,Y
+		STA		_info_maps_city_map_modes_idx,Y
 		JSR		loc_EAC56
-		LDY		byte_114
-		LDA		_maps_info_mode_idx
-		STA		byte_114
-		STY		_maps_info_mode_idx
-		FJSRA	sub_A0183,PRG6,PRG9
-		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		LDY		_prev_info_maps_button_idx
+		LDA		_cur_info_maps_button_idx
+		STA		_prev_info_maps_button_idx
+		STY		_cur_info_maps_button_idx
+		FJSRA	_info_maps_buttons_redraw,PRG6,PRG9
+;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		JSR		_scr_pal_bg_load				; FIX, now local
 		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
 		RTS
 loc_EAC3C:
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		BEQ		loc_EAC51
 		LDA		byte_EB6A9,Y
 		TAY
-		LDA		byte_12E,Y
+		LDA		_info_maps_city_map_modes_idx,Y
 		AND		#$01
 		CLC
-		ADC		_maps_info_mode_idx
-		STA		_maps_info_mode_idx
+		ADC		_cur_info_maps_button_idx
+		STA		_cur_info_maps_button_idx
 loc_EAC51:
 		LDA		#$80
 		STA		_scr_res_control_flags
@@ -1585,7 +1722,7 @@ loc_EAC56:
 		LDA		#$20
 		STA		_apu_se_flags
 		FJSRA	_wnd_erase,PRGC,PRG9
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		AND		#$FE
 		TAY
 		LDA		byte_EB69F,Y
@@ -1606,20 +1743,21 @@ sub_EAC82:
 		LDA		#$10
 		STA		_spr_buf_pos
 		JSR		_spr_finish
-		FJSRA	_scr_pal_bg_load,PRG6,PRG9
-		PUSHB	_maps_info_mode_idx
+;		FJSRA	_scr_pal_bg_load,PRG6,PRG9
+		JSR		_scr_pal_bg_load				; FIX, now local
+		PUSHB	_cur_info_maps_button_idx
 		LDA		#$0D
-		STA		_maps_info_mode_idx
+		STA		_cur_info_maps_button_idx
 		FJSRA	_info_maps_header_and_menu_draw,PRG6,PRG9
-		POPB	_maps_info_mode_idx
-		LDY		_maps_info_mode_idx
+		POPB	_cur_info_maps_button_idx
+		LDY		_cur_info_maps_button_idx
 		LDA		byte_EB6A9,Y
 		TAY
-		LDA		byte_12E,Y
+		LDA		_info_maps_city_map_modes_idx,Y
 		STA		byte_13A
 		LDA		#$00
 		STA		_wnd_lvl_idx
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		LDA		byte_EB695,Y
 		STA		_wnd_idx
 		LDX		byte_EB695+1,Y
@@ -1859,8 +1997,8 @@ _far_scr_res_hndl1_A_graphs_draw:
 		INC		_scr_res_idx
 ;		FJSRA	_scr_res_hndl1_A_graphs_draw_init,PRG6,PRG9		; REDUNDANT SO MUCH!
 		LDY		#$FF											; OPTIMIZED, this is what
-		STY		byte_598										; to be far called lol
-		STY		byte_599										; -
+		STY		_cur_graphs_button_press_idx										; to be far called lol
+		STY		_prev_graphs_button_press_idx										; -
 		FJSRA	_scr_res_hndl1_A_graphs_draw,PRG7,PRG9
 		LDA		#$04
 		STA		_MMC5_PRG_PAGES
@@ -1892,7 +2030,7 @@ loc_EAEEC:
 		LDA		#$34
 		STA		_cur_game_cursor_scr_pos._ROW
 		LDA		#$00
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 		STA		_pad0_autorep_press
 		STA		_tmp118+2
 		LDA		#$A0
@@ -1960,13 +2098,13 @@ loc_EAFD5:
 		JSR		_funding_rates_recalc
 loc_EAFF8:
 		LDY		#$00
-		STY		_tmp584
+		STY		_budget_tax_cur_pos
 loc_EAFFD:
 		JSR		_taxes_alloc_draw
-		LDY		_tmp584
+		LDY		_budget_tax_cur_pos
 		INY
 		INY
-		STY		_tmp584
+		STY		_budget_tax_cur_pos
 		CPY		#$0A
 		BCC		loc_EAFFD
 		JSR		_buffers_force_flush
@@ -1977,7 +2115,7 @@ loc_EAFFD:
 		LDA		#$00
 		STA		byte_596
 		STA		byte_597
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 		FJSRA	_budget_wnd_cursor_pos_set,PRG7,PRG9
 		FJSRA	_budget_wnd_cursor_draw,PRG7,PRG9
 		RTS
@@ -2109,11 +2247,11 @@ locret_EB11F:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl4_A_city_overview_draw:
-		PUSHB	_maps_info_mode_idx
+		PUSHB	_cur_info_maps_button_idx
 		LDA		#$0B
-		STA		_maps_info_mode_idx
+		STA		_cur_info_maps_button_idx
 		JSR		_thread_lock_flag_set
-		POPB	_maps_info_mode_idx
+		POPB	_cur_info_maps_button_idx
 		INC		_game_core_state
 		LDA		#$00
 		STA		_tmp118+4
@@ -2348,19 +2486,22 @@ _far_scr_res_hndl6_B_bank_input:
 
 ; =============== S U B	R O U T	I N E =======================================
 _budget_funds_recalc:
-		FJSRA	_budget_scr_tax_adjust,PRG6,PRG9
+;		FJSRA	_budget_scr_tax_adjust,PRG6,PRG9
+		JSR		_budget_scr_tax_adjust			; FIX, now local
 		JSR		_total_funds_calc
 		JSR		_test_if_money_for_funds_are_enough
 		BCS		_taxes_alloc_draw
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		JSR		_tax_alloc_clamp
 		JSR		_total_funds_calc
 		JSR		_funding_rate_calc
 
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
 _taxes_alloc_draw:
 ;		JSR		_taxes_alloc_hex_to_dec9999		; REDUNDANT
-		LDA		_tmp584							; OPTIMIZED, unufication
+		LDA		_budget_tax_cur_pos				; OPTIMIZED, unufication
 		AND		#$FE							; -
 		TAY										; -
 		LDA		_tax_alloc,Y					; -
@@ -2368,29 +2509,125 @@ _taxes_alloc_draw:
 		LDA		_tax_alloc+1,Y					; -
 		STA		_ptr0+1							; -
 		JSR		_hex_to_dec9999					; -
-		LDY		_tmp584
+		LDY		_budget_tax_cur_pos
 		LDA		byte_EB76C,Y
 		JSR		_printf_num_lib
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		AND		#$FE
 		BEQ		loc_EB328
 		JSR		_funding_rate_calc
 		LDA		#$00
 		STA		_ptr0+1
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		LSR
 		TAY
 		DEY
 		LDA		_funding_level,Y
 		STA		_ptr0
 		JSR		_hex_to_dec9999
-		LDY		_tmp584
+		LDY		_budget_tax_cur_pos
 		LDA		byte_EB778,Y
 		JSR		_printf_num_lib
 		JSR		_cash_flow_draw
 loc_EB328:
 		FJSRA	_save_taxes_data,PRG7,PRG9
 		RTS
+
+; FIX, now local
+; -
+; =============== S U B	R O U T	I N E =======================================
+_budget_scr_tax_adjust:
+		LDA		_budget_tax_cur_pos				; cur pos corresponds to particular
+		AND		#$FE							; tax on screen, bits 1-7, so already
+		TAX										; multiplied by 2, just mask lower bit
+		LDA		_fund_reqest_vars_list,X		; get the var ofs by idx
+		STA		_ptr0
+		LDA		_fund_reqest_vars_list+1,X
+		STA		_ptr0+1
+		LDY		#$00
+		LDA		(_ptr0),Y						; read requested fund value if any
+		STA		_tmp2							; this will be the max value of funding
+		INY
+		LDA		(_ptr0),Y
+		STA		_tmp3
+		BNE		loc_A0118
+		LDA		_tmp2
+		BNE		loc_A0118
+		RTS										; zero, nothing to fund, nothing to increase
+loc_A0118:
+		LDA		_budget_tax_adjust_value		; this is actually a counter, when you press
+		LSR										; buttons on budget screen, if non-zero, then
+		LSR										; value need adjustment, if button is held
+		LSR										; higher nibbles reaches $3x, so we may change
+		LSR										; higher digits of the desired value up to 1000
+		ASL
+		TAX										; extract digit idx for adjust, mul2, because of words
+		LDA		_budget_tax_cur_pos				; now, lower bit is exactly what arrow is pressed
+		LSR										; up or down, so we need to increase or decrease
+		BCC		.do_decrease
+		ASL										; do increase here
+		TAY
+		LDA		_tax_alloc,Y					; Y = tax idx * 2
+		CLC
+		ADC		_inc_table,X					;
+		STA		_ptr0
+		LDA		_tax_alloc+1,Y
+		ADC		_inc_table+1,X
+		STA		_ptr0+1							; store result in tmp var
+		CMP		_tmp3							; compare with max value needed
+		BCC		.apply_adjust
+		BNE		.clamp_to_max
+		LDA		_ptr0
+		CMP		_tmp2
+		BCC		.apply_adjust
+		BEQ		.apply_adjust
+.clamp_to_max:
+		LDA		_tmp2							; more than need, fix to max value
+		STA		_tax_alloc,Y
+		LDA		_tmp3
+		STA		_tax_alloc+1,Y
+		RTS
+.apply_adjust:
+		LDA		_ptr0+1							; update increased value
+.apply_adjust_ex:
+		STA		_tax_alloc+1,Y
+		LDA		_ptr0
+		STA		_tax_alloc,Y
+		RTS
+.do_decrease:
+		ASL
+		TAY
+		LDA		_tax_alloc,Y					; the same for decrease
+		SEC
+		SBC		_inc_table,X
+		STA		_ptr0
+		LDA		_tax_alloc+1,Y
+		SBC		_inc_table+1,X					; test against 0 instead
+		BCS		.apply_adjust_ex				; OPTIMIZE a little
+;		BCS		loc_A017A
+		LDA		#$00
+		STA		_tax_alloc,Y					; store minimal value
+		STA		_tax_alloc+1,Y
+		RTS
+;loc_A017A:										; REDUNDANT
+;		STA		_tax_alloc+1,Y
+;		LDA		_ptr0
+;		STA		_tax_alloc,Y
+;		RTS
+
+_fund_reqest_vars_list:
+		.WORD	_fund_request_tax
+		.WORD	_fund_request_fire
+		.WORD	_fund_request_police
+		.WORD	_fund_request_trans
+		.WORD	_fund_request_education
+		.WORD	0
+_inc_table:
+		.WORD	1
+		.WORD	10
+		.WORD	100
+		.WORD	1000
+; -
 
 ; =============== S U B	R O U T	I N E =======================================
 _test_if_money_for_funds_are_enough:
@@ -2507,13 +2744,13 @@ _bank_loan_amount:
 ; =============== S U B	R O U T	I N E =======================================
 _funding_rates_recalc:
 		LDA		#$02
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 loc_EB3F0:
 		JSR		_funding_rate_calc
 		JSR		_wait_for_nmi
-		INC		_tmp584
-		INC		_tmp584
-		LDA		_tmp584
+		INC		_budget_tax_cur_pos
+		INC		_budget_tax_cur_pos
+		LDA		_budget_tax_cur_pos
 		CMP		#$0A
 		BCC		loc_EB3F0
 		RTS
@@ -2558,7 +2795,7 @@ _flush_test_wait_0:
 
 ; =============== S U B	R O U T	I N E =======================================
 _thread_lock_flag_set:
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		ORA		#$80
 		STA		_thread_priority_req
 		JMP		_wait_for_nmi
@@ -2566,7 +2803,7 @@ _thread_lock_flag_set:
 ; =============== S U B	R O U T	I N E =======================================
 _tax_alloc_calc:
 		LDA		#$02
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 loc_EB450:
 		AND		#$FE
 		TAY
@@ -2581,7 +2818,7 @@ loc_EB450:
 		LDA		(_ptr0),Y
 		STA		_ptr0+1
 		STX		_ptr0
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		LSR
 		TAY
 		DEY
@@ -2600,7 +2837,7 @@ loc_EB478:
 		LDA		#$64
 		STA		_ptr0
 		JSR		_div24
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		AND		#$FE
 		TAY
 		TXA
@@ -2608,16 +2845,16 @@ loc_EB478:
 		LDA		_tmp6
 		STA		_tax_alloc+1,Y
 		JSR		_wait_for_nmi
-		INC		_tmp584
-		INC		_tmp584
-		LDA		_tmp584
+		INC		_budget_tax_cur_pos
+		INC		_budget_tax_cur_pos
+		LDA		_budget_tax_cur_pos
 		CMP		#$0A
 		BCC		loc_EB450
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _funding_rate_calc:
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		AND		#$FE
 		TAY
 		PHA
@@ -2656,7 +2893,7 @@ loc_EB4EF:
 		STA		_tmp2
 		JSR		_div24
 loc_EB4F8:
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		LSR
 		TAY
 		DEY
@@ -3542,7 +3779,7 @@ _fund_reqest_ofs_list:
 
 ; =============== S U B	R O U T	I N E =======================================
 ;_taxes_alloc_hex_to_dec9999:					; REDUNDANT
-;		LDA		_tmp584							; -
+;		LDA		_budget_tax_cur_pos							; -
 ;		AND		#$FE							; -
 ;		TAY										; -
 ;		LDA		_tax_alloc,Y					; -

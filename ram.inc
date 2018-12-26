@@ -448,9 +448,9 @@ _unref_14:
 
 		_tpos	_last_water_tile_pos				; NEW: new var for ship deploy
 
-_maps_info_mode_idx:
+_cur_info_maps_button_idx:
 		.BYTE	0
-byte_114:
+_prev_info_maps_button_idx:
 		.BYTE	0
 _scr_res_window_opened_flag:
 		.BYTE	0
@@ -472,7 +472,7 @@ _new_map_number:
 		.BYTE	0,0
 _game_wnd_spr_mode_flag:
 		.BYTE	0
-byte_12E:
+_info_maps_city_map_modes_idx:
 		.BYTE	0,0,0
 byte_131:
 		.BYTE	0
@@ -781,7 +781,7 @@ byte_582:
 		.BYTE	0
 _main_sub_idx:
 		.BYTE	0
-_tmp584:
+_budget_tax_cur_pos:
 		.BYTE	0
 
 		_tfund16 _tax_alloc
@@ -792,9 +792,9 @@ byte_596:
 		.BYTE	0
 byte_597:
 		.BYTE	0
-byte_598:
+_cur_graphs_button_press_idx:
 		.BYTE	0
-byte_599:
+_prev_graphs_button_press_idx:
 		.BYTE	0
 _graphs_scr_period_mode:
 		.BYTE	0

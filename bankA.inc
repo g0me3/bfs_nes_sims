@@ -2141,28 +2141,26 @@ _practice_mode_events_handler:
 		CMP		#$6C
 		BNE		loc_1051D1
 		LDX		#$1B							; first practice hint message
-		BNE		loc_1051F4
+		BNE		.set_game_msg
 loc_1051D1:
 		CMP		#$6D							; low nibble for 1901 year
-		BNE		_exit
+;		BNE		_exit							; REDUNDANT
+		BNE		loc_1051F3						; FIX
 		LDX		#$1C							; second practice hint message
-		BNE		loc_1051F4
+		BNE		.set_game_msg
 ; BUG! never executed
 ; -
-		LDA		_city._cur_year					; test for year 1905
-		CMP		#$71
+;		LDA		_city._cur_year					; REDUNDANT
+loc_1051F3:
+		CMP		#$71							; test for year 1905
 		BNE		_exit
 		LDX		#$1D							; message for good practice result
 		LDA		_popul_cur+2					; test for population level
-		BNE		loc_1051F4
-		LDA		_popul_cur						; should be above 30000 to win
-		CMP		#$30
-		LDA		_popul_cur+1
-		SBC		#$75
-		BCS		loc_1051F4
+		BNE		.set_game_msg
+		CMPWI	_popul_cur,30000				; should be above 30000 to win
 		INX										; if less, use fail practice message
 ; -
-loc_1051F4:
+.set_game_msg:
 		STX		_game_msg_idx
 		LDA		#$01
 		STA		_game_msg_awaits_flag

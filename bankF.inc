@@ -314,7 +314,7 @@ loc_18A213:
 		LDA		_scr_res_idx
 		CMP		#$01
 		BNE		loc_18A2A1
-		LDA		_maps_info_mode_idx
+		LDA		_cur_info_maps_button_idx
 		BNE		loc_18A2A1
 loc_18A258:
 		PUSHB	_prg_prg8000_shadow
@@ -402,7 +402,7 @@ loc_18A2FC:
 		ORA		_pad0_held
 		BNE		_switch_to_thread0
 		LDX		#$00
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		CPY		#$08
 		BCC		loc_18A30D
 		INX

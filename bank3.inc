@@ -3107,11 +3107,11 @@ loc_59835:
 		BCS		loc_59883
 		LDA		byte_575
 		CLC
-		ADC		byte_599B1,Y
+		ADC		_prev_graphs_button_press_idxB1,Y
 		STA		byte_577
 		LDA		byte_576
 		CLC
-		ADC		byte_599B5,Y
+		ADC		_prev_graphs_button_press_idxB5,Y
 		STA		byte_578
 		JSR		_generate_new_map_sub2
 		BCS		loc_5987B
@@ -3128,7 +3128,7 @@ loc_5987C:
 		BNE		loc_59835
 loc_59883:
 		LDX		byte_57B
-		LDA		byte_598AD,X
+		LDA		_cur_graphs_button_press_idxAD,X
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_5988D:
@@ -3148,7 +3148,7 @@ loc_5989A:
 locret_598AC:
 		RTS
 
-byte_598AD:
+_cur_graphs_button_press_idxAD:
 		.BYTE	$00,$00,$00,$00
 		.BYTE	$00,$16,$10,$13
 		.BYTE	$00,$18,$12,$15
@@ -3176,23 +3176,23 @@ loc_598F3:
 loc_598FC:
 		LDA		byte_575
 		CLC
-		ADC		byte_599B1,Y
+		ADC		_prev_graphs_button_press_idxB1,Y
 		STA		byte_577
 		LDA		byte_576
 		CLC
-		ADC		byte_599B5,Y
+		ADC		_prev_graphs_button_press_idxB5,Y
 		STA		byte_578
 		JSR		_generate_new_map_sub2
 		BCC		loc_59957
 		LDY		_tmp4
-		LDA		byte_599B1,Y
+		LDA		_prev_graphs_button_press_idxB1,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
 		CLC
 		ADC		byte_575
 		STA		byte_577
-		LDA		byte_599B5,Y
+		LDA		_prev_graphs_button_press_idxB5,Y
 		EOR		#$FF
 		CLC
 		ADC		#$01
@@ -3226,7 +3226,7 @@ loc_5997D:
 		JMP		loc_598F3
 loc_59987:
 		LDX		byte_57B
-		LDA		byte_599B9,X
+		LDA		_prev_graphs_button_press_idxB9,X
 		LDY		#$00
 		STA		(_ptr0),Y
 loc_59991:
@@ -3246,11 +3246,11 @@ loc_5999E:
 locret_599B0:
 		RTS
 
-byte_599B1:
+_prev_graphs_button_press_idxB1:
 		.BYTE	$FF,$01,$00,$00
-byte_599B5:
+_prev_graphs_button_press_idxB5:
 		.BYTE	$00,$00,$01,$FF
-byte_599B9:
+_prev_graphs_button_press_idxB9:
 		.BYTE	$00,$00,$00,$07
 		.BYTE	$00,$15,$10,$13
 		.BYTE	$00,$17,$12,$14

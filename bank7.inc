@@ -1389,7 +1389,8 @@ byte_B8E0A:
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl1_A_graphs_draw:
 		JSR		_graphs_period_start_year_draw
-		JMP		_scr_res_hndl1_A_graphs1
+		FJSRA	_graphs_period_button_redraw,PRG6,PRG7	; FIX uninitialized button state
+		JMP		_graphs_data_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl1_B_graphs_input:
@@ -1492,20 +1493,20 @@ loc_B8EB4:
 		STA		_graphs_scr_period_mode
 		LDA		#$80
 		STA		_scr_res_control_flags
-		FJSRA	sub_A021E,PRG6,PRG7
-		JMP		_scr_res_hndl1_A_graphs1
+		FJSRA	_graphs_period_button_redraw,PRG6,PRG7
+		JMP		_graphs_data_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B8ED8:
-		CPX		byte_598
+		CPX		_cur_graphs_button_press_idx
 		BEQ		nullsub_9
-		LDY		byte_599
-		LDA		byte_598
-		STA		byte_599
-		STX		byte_598
+		LDY		_prev_graphs_button_press_idx
+		LDA		_cur_graphs_button_press_idx
+		STA		_prev_graphs_button_press_idx
+		STX		_cur_graphs_button_press_idx
 		LDA		#$80
 		STA		_scr_res_control_flags
-		FJSRA	sub_A01BF,PRG6,PRG7
+		FJSRA	_graphs_buttons_redraw,PRG6,PRG7
 		LDA		#$00
 		STA		byte_59B
 
@@ -1518,14 +1519,14 @@ sub_B8EFB:
 		LDA		byte_59B
 		AND		#$01
 		TAX
-		LDA		byte_598,X
+		LDA		_cur_graphs_button_press_idx,X
 		BMI		loc_B8F1A
 		JSR		sub_B8F2D
 		PHA
 		LDA		byte_59B
 		AND		#$01
 		TAY
-		LDX		byte_598,Y
+		LDX		_cur_graphs_button_press_idx,Y
 		JSR		sub_B8F82
 		PLA
 		JSR		sub_B8F9E
@@ -1685,10 +1686,10 @@ loc_B901D:
 		BNE		loc_B901D
 loc_B9024:
 		EXTQEND
-		LDA		byte_598
+		LDA		_cur_graphs_button_press_idx
 		CMP		#$04
 		BEQ		loc_B9034
-		LDA		byte_599
+		LDA		_prev_graphs_button_press_idx
 		CMP		#$04
 		BNE		locret_B9082
 loc_B9034:
@@ -1721,7 +1722,7 @@ locret_B9082:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_scr_res_hndl1_A_graphs1:
+_graphs_data_draw:
 		JSR		_get_graphs_scr_period_range
 		PPUQSTART
 		LDY		#$02
@@ -1894,7 +1895,7 @@ loc_B9221:
 		BPL		loc_B927C
 		LDA		#$01
 		STA		_apu_se_flags
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		CMP		#$0A
 		BCS		loc_B9238
 		FJSRA	_budget_funds_recalc,PRG7,PRG9
@@ -1975,18 +1976,18 @@ sub_B92DA:
 		LDA		_pad0_autorep_release
 		AND		#$0C
 		BEQ		loc_B9312
-		LDX		_tmp584
+		LDX		_budget_tax_cur_pos
 		CMP		#$08
 		BNE		loc_B92FE
 		CPX		#$02
 		BCC		loc_B92F8
 		CPX		#$0A
 		BCC		loc_B9312
-		DEC		_tmp584
+		DEC		_budget_tax_cur_pos
 		RTS
 loc_B92F8:
 		LDA		#$0B
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 		RTS
 loc_B92FE:
 		CPX		#$08
@@ -1994,11 +1995,11 @@ loc_B92FE:
 		BEQ		loc_B930C
 		CPX		#$0B
 		BEQ		loc_B9312
-		INC		_tmp584
+		INC		_budget_tax_cur_pos
 		RTS
 loc_B930C:
 		LDA		#$0A
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 		RTS
 loc_B9312:
 		LDA		_pad0_autorep_release
@@ -2007,43 +2008,43 @@ loc_B9312:
 		AND		#$05
 		BCS		loc_B9334
 		BNE		loc_B9329
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		AND		#$01
 		BEQ		locret_B9365
 		LDA		#$FF
 		BNE		loc_B935A
 loc_B9329:
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		AND		#$01
 		BNE		locret_B9365
 		LDA		#$01
 		BNE		loc_B935A
 loc_B9334:
 		BNE		loc_B9349
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		CMP		#$02
 		BCS		loc_B9345
 		AND		#$01
 		CLC
 		ADC		#$0C
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 loc_B9345:
 		LDA		#$FE
 		BNE		loc_B935A
 loc_B9349:
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		CMP		#$0A
 		BCC		loc_B9358
 		AND		#$01
 		CLC
 		ADC		#$FE
-		STA		_tmp584
+		STA		_budget_tax_cur_pos
 loc_B9358:
 		LDA		#$02
 loc_B935A:
 		CLC
-		ADC		_tmp584
-		STA		_tmp584
+		ADC		_budget_tax_cur_pos
+		STA		_budget_tax_cur_pos
 		LDX		#$40
 		STX		_apu_se_flags+1
 locret_B9365:
@@ -2053,7 +2054,7 @@ locret_B9365:
 _budget_wnd_cursor_pos_set:
 		BIT		_city._bank_flags
 		BPL		loc_B937D
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		CMP		#$0A
 		BCC		loc_B937D
 		BNE		loc_B937D
@@ -2064,7 +2065,7 @@ _budget_wnd_cursor_pos_set:
 		RTS
 loc_B937D:
 		LDX		#$00
-		LDA		_tmp584
+		LDA		_budget_tax_cur_pos
 		LSR
 		BCC		loc_B9386
 		INX
@@ -2348,10 +2349,10 @@ loc_B9607:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B962F:
-		LDY		_maps_info_mode_idx
+		LDY		_cur_info_maps_button_idx
 		LDA		byte_B9665,Y
 		TAY
-		LDA		byte_12E,Y
+		LDA		_info_maps_city_map_modes_idx,Y
 		STA		_ptr0
 		TYA
 		ASL
