@@ -722,10 +722,12 @@ _surround_tiles3_list:
 		.BYTE	$80
 
 ; =============== S U B	R O U T	I N E =======================================
-; looks like too much bounds checking with no actual reason..
+; REDUNDANT, too much bounds checking with no actual reason..
 ; when the building is build at the map side, the first two test
 ; are enough to check if it out of right/bottom bounds,
 ; and test 2 is enough to test left/top bounds
+; in any case, you just couldn't put the building out of
+; bounds, because they already checked by the building cursor code!
 ;
 ; return C=0 if ptr calculated,
 ; 		 C=1 out of bounds
@@ -736,43 +738,48 @@ _get_building_tile_map_ptr:
 		CLC
 		ADC		_cur_constr_cursor_map_pos._COL
 		STA		_tmp511
-		CMP		#$4C
-		BCS		.out_of_bounds					; out of bounds test 0
+;		CMP		#$4C							; REDUNDANT, not needed!
+;		BCS		.out_of_bounds					; out of bounds test 0
 		LDA		(word_D0),Y
 		CLC
 		ADC		_cur_constr_cursor_map_pos._ROW
 		STA		_tmp512
-		CMP		#$4C
-		BCS		.out_of_bounds					; out of bounds test 1
-		LDX		#$4C
-		MULXA
-		CLC
-		ADC		_tmp511
-		STA		word_D2
-		TXA
-		ADC		#$00
-		STA		word_D2+1
-		LDA		word_D2
-		CLC
-		ADC		#<[_city_map]
-		STA		word_D2
-		LDA		word_D2+1
-		ADC		#>[_city_map]
-		STA		word_D2+1
-		CMP		#>[_city_map]					; OUT UF BOUNDS TEST 2!!
-		BCC		.out_of_bounds
-		CMP		#>[_city_map_end]				; out of bounds test 3
-		BCC		.calc_ok
-		BNE		.out_of_bounds
-		LDA		word_D2
-		CMP		#<[_city_map_end]				; out of bounds test 4
-		BCS		.out_of_bounds
-.calc_ok:
+;		CMP		#$4C							; REDUNDANT, not needed!
+;		BCS		.out_of_bounds					; out of bounds test 1
+; REDUNDANT
+;		LDX		#$4C
+;		MULXA
+;		CLC
+;		ADC		_tmp511
+;		STA		word_D2
+;		TXA
+;		ADC		#$00
+;		STA		word_D2+1
+;		LDA		word_D2
+;		CLC
+;		ADC		#<[_city_map]
+;		STA		word_D2
+;		LDA		word_D2+1
+;		ADC		#>[_city_map]
+;		STA		word_D2+1
+; -
+; OPTIMIZED
+		BUFPOS	word_D2,_tmp511,_tmp512,#$4C,#>[_city_map]	; FIX, optimized version
+; -
+;		CMP		#>[_city_map]					; OUT UF BOUNDS TEST 2!!
+;		BCC		.out_of_bounds					; REDUNDANT, not needed!
+;		CMP		#>[_city_map_end]				; out of bounds test 3
+;		BCC		.calc_ok
+;		BNE		.out_of_bounds
+;		LDA		word_D2
+;		CMP		#<[_city_map_end]				; out of bounds test 4
+;		BCS		.out_of_bounds
+;.calc_ok:
 		CLC
 		RTS
-.out_of_bounds:
-		SEC
-		RTS
+;.out_of_bounds:								; REDUNDANT, not needed!
+;		SEC
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _adjust_conjunction_tiles:

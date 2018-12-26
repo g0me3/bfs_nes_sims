@@ -2532,21 +2532,21 @@ _generate_new_map:
 		JSR		_rand_map_start_pos				; base point for river generation
 		JSR		_generate_rivers				; draw rivers with two brushes
 		JSR		_generate_lakes					; draw small lakes
-		JSR		_generate_shores				; fill shores pixels
+		JSR		_smooth_water_shores				; fill shores pixels
 		JSR		_fill_water_tiles				; fill actual map tiles for water and shores
-		JSR		_generate_new_mapF
-		JSR		_generate_new_mapG
+		JSR		_generate_woods
+		JSR		_fill_wood_tiles
 		LDA		#$00
 		STA		_mmc5_operation_in_progress_flag
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _generate_island:
-		LDA		#$4B
+		LDA		#$4B							; not random start
 		STA		_map_start_pos._COL
 		STA		_map_start_pos._ROW
 loc_59379:
-		LDA		#$02
+		LDA		#$02							; select water tiles if we at the edges
 		LDX		_map_start_pos._COL
 		CPX		#$02
 		BCC		loc_59393
@@ -2557,26 +2557,26 @@ loc_59379:
 		BCC		loc_59393
 		CPX		#$4A
 		BCS		loc_59393
-		LDA		#$00
+		LDA		#$00							; and ground tiles in the middle of the map
 loc_59393:
-		JSR		_map_start_pos_write
+		JSR		_map_start_pos_write			; write
 		DEC		_map_start_pos._ROW
 		BPL		loc_59379
 		DEC		_map_start_pos._COL
 		BMI		loc_593A8
 		LDA		#$4B
 		STA		_map_start_pos._ROW
-		JMP		loc_59379
+		BNE		loc_59379
 loc_593A8:
 		LDA		#$00
 		STA		_map_start_pos._COL
 loc_593AD:
 		LDX		#$09
-		JSR		_rand_clamp_X
+		JSR		_rand_clamp_X					; now distort the island edges with river brush
 		STA		_map_pos._ROW
 		LDA		_map_start_pos._COL
 		STA		_map_pos._COL
-		JSR		_put_small_brush
+		JSR		_put_small_brush				; for the top side rendomly
 		LDX		#$09
 		JSR		_rand_clamp_X
 		STA		_ptr0
@@ -2584,12 +2584,12 @@ loc_593AD:
 		SEC
 		SBC		_ptr0
 		STA		_map_pos._ROW
-		JSR		_put_small_brush
+		JSR		_put_small_brush				; then for the bottom side randomly
 		LDA		#$00
 		STA		_map_pos._ROW
-		JSR		_put_small_brush
+		JSR		_put_small_brush				; then completely clear the top line
 		LDA		#$48
-		STA		_map_pos._ROW
+		STA		_map_pos._ROW					; and bottom line
 		JSR		_put_small_brush
 		LDX		_map_start_pos._COL
 		INX
@@ -2601,11 +2601,11 @@ loc_593AD:
 		STA		_map_start_pos._ROW
 loc_593F1:
 		LDX		#$09
-		JSR		_rand_clamp_X
+		JSR		_rand_clamp_X					; now do the same for the horizontal sides
 		STA		_map_pos._COL
 		LDA		_map_start_pos._ROW
 		STA		_map_pos._ROW
-		JSR		_put_small_brush
+		JSR		_put_small_brush				; for the left side randomly
 		LDX		#$09
 		JSR		_rand_clamp_X
 		STA		_ptr0
@@ -2613,10 +2613,10 @@ loc_593F1:
 		SEC
 		SBC		_ptr0
 		STA		_map_pos._COL
-		JSR		_put_small_brush
+		JSR		_put_small_brush				; for the right side randomly
 		LDA		#$00
 		STA		_map_pos._COL
-		JSR		_put_small_brush
+		JSR		_put_small_brush				; and remove left-right side of the edges
 		LDA		#$48
 		STA		_map_pos._COL
 		JSR		_put_small_brush
@@ -2626,10 +2626,10 @@ loc_593F1:
 		STX		_map_start_pos._ROW
 		CPX		#$4C
 		BCC		loc_593F1
-		JSR		_generate_shores
-		JSR		_fill_water_tiles
-		JSR		_generate_new_mapF
-		JMP		_generate_new_mapG
+		JSR		_smooth_water_shores			; same water smooth, woods, then woods smooth
+		JSR		_fill_water_tiles				; procedures
+		JSR		_generate_woods
+		JMP		_fill_wood_tiles				; and fill finally ann actual tiles
 
 ; =============== S U B	R O U T	I N E =======================================
 _map_start_pos_write:
@@ -2778,50 +2778,50 @@ locret_5953D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapF:
-		LDX		#$32
-		JSR		_rand_clamp_X
-		CLC
+_generate_woods:
+		LDX		#$32							; random select of amount of trees
+		JSR		_rand_clamp_X					; counter = rand(50) + 23 (half of the
+		CLC										; Micropolis version)
 		ADC		#$17
 		STA		_tmp57C
 loc_59549:
-		LDX		#$4C
-		JSR		_rand_clamp_X
+		LDX		#$4C							; choose random position on the map for
+		JSR		_rand_clamp_X					; every wood
 		STA		_map_pos._COL
 		LDX		#$4C
 		JSR		_rand_clamp_X
 		STA		_map_pos._ROW
-		JSR		_generate_new_mapF_0
+		JSR		_put_woods
 		DEC		_tmp57C
 		BNE		loc_59549
-		JSR		_generate_new_map_sub5
-		JMP		_generate_new_map_sub5
+		JSR		_smooth_woods_edges				; smooth edges two times in row, to
+		JMP		_smooth_woods_edges				; make it smoother
 
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapF_0:
-		LDX		#$3C
+_put_woods:
+		LDX		#$3C							; select size for current woods splash
 		JSR		_rand_clamp_X
 		CLC
 		ADC		#$17
 		STA		_tmp57D
-		LDA		_map_pos._COL
+		LDA		_map_pos._COL					; set the starting point
 		STA		_map_tmp_pos._COL
 		LDA		_map_pos._ROW
 		STA		_map_tmp_pos._ROW
 loc_5957F:
 		LDX		#$08
-		JSR		_rand_clamp_X
+		JSR		_rand_clamp_X					; randomly select the direction
 		STA		_map_dir
-		JSR		_map_tmp_pos_move
-		JSR		_map_tmp_pos_bounds_test
+		JSR		_map_tmp_pos_move				; then move pen to it
+		JSR		_map_tmp_pos_bounds_test		; test bounds
 		BCS		locret_595BA
-		JSR		_map_tmp_pos_read_ptr0			; OPTIMIZED: size
-		BNE		loc_595B5
+		JSR		_map_tmp_pos_read_ptr0			; OPTIMIZED: read current tile
+		BNE		loc_595B5						; put only on zero pixels, ie ground tiles
 		LDA		#$05
-		STA		(_ptr0),Y
+		STA		(_ptr0),Y						; put default square wood pixel
 loc_595B5:
-		DEC		_tmp57D
+		DEC		_tmp57D							; repeat
 		BNE		loc_5957F
 locret_595BA:
 		RTS
@@ -3070,21 +3070,22 @@ loc_59800:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_map_sub5:
-		LDA		#$00
+_smooth_woods_edges:
+		LDA		#$00							; mostly same as shores smooth
 		STA		_map_pos._COL
 		STA		_map_pos._ROW
-loc_5980A:
+.woods_edges_loop:
 		JSR		_map_pos_read					; OPTIMIZED size
-		BMI		loc_5988D
-		BEQ		loc_5988D
-		LDA		#$00
-		STA		_tmp57B
+		BMI		.woods_next_pixel				; skip already filled water tiles
+		BEQ		.woods_next_pixel				; and empty grounds, the rest is trees
+		LDY		#$00							; FIX, the same copypaste code as for
+		STY		_tmp57B							; sea shores
+;		STY		_tmp4
+.woods_area_loop:
+;		LDY		_tmp4							; end loop test comes first correct here
+;		CPY		#$04							; then read current surrounding tile
+;		BCS		.put_woods_pixel				; let do the same as for other sub
 		STY		_tmp4
-loc_59835:
-		LDY		_tmp4
-		CPY		#$04
-		BCS		loc_59883
 		LDA		_map_pos._COL
 		CLC
 		ADC		_shores_delta_col,Y
@@ -3093,10 +3094,10 @@ loc_59835:
 		CLC
 		ADC		_shores_delta_row,Y
 		STA		_map_tmp_pos._ROW
-		JSR		_map_tmp_pos_bounds_test
-		BCS		loc_5987B
-		JSR		_map_tmp_pos_read_ptr2			; OPTIMIZED size
-		BMI		loc_5987B
+		JSR		_map_tmp_pos_bounds_test		; test for bounds and nothing more extra actions!
+		BCS		loc_5987B						; as against the sea shores, they don't revert
+		JSR		_map_tmp_pos_read_ptr2			; the direction here and just skip the pixel
+		BMI		loc_5987B						; as in the original Micropolis code.
 		BEQ		loc_5987B
 		SEC
 		BCS		loc_5987C
@@ -3104,47 +3105,48 @@ loc_5987B:
 		CLC
 loc_5987C:
 		ROL		_tmp57B
-		INC		_tmp4
-		BNE		loc_59835
-loc_59883:
+		LDY		_tmp4							; FIX, the same code as for rivers
+		INY
+		CPY		#$04
+		BNE		.woods_area_loop
+.put_woods_pixel:
 		LDX		_tmp57B
-		LDA		byte_598AD,X
+		LDA		_woods_edges_matrix,X
 		LDY		#$00
 		STA		(_ptr0),Y
-loc_5988D:
+.woods_next_pixel:
 		INC		_map_pos._COL
 		LDA		_map_pos._COL
 		CMP		#$4C
-		BCS		loc_5989A
-		JMP		loc_5980A
-loc_5989A:
+		BCC		.woods_edges_loop
 		INC		_map_pos._ROW
 		LDA		_map_pos._ROW
 		CMP		#$4C
 		BCS		locret_598AC
 		LDA		#$00
 		STA		_map_pos._COL
-		JMP		loc_5980A
+		BEQ		.woods_edges_loop
 locret_598AC:
 		RTS
 
-byte_598AD:
-		.BYTE	$00,$00,$00,$00
-		.BYTE	$00,$16,$10,$13
+_woods_edges_matrix:
+		.BYTE	$00,$00,$00,$00					; same table as for shores, but with woods
+		.BYTE	$00,$16,$10,$13					; tile set pixels $10-$18
 		.BYTE	$00,$18,$12,$15
 		.BYTE	$00,$17,$11,$14
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_shores:
+_smooth_water_shores:
 		LDA		#$00
 		STA		_map_pos._COL					; scan full map
 		STA		_map_pos._ROW
 .shores_map_loop:
 		JSR		_map_pos_read					; OPTIMIZED size
 		CMP		#$03							; here we read the map pixel, _tmp0
-		BEQ		.water_shore_found				; points to current pixel
-		JMP		.shores_next_pixel
-.water_shore_found:
+;		BEQ		.water_shore_found				; points to current pixel
+;		JMP		.shores_next_pixel
+		BNE		.shores_next_pixel				; FIX, the short is enough
+;.water_shore_found:
 		LDY		#$00							; FIX, now 0 for sure
 		STY		_tmp57B
 .shores_area_loop:
@@ -3168,8 +3170,8 @@ _generate_shores:
 		NEGA									; from the Micropolis code. they don't
 		CLC										; bounce in negative direction, but
 		ADC		_map_pos._COL					; just skip the tile
-		STA		_map_tmp_pos._COL
-		LDA		_shores_delta_row,Y
+		STA		_map_tmp_pos._COL				; if not use this, sometimes the shores
+		LDA		_shores_delta_row,Y				; calculated incorrectly!
 		NEGA
 		CLC
 		ADC		_map_pos._ROW
@@ -3195,11 +3197,12 @@ loc_5997D:
 ; BUG, this fix alone were redundant here seems they put counter test to the loop start
 ; but forgot to remove this jump... now we have test here, and remove it from top of
 ; the loop, and let this branch stay here
-		BEQ		.put_shores_pixel
-		JMP		.shores_area_loop
+;		BEQ		.put_shores_pixel
+;		JMP		.shores_area_loop
+		BNE		.shores_area_loop				; FIX, short enough too
 .put_shores_pixel:
 		LDX		_tmp57B
-		LDA		_shores_matrix,X			; now read smooth table by index we calculated
+		LDA		_shores_matrix,X				; now read smooth table by index we calculated
 		LDY		#$00
 		STA		(_ptr0),Y
 .shores_next_pixel:
@@ -3233,17 +3236,17 @@ _shores_matrix:						;00  00  00  07  00  15  10  13
 									;00  17  12  14  07  17  11  07
 
 ; =============== S U B	R O U T	I N E =======================================
-_generate_new_mapG:
-		MOVWO	_ptr0,_city_map
+_fill_wood_tiles:
+		MOVWO	_ptr0,_city_map					; same as for rivers
 		LDY		#$00
 loc_599D3:
-		LDA		(_ptr0),Y
+		LDA		(_ptr0),Y						; skip already filled rivers tiles
 		BMI		loc_599E8
-		BEQ		loc_599FB
+		BEQ		loc_599FB						; for ground set the default ground tile
 		CLC
-		ADC		#$BE
-		PHA
-		JSR		_rand
+		ADC		#[_MAP_WOODS0-$10]				; the same two ranges for woods $BE + $10 / $19
+		PHA										; _MAP_WOODS0 - _MAP_WOODS8
+		JSR		_rand							; _MAP_WOODS9 - _MAP_WOODS11
 		LSR
 		PLA
 		BCS		loc_599E6
@@ -3252,7 +3255,7 @@ loc_599E6:
 		STA		(_ptr0),Y
 loc_599E8:
 		INCW	_ptr0
-		LDA		_ptr0+1							; TODO: rearrange to use macro
+		LDA		_ptr0+1
 		CMP		#>[_city_map_end]
 		BCC		loc_599D3
 		LDA		_ptr0
@@ -3264,6 +3267,7 @@ loc_599FB:
 		STA		(_ptr0),Y
 		BNE		loc_599E8
 ; REDUNDANT, never executes, the previous BNE is unconditional branch
+; there is unknown where should be this default tile set
 ;
 ;		LDA		#_MAP_WOODS4
 ;		STA		(_ptr0),Y

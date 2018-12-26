@@ -562,12 +562,12 @@ OP_ADD	EQU	3
 	;
 	MAC	BUFPOS
 	#if {5}==[[_city_map>>8]&$FF]
-		LDY		{3}
-		LDA		_city_map_row_pos_list_lo,Y
+		LDX		{3}
+		LDA		_city_map_row_pos_list_lo,X
 		CLC
 		ADC		{2}
 		STA		{1}
-		LDA		_city_map_row_pos_list_hi,Y
+		LDA		_city_map_row_pos_list_hi,X
 		ADC		#$00
 		STA		{1}+1
 	#else

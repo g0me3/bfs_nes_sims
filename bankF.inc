@@ -1544,10 +1544,6 @@ _city_map_init:
 		LDX		#$00
 		MOVWO	_ptr0,_city_map					; map buf ptr
 		MOVWI	_tmp2,$1690						; map buf size
-;		LDA		#$90
-;		LDX		#$16
-;		STA		_tmp2
-;		STX		_tmp3
 		LDA		#$90							; fill with bulldozered grounds
 		LDY		#$00
 loc_18AA19:
@@ -3769,6 +3765,41 @@ _tmp_map_dec_pos_X:
 ; =============== S U B	R O U T	I N E =======================================
 _tmp_map_cant_change_pos:
 		SEC
+		RTS
+
+; OPTIMIZED, moved here from PRGB
+; =============== S U B	R O U T	I N E =======================================
+_map_tile_read:
+; REDUNDANT, too slow for such frequently used routine
+;		PUSHB	_tmp_map_pos._ROW
+;		PUSHB	#$4C
+;		JSR		_mmc5_mul8to8
+;		PLA
+;		CLC
+;		ADC		#<[_city_map]
+;		STA		word_EC
+;		PLA
+;		ADC		#>[_city_map]
+;		STA		word_EC+1
+;		LDY		_tmp_map_pos._COL
+; -
+; OPTIMIZED, FASTER!
+; FIX, even if BUFPOS isn't safe for other muls, it is pretty safe for _city_map
+; muls, because uses table lookup method, not the HW mul registers!
+;
+; WARNING! BUFPOS not X safe macros, most of code aware of it
+; but only _map_tile_read routine need to be X-safe, it used very
+; frequently and need to check carefully where it may damage X
+; so make a workaround for now here. it's look safe for most of the code
+; and not so much slower.
+;
+		TXA
+		PHA
+		BUFPOS	word_EC,_tmp_map_pos._COL,_tmp_map_pos._ROW,#$4C,#>[_city_map]
+		PLA
+		TAX
+		LDY		#$00
+		LDA		(word_EC),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

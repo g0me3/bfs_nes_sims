@@ -2295,35 +2295,6 @@ _internal_building_tile_deltaY_list:
 		.BYTE	$01,$01,$00,$02,$02,$02,$01,$00,$03,$03,$03,$03,$02,$01,$00
 
 ; =============== S U B	R O U T	I N E =======================================
-_map_tile_read:
-; REDUNDANT, too slow for such frequently used routine
-;		PUSHB	_tmp_map_pos._ROW
-;		PUSHB	#$4C
-;		JSR		_mmc5_mul8to8
-;		PLA
-;		CLC
-;		ADC		#<[_city_map]
-;		STA		word_EC
-;		PLA
-;		ADC		#>[_city_map]
-;		STA		word_EC+1
-; -
-; OPTIMIZED, FASTER!
-		LDA		_tmp_map_pos._ROW
-		MULAI	#$4C
-		LDA		#<[_city_map]
-		CLC
-		ADC		_MMC5_MUL0
-		STA		word_EC
-		LDA		#>[_city_map]
-		ADC		_MMC5_MUL1
-		STA		word_EC+1
-; -
-		LDY		_tmp_map_pos._COL
-		LDA		(word_EC),Y
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _map_tile_write:
 		PHA
 ; REDUNDANT, too slow for such frequently used routine
@@ -2337,21 +2308,14 @@ _map_tile_write:
 ;		PLA
 ;		ADC		#>[_city_map]
 ;		STA		word_EC+1
+;		LDY		_tmp_map_pos._COL
 ; -
 ; OPTIMIZED, FASTER!
-		LDA		_tmp_map_pos._ROW
-		MULAI	#$4C
-		LDA		#<[_city_map]
-		CLC
-		ADC		_MMC5_MUL0
-		STA		word_EC
-		LDA		#>[_city_map]
-		ADC		_MMC5_MUL1
-		STA		word_EC+1
+		BUFPOS	word_EC,_tmp_map_pos._COL,_tmp_map_pos._ROW,#$4C,#>[_city_map]
 ; -
-		LDY		_tmp_map_pos._COL
 		JSR		_sram_write_enable
 		PLA
+		LDY		#$00
 		STA		(word_EC),Y
 		JMP		_sram_write_disable
 

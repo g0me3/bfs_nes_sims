@@ -468,7 +468,7 @@ _power_tile_test:
 ; or tile already powered.
 ;
 _power_grid_test:
-		JSR		_map_tile_read_0				; read nearest tile
+		JSR		_map_tile_read				; read nearest tile
 		TAY
 		LDA		_map_tiles_flags_tbl,Y
 		BPL		.nothing_to_power				; test if powerable
@@ -517,25 +517,6 @@ _power_grid_test:
 		RTS
 .nothing_to_power:
 		SEC
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-; TODO: when space is enough, merge me with my copy
-; copy of _map_tile_read in PRGB
-; TODO: optimize, drop lower bits of _city_map which is zero anyway
-;
-_map_tile_read_0:
-		LDA		_tmp_map_pos._ROW
-		MULAI	#$4C
-		LDA		#<[_city_map]
-		CLC
-		ADC		_MMC5_MUL0
-		STA		word_EC
-		LDA		#>[_city_map]
-		ADC		_MMC5_MUL1
-		STA		word_EC+1
-		LDY		_tmp_map_pos._COL
-		LDA		(word_EC),Y
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
