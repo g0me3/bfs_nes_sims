@@ -28,11 +28,11 @@ loc_13601B:
 		.WORD	_game_state02_map_scroll
 		.WORD	_game_state03_map_scroll_mode_set
 		.WORD	_game_state04
-		.WORD	_game_state05_regular_constr_palette_redraw
+		.WORD	_game_state05_regular_building_name_and_cost_hud_draw
 		.WORD	_game_state06_game_hud_redraw
 		.WORD	_game_state07
 		.WORD	_game_state08
-		.WORD	_game_state09_presents_constr_palette_redraw
+		.WORD	_game_state09_presents_building_name_and_cost_hud_draw
 		.WORD	_game_state0A_power_build_menu
 		.WORD	_game_state0B_gui_ctrl_menu
 		.WORD	_game_state0C_RCI_meter_redraw
@@ -69,8 +69,8 @@ _game_state_common:
 		ORA		byte_39
 		ORA		byte_3A
 		ORA		byte_3B
-		ORA		_regular_constr_palette_redraw_req
-		ORA		_presents_constr_palette_redraw_req
+		ORA		_regular_building_name_and_cost_hud_draw_req
+		ORA		_presents_building_name_and_cost_hud_draw_req
 		ORA		_RCI_meter_redraw_req
 		ORA		_cur_date_redraw_req
 		ORA		_cur_popul_redraw_req
@@ -221,7 +221,7 @@ loc_13617F:
 		BEQ		loc_1361A4
 		LDA		_constr_cursor_tile._X
 		CLC
-		ADC		byte_C0
+		ADC		_cur_selected_buildings_size
 		CMP		#$19
 		BCS		loc_1361A4
 		LDA		_cur_game_cursor_scr_pos._X
@@ -280,7 +280,7 @@ loc_1361EA:
 		BEQ		loc_13620D
 		LDA		_constr_cursor_tile._Y
 		CLC
-		ADC		byte_C0
+		ADC		_cur_selected_buildings_size
 		CMP		#$15
 		BCS		loc_13620D
 		LDA		_cur_game_cursor_scr_pos._Y
@@ -358,10 +358,10 @@ loc_13626D:
 		STA		_constr_palette_area_cursor_pos._X
 		LDA		_cur_game_cursor_scr_pos._Y
 		STA		_constr_palette_area_cursor_pos._Y
-		LDA		byte_150351,X
-		STA		byte_C0
+		LDA		_building_sizes_list,X
+		STA		_cur_selected_buildings_size
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		CPX		#$0B
 		BNE		loc_13629F
 		STA		_power_build_menu_req
@@ -375,7 +375,7 @@ loc_1362A9:
 		CPX		#$0D
 		BNE		_j_game_state_common
 		STA		_presents_build_menu_req
-		FJSRA	_presents_wnd_draw,PRGC,PRG2
+		FJSRA	_presents_wnd_generate,PRGC,PRG2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -391,23 +391,23 @@ sub_1362C0:
 		CMP		#$0B
 		BNE		loc_1362CE
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		STA		_power_build_menu_req
 		JMP		_game_state_common
 loc_1362CE:
 		CMP		#$0C
 		BNE		loc_1362DC
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		STA		_airport_build_menu_req
 		JMP		_game_state_common
 loc_1362DC:
 		CMP		#$0D
 		BNE		_j_apu_se_error
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		STA		_presents_build_menu_req
-		FJSRA	_presents_wnd_draw,PRGC,PRG2
+		FJSRA	_presents_wnd_generate,PRGC,PRG2
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -529,7 +529,7 @@ loc_1363BE:
 		CMP		#$0D
 		BNE		loc_1363F5
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		BNE		loc_1363F5
 loc_1363EF:
 		JSR		_save_constr_cursor_pos
@@ -574,7 +574,7 @@ _game_state04:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state05_regular_constr_palette_redraw:
+_game_state05_regular_building_name_and_cost_hud_draw:
 		JSR		_regular_constr_palette_draw
 		JMP		_game_state_common
 
@@ -855,7 +855,7 @@ loc_136654:
 		LDA		#$01
 		JMP		_set_game_state_idx
 loc_13665D:
-		LDA		_regular_constr_palette_redraw_req
+		LDA		_regular_building_name_and_cost_hud_draw_req
 		BEQ		loc_136666
 		LDA		#$05
 		JMP		_set_game_state_idx
@@ -906,7 +906,7 @@ loc_1366B6:
 		LDA		#$11
 		JMP		_set_game_state_idx
 loc_1366C0:
-		LDA		_presents_constr_palette_redraw_req
+		LDA		_presents_building_name_and_cost_hud_draw_req
 		BEQ		loc_1366C9
 		LDA		#$09
 		JMP		_set_game_state_idx
@@ -977,7 +977,7 @@ sub_13671F:
 		STA		byte_57
 		LDA		#$FF
 		STA		byte_53
-		JSR		_regular_constr_palette_redraw_req_set
+		JSR		_regular_building_name_and_cost_hud_draw_req_set
 		CLC
 locret_136745:
 		RTS
@@ -1564,47 +1564,47 @@ locret_136BF8:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_presents_constr_palette_draw:
+_building_name_and_cost_hud_draw:
 		PUSHB	_prg_prgA000_shadow
 		LDA		#$F2
 		STA		_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
-		LDA		_ppu_queue_pos_head
-		STA		_ptr0
-		LDA		_extnt_queue_pos_head
+		LDA		_ppu_queue_pos_head						; calc hud position
+		STA		_ptr0									; relative to current
+		LDA		_extnt_queue_pos_head					; screen scroll
 		STA		_ptr0+1
-		JSR		sub_136C6F
-		LDA		_prev_constr_palette_press_idx
-		CMP		#$0B
+		JSR		_building_name_and_cost_hud_pos_calc
+		LDA		_prev_constr_palette_press_idx			; check for additional
+		CMP		#$0B									; buildings
 		BNE		loc_136C1D
-		LDX		_cur_power_type_select_idx
-		BEQ		loc_136C3A
+		LDX		_cur_power_type_select_idx				; if power plant selected
+		BEQ		loc_136C3A								; choose one of 0B or 0E
 		CLC
 		ADC		#$03
 		BCC		loc_136C3A
 loc_136C1D:
 		CMP		#$0C
 		BNE		loc_136C28
-		LDX		_cur_port_type_select_idx
-		BEQ		loc_136C3A
+		LDX		_cur_port_type_select_idx				; if ports selected
+		BEQ		loc_136C3A								; choose 0C or 0F
 		CLC
 		ADC		#$03
 loc_136C28:
-		CMP		#$0D
-		BNE		loc_136C3A
-		LDX		_cur_present_select_idx
-		LDY		_city._presents_list,X
-		DEY
-		BPL		loc_136C37
-		LDY		#$0F
-loc_136C37:
-		LDA		byte_136C5F,Y
+;		CMP		#$0D									; REDUNDANT
+;		BNE		loc_136C3A								;
+;		LDX		_cur_present_select_idx					; presents have the same
+;		LDY		_city._presents_list,X					; name 0D, empty slot should
+;		DEY												; display "NoPresent", but
+;		BPL		loc_136C37								; it is not possible to select it
+;		LDY		#$0F									; so it goes unused as well as
+;loc_136C37:											; the whole this code is redundant
+;		LDA		_present_names_length_list,Y
 loc_136C3A:
 		LDX		#$0C
 		MULXA
-		STA		byte_D7
-		JSR		sub_136CB8
-		JSR		sub_136D06
+		STA		_building_name_and_cost_hud_src_ofs
+		JSR		_building_name_and_cost_hud_nt_queue
+		JSR		_building_name_and_cost_hud_extnt_queue
 		LDA		_ptr0
 		STA		_ppu_queue_pos_head
 		LDA		_ptr0+1
@@ -1612,11 +1612,12 @@ loc_136C3A:
 		POPB	_prg_prgA000_shadow
 		STA		_MMC5_PRG_PAGES+2
 		RTS
-byte_136C5F:
-		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$10
+; REDUNDANT
+;_present_names_length_list:
+;		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$10
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136C6F:
+_building_name_and_cost_hud_pos_calc:
 		LDA		_cur_screen_tile._Y
 		LSR
 		SEC
@@ -1659,7 +1660,7 @@ loc_136CAF:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136CB8:
+_building_name_and_cost_hud_nt_queue:
 		LDX		_ptr0
 		LDA		byte_7E
 		STA		_tmp2
@@ -1668,9 +1669,9 @@ sub_136CB8:
 		PPUQMOVB	byte_7A,OP_NOP,0
 		PPUQMOVB	byte_7B,OP_NOP,0
 		PPUQMOVB	_tmp2,OP_NOP,0
-		LDY		byte_D7
+		LDY		_building_name_and_cost_hud_src_ofs
 loc_136CD6:
-		LDA		byte_3E6CF,Y
+		LDA		_tlm_nt_building_names_lib,Y
 		PPUQMOVA
 		INY
 		DEC		_tmp2
@@ -1689,14 +1690,14 @@ loc_136D03:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_136D06:
+_building_name_and_cost_hud_extnt_queue:
 		LDX		_ptr0+1
 		EXTQMOVB	byte_7A,OP_NOP,0
 		EXTQMOVB	byte_7B,OP_ADD,#$3C
 		EXTQMOVB	byte_7E,OP_NOP,0
-		LDY		byte_D7
+		LDY		_building_name_and_cost_hud_src_ofs
 loc_136D1F:
-		LDA		byte_3E79B,Y
+		LDA		_tlm_extnt_building_names_lib,Y
 		EXTQMOVA
 		INY
 		DEC		byte_7E
@@ -1720,7 +1721,7 @@ _airport_build_menu:
 		JSR		_airport_build_wnd_draw
 		LDA		#$FF
 		STA		byte_37
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 loc_136D5F:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
@@ -1752,16 +1753,16 @@ loc_136D8E:
 		LDA		_cur_port_type_select_idx
 		BEQ		loc_136DA3
 		LDA		#$03
-		STA		byte_C0
+		STA		_cur_selected_buildings_size
 		LDA		#$00
 		STA		_cur_port_type_select_idx
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 		JMP		loc_136D5F
 loc_136DA3:
 		LDA		#$04
-		STA		byte_C0
+		STA		_cur_selected_buildings_size
 		INC		_cur_port_type_select_idx
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 		JMP		loc_136D5F
 loc_136DAF:
 		JSR		_spr_clear
@@ -1786,7 +1787,7 @@ _power_build_menu:
 		JSR		_power_build_wnd_draw
 		LDA		#$FF
 		STA		byte_37
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 loc_136DD6:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
@@ -1819,11 +1820,11 @@ loc_136E05:
 		BEQ		loc_136E16
 		LDA		#$00
 		STA		_cur_power_type_select_idx
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 		JMP		loc_136DD6
 loc_136E16:
 		INC		_cur_power_type_select_idx
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 		JMP		loc_136DD6
 loc_136E1E:
 		JSR		_spr_clear
@@ -3670,7 +3671,7 @@ loc_137B1D:
 
 ; =============== S U B	R O U T	I N E =======================================
 _regular_constr_palette_draw:
-		LDA		_regular_constr_palette_redraw_req
+		LDA		_regular_building_name_and_cost_hud_draw_req
 		BEQ		locret_137B5D
 		JSR		_ppu_queue_empty_test_0
 		BCS		locret_137B5D
@@ -3700,7 +3701,7 @@ loc_137B55:
 		DEC		_tmp3
 		BPL		loc_137B3D
 		LDA		#$00
-		STA		_regular_constr_palette_redraw_req
+		STA		_regular_building_name_and_cost_hud_draw_req
 locret_137B5D:
 		RTS
 
@@ -4282,7 +4283,7 @@ loc_137F8D:
 		STA		_cur_map_wnd_pos._X
 		STA		_cur_map_wnd_pos._Y
 loc_137F93:
-		JSR		_regular_constr_palette_redraw_req_set
+		JSR		_regular_building_name_and_cost_hud_draw_req_set
 		LDA		#$00
 		STA		_MMC5_NT_MODE
 		STA		_game_wnd_spr_mode_flag
@@ -4300,7 +4301,7 @@ loc_137F93:
 		STA		_cur_game_cursor_scr_pos._Y
 		STA		_constr_palette_area_cursor_pos._Y
 		LDA		#$01
-		STA		byte_C0
+		STA		_cur_selected_buildings_size
 		JSR		_game_hud_full_draw
 		JSR		_seasonal_pal_load
 		JSR		_pal_fade_in

@@ -9,15 +9,15 @@ _year_to_str:
 		LDY		#$02
 loc_10400C:
 		LDA		_tmpE6
-		CMP		byte_10402E,Y
+		CMP		_hex_to_dec_999_tbl0,Y
 		LDA		_tmpE7
-		SBC		byte_104031,Y
+		SBC		_hex_to_dec_999_tbl1,Y
 		BCC		loc_104028
 		LDA		_tmpE6
-		SBC		byte_10402E,Y
+		SBC		_hex_to_dec_999_tbl0,Y
 		STA		_tmpE6
 		LDA		_tmpE7
-		SBC		byte_104031,Y
+		SBC		_hex_to_dec_999_tbl1,Y
 		STA		_tmpE7
 		BCS		loc_10400C
 loc_104028:
@@ -25,14 +25,14 @@ loc_104028:
 		BPL		loc_10400C
 		LDA		_tmpE6
 		RTS
-byte_10402E:
-		.BYTE	<[10]
-		.BYTE	<[100]
-		.BYTE	<[1000]
-byte_104031:
-		.BYTE	>[10]
-		.BYTE	>[100]
-		.BYTE	>[1000]
+_hex_to_dec_999_tbl0:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+_hex_to_dec_999_tbl1:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
 
 ; =============== S U B	R O U T	I N E =======================================
 ; city_level_R/8

@@ -646,3 +646,43 @@ _total_free	SET _total_free+_bank{1}_free
 		LDA		{1}+1
 		SBC		#[[{2}>>8]&$FF]
 	ENDM
+
+;-------------------F-O-N-T-S-------------------
+
+_0		EQU		$00
+_1		EQU		$01
+_2		EQU		$02
+_3		EQU		$03
+_4		EQU		$04
+_5		EQU		$05
+_6		EQU		$06
+_7		EQU		$07
+_8		EQU		$08
+_9		EQU		$09
+_A		EQU		$0A
+_B		EQU		$0B
+_C		EQU		$0C
+_D		EQU		$0D
+_E		EQU		$0E
+_F		EQU		$0F
+_G		EQU		$10
+_H		EQU		$11
+_I		EQU		$12
+_J		EQU		$13
+_K		EQU		$14
+_L		EQU		$15
+_M		EQU		$16
+_N		EQU		$17
+_O		EQU		$18
+_P		EQU		$19
+_Q		EQU		$1A
+_R		EQU		$1B
+_S		EQU		$1C
+_T		EQU		$1D
+_U		EQU		$1E
+_V		EQU		$1F
+_W		EQU		$20
+_X		EQU		$21
+_Y		EQU		$22
+_Z		EQU		$23
+__		EQU		$DF

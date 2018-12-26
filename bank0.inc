@@ -6,6 +6,10 @@
 
 		BANK_START $F0
 
+; ---------------------------------------------------------------------------
+; -------------M-A-I-N--M-U-S-I-C--A-N-D--S-E--E-N-G-I-N-E-------------------
+; ---------------------------------------------------------------------------
+
 		SECTION_START	0
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1357,7 +1361,11 @@ byte_BABC:
 
 		SECTION_END		0
 
-		SECTION_START	1
+		SECTION_START	30A
+
+; ---------------------------------------------------------------------------
+; ---------E-X-T-E-R-N-A-L--G-A-M-E--E-V-E-N-T--W-N-D--H-E-A-D-E-R-----------
+; ---------------------------------------------------------------------------
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_draw:
@@ -1370,9 +1378,9 @@ loc_BB84:
 		LDA		_wnd_pos_ofs_Y,X
 		STA		_tmp3
 		JSR		_wnd_header_pos_calc
-;		LDA		_game_msg_idx					; OPTIMIZED
-;		ASL										; -
-;		CLC										; -
+;		LDA		_game_msg_idx					; REDUNDANT no need to calculate
+;		ASL										; idx * 3 value, there is only single
+;		CLC										; byte array left
 ;		ADC		_ptr0+1							; -
 ;		ADC		_game_msg_idx					; -
 ;		TAX										; -
@@ -1381,8 +1389,8 @@ loc_BB84:
 		STA		_tmp2
 		LDA		_wnd_header_tlm_hi,X
 		STA		_tmp3
-		LDX		_ptr0+1							; ADDED
-		LDA		_wnd_header_char_delta,X		; -
+		LDX		_ptr0+1							; OPTIMIZED read special symbols
+		LDA		_wnd_header_char_delta,X		; table and space symbol for a line
 		STA		_ptr0							; -
 		LDA		_wnd_header_space_table,X		; -
 		STA		_tmp8							; -
@@ -1428,19 +1436,19 @@ _wnd_header_queue:
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp4,OP_NOP,0
-loc_BC1A:
+loc_BC1A:										; OPTIMIZE
 		PPUQMOVB	_tmp5,OP_ORA,#$20
 		PPUQMOVB	_tmp6,OP_NOP,0
 loc_BC1B:
 		LDA		(_tmp2),Y
 		INY
-		CMP		#$20							; ADDED
-		BEQ		loc_BC1C						; -
-		CLC										; -
+		CMP		#$20							; ADDED, if not space,
+		BEQ		loc_BC1C						; adjust character idx
+		CLC										; for a corresponding line
 		ADC		_ptr0							; -
 		.BYTE	$2C								; -
 loc_BC1C:										; -
-		LDA		_tmp8							; -
+		LDA		_tmp8							; or replace with space symbol
 		PPUQMOVA
 		DEC		_tmp6
 		BNE		loc_BC1B
@@ -1450,10 +1458,10 @@ loc_BC1C:										; -
 		LDA		#$00
 		STA		_tmp6+1
 		PPUQMOVB	_tmp4,OP_AND,#$E0
-;		PPUQMOVB	_tmp5,OP_ORA,#$20			; OPTIMIZED
-;		PPUQMOVB	_tmp6,OP_NOP,0				; -
-;		JMP		loc_BC1B						; -
-		JMP		loc_BC1A
+;		PPUQMOVB	_tmp5,OP_ORA,#$20			; REDUNDANT, dupe of the code
+;		PPUQMOVB	_tmp6,OP_NOP,0				; at the beginning of the loop,
+;		JMP		loc_BC1B						; reuse them with longer jump
+		JMP		loc_BC1A						; OPTIMIZE
 loc_BC49:
 		PPUQEND
 		RTS
@@ -1467,12 +1475,16 @@ _wnd_pos_ofs_Y:
 		.BYTE	$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$07,$08,$08,$08,$08,$0B
 		.BYTE	$04,$05,$09,$07
 
+; OPTIMIZE: instead of keep all dupes for three different encodings of one
+; header name line, we can just keep the difference between characters
+; and a special symbol (space)
+;
 _wnd_header_char_delta:
 		.BYTE	[-$40]&$FF,$00,$40
 _wnd_header_space_table:
 		.BYTE	$00,$00,$81
 
-; OPTIMIZED: here is three rows of the same message in 24x8 letters,
+; REDUNDANT: here is three rows of the same message in 24x8 letters,
 ; middle row indexes are the same as corresponding ASCII codes
 ; but upper and lower are shifted, but it is the same letters (except spaces)
 ; unneeded data replaced with on-the-fly calcs, obviously cannot be used
@@ -1739,6 +1751,6 @@ aTornade:
 ;byte_BF1B:
 ;		.BYTE	$94,$AF,$B2,$AE,$A1,$A4,$A5
 
-		SECTION_END	1
+		SECTION_END	30A
 
 		BANK_END F0,$C000

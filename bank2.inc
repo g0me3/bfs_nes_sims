@@ -3,24 +3,37 @@
 
 		BANK_START $F2
 
+		SECTION_START	C0A
+
+; ---------------------------------------------------------------------------
+; -------E-X-T-E-R-N-A-L--D-Y-N-A-M-I-C--W-N-D--D-A-T-A--A-N-D--C-O-D-E------
+; ---------------------------------------------------------------------------
+
 ; =============== S U B	R O U T	I N E =======================================
-_presents_wnd_draw:
+; generates present selection menu in special ram buffer accordig to
+; curernt presents list. as against other fixed menus, this one
+; dinamic and may have a number or different states to kkep them all
+; as a static resources...
+;
+; far routine for bank 0C
+;
+_presents_wnd_generate:
 		JSR		_sram_on
 		LDX		#$F0
 loc_3E0B0:
-		LDA		byte_3E143-1,X
+		LDA		_tlm_nt_presents_menu-1,X		; copy empty window data
 		STA		_nt_backup_buf0+$F0-1,X
-		LDA		byte_3E224-1,X
+		LDA		_tlm_extnt_presents_menu-1,X
 		STA		_extnt_backup0+$F0-1,X
 		DEX
 		BNE		loc_3E0B0
 		LDX		#$03
 loc_3E0C1:
-		LDA		_city._presents_list,X
-		BEQ		loc_3E0CD
+		LDA		_city._presents_list,X			; if present present (lol)
+		BEQ		loc_3E0CD						; then draw it according to position
 		TXA
 		PHA
-		JSR		_present_icon_draw
+		JSR		_presents_wnd_icon_insert
 		PLA
 		TAX
 loc_3E0CD:
@@ -30,7 +43,7 @@ loc_3E0CD:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_present_icon_draw:
+_presents_wnd_icon_insert:
 		LDY		_city._presents_list,X
 		DEY
 		LDA		_present_icon_tlm_lib_lo,Y
@@ -59,20 +72,25 @@ loc_3E104:
 		STA		(_tmp6),Y
 		DEY
 		BPL		loc_3E104
-		JSR		_present_icon_pos_adjust
+;		JSR		_present_icon_pos_adjust		; REDUNDANT
+		ADDW8	_ptr0,#$05						; OPTIMIZED: -4 bytes
+		ADDW8	_tmp4,#$05
+		ADDW8	_tmp2,#$0F
+		ADDW8	_tmp6,#$0F
 		DEX
 		BNE		loc_3E102
 		RTS
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-_present_icon_pos_adjust:
-		ADDW8	_ptr0,#$05
-		ADDW8	_tmp4,#$05
-		ADDW8	_tmp2,#$0F
-		ADDW8	_tmp6,#$0F
-		RTS
+;_present_icon_pos_adjust:
+;		ADDW8	_ptr0,#$05
+;		ADDW8	_tmp4,#$05
+;		ADDW8	_tmp2,#$0F
+;		ADDW8	_tmp6,#$0F
+;		RTS
 
-byte_3E143:
+_tlm_nt_presents_menu:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$00,$00,$74,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D6
 		.BYTE	$D1,$00,$00,$74,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D6
@@ -88,7 +106,7 @@ byte_3E143:
 		.BYTE	$D1,$00,$00,$74,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D6
 		.BYTE	$D1,$00,$00,$74,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D6
 		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
-byte_3E224:
+_tlm_extnt_presents_menu:
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
@@ -104,6 +122,7 @@ byte_3E224:
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$98,$98,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
+
 _present_icon_tlm_lib_lo:
 		.BYTE	<[_present_icon_tlm0]
 		.BYTE	<[_present_icon_tlm1]
@@ -370,19 +389,23 @@ _present_icon_extnt_tlmE:
 		.BYTE	$41,$41,$41,$52,$41
 
 ; =============== S U B	R O U T	I N E =======================================
+; building menu input and selection handler.
+;
+; far routine for bank 0C
+;
 _presents_build_menu:
 		LDA		#$FF
 		STA		byte_37
 		LDA		#$00
 		STA		_cur_present_select_idx
-		JSR		_presents_constr_palette_draw
-loc_3E64B:
+		JSR		_building_name_and_cost_hud_draw
+.present_wnd_loop:
 		JSR		_wait_for_nmi
 		JSR		_spr_clear
-		LDA		_cur_present_select_idx
-		AND		#$01
-		ASL
-		ASL
+		LDA		_cur_present_select_idx			; menu position is fixed, never changes
+		AND		#$01							; so we can calc the cursor menu position
+		ASL										; using relative positions with hardwritten
+		ASL										; coordinates
 		ASL
 		ASL
 		STA		_ptr0
@@ -390,7 +413,7 @@ loc_3E64B:
 		CLC
 		ADC		_ptr0
 		ADC		#$5B
-		STA		_spr_insert_args._pos._X
+		STA		_spr_insert_args._pos._X		; sprX = curX * 48 + 91
 		LDA		_cur_present_select_idx
 		AND		#$02
 		ASL
@@ -401,85 +424,113 @@ loc_3E64B:
 		CLC
 		ADC		_ptr0
 		ADC		#$A4
-		STA		_spr_insert_args._pos._Y
+		STA		_spr_insert_args._pos._Y		; sprY = curY * 38 + 164
 		LDA		#$00
 		STA		_spr_insert_args._idx
-		JSR		_spr_lib_attr_insert
-		LDA		_pad0_autorep_press
+		JSR		_spr_lib_attr_insert			; draw cursor, idx == $00
+		LDA		_pad0_autorep_press				; input parsing start
 		AND		#$0F
-		BNE		loc_3E68B
+		BNE		.present_wnd_dpad
 		LDA		_pad0_autorep_press
 		AND		#$C0
-		BEQ		loc_3E64B
-		BNE		loc_3E6C7
-loc_3E68B:
-		AND		#$03
-		BEQ		loc_3E6A3
-		LSR
-		LDA		_cur_present_select_idx
-		BCS		loc_3E69E
-		SEC
+		BEQ		.present_wnd_loop
+		BNE		.present_wnd_buttons
+.present_wnd_dpad:
+		AND		#$03							; D-Pad control
+		BEQ		.present_wnd_updown
+		LSR										; left-right cycles through all
+		LDA		_cur_present_select_idx			; 4 items left to right and
+		BCS		.present_wnd_right				; top to bottom
+		SEC										; left
 		SBC		#$01
-		BCS		loc_3E6AF
-		ADC		#$04
-		BNE		loc_3E6AF
-loc_3E69E:
-		CLC
+		BVC		.present_wnd_input_end			; OPTIMIZE: V always 0 after SBC
+;		BCS		.present_wnd_input_end			; REDUNDANT, wrap 0 to 4 not needed
+;		ADC		#$04							; -
+;		BNE		.present_wnd_input_end
+.present_wnd_right:
+		CLC										; right
 		ADC		#$01
-		BNE		loc_3E6A9
-loc_3E6A3:
-		LDA		_cur_present_select_idx
-		CLC
+		BNE		.present_wnd_max_warp			; never hit $0 here
+.present_wnd_updown:
+		LDA		_cur_present_select_idx			; up-down jumps only vertically
+		CLC										; no difference between buttons
 		ADC		#$02
-loc_3E6A9:
-		CMP		#$04
-		BCC		loc_3E6AF
-		SBC		#$04
-loc_3E6AF:
-		STA		_cur_present_select_idx
+.present_wnd_max_warp:
+;		CMP		#$04							; REDUNDANT, wrap 4 to 0 not needed
+;		BCC		.present_wnd_input_end			; -
+;		SBC		#$04							; -
+.present_wnd_input_end:
+		AND		#$03							; OPTIMIZE: simple and enough here
+		STA		_cur_present_select_idx			; save changed cursor pos
 		TAX
-		LDA		_city._presents_list,X
-		BNE		loc_3E6BD
-		LDA		#$00
-		STA		_cur_present_select_idx
+		LDA		_city._presents_list,X			; preventing the empty slot selection
+		BNE		loc_3E6BD						; thus makes "NoPresents" line unused
+		LDA		#$00							; always skip to the first slot, which
+		STA		_cur_present_select_idx			; can't be zero.
 loc_3E6BD:
-		LDA		#$40
-		STA		_apu_se_flags+1
-		JSR		_presents_constr_palette_draw
-		JMP		loc_3E64B
-loc_3E6C7:
+		LDA		#$40							; play se
+		STA		_apu_se_flags+1					; redraw selection name if needed
+		JSR		_building_name_and_cost_hud_draw
+		JMP		.present_wnd_loop
+.present_wnd_buttons:							; exit with A/B buttons
 		LDA		#$03
-		STA		byte_C0
+		STA		_cur_selected_buildings_size	; all buildings here 3x3
 		JSR		_spr_clear
 		RTS
-byte_3E6CF:
-		.BYTE	$DF,$DF,$DF,$90,$91,$92,$93,$94,$95,$DF,$30,$26,$DF,$DF,$DF,$90
-		.BYTE	$96,$97,$98,$99,$DF,$DF,$30,$56,$DF,$DF,$90,$96,$3C,$9B,$9C,$A0
-		.BYTE	$A1,$DF,$30,$27,$DF,$90,$96,$A2,$A3,$A4,$A5,$A6,$A7,$DF,$30,$57
-		.BYTE	$DF,$DF,$DF,$90,$96,$9A,$A8,$A9,$DF,$DF,$30,$56,$DF,$AA,$A1,$97
-		.BYTE	$AB,$AC,$AD,$30,$DF,$30,$26,$5A,$DF,$AA,$A1,$31,$32,$33,$34,$35
-		.BYTE	$36,$30,$26,$5A,$DF,$AA,$A1,$37,$38,$39,$3A,$3B,$DF,$30,$26,$5A
-		.BYTE	$DF,$90,$96,$3C,$3D,$3E,$40,$41,$DF,$30,$27,$5A,$DF,$90,$96,$42
-		.BYTE	$43,$44,$45,$46,$DF,$30,$27,$5A,$DF,$90,$96,$47,$48,$49,$4A,$DF
-		.BYTE	$DF,$30,$58,$5A,$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$58,$5A
-		.BYTE	$DF,$90,$96,$4E,$4F,$50,$51,$DF,$DF,$30,$59,$5A,$DF,$90,$96,$97
-		.BYTE	$98,$99,$9A,$DF,$DF,$30,$26,$5A,$DF,$90,$96,$3C,$9B,$9C,$4B,$4C
-		.BYTE	$4D,$30,$59,$5A,$DF,$90,$96,$52,$53,$54,$55,$DF,$30,$26,$5A,$5A
-		.BYTE	$DF,$A3,$A4,$A5,$A6,$A7,$A8,$DF,$DF,$DF,$DF,$DF
-byte_3E79B:
-		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06,$02,$02,$02,$02
-		.BYTE	$02,$02,$02,$02,$02,$02,$02,$06,$02,$02,$02,$02,$06,$02,$02,$02
-		.BYTE	$02,$02,$02,$06,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
-		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06,$02,$02,$02,$02
-		.BYTE	$02,$02,$02,$06,$02,$02,$06,$06,$02,$02,$02,$06,$06,$06,$06,$06
-		.BYTE	$06,$02,$06,$06,$02,$02,$02,$06,$06,$06,$06,$06,$02,$02,$06,$06
-		.BYTE	$02,$02,$02,$06,$06,$06,$06,$06,$02,$02,$06,$06,$02,$02,$02,$06
-		.BYTE	$06,$06,$06,$06,$02,$02,$06,$06,$02,$02,$02,$06,$06,$06,$06,$02
-		.BYTE	$02,$02,$06,$06,$02,$02,$02,$06,$02,$02,$06,$06,$06,$02,$06,$06
-		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$02,$06,$06,$02,$02,$02,$06
-		.BYTE	$06,$06,$06,$02,$02,$02,$06,$06,$02,$02,$02,$06,$02,$02,$06,$06
-		.BYTE	$06,$02,$06,$06,$02,$02,$02,$06,$06,$06,$06,$02,$02,$06,$06,$06
-		.BYTE	$02,$06,$06,$06,$06,$06,$06,$02,$02,$02,$02,$02
+
+		SECTION_END	C0A
+
+		SECTION_START	C0B
+
+; ---------------------------------------------------------------------------
+; --------E-X-T-E-R-N-A-L--B-U-I-L-D-I-N-G--N-A-M-E-S--D-R-A-W---------------
+; ---------------------------------------------------------------------------
+
+_tlm_nt_building_names_lib:
+		.BYTE	$DF,$DF,$DF,$90,$91,$92,$93,$94,$95,$DF,$30,$26	; "BullDozeArea     $1"
+		.BYTE	$DF,$DF,$DF,$90,$96,$97,$98,$99,$DF,$DF,$30,$56	; "BuildRoads       $10"
+		.BYTE	$DF,$DF,$90,$96,$3C,$9B,$9C,$A0,$A1,$DF,$30,$27	; "BuildPowerLine   $5"
+		.BYTE	$DF,$90,$96,$A2,$A3,$A4,$A5,$A6,$A7,$DF,$30,$57 ; "BuildMassTransit $20"
+		.BYTE	$DF,$DF,$DF,$90,$96,$9A,$A8,$A9,$DF,$DF,$30,$56 ; "BuildPark        $10"
+		.BYTE	$DF,$AA,$A1,$97,$AB,$AC,$AD,$30,$DF,$30,$26,$5A ; "ZoneResidential  $100"
+		.BYTE	$DF,$AA,$A1,$31,$32,$33,$34,$35,$36,$30,$26,$5A ; "ZoneCommercial   $100"
+		.BYTE	$DF,$AA,$A1,$37,$38,$39,$3A,$3B,$DF,$30,$26,$5A ; "ZoneIndustrial   $100"
+		.BYTE	$DF,$90,$96,$3C,$3D,$3E,$40,$41,$DF,$30,$27,$5A ; "BuildPoliceDept  $500"
+		.BYTE	$DF,$90,$96,$42,$43,$44,$45,$46,$DF,$30,$27,$5A ; "BuildFireDept    $500"
+		.BYTE	$DF,$90,$96,$47,$48,$49,$4A,$DF,$DF,$30,$58,$5A ; "BuildStadium     $3000"
+		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$58,$5A ; "BuildPowerPlant  $3000"
+		.BYTE	$DF,$90,$96,$4E,$4F,$50,$51,$DF,$DF,$30,$59,$5A ; "BuildSeaPort     $5000"
+		.BYTE	$DF,$90,$96,$97,$98,$99,$9A,$DF,$DF,$30,$26,$5A ; "BuildPresent     $100"
+		.BYTE	$DF,$90,$96,$3C,$9B,$9C,$4B,$4C,$4D,$30,$59,$5A ; "BuildPowerPlant  $5000"
+		.BYTE	$DF,$90,$96,$52,$53,$54,$55,$DF,$30,$26,$5A,$5A ; "BuildAirPort     $10000"
+;		.BYTE	$DF,$A3,$A4,$A5,$A6,$A7,$A8,$DF,$DF,$DF,$DF,$DF ; "NoPresents"	   *unused*	REDUNDANT
+_tlm_extnt_building_names_lib:
+		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
+		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
+		.BYTE	$02,$02,$02,$02,$06,$02,$02,$02,$02,$02,$02,$06
+		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
+		.BYTE	$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$02,$06
+		.BYTE	$02,$02,$02,$02,$02,$02,$02,$06,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$06,$06,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$06,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$06,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$06,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$02,$02,$06,$06,$06,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$02,$02,$06,$06,$06,$02,$06,$06
+		.BYTE	$02,$02,$02,$06,$06,$06,$06,$02,$02,$06,$06,$06
+;		.BYTE	$02,$06,$06,$06,$06,$06,$06,$02,$02,$02,$02,$02	; REDUNDANT
+
+		SECTION_END	C0B
+
+		SECTION_START	C0C
+
+; ---------------------------------------------------------------------------
+; -------------------I-N-G-A-M-E--W-N-D-S--D-A-T-A---------------------------
+; ---------------------------------------------------------------------------
+
 _wnd_height0_list:
 		.BYTE	$0D,$0D,$0F,$0F,$0E,$0C,$0D,$10,$0F,$0F,$0E,$10,$0F,$0F,$0F,$0F
 		.BYTE	$10,$10,$10
@@ -493,45 +544,45 @@ _wnd_width_list:
 		.BYTE	$0D,$0D,$0F,$0F,$0E,$0C,$0A,$0A,$0A,$0F,$0B,$10,$0F,$0F,$0F,$0F
 		.BYTE	$10,$10,$10
 _wnd_nt_lib_lo:
-		.BYTE	<[_wnd_nt00]
-		.BYTE	<[_wnd_nt01]
-		.BYTE	<[_wnd_nt02]
-		.BYTE	<[_wnd_nt03]
-		.BYTE	<[_wnd_nt04]
-		.BYTE	<[_wnd_nt00]
-		.BYTE	<[_wnd_nt06]
-		.BYTE	<[_wnd_nt07]
-		.BYTE	<[_wnd_nt08]
-		.BYTE	<[_wnd_nt09]
-		.BYTE	<[_wnd_nt0A]
-		.BYTE	<[_wnd_nt0B]
+		.BYTE	<[_wnd_nt00_speed_menu]
+		.BYTE	<[_wnd_nt01_options_menu]
+		.BYTE	<[_wnd_nt02_disasters_menu]
+		.BYTE	<[_wnd_nt03_windows_menu]
+		.BYTE	<[_wnd_nt04_game_menu]
+		.BYTE	<[_wnd_nt00_speed_menu]
+		.BYTE	<[_wnd_nt06_power_plant_menu]
+		.BYTE	<[_wnd_nt07_population_menu]
+		.BYTE	<[_wnd_nt08_city_services_menu]
+		.BYTE	<[_wnd_nt09_city_map]
+		.BYTE	<[_wnd_nt0A_port_menu]
+		.BYTE	<[_wnd_nt0B_do_you_want_to_save]
+		.BYTE	<[_nt_backup_buf0+$F0]						; special entry for presents
+		.BYTE	<[_nt_backup_buf0+$F0]						; menu, which is constructed
+		.BYTE	<[_nt_backup_buf0+$F0]						; manually in ram buf
 		.BYTE	<[_nt_backup_buf0+$F0]
-		.BYTE	<[_nt_backup_buf0+$F0]
-		.BYTE	<[_nt_backup_buf0+$F0]
-		.BYTE	<[_nt_backup_buf0+$F0]
-		.BYTE	<[_wnd_nt10]
-		.BYTE	<[_wnd_nt11]
-		.BYTE	<[_wnd_nt12]
+		.BYTE	<[_wnd_nt10_do_you_want_to_load]
+;		.BYTE	<[_wnd_nt11_do_you_quit_without_saving]		; REDUNDANT *unused*
+;		.BYTE	<[_wnd_nt12_do_you_want_to_start_new_city]	; -
 _wnd_nt_lib_hi:
-		.BYTE	>[_wnd_nt00]
-		.BYTE	>[_wnd_nt01]
-		.BYTE	>[_wnd_nt02]
-		.BYTE	>[_wnd_nt03]
-		.BYTE	>[_wnd_nt04]
-		.BYTE	>[_wnd_nt00]
-		.BYTE	>[_wnd_nt06]
-		.BYTE	>[_wnd_nt07]
-		.BYTE	>[_wnd_nt08]
-		.BYTE	>[_wnd_nt09]
-		.BYTE	>[_wnd_nt0A]
-		.BYTE	>[_wnd_nt0B]
+		.BYTE	>[_wnd_nt00_speed_menu]
+		.BYTE	>[_wnd_nt01_options_menu]
+		.BYTE	>[_wnd_nt02_disasters_menu]
+		.BYTE	>[_wnd_nt03_windows_menu]
+		.BYTE	>[_wnd_nt04_game_menu]
+		.BYTE	>[_wnd_nt00_speed_menu]
+		.BYTE	>[_wnd_nt06_power_plant_menu]
+		.BYTE	>[_wnd_nt07_population_menu]
+		.BYTE	>[_wnd_nt08_city_services_menu]
+		.BYTE	>[_wnd_nt09_city_map]
+		.BYTE	>[_wnd_nt0A_port_menu]
+		.BYTE	>[_wnd_nt0B_do_you_want_to_save]
 		.BYTE	>[_nt_backup_buf0+$F0]
 		.BYTE	>[_nt_backup_buf0+$F0]
 		.BYTE	>[_nt_backup_buf0+$F0]
 		.BYTE	>[_nt_backup_buf0+$F0]
-		.BYTE	>[_wnd_nt10]
-		.BYTE	>[_wnd_nt11]
-		.BYTE	>[_wnd_nt12]
+		.BYTE	>[_wnd_nt10_do_you_want_to_load]
+;		.BYTE	>[_wnd_nt11_do_you_quit_without_saving]		; REDUNDANT *unused*
+;		.BYTE	>[_wnd_nt12_do_you_want_to_start_new_city]	; -
 _wnd_extnt_lib_lo:
 		.BYTE	<[_wnd_extnt00]
 		.BYTE	<[_wnd_extnt01]
@@ -550,8 +601,8 @@ _wnd_extnt_lib_lo:
 		.BYTE	<[_extnt_backup0+$F0]
 		.BYTE	<[_extnt_backup0+$F0]
 		.BYTE	<[_wnd_extnt0B]
-		.BYTE	<[_wnd_extnt11]
-		.BYTE	<[_wnd_extnt11]
+;		.BYTE	<[_wnd_extnt11]				; REDUNDANT *unused*
+;		.BYTE	<[_wnd_extnt11]				; -
 _wnd_extnt_lib_hi:
 		.BYTE	>[_wnd_extnt00]
 		.BYTE	>[_wnd_extnt01]
@@ -570,9 +621,9 @@ _wnd_extnt_lib_hi:
 		.BYTE	>[_extnt_backup0+$F0]
 		.BYTE	>[_extnt_backup0+$F0]
 		.BYTE	>[_wnd_extnt0B]
-		.BYTE	>[_wnd_extnt11]
-		.BYTE	>[_wnd_extnt11]
-_wnd_nt00:
+;		.BYTE	>[_wnd_extnt11]				; REDUNDANT *unused*
+;		.BYTE	>[_wnd_extnt11]				; -
+_wnd_nt00_speed_menu:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$00,$00,$00,$13,$10,$05,$05,$04,$00,$00,$00,$D4
 		.BYTE	$D3,$00,$00,$00,$53,$50,$45,$45,$44,$00,$00,$00,$D4
@@ -588,7 +639,7 @@ _wnd_nt00:
 		.BYTE	$D3,$DC,$06,$07,$08,$DC,$DC,$DC,$09,$0A,$0B,$DC,$D4
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_nt01:
+_wnd_nt01_options_menu:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$00,$00,$0F,$10,$14,$09,$0F,$0E,$13,$00,$00,$D4
 		.BYTE	$D3,$00,$00,$4F,$50,$54,$49,$4F,$4E,$53,$00,$00,$D4
@@ -605,7 +656,7 @@ _wnd_nt01:
 		.BYTE	$D3,$DC,$0C,$0D,$0E,$DC,$DC,$1A,$1B,$1C,$1D,$1E,$D4
 		.BYTE	$D3,$DC,$17,$18,$19,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_nt02:
+_wnd_nt02_disasters_menu:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$00,$00,$04,$09,$13,$01,$13,$14,$05,$12,$13,$00,$00,$D4
 		.BYTE	$D3,$00,$00,$44,$49,$53,$41,$53,$54,$45,$52,$53,$00,$00,$D4
@@ -622,7 +673,7 @@ _wnd_nt02:
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$32,$33,$34,$DC,$39,$3A,$3B,$DC,$D4
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_nt03:
+_wnd_nt03_windows_menu:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$00,$00,$00,$17,$09,$0E,$04,$0F,$17,$13,$00,$00,$00,$D4
 		.BYTE	$D3,$00,$00,$00,$57,$49,$4E,$44,$4F,$57,$53,$00,$00,$00,$D4
@@ -638,7 +689,7 @@ _wnd_nt03:
 		.BYTE	$D3,$DC,$42,$43,$44,$95,$96,$97,$98,$99,$8E,$8F,$9E,$DC,$D4
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_nt04:
+_wnd_nt04_game_menu:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$00,$00,$00,$00,$07,$01,$0D,$05,$00,$00,$00,$00,$D4
 		.BYTE	$D3,$00,$00,$00,$00,$47,$41,$4D,$45,$00,$00,$00,$00,$D4
@@ -654,7 +705,7 @@ _wnd_nt04:
 		.BYTE	$D3,$DC,$70,$71,$72,$73,$74,$DC,$5A,$5B,$5C,$DC,$DC,$D4
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_nt06:
+_wnd_nt06_power_plant_menu:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$20,$50,$74,$DC,$DC,$DC,$DC,$DC,$D6
 		.BYTE	$D1,$20,$4F,$74,$E0,$F0,$E3,$5D,$DC,$D6
@@ -668,7 +719,7 @@ _wnd_nt06:
 		.BYTE	$D1,$20,$4E,$74,$F5,$E8,$F8,$63,$DC,$D6
 		.BYTE	$D1,$20,$54,$74,$DC,$DC,$DC,$64,$DC,$D6
 		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
-_wnd_nt07:
+_wnd_nt07_population_menu:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$DC,$50,$74,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D1,$DC,$4F,$74,$DD,$DD,$DD,$65,$DD,$D6
@@ -685,7 +736,7 @@ _wnd_nt07:
 		.BYTE	$D1,$DC,$41,$74,$DD,$DD,$DD,$72,$B0,$D6
 		.BYTE	$D1,$DC,$50,$74,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
-_wnd_nt08:
+_wnd_nt08_city_services_menu:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$DC,$43,$74,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D1,$DC,$49,$74,$DD,$DD,$DD,$DD,$DD,$D6
@@ -701,7 +752,7 @@ _wnd_nt08:
 		.BYTE	$D1,$DC,$45,$74,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D1,$DC,$53,$74,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
-_wnd_nt09:
+_wnd_nt09_city_map:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$DC,$DC,$74,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D1,$DC,$DC,$74,$DD,$DD,$DD,$7F,$DD,$DD,$DD,$DD,$8C,$DD,$D6
@@ -717,7 +768,7 @@ _wnd_nt09:
 		.BYTE	$D1,$DC,$DC,$74,$DD,$DD,$DD,$88,$DD,$DD,$DD,$DD,$95,$DD,$D6
 		.BYTE	$D1,$DC,$DC,$74,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$DD,$D6
 		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
-_wnd_nt0A:
+_wnd_nt0A_port_menu:
 		.BYTE	$D0,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D3,$D5
 		.BYTE	$D1,$20,$20,$74,$DC,$DC,$DC,$DC,$DC,$DC,$D6
 		.BYTE	$D1,$20,$20,$74,$E5,$E8,$EB,$DC,$96,$DC,$D6
@@ -732,7 +783,7 @@ _wnd_nt0A:
 		.BYTE	$D1,$20,$20,$74,$03,$07,$0B,$0F,$99,$DC,$D6
 		.BYTE	$D1,$20,$20,$74,$DC,$DC,$DC,$DC,$DC,$DC,$D6
 		.BYTE	$D2,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D4,$D7
-_wnd_nt0B:
+_wnd_nt0B_do_you_want_to_save:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D3,$20,$44,$6F,$20,$79,$6F,$75,$20,$77,$61,$6E,$74,$20,$20,$D4
@@ -752,7 +803,7 @@ _wnd_extnt0B:
 		.BYTE	$81,$41,$41,$06,$06,$06,$06,$41,$41,$06,$06,$06,$06,$41,$41,$81
 		.BYTE	$81,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
-_wnd_nt10:
+_wnd_nt10_do_you_want_to_load:
 		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D3,$20,$44,$6F,$20,$79,$6F,$75,$20,$77,$61,$6E,$74,$20,$20,$D4
@@ -762,39 +813,47 @@ _wnd_nt10:
 		.BYTE	$D3,$DC,$DC,$F8,$F9,$FA,$FB,$DC,$DC,$FC,$FD,$FE,$FF,$DC,$DC,$D4
 		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
 		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_nt11:
-		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
-		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
-		.BYTE	$D3,$20,$44,$6F,$20,$79,$6F,$75,$20,$71,$75,$69,$74,$20,$20,$D4
-		.BYTE	$D3,$20,$70,$6C,$61,$79,$69,$6E,$67,$20,$77,$69,$74,$68,$2D,$D4
-		.BYTE	$D3,$20,$6F,$75,$74,$20,$73,$61,$76,$69,$6E,$67,$3F,$20,$20,$D4
-		.BYTE	$D3,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$D4
-		.BYTE	$D3,$DC,$DC,$E8,$E9,$EA,$EB,$DC,$DC,$EC,$ED,$EE,$EF,$DC,$DC,$D4
-		.BYTE	$D3,$DC,$DC,$F8,$F9,$FA,$FB,$DC,$DC,$FC,$FD,$FE,$FF,$DC,$DC,$D4
-		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
-		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
-_wnd_extnt11:
-		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
-		.BYTE	$81,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$81
-		.BYTE	$81,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$81
-		.BYTE	$81,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$81
-		.BYTE	$81,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$81
-		.BYTE	$81,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
-		.BYTE	$81,$41,$41,$06,$06,$06,$06,$41,$41,$06,$06,$06,$06,$41,$41,$81
-		.BYTE	$81,$41,$41,$06,$06,$06,$06,$41,$41,$06,$06,$06,$06,$41,$41,$81
-		.BYTE	$81,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
-		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
-_wnd_nt12:
-		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
-		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
-		.BYTE	$D3,$20,$44,$6F,$20,$79,$6F,$75,$20,$77,$61,$6E,$74,$20,$20,$D4
-		.BYTE	$D3,$20,$74,$6F,$20,$73,$74,$61,$72,$74,$20,$6E,$65,$77,$20,$D4
-		.BYTE	$D3,$20,$63,$69,$74,$79,$3F,$20,$20,$20,$20,$20,$20,$20,$20,$D4
-		.BYTE	$D3,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$D4
-		.BYTE	$D3,$DC,$DC,$E8,$E9,$EA,$EB,$DC,$DC,$EC,$ED,$EE,$EF,$DC,$DC,$D4
-		.BYTE	$D3,$DC,$DC,$F8,$F9,$FA,$FB,$DC,$DC,$FC,$FD,$FE,$FF,$DC,$DC,$D4
-		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
-		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
+; REDUNDANT *unused*
+; two menus
+; "DO YOU QUIT PLAYING WITHOUT SAVING?" and
+; "DO YOU WANT TO START NEW CITY?"
+; are unused here, there is impossible to quit without saving,
+; you'll be asked to save first, if you answer no, you just silently quit.
+; as well as there is no option to start a new city during the game
+;
+;_wnd_nt11_do_you_quit_without_saving:
+;		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
+;		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
+;		.BYTE	$D3,$20,$44,$6F,$20,$79,$6F,$75,$20,$71,$75,$69,$74,$20,$20,$D4
+;		.BYTE	$D3,$20,$70,$6C,$61,$79,$69,$6E,$67,$20,$77,$69,$74,$68,$2D,$D4
+;		.BYTE	$D3,$20,$6F,$75,$74,$20,$73,$61,$76,$69,$6E,$67,$3F,$20,$20,$D4
+;		.BYTE	$D3,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$D4
+;		.BYTE	$D3,$DC,$DC,$E8,$E9,$EA,$EB,$DC,$DC,$EC,$ED,$EE,$EF,$DC,$DC,$D4
+;		.BYTE	$D3,$DC,$DC,$F8,$F9,$FA,$FB,$DC,$DC,$FC,$FD,$FE,$FF,$DC,$DC,$D4
+;		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
+;		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
+;_wnd_extnt11:
+;		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
+;		.BYTE	$81,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$81
+;		.BYTE	$81,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$81
+;		.BYTE	$81,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$81
+;		.BYTE	$81,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$0B,$81
+;		.BYTE	$81,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
+;		.BYTE	$81,$41,$41,$06,$06,$06,$06,$41,$41,$06,$06,$06,$06,$41,$41,$81
+;		.BYTE	$81,$41,$41,$06,$06,$06,$06,$41,$41,$06,$06,$06,$06,$41,$41,$81
+;		.BYTE	$81,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$41,$81
+;		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
+;_wnd_nt12_do_you_want_to_start_new_city:
+;		.BYTE	$D0,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D1,$D2
+;		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
+;		.BYTE	$D3,$20,$44,$6F,$20,$79,$6F,$75,$20,$77,$61,$6E,$74,$20,$20,$D4
+;		.BYTE	$D3,$20,$74,$6F,$20,$73,$74,$61,$72,$74,$20,$6E,$65,$77,$20,$D4
+;		.BYTE	$D3,$20,$63,$69,$74,$79,$3F,$20,$20,$20,$20,$20,$20,$20,$20,$D4
+;		.BYTE	$D3,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$74,$D4
+;		.BYTE	$D3,$DC,$DC,$E8,$E9,$EA,$EB,$DC,$DC,$EC,$ED,$EE,$EF,$DC,$DC,$D4
+;		.BYTE	$D3,$DC,$DC,$F8,$F9,$FA,$FB,$DC,$DC,$FC,$FD,$FE,$FF,$DC,$DC,$D4
+;		.BYTE	$D3,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$DC,$D4
+;		.BYTE	$D5,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D6,$D7
 _wnd_extnt00:
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
 		.BYTE	$81,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$98,$81
@@ -956,7 +1015,13 @@ _wnd_extnt0A:
 		.BYTE	$81,$0B,$0B,$41,$41,$41,$41,$41,$41,$41,$81
 		.BYTE	$81,$81,$81,$81,$81,$81,$81,$81,$81,$81,$81
 
-		SECTION_START 102
+		SECTION_END	C0C
+
+; ---------------------------------------------------------------------------
+; ----E-X-T-E-R-N-A-L--C-O-M-M-O-N--C-O-N-T-R-O-L-S--S-P-R-I-T-E--D-A-T-A----
+; ---------------------------------------------------------------------------
+
+		SECTION_START F02
 
 _spr90:
 		.BYTE	$F0,$C0,$03,$F0
@@ -1169,6 +1234,6 @@ _sprA8:
 		.BYTE	$E4,$EF,$00,$E8
 		.BYTE	$80
 
-		SECTION_END 102
+		SECTION_END F02
 
 		BANK_END F2,$C000

@@ -1749,7 +1749,7 @@ _info_maps_date_draw_ex:
 		ASL
 		TAY
 loc_EADA1:
-		LDA		byte_EB6B8,Y
+		LDA		_months_lib_0,Y
 		CMP		#$80
 		BEQ		loc_EADAF
 		PPUQMOVA
@@ -2829,19 +2829,19 @@ byte_EB6B2:
 		.BYTE	$07,$04
 		.BYTE	$07,$0A
 		.BYTE	$07,$11
-byte_EB6B8:
-		.BYTE	$13,$0A,$17,$80
-		.BYTE	$0F,$0E,$0B,$80
-		.BYTE	$16,$0A,$1B,$80
-		.BYTE	$0A,$19,$1B,$80
-		.BYTE	$16,$0A,$22,$80
-		.BYTE	$13,$1E,$17,$80
-		.BYTE	$13,$1E,$15,$80
-		.BYTE	$0A,$1E,$10,$80
-		.BYTE	$1C,$0E,$19,$80
-		.BYTE	$18,$0C,$1D,$80
-		.BYTE	$17,$18,$1F,$80
-		.BYTE	$0D,$0E,$0C,$80
+_months_lib_0:
+		.BYTE	_J,_A,_N,$80
+		.BYTE	_F,_E,_B,$80
+		.BYTE	_M,_A,_R,$80
+		.BYTE	_A,_P,_R,$80
+		.BYTE	_M,_A,_Y,$80
+		.BYTE	_J,_U,_N,$80
+		.BYTE	_J,_U,_L,$80
+		.BYTE	_A,_U,_G,$80
+		.BYTE	_S,_E,_P,$80
+		.BYTE	_O,_C,_T,$80
+		.BYTE	_N,_O,_V,$80
+		.BYTE	_D,_E,_C,$80
 
 ;_unused?:
 ;		.BYTE	$00,$07,$0E
@@ -3192,20 +3192,20 @@ loc_EBA2D:
 		LDY		#$00
 loc_EBA2F:
 		LDA		_ptr0
-		CMP		byte_EBA77,X
+		CMP		_hex_to_dec9999999_tbl2,X
 		LDA		_ptr0+1
-		SBC		byte_EBA70,X
+		SBC		_hex_to_dec9999999_tbl1,X
 		LDA		_tmp2
-		SBC		byte_EBA69,X
+		SBC		_hex_to_dec9999999_tbl0,X
 		BCC		loc_EBA58
 		LDA		_ptr0
-		SBC		byte_EBA77,X
+		SBC		_hex_to_dec9999999_tbl2,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		byte_EBA70,X
+		SBC		_hex_to_dec9999999_tbl1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		byte_EBA69,X
+		SBC		_hex_to_dec9999999_tbl0,X
 		STA		_tmp2
 		INY
 		BNE		loc_EBA2F
@@ -3221,12 +3221,31 @@ loc_EBA5F:
 		CPX		#$06
 		BNE		loc_EBA5F
 		RTS
-byte_EBA69:
-		.BYTE	$00,$00,$00,$00,$01,$0F,$98
-byte_EBA70:
-		.BYTE	$00,$00,$03,$27,$86,$42,$96
-byte_EBA77:
-		.BYTE	$0A,$64,$E8,$10,$A0,$40,$80
+
+_hex_to_dec9999999_tbl0:
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+		.BYTE	[[10000000 >> 16] & $FF]; $98
+_hex_to_dec9999999_tbl1:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+		.BYTE	[[10000000 >> 8] & $FF] ; $96
+_hex_to_dec9999999_tbl2:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
 ; =============== S U B	R O U T	I N E =======================================
 ; input args: 16bit _ptr0 * reg X, store 24bit _ptr0/tmp2

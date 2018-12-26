@@ -288,7 +288,7 @@ byte_AA:
 		.BYTE	0
 byte_AB:
 		.BYTE	0
-_regular_constr_palette_redraw_req:
+_regular_building_name_and_cost_hud_draw_req:
 		.BYTE	0
 _constr_palette_flags:
 		.BYTE	0,0,0,0
@@ -315,7 +315,7 @@ _pal_anim_counter:
 		.BYTE	0
 _unref_10:
 		.BYTE	0
-byte_C0:
+_cur_selected_buildings_size:
 		.BYTE	0
 word_C1:
 		.BYTE	0,0
@@ -349,9 +349,9 @@ byte_D4:
 		.BYTE	0
 byte_D5:
 		.BYTE	0
-_presents_constr_palette_redraw_req:
+_presents_building_name_and_cost_hud_draw_req:
 		.BYTE	0
-byte_D7:
+_building_name_and_cost_hud_src_ofs:
 		.BYTE	0
 _game_msg_idx:
 		.BYTE	0

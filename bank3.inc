@@ -12,12 +12,7 @@ _cur_money_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_str_calc:
-		LDA		_city._money
-		LDX		_city._money+1
-		LDY		_city._money+2
-		STA		_ptr0
-		STX		_ptr0+1
-		STY		_tmp2
+		MOVD	_ptr0,_city._money
 		LDA		#$00
 		STA		_tmp3
 		LDY		#$01
@@ -83,12 +78,31 @@ loc_58076:
 		STA		_tmp2
 		LDA		_tmp4
 		RTS
+
 _hex_to_dec_9999999_tbl0:
-		.BYTE	$01,$0A,$64,$E8,$10,$A0,$40
+		.BYTE	[[1 >> 0] & $FF]		; $01
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]	; $40
 _hex_to_dec_9999999_tbl1:
-		.BYTE	$00,$00,$00,$03,$27,$86,$42
+		.BYTE	[[1 >> 8] & $FF]		; $00
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]	; $42
 _hex_to_dec_9999999_tbl2:
-		.BYTE	$00,$00,$00,$00,$00,$01,$0F
+		.BYTE	[[1 >> 16] & $FF]		; $00
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_money_str_pos_calc:
@@ -650,7 +664,7 @@ _game_msg_wnd_animB:
 		RTS
 loc_58578:
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		LDA		byte_528
 		BEQ		loc_58586
 		BPL		loc_585A5
@@ -1179,13 +1193,13 @@ loc_589CC:
 loc_589D1:
 		SEC
 		LDA		_tmp_popul_hex
-		SBC		byte_58A25,Y
+		SBC		_hex_to_dec_999999_tbl0_0,Y
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		SBC		byte_58A2B,Y
+		SBC		_hex_to_dec_999999_tbl1_0,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		SBC		byte_58A31,Y
+		SBC		_hex_to_dec_999999_tbl2_0,Y
 		STA		_tmp_popul_hex+2
 		BCC		loc_589FA
 		LDA		_tmp_popul_decimal_buf,Y
@@ -1196,13 +1210,13 @@ loc_589D1:
 loc_589FA:
 		CLC
 		LDA		_tmp_popul_hex
-		ADC		byte_58A25,Y
+		ADC		_hex_to_dec_999999_tbl0_0,Y
 		STA		_tmp_popul_hex
 		LDA		_tmp_popul_hex+1
-		ADC		byte_58A2B,Y
+		ADC		_hex_to_dec_999999_tbl1_0,Y
 		STA		_tmp_popul_hex+1
 		LDA		_tmp_popul_hex+2
-		ADC		byte_58A31,Y
+		ADC		_hex_to_dec_999999_tbl2_0,Y
 		STA		_tmp_popul_hex+2
 		LDA		_tmp_popul_decimal_buf,Y
 		CLC
@@ -1213,22 +1227,21 @@ loc_589FA:
 		PLA
 		TAY
 		RTS
-
-byte_58A25:
+_hex_to_dec_999999_tbl0_0:
 		.BYTE	[[1 >> 0] & $FF]		; $01
 		.BYTE	[[10 >> 0] & $FF]		; $0A
 		.BYTE	[[100 >> 0] & $FF]		; $64
 		.BYTE	[[1000 >> 0] & $FF]		; $E8
 		.BYTE	[[10000 >> 0] & $FF]	; $10
 		.BYTE	[[100000 >> 0] & $FF]	; $A0
-byte_58A2B:
+_hex_to_dec_999999_tbl1_0:
 		.BYTE	[[1 >> 8] & $FF]		; $00
 		.BYTE	[[10 >> 8] & $FF]		; $00
 		.BYTE	[[100 >> 8] & $FF]		; $00
 		.BYTE	[[1000 >> 8] & $FF]		; $03
 		.BYTE	[[10000 >> 8] & $FF]	; $27
 		.BYTE	[[100000 >> 8] & $FF]	; $86
-byte_58A31:
+_hex_to_dec_999999_tbl2_0:
 		.BYTE	[[1 >> 16] & $FF]		; $00
 		.BYTE	[[10 >> 16] & $FF]		; $00
 		.BYTE	[[100 >> 16] & $FF]		; $00
@@ -1643,6 +1656,7 @@ loc_58E0E:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; TODO: bank 9 different type of month display lib
 _cur_month_str_queue:
 		LDA		_city._cur_month
 		STA		_ptr0
@@ -1660,24 +1674,26 @@ loc_58E2E:
 		DEC		_ptr0
 		BNE		loc_58E2E
 		RTS
+
 _hex_to_dec_9999_tbl:
-		.BYTE	$E8, $03
-		.BYTE	$64,$00
-		.BYTE	$0A,$00
-		.BYTE	$01,$00
+		.WORD	1000
+		.WORD	100
+		.WORD	10
+		.WORD	1
+
 _months_lib:
-		.BYTE	$13,$0A,$17
-		.BYTE	$0F,$0E,$0B
-		.BYTE	$16,$0A,$1B
-		.BYTE	$0A,$19,$1B
-		.BYTE	$16,$0A,$22
-		.BYTE	$13,$1E,$17
-		.BYTE	$13,$1E,$15
-		.BYTE	$0A,$1E,$10
-		.BYTE	$1C,$0E,$19
-		.BYTE	$18,$0C,$1D
-		.BYTE	$17,$18,$1F
-		.BYTE	$0D,$0E,$0C
+		.BYTE	_J,_A,_N
+		.BYTE	_F,_E,_B
+		.BYTE	_M,_A,_R
+		.BYTE	_A,_P,_R
+		.BYTE	_M,_A,_Y
+		.BYTE	_J,_U,_N
+		.BYTE	_J,_U,_L
+		.BYTE	_A,_U,_G
+		.BYTE	_S,_E,_P
+		.BYTE	_O,_C,_T
+		.BYTE	_N,_O,_V
+		.BYTE	_D,_E,_C
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_date_str_pos_calc:
@@ -3188,13 +3204,13 @@ _hex_to_dec_999999:
 loc_59AB3:
 		SEC
 		LDA		_ptr0
-		SBC		byte_59AE8,X
+		SBC		_hex_to_dec_999999_tbl0,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		byte_59AEE,X
+		SBC		_hex_to_dec_999999_tbl1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		byte_59AF4,X
+		SBC		_hex_to_dec_999999_tbl2,X
 		STA		_tmp2
 		BCC		loc_59ACF
 		INC		_tmp4
@@ -3202,27 +3218,43 @@ loc_59AB3:
 loc_59ACF:
 		CLC
 		LDA		_ptr0
-		ADC		byte_59AE8,X
+		ADC		_hex_to_dec_999999_tbl0,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		ADC		byte_59AEE,X
+		ADC		_hex_to_dec_999999_tbl1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		ADC		byte_59AF4,X
+		ADC		_hex_to_dec_999999_tbl2,X
 		STA		_tmp2
 		LDA		_tmp4
 		RTS
-byte_59AE8:
-		.BYTE	$01,$0A,$64,$E8,$10,$A0
-byte_59AEE:
-		.BYTE	$00,$00,$00,$03,$27,$86
-byte_59AF4:
-		.BYTE	$00,$00,$00,$00,$00,$01
+
+_hex_to_dec_999999_tbl0:
+		.BYTE	[[1 >> 0] & $FF]		; $01
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+_hex_to_dec_999999_tbl1:
+		.BYTE	[[1 >> 8] & $FF]		; $00
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+_hex_to_dec_999999_tbl2:
+		.BYTE	[[1 >> 16] & $FF]		; $00
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
 
 ; =============== S U B	R O U T	I N E =======================================
 _cur_popul_str_pos_set:
 		CIADDB	_ptr0+1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_ptr0,_cur_screen_tile._X,#$0E,NONE,#$20
+		CIADDB	_ptr0,  _cur_screen_tile._X,#$0E,NONE,#$20
 		CLC
 		ADC		#$05
 		CMP		#$20
@@ -3423,12 +3455,12 @@ loc_59C76:
 		LDA		_tmp5
 		STA		_tmp3
 		RTS
+
 _scroll_txt_i_am_god:
-		.BYTE	$12,$DF,$0A,$16,$DF,$10,$18, $0D,$DF,$DF,$DF,$12,$DF,$20,$12,$1C
-		.BYTE	$11,$DF,$22,$18,$1E,$DF,$11,$0A,$19,$19,$22,$FF
+		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_I,__,_W,_I,_S,_H,__,_Y,_O,_U,__,_H,_A,_P,_P,_Y,$FF
 _scroll_txt_debug_off:
-		.BYTE	$12,$DF,$0A,$16,$DF,$10,$18,$0D,$DF,$DF,$DF,$0D,$0E,$0B,$1E,$10
-		.BYTE	$DF,$18,$0F,$0F,$FF
+		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_D,_E,_B,_U,_G,__,_O,_F,_F,$FF
+
 _scroll_msg_lib_lo:
 		.BYTE	<[_scroll_txt00_more_residental]
 		.BYTE	<[_scroll_txt01_more_commercial]
@@ -3481,85 +3513,57 @@ _scroll_msg_lib_hi:
 		.BYTE	>[_scroll_txt16_explosion_detected]
 		.BYTE	>[_scroll_txt17_brownouts]
 		.BYTE	>[_scroll_txt18_heavy_traffic_repotrted]
+
 _scroll_txt00_more_residental:
-		.BYTE	$16,$18,$1B,$0E,$DF,$1B,$0E,$1C,$12,$0D,$0E,$17,$1D,$12,$0A,$15
-		.BYTE	$DF,$23,$18,$17,$0E,$1C,$DF,$17,$0E,$0E,$0D,$0E,$0D,$FF
+		.BYTE	_M,_O,_R,_E,__,_R,_E,_S,_I,_D,_E,_N,_T,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
 _scroll_txt01_more_commercial:
-		.BYTE	$16,$18,$1B,$0E,$DF,$0C,$18,$16,$16,$0E,$1B,$0C,$12,$0A,$15,$DF
-		.BYTE	$23,$18,$17,$0E,$1C,$DF,$17,$0E,$0E,$0D,$0E,$0D,$FF
+		.BYTE	_M,_O,_R,_E,__,_C,_O,_M,_M,_E,_R,_C,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
 _scroll_txt02_more_industrial:
-		.BYTE	$16,$18,$1B,$0E,$DF,$12,$17,$0D,$1E,$1C,$1D,$1B,$12,$0A,$15,$DF
-		.BYTE	$23,$18,$17,$0E,$1C,$DF,$17,$0E,$0E,$0D,$0E,$0D,$FF
+		.BYTE	_M,_O,_R,_E,__,_I,_N,_D,_U,_S,_T,_R,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
 _scroll_txt03_more_roads:
-		.BYTE	$16,$18,$1B,$0E,$DF,$1B,$18,$0A, $0D,$1C,$DF,$1B, $0E,$1A,$1E,$12
-		.BYTE	$1B,$0E,$0D,$FF
+		.BYTE	_M,_O,_R,_E,__,_R,_O,_A,_D,_S,__,_R,_E,_Q,_U,_I,_R,_E,_D,$FF
 _scroll_txt04_inadeqate_rail_system:
-		.BYTE	$12,$17,$0A,$0D,$0E,$1A,$1E,$0A,$1D,$0E,$DF,$1B,$0A,$12,$15,$DF
-		.BYTE	$1C,$22,$1C,$1D,$0E,$16,$FF
+		.BYTE	_I,_N,_A,_D,_E,_Q,_U,_A,_T,_E,__,_R,_A,_I,_L,__,_S,_Y,_S,_T,_E,_M,$FF
 _scroll_txt05_build_a_power_plant:
-		.BYTE	$0B,$1E,$12,$15,$0D,$DF,$0A,$DF,$19,$18,$20,$0E,$1B,$DF,$19,$15
-		.BYTE	$0A,$17,$1D,$FF
+		.BYTE	_B,_U,_I,_L,_D,__,_A,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
 _scroll_txt06_demand_a_stadium:
-		.BYTE	$1B,$0E,$1C,$12,$0D,$0E,$17,$1D,$1C,$DF,$0D,$0E,$16,$0A,$17,$0D
-		.BYTE	$DF,$0A,$DF,$1C,$1D,$0A,$0D,$12,$1E,$16,$FF
+		.BYTE	_R,_E,_S,_I,_D,_E,_N,_T,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_S,_T,_A,_D,_I,_U,_M,$FF
 _scroll_txt07_requires_a_sea_port:
-		.BYTE	$12,$17,$0D,$1E,$1C,$1D,$1B,$22,$DF,$1B,$0E,$1A,$1E,$12,$1B,$0E
-		.BYTE	$1C,$DF,$0A,$DF,$1C,$0E,$0A,$DF,$19,$18,$1B,$1D,$FF
+		.BYTE	_I,_N,_D,_U,_S,_T,_R,_Y,__,_R,_E,_Q,_U,_I,_R,_E,_S,__,_A,__,_S,_E,_A,__,_P,_O,_R,_T,$FF
 _scroll_txt08_requires_airport:
-		.BYTE	$0C,$18,$16,$16,$0E,$1B,$0C,$0E,$DF,$1B,$0E,$1A,$1E,$12,$1B,$0E
-		.BYTE	$1C,$DF,$0A,$17,$DF,$0A,$12,$1B,$19,$18,$1B,$1D,$FF
+		.BYTE	_C,_O,_M,_M,_E,_R,_C,_E,__,_R,_E,_Q,_U,_I,_R,_E,_S,__,_A,_N,__,_A,_I,_R,_P,_O,_R,_T,$FF
 _scroll_txt09_demand_a_fire_department:
-		.BYTE	$0C,$12,$1D,$12,$23,$0E,$17,$1C,$DF,$0D,$0E,$16,$0A,$17,$0D,$DF
-		.BYTE	$0A,$DF,$0F,$12,$1B,$0E,$DF,$0D,$0E,$19,$0A,$1B,$1D,$16,$0E,$17
-		.BYTE	$1D,$FF
+		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_F,_I,_R,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,$FF
 _scroll_txt0A_demand_a_police_department:
-		.BYTE	 $0C,$12,$1D,$12,$23,$0E,$17,$1C,$DF,$0D, $0E,$16, $0A,$17, $0D,$DF
-		.BYTE	$0A,$DF,$19,$18,$15,$12,$0C,$0E,$DF,$0D,$0E,$19,$0A,$1B,$1D,$16
-		.BYTE	$0E,$17,$1D,$FF
+		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_D,_E,_M,_A,_N,_D,__,_A,__,_P,_O,_L,_I,_C,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,$FF
 _scroll_txt0B_blackouts_reported:
-		.BYTE	 $0B,$15, $0A,$0C,$14,$18,$1E,$1D,$1C,$DF,$1B,$0E,$19,$18,$1B,$1D
-		.BYTE	$0E,$0D,$DF,$DF,$0C,$11,$0E,$0C,$14,$DF,$19,$18,$20,$0E,$1B,$DF
-		.BYTE	$16,$0A,$19,$FF
+		.BYTE	_B,_L,_A,_C,_K,_O,_U,_T,_S,__,_R,_E,_P,_O,_R,_T,_E,_D,__,__,_C,_H,_E,_C,_K,__,_P,_O,_W,_E,_R,__,_M,_A,_P,$FF
 _scroll_txt0C_tax_rate_is_too_high:
-		.BYTE	$0C,$12,$1D,$12,$23,$0E,$17,$1C,$DF,$1E,$19,$1C,$0E,$1D,$DF,$DF
-		.BYTE	$1D,$11,$0E,$DF,$1D,$0A,$21,$DF,$1B,$0A,$1D,$0E,$DF,$12,$1C,$DF
-		.BYTE	$1D,$18,$18,$DF,$11,$12,$10,$11,$FF
+		.BYTE	_C,_I,_T,_I,_Z,_E,_N,_S,__,_U,_P,_S,_E,_T,__,__,_T,_H,_E,__,_T,_A,_X,__,_R,_A,_T,_E,__,_I,_S,__,_T,_O,_O,__,_H,_I,_G,_H,$FF
 _scroll_txt0D_roads_deteriorating:
-		.BYTE	$1B,$18,$0A,$0D,$1C,$DF,$0D,$0E,$1D,$0E,$1B,$12,$18,$1B,$0A,$1D
-		.BYTE	$12,$17,$10,$DF,$DF,$0D,$1E,$0E,$DF,$1D,$18,$DF,$15,$0A,$0C,$14
-		.BYTE	$DF,$18,$0F,$DF,$0F,$1E,$17,$0D,$1C,$FF
+		.BYTE	_R,_O,_A,_D,_S,__,_D,_E,_T,_E,_R,_I,_O,_R,_A,_T,_I,_N,_G,__,__,_D,_U,_E,__,_T,_O,__,_L,_A,_C,_K,__,_O,_F,__,_F,_U,_N,_D,_S,$FF
 _scroll_txt0E_fire_department_need_funding:
-		.BYTE	$0F,$12,$1B,$0E,$DF,$0D,$0E,$19,$0A,$1B,$1D,$16,$0E,$17,$1D,$1C
-		.BYTE	$DF,$17,$0E,$0E,$0D,$DF,$0F,$1E,$17,$0D,$12,$17,$10,$FF
+		.BYTE	_F,_I,_R,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,_S,__,_N,_E,_E,_D,__,_F,_U,_N,_D,_I,_N,_G,$FF
 _scroll_txt0F_police_need_funding:
-		.BYTE	$19,$18,$15,$12,$0C,$0E,$DF,$0D,$0E,$19,$0A,$1B,$1D,$16,$0E,$17
-		.BYTE	$1D,$1C,$DF,$17,$0E,$0E,$0D,$DF,$0F,$1E,$17,$0D,$12,$17,$10,$FF
+		.BYTE	_P,_O,_L,_I,_C,_E,__,_D,_E,_P,_A,_R,_T,_M,_E,_N,_T,_S,__,_N,_E,_E,_D,__,_F,_U,_N,_D,_I,_N,_G,$FF
 _scroll_txt10_plane_crashed:
-		.BYTE	$0A,$DF,$19,$15,$0A,$17,$0E,$DF,$11,$0A,$1C,$DF,$0C,$1B,$0A,$1C
-		.BYTE	$11,$0E,$0D,$FF
+		.BYTE	_A,__,_P,_L,_A,_N,_E,__,_H,_A,_S,__,_C,_R,_A,_S,_H,_E,_D,$FF
 _scroll_txt11_shipwreck_reported:
-		.BYTE	$1C,$11,$12,$19,$20,$1B, $0E,$0C,$14,$DF,$1B,$0E,$19,$18,$1B,$1D
-		.BYTE	$0E,$0D,$FF
+		.BYTE	_S,_H,_I,_P,_W,_R,_E,_C,_K,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
 _scroll_txt12_train_crashed:
-		.BYTE	$0A,$DF,$1D,$1B,$0A,$12,$17,$DF,$0C,$1B,$0A,$1C,$11,$0E,$0D,$FF
+		.BYTE	_A,__,_T,_R,_A,_I,_N,__,_C,_R,_A,_S,_H,_E,_D,$FF
 _scroll_txt13_heli_crashed:
-		.BYTE	$0A,$DF,$11,$0E,$15,$12,$0C,$18,$19,$1D,$0E,$1B,$DF,$0C,$1B,$0A
-		.BYTE	$1C,$11,$0E,$0D,$FF
+		.BYTE	_A,__,_H,_E,_L,_I,_C,_O,_P,_T,_E,_R,__,_C,_R,_A,_S,_H,_E,_D,$FF
 _scroll_txt14_hi_unemployment_rate:
-		.BYTE	$1E,$17,$0E,$16,$19,$15,$18,$22,$16,$0E,$17,$1D,$DF,$1B,$0A,$1D
-		.BYTE	$0E,$DF,$12,$1C,$DF,$11,$12,$10,$11,$FF
+		.BYTE	_U,_N,_E,_M,_P,_L,_O,_Y,_M,_E,_N,_T,__,_R,_A,_T,_E,__,_I,_S,__,_H,_I,_G,_H,$FF
 _scroll_txt15_city_gone_broke:
-		.BYTE	$22,$18,$1E,$1B,$DF,$0C,$12,$1D,$22,$DF,$11,$0A,$1C,$DF,$10,$18
-		.BYTE	$17,$0E,$DF,$0B,$1B,$18,$14,$0E,$FF
+		.BYTE	_Y,_O,_U,_R,__,_C,_I,_T,_Y,__,_H,_A,_S,__,_G,_O,_N,_E,__,_B,_R,_O,_K,_E,$FF
 _scroll_txt16_explosion_detected:
-		.BYTE	 $0E,$21,$19,$15,$18,$1C,$12,$18,$17,$DF, $0D,$0E,$1D,$0E, $0C,$1D
-		.BYTE	$0E,$0D,$FF
+		.BYTE	_E,_X,_P,_L,_O,_S,_I,_O,_N,__,_D,_E,_T,_E,_C,_T,_E,_D,$FF
 _scroll_txt17_brownouts:
-		.BYTE	$0B,$1B,$18,$20,$17,$18,$1E,$1D,$1C,$DF,$DF,$0B,$1E,$12,$15,$0D
-		.BYTE	$DF,$0A,$17,$18,$1D,$11,$0E,$1B,$DF,$19,$18,$20,$0E,$1B,$DF,$19
-		.BYTE	$15,$0A,$17,$1D,$FF
+		.BYTE	_B,_R,_O,_W,_N,_O,_U,_T,_S,__,__,_B,_U,_I,_L,_D,__,_A,_N,_O,_T,_H,_E,_R,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
 _scroll_txt18_heavy_traffic_repotrted:
-		.BYTE	$11,$0E,$0A,$1F,$22,$DF,$1D,$1B,$0A,$0F,$0F,$12,$0C,$DF,$1B,$0E
-		.BYTE	$19,$18,$1B,$1D,$0E,$0D,$FF
+		.BYTE	_H,_E,_A,_V,_Y,__,_T,_R,_A,_F,_F,_I,_C,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
+
 
 		BANK_END F3,$C000

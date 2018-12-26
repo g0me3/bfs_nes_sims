@@ -95,7 +95,7 @@ _constr_palette_state_update:
 		STA		_tmp3
 		TAX
 loc_B80CC:
-		JSR		sub_B813E
+		JSR		_test_if_city_money_enough_to_build
 		PHP
 		ROL		_ptr0
 		ROL		_ptr0+1
@@ -154,53 +154,54 @@ loc_B8129:
 		LDA		_tmp3
 		STA		_constr_palette_flags+3
 		LDA		#$FF
-		STA		_regular_constr_palette_redraw_req
+		STA		_regular_building_name_and_cost_hud_draw_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B813E:
-		LDA		_city._money+2
+_test_if_city_money_enough_to_build:
+		LDA		_city._money+2					; more than needed
 		BNE		loc_B815D
-		TXA
+		TXA										; backup X reg
 		PHA
 		ASL
 		TAX
-		LDA		byte_B8163+1,X
+		LDA		_buildings_prices_list+1,X		; compare for cur building
 		CMP		_city._money+1
 		BCC		loc_B815B
 		BNE		loc_B815F
-		LDA		byte_B8163,X
+		LDA		_buildings_prices_list,X
 		CMP		_city._money
 		BCC		loc_B815B
 		BNE		loc_B815F
 loc_B815B:
-		PLA
+		PLA										; restore X reg
 		TAX
 loc_B815D:
-		CLC
+		CLC										; money enough C=0
 		RTS
 loc_B815F:
-		PLA
+		PLA										; restore X reg as well
 		TAX
-		SEC
+		SEC										; money not enough C=1
 		RTS
-byte_B8163:
-		.BYTE	$01,$00
-		.BYTE	$0A,$00
-		.BYTE	$05,$00
-		.BYTE	$14,$00
-		.BYTE	$0A,$00
-		.BYTE	$64,$00
-		.BYTE	$64,$00
-		.BYTE	$64,$00
-		.BYTE	$F4,$01
-		.BYTE	$F4,$01
-		.BYTE	$B8,$0B
-		.BYTE	$B8,$0B
-		.BYTE	$88,$13
-		.BYTE	$00,$00
-		.BYTE	$88,$13
-		.BYTE	$10,$27
+
+_buildings_prices_list:
+		.WORD	1
+		.WORD	10
+		.WORD	5
+		.WORD	20
+		.WORD	10
+		.WORD	100
+		.WORD	100
+		.WORD	100
+		.WORD	500
+		.WORD	500
+		.WORD	3000
+		.WORD	3000
+		.WORD	5000
+		.WORD	0
+		.WORD	5000
+		.WORD	10000
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_B8183:
@@ -966,7 +967,7 @@ _tlm_res_title_menu_default:
 		.WORD	byte_B887C
 		.WORD	byte_B89B8
 _tlm_title_header:
-		.BYTE	 $0E4,$44,$FF,$67,$02,$23,$FF,$01,$0E,$0F,$65,$80,$03,$FF,$FF,$7A
+		.BYTE	$E4,$44,$FF,$67,$02,$23,$FF,$01,$0E,$0F,$65,$80,$03,$FF,$FF,$7A
 		.BYTE	$7B,$27,$FF,$67,$12,$22,$FF,$62,$1D,$66,$90,$02,$FF,$7C,$7D,$26
 		.BYTE	$FF,$6E,$21,$69,$A0,$25,$FF,$6F,$30,$69,$B0,$25,$FF,$6F,$40,$69
 		.BYTE	$C0,$25,$FF,$6F,$50,$68,$D0,$26,$FF,$6F,$60,$67,$E0,$28,$FF,$63
@@ -1946,20 +1947,20 @@ loc_B917F:
 		LDY		#$00
 loc_B9181:
 		LDA		_ptr0
-		CMP		byte_B91C9,X
+		CMP		_hex_to_dec9999999_tbl2_1,X
 		LDA		_ptr0+1
-		SBC		byte_B91C2,X
+		SBC		_hex_to_dec9999999_tbl1_1,X
 		LDA		_tmp2
-		SBC		byte_B91BB,X
+		SBC		_hex_to_dec9999999_tbl0_1,X
 		BCC		loc_B91AA
 		LDA		_ptr0
-		SBC		byte_B91C9,X
+		SBC		_hex_to_dec9999999_tbl2_1,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		byte_B91C2,X
+		SBC		_hex_to_dec9999999_tbl1_1,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		byte_B91BB,X
+		SBC		_hex_to_dec9999999_tbl0_1,X
 		STA		_tmp2
 		INY
 		BNE		loc_B9181
@@ -1975,12 +1976,30 @@ loc_B91B1:
 		CPX		#$06
 		BNE		loc_B91B1
 		RTS
-byte_B91BB:
-		.BYTE	$00,$00,$00,$00,$01,$0F,$98
-byte_B91C2:
-		.BYTE	$00,$00,$03,$27,$86,$42,$96
-byte_B91C9:
-		.BYTE	$0A,$64,$E8,$10,$A0,$40,$80
+_hex_to_dec9999999_tbl0_1:
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+		.BYTE	[[10000000 >> 16] & $FF]; $98
+_hex_to_dec9999999_tbl1_1:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+		.BYTE	[[10000000 >> 8] & $FF] ; $96
+_hex_to_dec9999999_tbl2_1:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
 ; =============== S U B	R O U T	I N E =======================================
 _flush_wait:
@@ -2663,20 +2682,20 @@ loc_B97A7:
 		LDY		#$00
 loc_B97A9:
 		LDA		_ptr0
-		CMP		byte_B97F1,X
+		CMP		_hex_to_dec9999999_tbl2_0,X
 		LDA		_ptr0+1
-		SBC		byte_B97EA,X
+		SBC		_hex_to_dec9999999_tbl1_0,X
 		LDA		_tmp2
-		SBC		byte_B97E3,X
+		SBC		_hex_to_dec9999999_tbl0_0,X
 		BCC		loc_B97D2
 		LDA		_ptr0
-		SBC		byte_B97F1,X
+		SBC		_hex_to_dec9999999_tbl2_0,X
 		STA		_ptr0
 		LDA		_ptr0+1
-		SBC		byte_B97EA,X
+		SBC		_hex_to_dec9999999_tbl1_0,X
 		STA		_ptr0+1
 		LDA		_tmp2
-		SBC		byte_B97E3,X
+		SBC		_hex_to_dec9999999_tbl0_0,X
 		STA		_tmp2
 		INY
 		BNE		loc_B97A9
@@ -2692,12 +2711,30 @@ loc_B97D9:
 		CPX		#$06
 		BNE		loc_B97D9
 		RTS
-byte_B97E3:
-		.BYTE	$00,$00,$00,$00,$01,$0F,$98
-byte_B97EA:
-		.BYTE	$00,$00,$03,$27,$86,$42,$96
-byte_B97F1:
-		.BYTE	$0A,$64,$E8,$10,$A0,$40,$80
+_hex_to_dec9999999_tbl0_0:
+		.BYTE	[[10 >> 16] & $FF]		; $00
+		.BYTE	[[100 >> 16] & $FF]		; $00
+		.BYTE	[[1000 >> 16] & $FF]	; $00
+		.BYTE	[[10000 >> 16] & $FF]	; $00
+		.BYTE	[[100000 >> 16] & $FF]	; $01
+		.BYTE	[[1000000 >> 16] & $FF] ; $0F
+		.BYTE	[[10000000 >> 16] & $FF]; $98
+_hex_to_dec9999999_tbl1_0:
+		.BYTE	[[10 >> 8] & $FF]		; $00
+		.BYTE	[[100 >> 8] & $FF]		; $00
+		.BYTE	[[1000 >> 8] & $FF]		; $03
+		.BYTE	[[10000 >> 8] & $FF]	; $27
+		.BYTE	[[100000 >> 8] & $FF]	; $86
+		.BYTE	[[1000000 >> 8] & $FF]  ; $42
+		.BYTE	[[10000000 >> 8] & $FF] ; $96
+_hex_to_dec9999999_tbl2_0:
+		.BYTE	[[10 >> 0] & $FF]		; $0A
+		.BYTE	[[100 >> 0] & $FF]		; $64
+		.BYTE	[[1000 >> 0] & $FF]		; $E8
+		.BYTE	[[10000 >> 0] & $FF]	; $10
+		.BYTE	[[100000 >> 0] & $FF]	; $A0
+		.BYTE	[[1000000 >> 0] & $FF]  ; $40
+		.BYTE	[[10000000 >> 0] & $FF] ; $80
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_common_cursor_spr_clear:

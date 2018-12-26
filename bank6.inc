@@ -160,10 +160,10 @@ loc_A0118:
 		TAY
 		LDA		_tax_alloc,Y
 		CLC
-		ADC		word_A0388,X
+		ADC		_hex_to_dec_9999_simple_tbl,X
 		STA		_ptr0
 		LDA		_tax_alloc+1,Y
-		ADC		word_A0388+1,X
+		ADC		_hex_to_dec_9999_simple_tbl+1,X
 		STA		_ptr0+1
 		CMP		_tmp3
 		BCC		loc_A0153
@@ -189,10 +189,10 @@ loc_A015E:
 		TAY
 		LDA		_tax_alloc,Y
 		SEC
-		SBC		word_A0388,X
+		SBC		_hex_to_dec_9999_simple_tbl,X
 		STA		_ptr0
 		LDA		_tax_alloc+1,Y
-		SBC		word_A0388+1,X
+		SBC		_hex_to_dec_9999_simple_tbl+1,X
 		BCS		loc_A017A
 		LDA		#$00
 		STA		_tax_alloc,Y
@@ -508,13 +508,13 @@ _fund_reqest_vars_list:
 		.WORD	_fund_request_trans
 		.WORD	_fund_request_education
 		.WORD	0
-word_A0388:
-		.WORD	$01
+_hex_to_dec_9999_simple_tbl:
+		.WORD	1
 		.WORD	10
 		.WORD	100
 		.WORD	1000
 _screen_pal_list:
-		.BYTE	 $00,$04, $03,$02, $0B,$12, $06,$0A
+		.BYTE	$00,$04,$03,$02,$0B,$12,$06,$0A
 _screen_pal_extra_list:
 		.BYTE	$05,$05,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 byte_A03A5:

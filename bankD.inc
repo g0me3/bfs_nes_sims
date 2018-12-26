@@ -10,7 +10,7 @@ _game_state01:
 		LDA		#$3A
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		#$FF
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 		LDA		byte_3C
 		ORA		#$02
 		STA		byte_3C
@@ -20,12 +20,12 @@ loc_150019:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state09_presents_constr_palette_redraw:
+_game_state09_presents_building_name_and_cost_hud_draw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_150028
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 		LDA		#$00
-		STA		_presents_constr_palette_redraw_req
+		STA		_presents_building_name_and_cost_hud_draw_req
 loc_150028:
 		JMP		_game_state_common
 
@@ -476,7 +476,7 @@ loc_15034A:
 		JSR		sub_15035F
 		JSR		sub_150383
 		RTS
-byte_150351:
+_building_sizes_list:
 		.BYTE	$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$03,$03,$03,$03
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -510,14 +510,14 @@ sub_150383:
 		LDA		_cur_game_cursor_area
 		BEQ		loc_1503D2
 		LDY		_prev_constr_palette_press_idx
-		LDX		byte_150351,Y
+		LDX		_building_sizes_list,Y
 		CPY		#$0C
 		BNE		loc_150395
 		LDY		_cur_port_type_select_idx
 		BEQ		loc_150395
 		INX
 loc_150395:
-		STX		byte_C0
+		STX		_cur_selected_buildings_size
 		TXA
 		ASL
 		ASL
@@ -802,7 +802,7 @@ sub_150551:
 ; =============== S U B	R O U T	I N E =======================================
 sub_15055A:
 		JSR		_sram_on
-		LDX		byte_C0
+		LDX		_cur_selected_buildings_size
 		DEX
 loc_150560:
 		LDA		off_150585,X
@@ -1441,7 +1441,7 @@ sub_1509D5:
 		LDA		#$00
 		STA		byte_CE
 		STA		byte_CF
-		LDA		byte_C0
+		LDA		_cur_selected_buildings_size
 		STA		_ptr0
 loc_1509DF:
 		LDA		_cur_map_wnd_pos._X
@@ -1678,7 +1678,7 @@ sub_150BAD:
 ; =============== S U B	R O U T	I N E =======================================
 sub_150BB3:
 		LDX		_prev_constr_palette_press_idx
-		LDY		byte_150351,X
+		LDY		_building_sizes_list,X
 		DEY
 		CPX		#$0C
 		BNE		loc_150BC2
@@ -2783,9 +2783,9 @@ byte_15132F:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_regular_constr_palette_redraw_req_set:
+_regular_building_name_and_cost_hud_draw_req_set:
 		LDA		#$FF
-		STA		_regular_constr_palette_redraw_req
+		STA		_regular_building_name_and_cost_hud_draw_req
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -4057,10 +4057,10 @@ _game_hud_full_draw:
 loc_151F3B:
 		JSR		_ppu_flush_wait
 		JSR		_regular_constr_palette_draw
-		LDA		_regular_constr_palette_redraw_req
+		LDA		_regular_building_name_and_cost_hud_draw_req
 		BNE		loc_151F3B
 		JSR		_ppu_flush_wait
-		JSR		_presents_constr_palette_draw
+		JSR		_building_name_and_cost_hud_draw
 		JSR		_RCI_meters_draw
 		FJSRA	_cur_date_draw,PRG7,PRG3
 		FJSRA	_cur_money_draw,PRGC,PRG3
