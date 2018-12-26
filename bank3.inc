@@ -14,7 +14,7 @@ _game_msg_handler:
 		LDX		#$03
 		LDA		#$00
 loc_58144:
-		STA		byte_70,X
+		STA		_anim_pos_is_load,X
 		STA		byte_76,X
 		STA		byte_78,X
 		STA		byte_7A,X
@@ -738,60 +738,6 @@ loc_583FA:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_wnd_animA:
-		LDA		byte_523
-		BNE		loc_58419
-		LDX		_game_msg_idx
-		LDA		_anim_seq_cmd_list,X
-		STA		byte_523
-loc_58419:
-		CMP		#$FA
-		BEQ		locret_5846D
-		LDY		#$CF
-		LDX		_spr_buf_pos
-		LDA		#$07
-		STA		_ptr0
-loc_58425:
-		LDA		#$F4
-		STA		_spr_buf,X
-		STA		_spr_buf+4,X
-		LDA		byte_523
-		CMP		#$FC
-		BEQ		loc_58438
-		TYA
-		STA		_spr_buf,X
-loc_58438:
-		LDA		byte_523
-		CMP		#$FD
-		BEQ		loc_58443
-		TYA
-		STA		_spr_buf+4,X
-loc_58443:
-		LDA		#$BA
-		STA		_spr_buf+1,X
-		STA		_spr_buf+5,X
-		LDA		#$20
-		STA		_spr_buf+2,X
-		STA		_spr_buf+6,X
-		LDA		#$38
-		STA		_spr_buf+3,X
-		LDA		#$F8
-		STA		_spr_buf+7,X
-		TXA
-		CLC
-		ADC		#$08
-		TAX
-		TYA
-		SEC
-		SBC		#$08
-		TAY
-		DEC		_ptr0
-		BNE		loc_58425
-		STX		_spr_buf_pos
-locret_5846D:
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_clear:
 		LDA		byte_528
 		CMP		#$02
@@ -850,6 +796,60 @@ loc_58541:
 		JMP		loc_58540
 loc_5856D:
 		PPUQEND
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_game_msg_wnd_animA:
+		LDA		byte_523
+		BNE		loc_58419
+		LDX		_game_msg_idx
+		LDA		_anim_seq_cmd_list,X
+		STA		byte_523
+loc_58419:
+		CMP		#$FA
+		BEQ		locret_5846D
+		LDY		#$CF
+		LDX		_spr_buf_pos
+		LDA		#$07
+		STA		_ptr0
+loc_58425:
+		LDA		#$F4
+		STA		_spr_buf,X
+		STA		_spr_buf+4,X
+		LDA		byte_523
+		CMP		#$FC
+		BEQ		loc_58438
+		TYA
+		STA		_spr_buf,X
+loc_58438:
+		LDA		byte_523
+		CMP		#$FD
+		BEQ		loc_58443
+		TYA
+		STA		_spr_buf+4,X
+loc_58443:
+		LDA		#$BA
+		STA		_spr_buf+1,X
+		STA		_spr_buf+5,X
+		LDA		#$20
+		STA		_spr_buf+2,X
+		STA		_spr_buf+6,X
+		LDA		#$38
+		STA		_spr_buf+3,X
+		LDA		#$F8
+		STA		_spr_buf+7,X
+		TXA
+		CLC
+		ADC		#$08
+		TAX
+		TYA
+		SEC
+		SBC		#$08
+		TAY
+		DEC		_ptr0
+		BNE		loc_58425
+		STX		_spr_buf_pos
+locret_5846D:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -984,9 +984,9 @@ byte_586B2:
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_animC:
 		LDX		_game_msg_idx
-		LDA		_anim_seq_size_list,X
-		STA		byte_522
-loc_586DE:
+		LDA		_anim_seq_obj_count_list,X
+		STA		byte_522						; tmp anim obj counter
+.anim_load_loop:
 		LDX		_game_msg_idx
 		LDA		_anim_seq_lib_lo,X
 		STA		_ptr0
@@ -996,22 +996,22 @@ loc_586DE:
 		DEY
 		LDA		(_ptr0),Y
 		TAX
-		LDA		byte_70,Y
+		LDA		_anim_pos_is_load,Y
 		BEQ		loc_586FB
 		BPL		loc_58707
-		JMP		loc_5886E
+		JMP		.anim_load_next_obj
 loc_586FB:
-		LDA		_anim_param_lo,X
-		STA		byte_72,Y
-		LDA		_anim_param_hi,X
-		STA		byte_74,Y
+		LDA		_anim_pos_col_list,X
+		STA		_anim_pos_col,Y
+		LDA		_anim_pos_row_list,X
+		STA		_anim_pos_row,Y
 loc_58707:
-		LDA		byte_72,Y
+		LDA		_anim_pos_col,Y
 		STA		_spr_insert_args._pos._COL
-		LDA		byte_74,Y
+		LDA		_anim_pos_row,Y
 		STA		_spr_insert_args._pos._ROW
 		LDA		#$01
-		STA		byte_70,Y
+		STA		_anim_pos_is_load,Y
 		LDA		_anim_spr_lib_lo,X
 		STA		_ptr0
 		LDA		_anim_spr_lib_hi,X
@@ -1052,8 +1052,8 @@ loc_58760:
 		LDY		byte_522
 		DEY
 		LDA		#$FF
-		STA		byte_70,Y
-		JMP		loc_5886E
+		STA		_anim_pos_is_load,Y
+		JMP		.anim_load_next_obj
 loc_5876C:
 		CMP		#$FE
 		BNE		loc_5877E
@@ -1192,8 +1192,8 @@ loc_58837:
 		ORA		#$F0
 loc_58850:
 		CLC
-		ADC		byte_72,Y
-		STA		byte_72,Y
+		ADC		_anim_pos_col,Y
+		STA		_anim_pos_col,Y
 		TXA
 		AND		#$F0
 		LSR
@@ -1205,13 +1205,13 @@ loc_58850:
 		ORA		#$F0
 loc_58864:
 		CLC
-		ADC		byte_74,Y
-		STA		byte_74,Y
+		ADC		_anim_pos_row,Y
+		STA		_anim_pos_row,Y
 		JSR		_spr_lib_clip_insert
-loc_5886E:
+.anim_load_next_obj:
 		DEC		byte_522
 		BEQ		locret_58876
-		JMP		loc_586DE
+		JMP		.anim_load_loop
 locret_58876:
 		RTS
 

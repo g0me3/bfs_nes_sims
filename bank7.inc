@@ -3,74 +3,79 @@
 
 		BANK_START $F7
 
+		SECTION_START C03
+
 ; =============== S U B	R O U T	I N E =======================================
 _constr_palette_state_update:
 		LDA		#$00
-		STA		_ptr0
-		STA		_ptr0+1
+		STA		_tmp0
+		STA		_tmp1
 		STA		_tmp2
 		STA		_tmp3
 		TAX
-loc_B80CC:
-		JSR		_test_if_city_money_enough_to_build
+.pal_loop:
+		JSR		_test_if_city_money_enough_to_build	; C=0 if available
 		PHP
-		ROL		_ptr0
-		ROL		_ptr0+1
+		ROL		_tmp0							; shift value
+		ROL		_tmp1							; 0 - enabled, 1 - blocked
 		ROL		_tmp2
 		ROL		_tmp3
 		PLP
-		BCC		loc_B80DE
+		BCC		.pal_enabled
 		CLC
-		BCC		loc_B80E6
-loc_B80DE:
-		CPX		byte_B1
-		BNE		loc_B80E5
+		BCC		.push_activity_flag
+.pal_enabled:
+		CPX		_cur_const_palette_selected_idx	; if current icon isn't pressed
+		BNE		.push_no_active					; then push second bit 0
 		SEC
-		BCS		loc_B80E6
-loc_B80E5:
+		BCS		.push_activity_flag				; push 1 otherwise
+.push_no_active:
 		CLC
-loc_B80E6:
-		ROL		_ptr0
-		ROL		_ptr0+1
-		ROL		_tmp2
-		ROL		_tmp3
+.push_activity_flag:
+		ROL		_tmp0							; now we have pairs of bits for every
+		ROL		_tmp1							; constr button: 10 - blocked
+		ROL		_tmp2							; 00 - enabled, not pressed
+		ROL		_tmp3							; 01 - enabled, pressed
 		INX
 		CPX		#$0E
-		BCC		loc_B80CC
-		LDA		_city._presents_list
+		BCC		.pal_loop						; 14 items total, including prize ones
+		LDA		_city._presents_list			; is a special case
 		ORA		_city._presents_list+1
 		ORA		_city._presents_list+2
-		ORA		_city._presents_list+3
-		BEQ		loc_B810A
-		LDA		_ptr0
+		ORA		_city._presents_list+3			; test if any
+		BEQ		.no_prizes
+		LDA		_tmp0							; force enable the prize button
 		AND		#$FD
-		STA		_ptr0
+		STA		_tmp0
 		JMP		loc_B8110
-loc_B810A:
-		LDA		_ptr0
+.no_prizes:
+		LDA		_tmp0							; or force disable
 		ORA		#$02
-		STA		_ptr0
+		STA		_tmp0
 loc_B8110:
-		LDA		_ptr0
-		CMP		_constr_palette_flags
-		BNE		loc_B8129
-		LDA		_ptr0+1
+		LDA		_tmp0
+		CMP		_constr_palette_flags			; test with already calculated bits before
+		BNE		.pal_changed
+		LDA		_tmp1
 		CMP		_constr_palette_flags+1
-		BNE		loc_B8129
+		BNE		.pal_changed
 		LDA		_tmp2
 		CMP		_constr_palette_flags+2
-		BNE		loc_B8129
+		BNE		.pal_changed
 		LDA		_tmp3
 		CMP		_constr_palette_flags+3
-		BNE		loc_B8129
+		BNE		.pal_changed
 		RTS
-loc_B8129:
-		MOVW	_constr_palette_flags,_ptr0
+.pal_changed:
+		LDA		_tmp0							; if changed, apply settings
+		STA		_constr_palette_flags
+		LDA		_tmp1
+		STA		_constr_palette_flags+1
 		LDA		_tmp2
 		STA		_constr_palette_flags+2
 		LDA		_tmp3
 		STA		_constr_palette_flags+3
-		LDA		#$FF
+		LDA		#$FF							; set flag to update
 		STA		_regular_building_name_and_cost_hud_draw_req
 		RTS
 
@@ -118,63 +123,70 @@ loc_B815F:
 ;		.WORD	3000
 ;		.WORD	3000
 ;		.WORD	5000
-;		.WORD	0								; BUG? for some reason, Prize biulding here costs 0
-;		.WORD	5000							; maybe because to indicate that there are any in any case
-;		.WORD	10000
+;		.WORD	0								; here is some trick to be sure the prize
+;		.WORD	5000							; button won't be disabled when no money
+;		.WORD	10000							; now we disabled it because using the full table
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8183:
-		LDA		byte_C7
+; input: _cur_build_sample_tile_idx - current tile "sample" under construction cursor.
+; output: C=1    - can't build here
+;		  C=0    - success
+;		  _cur_build_store_tile_idx - index of tile to build
+;
+_get_valid_1X1_building_tile:
+		LDA		_cur_build_sample_tile_idx
 		CMP		#$90
-		BEQ		loc_B81BA
+		BEQ		.do_money_sub				; regular buldozered ground at this point
 		CMP		#$BD
-		BEQ		loc_B81C5
+		BEQ		.j_water_tile_build_select	; regular water tile
 		CMP		#$FE
-		BNE		loc_B8194
-		SEC
-		BCS		loc_B81C5
+		BEQ		.j_water_tile_build_select	; FIX
+;		BNE		loc_B8194					; special water tile HERE! still planned some
+;		SEC									; water roads! should be something special
+;		BCS		.j_water_tile_build_select	; but C=1 means nothing currently there
+; -
 loc_B8194:
 		LDA		_city._game_flags			; test autobuldozer flag
 		LSR
-		BCC		loc_B81C8
-		LDA		byte_C7
+		BCC		.no_auto_bulldoze
+		LDA		_cur_build_sample_tile_idx
 		CMP		#$B2
-		BCC		loc_B81C8
+		BCC		.no_auto_bulldoze			; can't autobulldoze any normal buildings
 		CMP		#$B5
-		BCC		loc_B81B4
+		BCC		.do_auto_bulldoze			; can autobulldoze parks or corrupted grounds
 		CMP		#$BE
-		BCC		loc_B81C8
+		BCC		.no_auto_bulldoze			; can't autobulldoze flood/pollution, other transport systems
 		CMP		#$E0
-		BCC		loc_B81B4
+		BCC		.do_auto_bulldoze			; can autobulldoze sea shores
 		CMP		#$E7
-		BCC		loc_B81C8
+		BCC		.no_auto_bulldoze			; more transport tiles
 		CMP		#$EB
-		BCS		loc_B81C8
-loc_B81B4:
-		INCW	_money_delta
-loc_B81BA:
+		BCS		.no_auto_bulldoze			; the rest of transport tiles
+.do_auto_bulldoze:
+		INCW	_cur_building_price			; yes, autobulldoze first
+.do_money_sub:
 		JSR		_money_subtract
-		BCS		locret_B81C4
+		BCS		locret_B81C4				; can't build something is low money
 		LDA		#$FF
-		STA		byte_CA
-		CLC
+		STA		_cur_build_store_tile_idx	; common flag to signal to destroy something
+		CLC									; then build a tile of the new construction
 locret_B81C4:
 		RTS
-loc_B81C5:
-		JMP		loc_B824B
-loc_B81C8:
-		LDA		_prev_constr_palette_press_idx
+.j_water_tile_build_select:
+		JMP		_water_tile_build_select
+.no_auto_bulldoze:
+		LDA		_const_palette_selected_idx
 		CMP		#$01
 		BNE		loc_B81D1
-		JMP		loc_B81DB
+		JMP		.build_ground_road_tile
 loc_B81D1:
 		CMP		#$03
 		BNE		loc_B81D8
-		JMP		loc_B8200
+		JMP		.build_ground_electro_tile
 loc_B81D8:
-		JMP		loc_B8225
-loc_B81DB:
-		LDA		byte_C7
+		JMP		.build_ground_rail_tile
+.build_ground_road_tile:
+		LDA		_cur_build_sample_tile_idx
 		CMP		#$9C
 		BNE		loc_B81E5
 		LDA		#$B8
@@ -192,12 +204,12 @@ loc_B81ED:
 loc_B81F5:
 		CMP		#$A8
 		BEQ		loc_B81FC
-		JMP		loc_B8283
+		JMP		.build_forbidden0
 loc_B81FC:
 		LDA		#$BA
 		BNE		loc_B8245
-loc_B8200:
-		LDA		byte_C7
+.build_ground_electro_tile:
+		LDA		_cur_build_sample_tile_idx
 		CMP		#$91
 		BNE		loc_B820A
 		LDA		#$B7
@@ -215,12 +227,12 @@ loc_B8212:
 loc_B821A:
 		CMP		#$A8
 		BEQ		loc_B8221
-		JMP		loc_B8283
+		JMP		.build_forbidden0
 loc_B8221:
 		LDA		#$BC
 		BNE		loc_B8245
-loc_B8225:
-		LDA		byte_C7
+.build_ground_rail_tile:
+		LDA		_cur_build_sample_tile_idx
 		CMP		#$91
 		BNE		loc_B822F
 		LDA		#$BA
@@ -237,179 +249,192 @@ loc_B8237:
 		BNE		loc_B8245
 loc_B823F:
 		CMP		#$9D
-		BNE		loc_B8283
+		BNE		.build_forbidden0
 		LDA		#$BB
 loc_B8245:
-		STA		byte_CA
+		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
 
-loc_B824B:
-		DEC		word_C1+1
-		LDY		#$B4
-		LDA		(word_C1),Y
-		PHA
+; B3 B4 B5
+; FF 00 01
+; 4B 4C 4D
+
+; =============== S U B	R O U T	I N E =======================================
+_water_tile_build_select:
+		DEC		_tmp_ptrC1+1					; get four surrounding tiles
+		LDY		#$B4							; upper, lower, left, right
+		LDA		(_tmp_ptrC1),Y
+		PHA										; push upper
 		LDY		#$FF
-		LDA		(word_C1),Y
-		TAX
-		INC		word_C1+1
+		LDA		(_tmp_ptrC1),Y
+		TAX										; X left
+		INC		_tmp_ptrC1+1
 		LDY		#$4C
-		LDA		(word_C1),Y
+		LDA		(_tmp_ptrC1),Y					; push lower
 		PHA
 		TXA
-		PHA
+		PHA										; push left
 		LDY		#$01
-		LDA		(word_C1),Y
-		PHA
-		LDA		_prev_constr_palette_press_idx
+		LDA		(_tmp_ptrC1),Y
+		PHA										; push right
+		LDA		_const_palette_selected_idx
 		CMP		#$01
-		BNE		loc_B8285
+		BNE		.no_roads_on_water				; here we build roads on water
+		PLA										; pop surrounding tiles in reverse order
+		JSR		_test_for_valid_hor_road_water_joint
+		BCS		.valid_left_road_water_joint
 		PLA
-		JSR		sub_B830D
-		BCS		loc_B82BD
+		JSR		_test_for_valid_hor_road_water_joint
+		BCS		.valid_right_road_water_joint
 		PLA
-		JSR		sub_B830D
-		BCS		loc_B82BE
+		JSR		_test_for_valid_vert_road_water_joint
+		BCS		.valid_bottom_road_water_joint
 		PLA
-		JSR		sub_B8329
-		BCS		loc_B82D2
-		PLA
-		JSR		sub_B8329
-		BCS		loc_B82D3
-loc_B8283:
+		JSR		_test_for_valid_vert_road_water_joint
+		BCS		.valid_upper_road_water_joint
+.build_forbidden0:
 		SEC
 		RTS
-loc_B8285:
+.no_roads_on_water:
 		CMP		#$03
-		BNE		loc_B82A3
+		BNE		.rails_water_joint_tests		; here we built electrics
 		PLA
-		JSR		sub_B8343
-		BCS		loc_B82E5
+		JSR		_test_for_valid_hor_electric_water_joint
+		BCS		.valid_left_electro_water_joint
 		PLA
-		JSR		sub_B8343
-		BCS		loc_B82E6
+		JSR		_test_for_valid_hor_electric_water_joint
+		BCS		.valid_right_electro_water_joint
 		PLA
-		JSR		sub_B835B
-		BCS		loc_B82F0
+		JSR		_test_for_valid_vert_electric_water_joint
+		BCS		.valid_bottom_electro_water_joint
 		PLA
-		JSR		sub_B835B
-		BCS		loc_B82F1
-		BCC		loc_B8283
-loc_B82A3:
+		JSR		_test_for_valid_vert_electric_water_joint
+		BCS		.valid_upper_electro_water_joint
+		BCC		.build_forbidden0
+.rails_water_joint_tests:
 		PLA
-		JSR		sub_B8371
-		BCS		loc_B82F9
+		JSR		_test_for_valid_hor_rail_water_joint
+		BCS		.valid_left_rail_water_joint
 		PLA
-		JSR		sub_B8371
-		BCS		loc_B82FA
+		JSR		_test_for_valid_hor_rail_water_joint
+		BCS		.valid_right_rail_water_joint
 		PLA
-		JSR		sub_B838D
-		BCS		loc_B8304
+		JSR		_test_for_valid_vert_rail_water_joint
+		BCS		.valid_bottom_rail_water_joint
 		PLA
-		JSR		sub_B838D
-		BCS		loc_B8305
-		BCC		loc_B8283
-loc_B82BD:
+		JSR		_test_for_valid_vert_rail_water_joint
+		BCS		.valid_upper_rail_water_joint
+		BCC		.build_forbidden0
+.valid_left_road_water_joint:
 		PLA
-loc_B82BE:
+.valid_right_road_water_joint:
 		PLA
 		PLA
-		LDA		byte_C7
-		CMP		#$FE
-		BNE		loc_B82CA
-		LDA		#$EB
-		BNE		loc_B82CC
-loc_B82CA:
-		LDA		#$E0
-loc_B82CC:
-		STA		byte_CA
-		JMP		_money_subtract
-
-loc_B82D2:
+; REDUNDANT: we have a lot of redundant code here because of
+; lack the actual sailable water tiles usage.
+; TODO: remove or implement it finally
+;
+;		LDA		_cur_build_sample_tile_idx		; special water no exists here,
+;		CMP		#$FE
+;		BNE		loc_B82CA
+;		LDA		#$EB
+;		BNE		loc_B82CC						; so we newer set the "bridge" roads as well
+;loc_B82CA:
+		LDA		#$E0							; let's build a regular hor road
+;loc_B82CC:
+;		STA		_cur_build_store_tile_idx
+;		JMP		_money_subtract
+		BNE		.build_store					; OPTIMIZED
+.valid_bottom_road_water_joint:
 		PLA
-loc_B82D3:
-		LDA		byte_C7
-		CMP		#$FE
-		BNE		loc_B82DD
-		LDA		#$EC
-		BNE		loc_B82DF
-loc_B82DD:
+.valid_upper_road_water_joint:
+; REDUNDANT, never used
+;		LDA		_cur_build_sample_tile_idx
+;		CMP		#$FE
+;		BNE		loc_B82DD
+;		LDA		#$EC
+;		BNE		loc_B82DF
+;loc_B82DD:
 		LDA		#$E1
-loc_B82DF:
-		STA		byte_CA
-		JMP		_money_subtract
-
-loc_B82E5:
+;loc_B82DF:
+;		STA		_cur_build_store_tile_idx
+;		JMP		_money_subtract
+		BNE		.build_store					; OPTIMIZED
+; NOTE: there is no sailable electrics or rails on water at all!
+;
+.valid_left_electro_water_joint:
 		PLA
-loc_B82E6:
+.valid_right_electro_water_joint:
 		PLA
 		PLA
 		LDA		#$E2
-		STA		byte_CA
-		JMP		_money_subtract
-
-loc_B82F0:
+;		STA		_cur_build_store_tile_idx
+;		JMP		_money_subtract
+		BNE		.build_store					; OPTIMIZED
+.valid_bottom_electro_water_joint:
 		PLA
-loc_B82F1:
+.valid_upper_electro_water_joint:
 		LDA		#$E3
-		STA		byte_CA
-		JMP		_money_subtract
-
-loc_B82F9:
+;		STA		_cur_build_store_tile_idx
+;		JMP		_money_subtract
+		BNE		.build_store					; OPTIMIZED
+.valid_left_rail_water_joint:
 		PLA
-loc_B82FA:
+.valid_right_rail_water_joint:
 		PLA
 		PLA
 		LDA		#$E4
-		STA		byte_CA
-		JMP		_money_subtract
-
-loc_B8304:
+;		STA		_cur_build_store_tile_idx
+;		JMP		_money_subtract
+		BNE		.build_store					; OPTIMIZED
+.valid_bottom_rail_water_joint:
 		PLA
-loc_B8305:
+.valid_upper_rail_water_joint:
 		LDA		#$E5
-		STA		byte_CA
+.build_store:
+		STA		_cur_build_store_tile_idx
 		JMP		_money_subtract
 
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B830D:
+_test_for_valid_hor_road_water_joint:
 		CMP		#$91
-		BCC		loc_B8325
+		BCC		.invalid_water_joint			; bulldozered ground and all other buildings
 		CMP		#$9C
-		BCC		loc_B8327
+		BCC		.valid_water_joint				; all roads here
 		CMP		#$B7
-		BEQ		loc_B8327
+		BEQ		.valid_water_joint				; hor road+rail
 		CMP		#$BA
-		BEQ		loc_B8327
+		BEQ		.valid_water_joint				; hor road+electric
 		CMP		#$E0
-		BEQ		loc_B8327
+		BEQ		.valid_water_joint				; hor road+water
 		CMP		#$EB
-		BEQ		loc_B8327
-loc_B8325:
+		BEQ		.valid_water_joint				; hor road+water copy, unused
+.invalid_water_joint:
 		CLC
 		RTS
-loc_B8327:
+.valid_water_joint:
 		SEC
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8329:
+_test_for_valid_vert_road_water_joint:
 		CMP		#$91
-		BCC		loc_B8325
+		BCC		.invalid_water_joint			; the same for vert tiles here
 		CMP		#$9C
-		BCC		loc_B8327
+		BCC		.valid_water_joint				; regular roards are valid all
 		CMP		#$B8
-		BEQ		loc_B8327
+		BEQ		.valid_water_joint
 		CMP		#$B9
-		BEQ		loc_B8327
+		BEQ		.valid_water_joint
 		CMP		#$E1
-		BEQ		loc_B8327
+		BEQ		.valid_water_joint
 		CMP		#$EC
-		BEQ		loc_B8327
-		BNE		loc_B8325
+		BEQ		.valid_water_joint
+		BNE		.invalid_water_joint
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8343:
+_test_for_valid_hor_electric_water_joint:
 		CMP		#$9C
 		BCC		loc_B8357
 		CMP		#$A7
@@ -428,7 +453,7 @@ loc_B8359:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B835B:
+_test_for_valid_vert_electric_water_joint:
 		CMP		#$9C
 		BCC		loc_B8357
 		CMP		#$A7
@@ -442,7 +467,7 @@ sub_B835B:
 		BNE		loc_B8357
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B8371:
+_test_for_valid_hor_rail_water_joint:
 		CMP		#$90
 		BCC		loc_B838B
 		CMP		#$A7
@@ -463,7 +488,7 @@ loc_B838B:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B838D:
+_test_for_valid_vert_rail_water_joint:
 		CMP		#$90
 		BCC		loc_B838B
 		CMP		#$A7
@@ -481,7 +506,7 @@ sub_B838D:
 ; =============== S U B	R O U T	I N E =======================================
 sub_B83A7:
 		LDA		#$FF
-		STA		byte_CA
+		STA		_cur_build_store_tile_idx
 		LDA		_city._game_flags
 		AND		#$10
 		BEQ		loc_B83B4
@@ -491,11 +516,11 @@ loc_B83B4:
 		LDY		#$00
 loc_B83B6:
 		STY		_ptr0
-		LDA		(word_C5),Y
+		LDA		(_tmp_ptrC5),Y
 		CMP		#$80
 		BEQ		loc_B83CA
 		TAY
-		LDA		(word_C1),Y
+		LDA		(_tmp_ptrC1),Y
 		JSR		sub_B83D0
 		LDY		_ptr0
 		INY
@@ -510,7 +535,7 @@ loc_B83CA:
 ; =============== S U B	R O U T	I N E =======================================
 sub_B83D0:
 		PHA
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$0D
 		BNE		loc_B83E1
 		LDY		_cur_present_select_idx
@@ -527,7 +552,7 @@ loc_B83E1:
 		LDA		_city._game_flags
 		LSR
 		BCC		loc_B843E
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$0D
 		BNE		loc_B8401
 		LDY		_cur_present_select_idx
@@ -537,7 +562,7 @@ loc_B83E1:
 loc_B8401:
 		PLA
 loc_B8402:
-		LDY		_prev_constr_palette_press_idx
+		LDY		_const_palette_selected_idx
 		CPY		#$04
 		BEQ		loc_B8410
 		CMP		#$A7
@@ -557,17 +582,17 @@ loc_B8410:
 		CMP		#$EB
 		BCS		loc_B843F
 loc_B8426:
-		INCW	_money_delta
+		INCW	_cur_building_price
 loc_B842C:
 		CLC
 		RTS
 loc_B842E:
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$04
 		BNE		loc_B8426
 		BEQ		loc_B843F
 loc_B8436:
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$02
 		BNE		loc_B8426
 		BEQ		loc_B843F
@@ -610,10 +635,10 @@ _money_subtract:
 		BNE		loc_B8483
 		LDA		_city._money				; subtract money with delta
 		SEC
-		SBC		_money_delta
+		SBC		_cur_building_price
 		STA		_city._money
 		LDA		_city._money+1
-		SBC		_money_delta+1
+		SBC		_cur_building_price+1
 		STA		_city._money+1
 		LDA		_city._money+2
 		SBC		#$00
@@ -624,16 +649,20 @@ loc_B8483:
 		RTS
 loc_B8485:
 		LDA		_city._money				; if exceeded, add back
-		ADC		_money_delta
+		ADC		_cur_building_price
 		STA		_city._money
 		LDA		_city._money+1
-		ADC		_money_delta+1
+		ADC		_cur_building_price+1
 		STA		_city._money+1
 		LDA		_city._money+2
 		ADC		#$00
 		STA		_city._money+2
 		SEC
 		RTS
+
+		SECTION_END C03
+
+		SECTION_START F05
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_screen:
@@ -853,7 +882,7 @@ loc_B864D:
 		STA		_tmp3
 		STA		_tmp4
 		MOVWO	_ptr0,_spr_raw_title_cursor
-		JMP		_spr_raw_send
+		JMP		_spr_raw_insert
 
 _spr_raw_title_cursor:
 		.BYTE	$00,$F4,$03,$20
@@ -868,32 +897,32 @@ _title_cursor_pos_list:
 _tlm_res_title_main:
 		.WORD	$2000
 		.BYTE	4
-		.WORD	_tlm_title_header
-		.WORD	byte_B86EB
-		.WORD	byte_B887C
-		.WORD	byte_B88B3
+		.WORD	_tlm_rle_title_header0
+		.WORD	_tlm_rle_title1
+		.WORD	_tlm_rle_title2
+		.WORD	_tlm_rle_title3
 _tlm_res_title_menu_continue:
 		.WORD	$2000
 		.BYTE	4
-		.WORD	_tlm_title_header
-		.WORD	byte_B8793
-		.WORD	byte_B887C
-		.WORD	byte_B8976
+		.WORD	_tlm_rle_title_header0
+		.WORD	_tlm_rle_title1A
+		.WORD	_tlm_rle_title2
+		.WORD	_tlm_rle_title3A
 _tlm_res_title_menu_default:
 		.WORD	$2000
 		.BYTE	4
-		.WORD	_tlm_title_header
-		.WORD	byte_B87F6
-		.WORD	byte_B887C
-		.WORD	byte_B89B8
-_tlm_title_header:
+		.WORD	_tlm_rle_title_header0
+		.WORD	_tlm_rle_title1B
+		.WORD	_tlm_rle_title2
+		.WORD	_tlm_rle_title3B
+_tlm_rle_title_header0:
 		.BYTE	$E4,$44,$FF,$67,$02,$23,$FF,$01,$0E,$0F,$65,$80,$03,$FF,$FF,$7A
 		.BYTE	$7B,$27,$FF,$67,$12,$22,$FF,$62,$1D,$66,$90,$02,$FF,$7C,$7D,$26
 		.BYTE	$FF,$6E,$21,$69,$A0,$25,$FF,$6F,$30,$69,$B0,$25,$FF,$6F,$40,$69
 		.BYTE	$C0,$25,$FF,$6F,$50,$68,$D0,$26,$FF,$6F,$60,$67,$E0,$28,$FF,$63
 		.BYTE	$71,$2F,$FF,$62,$F5,$3B,$FF,$63,$8B,$3C,$FF,$01,$9C,$9D,$25,$FF
 		.BYTE	$FF
-byte_B86EB:
+_tlm_rle_title1:
 		.BYTE	$2F,$FF,$00,$9E,$83,$00,$0D,$27,$FF,$00,$04,$2A,$FF,$64,$00,$02
 		.BYTE	$FF,$9F,$AB,$62,$BA,$00,$AA,$63,$AC,$64,$CB,$8A,$00,$1A,$64,$09
 		.BYTE	$03,$FF,$9F,$AA,$AC,$62,$BD,$66,$D9,$2C,$FF,$65,$19,$00,$FF,$66
@@ -905,7 +934,7 @@ byte_B86EB:
 		.BYTE	$00,$FF,$64,$66,$01,$FF,$FF,$72,$6D,$7F,$70,$7F,$80,$7F,$90,$7F
 		.BYTE	$A0,$7F,$B0,$7F,$C0,$7F,$D0,$72,$E0,$23,$FF,$03,$F7,$F8,$FF,$FF
 		.BYTE	$64,$FB,$6D,$F0,$E4,$41,$FF,$FF
-byte_B8793:
+_tlm_rle_title1A:
 		.BYTE	$E4,$6A,$FF,$07,$8E,$AD,$AC,$C1,$AB,$C2,$C1,$AF,$37,$FF,$07,$9E
 		.BYTE	$BD,$BC,$D1,$BB,$D2,$D1,$BF,$E4,$54,$FF,$63,$AA,$09,$AB,$FF,$AE
 		.BYTE	$AF,$C0,$FF,$C1,$C2,$AB,$7B,$31,$FF,$63,$BA,$09,$BB,$FF,$BE,$BF
@@ -913,7 +942,7 @@ byte_B8793:
 		.BYTE	$C9,$AF,$C1,$AB,$FF,$AA,$C1,$AF,$8C,$AC,$AD,$C2,$8D,$30,$FF,$0E
 		.BYTE	$BA,$BF,$D9,$BF,$D1,$BB,$FF,$BA,$D1,$BF,$9C,$BC,$BD,$D2,$9D,$E4
 		.BYTE	$E8,$FF,$FF
-byte_B87F6:
+_tlm_rle_title1B:
 		.BYTE	$E4,$26,$FF,$01,$C3,$AF,$62,$C4,$0B,$AF,$FF,$AA,$AC,$C7,$AF,$C8
 		.BYTE	$FF,$C1,$C2,$AB,$7B,$2E,$FF,$01,$D3,$BF,$62,$D4,$0B,$BF,$FF,$BA
 		.BYTE	$BC,$D7,$BF,$D8,$FF,$D1,$D2,$BB,$8B,$3E,$FF,$00,$9B,$E4,$32,$FF
@@ -923,12 +952,12 @@ byte_B87F6:
 		.BYTE	$0E,$AA,$AF,$C9,$AF,$C1,$AB,$FF,$AA,$C1,$AF,$8C,$AC,$AD,$C2,$8D
 		.BYTE	$30,$FF,$0E,$BA,$BF,$D9,$BF,$D1,$BB,$FF,$BA,$D1,$BF,$9C,$BC,$BD
 		.BYTE	$D2,$9D,$E4,$A8,$FF,$FF
-byte_B887C:
+_tlm_rle_title2:
 		.BYTE	$E4,$50,$14,$27,$54,$03,$14,$14,$94,$94,$32,$14,$29,$54,$9F,$00
 		.BYTE	$5A,$02,$54,$54,$54,$32,$14,$9F,$00,$90,$F0,$2B,$00,$90,$33,$14
 		.BYTE	$9E,$00,$F1,$08,$14,$14,$14,$14,$14,$14,$14,$14,$14,$9F,$01,$18
 		.BYTE	$F0,$21,$01,$18,$25,$14,$FF
-byte_B88B3:
+_tlm_rle_title3:
 		.BYTE	$2F,$14,$00,$D4,$83,$00,$0D,$27,$14,$00,$D7,$2A,$14,$24,$D7,$00
 		.BYTE	$14,$2E,$D4,$03,$14,$14,$14,$D7,$99,$00,$22,$0D,$14,$14,$14,$14
 		.BYTE	$14,$14,$14,$14,$14,$14,$14,$14,$14,$D7,$94,$00,$29,$00,$D4,$8F
@@ -942,18 +971,22 @@ byte_B88B3:
 		.BYTE	$01,$69,$2B,$97,$02,$96,$96,$96,$85,$01,$36,$26,$96,$92,$01,$40
 		.BYTE	$01,$D6,$D6,$8D,$01,$B5,$85,$00,$25,$01,$14,$14,$92,$02,$0B,$E4
 		.BYTE	$41,$14,$FF
-byte_B8976:
+_tlm_rle_title3A:
 		.BYTE	$E4,$6A,$14,$00,$81,$26,$80,$37,$14,$9F,$00,$6B,$E4,$3C,$14,$85
 		.BYTE	$00,$6E,$83,$00,$70,$22,$80,$00,$81,$31,$14,$9F,$00,$E8,$0C,$14
 		.BYTE	$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$14,$9F,$01,$15,$32
 		.BYTE	$14,$00,$80,$88,$00,$E8,$00,$81,$94,$00,$F2,$9F,$01,$68,$E4,$D7
 		.BYTE	$14,$FF
-byte_B89B8:
+_tlm_rle_title3B:
 		.BYTE	$E4,$26,$14,$25,$80,$85,$00,$26,$83,$00,$26,$00,$81,$9F,$00,$18
 		.BYTE	$3E,$14,$9F,$00,$57,$33,$14,$00,$81,$26,$80,$37,$14,$9F,$00,$AB
 		.BYTE	$E4,$3C,$14,$05,$80,$80,$80,$80,$80,$14,$99,$00,$50,$9F,$01,$28
 		.BYTE	$F0,$3F,$00,$6A,$89,$00,$27,$00,$81,$94,$00,$54,$9F,$01,$A8,$E4
 		.BYTE	$97,$14,$FF
+
+		SECTION_END F05
+
+		SECTION_START 903
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl6_A_bank_draw:
@@ -1051,38 +1084,40 @@ loc_B8AA2:
 locret_B8AA7:
 		RTS
 
+; REDUNDANT, two copies of the same routine here
+;
 ; =============== S U B	R O U T	I N E =======================================
-_spr_raw_send:
-		LDX		_spr_buf_pos
-		LDY		#$00
-loc_B8AAC:
-		LDA		(_ptr0),Y
-		CMP		#$FF
-		BEQ		loc_B8AD6
-		CLC
-		ADC		_tmp2
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_ptr0),Y
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_ptr0),Y
-		ORA		_tmp3
-		STA		_spr_buf,X
-		INX
-		INY
-		LDA		(_ptr0),Y
-		CLC
-		ADC		_tmp4
-		STA		_spr_buf,X
-		INX
-		INY
-		BNE		loc_B8AAC
-loc_B8AD6:
-		STX		_spr_buf_pos
-		RTS
+;_spr_raw_insert:
+;		LDX		_spr_buf_pos
+;		LDY		#$00
+;loc_B8AAC:
+;		LDA		(_ptr0),Y
+;		CMP		#$FF
+;		BEQ		loc_B8AD6
+;		CLC
+;		ADC		_tmp2
+;		STA		_spr_buf,X
+;		INX
+;		INY
+;		LDA		(_ptr0),Y
+;		STA		_spr_buf,X
+;		INX
+;		INY
+;		LDA		(_ptr0),Y
+;		ORA		_tmp3
+;		STA		_spr_buf,X
+;		INX
+;		INY
+;		LDA		(_ptr0),Y
+;		CLC
+;		ADC		_tmp4
+;		STA		_spr_buf,X
+;		INX
+;		INY
+;		BNE		loc_B8AAC
+;loc_B8AD6:
+;		STX		_spr_buf_pos
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub3_loan_done_init:
@@ -1158,10 +1193,11 @@ sub_B8B92:
 		LDA		_tmp118+4
 		BNE		loc_B8BAA
 		MOVWO	_ptr0,byte_B8BB5
-		JMP		_spr_raw_send
+		JMP		_spr_raw_insert
 loc_B8BAA:
 		MOVWO	_ptr0,byte_B8BD6
-		JMP		_spr_raw_send
+		JMP		_spr_raw_insert
+
 byte_B8BB5:
 		.BYTE	$CF,$D0,$02,$88
 		.BYTE	$CF,$D1,$02,$90
@@ -1320,11 +1356,11 @@ _bank_scr_common_spr_draw:
 loc_B8D1F:
 		STX		_tmp3
 		MOVWO	_ptr0,byte_B8D5C
-		JSR		_spr_raw_send
+		JSR		_spr_raw_insert
 		LDA		#$00
 		STA		_tmp3
 		MOVWO	_ptr0,byte_B8D75
-		JSR		_spr_raw_send
+		JSR		_spr_raw_insert
 		LDA		_tmp2
 		CMP		#$47
 		BCS		loc_B8D51
@@ -2214,6 +2250,8 @@ _info_maps_spr_arrows_draw:
 		STA		_tmp3
 		MOVWO	_ptr0,_spr_map_info_arrows
 
+; !FALLTHROUGH!
+
 ; =============== S U B	R O U T	I N E =======================================
 _spr_raw_insert:
 		LDY		#$00
@@ -2670,5 +2708,7 @@ loc_B97D9:
 ;		.BYTE	[[100000 >> 0] & $FF]	; $A0
 ;		.BYTE	[[1000000 >> 0] & $FF]  ; $40
 ;		.BYTE	[[10000000 >> 0] & $FF] ; $80
+
+		SECTION_END 903
 
 		BANK_END F7,$A000

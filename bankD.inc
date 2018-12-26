@@ -15,12 +15,12 @@ loc_15012B:
 		STA		_tmp_tile_pos._COL
 		LDA		_cur_map_wnd_pos._ROW
 		CLC
-		ADC		byte_72
+		ADC		_anim_pos_col
 		STA		_tmp_tile_pos._ROW
 		JSR		sub_150262
 		LDA		_cur_screen_tile._COL
 		LSR
-		STA		byte_74
+		STA		_anim_pos_row
 		CIADDB	byte_75,_cur_screen_tile._ROW,byte_73,NONE,#$1E
 		JSR		_buf_pos_calc_74_75_77
 		LDA		_cur_screen_tile._COL
@@ -72,14 +72,14 @@ loc_1501BF:
 loc_1501C5:
 		LDA		_cur_map_wnd_pos._COL
 		CLC
-		ADC		byte_72
+		ADC		_anim_pos_col
 		STA		_tmp_tile_pos._COL
 		LDA		_cur_map_wnd_pos._ROW
 		SEC
 		SBC		#$07
 		STA		_tmp_tile_pos._ROW
 		JSR		sub_150282
-		CIADDB	byte_74,_cur_screen_tile._COL,byte_73,NONE,#$20
+		CIADDB	_anim_pos_row,_cur_screen_tile._COL,byte_73,NONE,#$20
 		LDA		#$00
 		STA		byte_75
 		JSR		_buf_pos_calc_74_75_77
@@ -183,7 +183,7 @@ loc_150288:
 
 ; =============== S U B	R O U T	I N E =======================================
 _buf_pos_calc_74_75_77:
-		BUFPOS	byte_77,byte_74,byte_75,#$20,#$20	; DST=(byte_75*#$20+byte_74)+#$2000
+		BUFPOS	byte_77,_anim_pos_row,byte_75,#$20,#$20	; DST=(byte_75*#$20+_anim_pos_row)+#$2000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -312,7 +312,7 @@ loc_15037E:
 sub_150383:
 		LDA		_cur_game_cursor_area
 		BEQ		loc_1503D2
-		LDY		_prev_constr_palette_press_idx
+		LDY		_const_palette_selected_idx
 		LDX		_building_sizes_list,Y
 		CPY		#$0C
 		BNE		loc_150395
@@ -441,7 +441,7 @@ loc_150425:
 		LSR
 		LSR
 		ORA		_ptr0
-		STA		_cur_const_palette_press_idx
+		STA		_const_palette_press_idx
 		CLC
 		RTS
 loc_150450:
@@ -450,7 +450,7 @@ loc_150450:
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_build_year_init:
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$0D
 		BNE		locret_150474
 		LDX		_cur_present_select_idx
@@ -471,7 +471,7 @@ locret_150474:
 
 ; =============== S U B	R O U T	I N E =======================================
 _present_remove_from_list:
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$0D
 		BEQ		loc_15047C
 		RTS
@@ -492,61 +492,69 @@ loc_150492:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150498:
-		LDA		_prev_constr_palette_press_idx
+_get_cur_building_price:
+		LDA		_const_palette_selected_idx		; power station choosen?
 		CMP		#$0B
 		BNE		loc_1504A6
-		LDX		_cur_power_type_select_idx
+		LDX		_cur_power_type_select_idx		; test additionally for its type
 		BEQ		loc_1504B2
 		LDA		#$0E
-		BNE		loc_1504BF
+		BNE		loc_1504BF						; nuke has index E in prices list
 loc_1504A6:
 		CMP		#$0C
-		BNE		loc_1504B2
+		BNE		loc_1504B2						; the same for airports
 		LDX		_cur_port_type_select_idx
 		BEQ		loc_1504B2
-		LDA		#$0F
-		BNE		loc_1504BF
+		LDA		#$0F							; extra port has index F
+;		BNE		loc_1504BF
 loc_1504B2:
-		CMP		#$0D
-		BNE		loc_1504BF
-		LDY		_cur_present_select_idx
-		LDX		_city._presents_list,Y
-		LDA		_presents_cost_idx_list,X
+;		CMP		#$0D							; REDUNDANT
+;		BNE		loc_1504BF						; special prizes list seems planned to
+;		LDY		_cur_present_select_idx			; have different prices, but currently
+;		LDX		_city._presents_list,Y			; exactly the same 100
+;		LDA		_presents_cost_idx_list,X
 loc_1504BF:
-		ASL
+		ASL										; fetch price
 		TAX
 		LDA		_buildings_prices_list,X
-		STA		_money_delta
+		STA		_cur_building_price
 		INX
 		LDA		_buildings_prices_list,X
-		STA		_money_delta+1
+		STA		_cur_building_price+1
 		RTS
 
-_presents_cost_idx_list:
-		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D
+; REDUNDANT
+;_presents_cost_idx_list:
+;		.BYTE	$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D,$0D
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_1504FD:
+; no input, calc from cur construction palette button and selected buildings
+; type current position of the construction cursor on the map, take the
+; "sample" at this location, as well as loads the current building scheme list
+;
+; output: _tmp_ptrC1 - cur map ptr
+;		  _cur_build_sample_tile_idx    - cur map tile sample
+;
+_get_cur_constr_cursor_map_tile:
 		JSR		_get_cur_constr_cursor_map_ofs
-		JSR		sub_150BB3
+		JSR		_get_cur_building_scheme_ptr
 		LDY		#$00
-		LDA		(word_C1),Y
-		STA		byte_C7
+		LDA		(_tmp_ptrC1),Y
+		STA		_cur_build_sample_tile_idx
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_15050A:
 		JSR		_sram_on
-		LDA		byte_CA
+		LDA		_cur_build_store_tile_idx
 		CMP		#$FF
 		BNE		loc_150549
 		JSR		sub_150A4A
 		LDY		#$00
 loc_150518:
-		LDA		(word_C3),Y
+		LDA		(_tmp_ptrC3),Y
 		BMI		loc_150531
-		LDX		_prev_constr_palette_press_idx
+		LDX		_const_palette_selected_idx
 		CPX		#$0B
 		BNE		loc_150527
 		CLC
@@ -563,10 +571,10 @@ loc_150531:
 		BEQ		loc_150545
 		STY		_ptr0
 		STA		_ptr0+1
-		LDA		(word_C5),Y
+		LDA		(_tmp_ptrC5),Y
 		TAY
 		LDA		_ptr0+1
-		STA		(word_C1),Y
+		STA		(_tmp_ptrC1),Y
 		LDY		_ptr0
 		INY
 		BNE		loc_150518
@@ -575,7 +583,7 @@ loc_150545:
 
 loc_150549:
 		LDY		#$00
-		STA		(word_C1),Y
+		STA		(_tmp_ptrC1),Y
 		JMP		_sram_off
 
 
@@ -1081,17 +1089,17 @@ sub_1508BC:
 		JSR		sub_1508E6
 		JSR		sub_15096E
 		BCS		locret_1508E5
-		JSR		sub_150BAD
+		JSR		_get_building_scheme_ex
 		JSR		_sram_on
 		LDY		#$00
 loc_1508CF:
 		STY		_ptr0
-		LDA		(word_C5),Y
+		LDA		(_tmp_ptrC5),Y
 		CMP		#$80
 		BEQ		loc_1508E1
 		TAY
 		LDA		byte_CB
-		STA		(word_C1),Y
+		STA		(_tmp_ptrC1),Y
 		LDY		_ptr0
 		INY
 		BNE		loc_1508CF
@@ -1107,7 +1115,7 @@ sub_1508E6:
 		STA		byte_CE
 		STA		byte_CF
 		LDY		#$00
-		LDA		(word_C1),Y
+		LDA		(_tmp_ptrC1),Y
 		BPL		loc_150918
 		CMP		#$90
 		BCS		loc_150918
@@ -1120,14 +1128,14 @@ sub_1508E6:
 		STA		byte_CF
 		LDA		_special_tiles_ofs_list,X
 		STA		_ptr0
-		LDA		word_C1
+		LDA		_tmp_ptrC1
 		SEC
 		SBC		_ptr0
-		STA		word_C1
-		LDA		word_C1+1
+		STA		_tmp_ptrC1
+		LDA		_tmp_ptrC1+1
 		SBC		#$00
-		STA		word_C1+1
-		LDA		(word_C1),Y
+		STA		_tmp_ptrC1+1
+		LDA		(_tmp_ptrC1),Y
 loc_150918:
 		LDX		#$01
 		STA		byte_CB
@@ -1147,9 +1155,9 @@ loc_150930:
 		STX		byte_CC
 		DEX
 		LDA		byte_15096A,X
-		STA		_money_delta
+		STA		_cur_building_price
 		LDA		#$00
-		STA		_money_delta+1
+		STA		_cur_building_price+1
 		RTS
 ; REDUNDANT
 ;_special_tiles_ofs_list:
@@ -1275,33 +1283,33 @@ loc_150A15:
 
 ; =============== S U B	R O U T	I N E =======================================
 _get_cur_constr_cursor_map_ofs:
-		LDA		_cur_map_wnd_pos._COL
+		LDA		_cur_map_wnd_pos._COL			; map pos + const cursor pos = map pos
 		CLC
 		ADC		_constr_cursor_tile._COL
 		STA		_cur_constr_cursor_map_pos._COL
 		LDA		_cur_map_wnd_pos._ROW
 		CLC
 		ADC		_constr_cursor_tile._ROW
-		STA		_cur_constr_cursor_map_pos._ROW
+		STA		_cur_constr_cursor_map_pos._ROW	; map pos row + map pos col * $4C = map ofs
 		LDX		#$4C
 		MULXA
 		CLC
 		ADC		_cur_constr_cursor_map_pos._COL
-		STA		word_C1
+		STA		_tmp_ptrC1
 		TXA
-		ADC		#>[_wram_map_buf]
-		STA		word_C1+1
+		ADC		#>[_wram_map_buf]				; map ofs + map buf start = map ptr
+		STA		_tmp_ptrC1+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_150A4A:
-		LDX		_prev_constr_palette_press_idx
+		LDX		_const_palette_selected_idx
 		CPX		#$0D
 		BNE		loc_150A5C
 		LDX		_cur_present_select_idx
 		LDA		_city._presents_list,X
 		CLC
-		ADC		_prev_constr_palette_press_idx
+		ADC		_const_palette_selected_idx
 		TAX
 		BNE		loc_150A70
 loc_150A5C:
@@ -1318,9 +1326,9 @@ loc_150A66:
 		LDX		#$0D
 loc_150A70:
 		LDA		off_150A8B,X
-		STA		word_C3
+		STA		_tmp_ptrC3
 		LDA		off_150AA8,X
-		STA		word_C3+1
+		STA		_tmp_ptrC3+1
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1458,44 +1466,49 @@ byte_150BA3:
 		.BYTE	$7E,$80,$81,$82,$83,$84,$85,$86,$87,$DF
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150BAD:
+_get_building_scheme_ex:
 		LDY		byte_CC
 		DEY
-		JMP		loc_150BC2
+		JMP		_get_building_scheme_ptr
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_150BB3:
-		LDX		_prev_constr_palette_press_idx
+_get_cur_building_scheme_ptr:
+		LDX		_const_palette_selected_idx
 		LDY		_building_sizes_list,X
 		DEY
 		CPX		#$0C
-		BNE		loc_150BC2
+		BNE		_get_building_scheme_ptr
 		LDA		_cur_port_type_select_idx
-		BEQ		loc_150BC2
+		BEQ		_get_building_scheme_ptr
 		INY
-loc_150BC2:
-		LDA		off_150BCD,Y
-		STA		word_C5
-		LDA		off_150BD1,Y
-		STA		word_C5+1
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+_get_building_scheme_ptr:
+		LDA		_build_schemes_lib_lo,Y
+		STA		_tmp_ptrC5
+		LDA		_build_schemes_lib_hi,Y
+		STA		_tmp_ptrC5+1
 		RTS
-off_150BCD:
-		.BYTE	<[byte_150BD5]
-		.BYTE	<[byte_150BD7]
-		.BYTE	<[byte_150BDC]
-		.BYTE	<[byte_150BE6]
-off_150BD1:
-		.BYTE	>[byte_150BD5]
-		.BYTE	>[byte_150BD7]
-		.BYTE	>[byte_150BDC]
-		.BYTE	>[byte_150BE6]
-byte_150BD5:
+
+_build_schemes_lib_lo:
+		.BYTE	<[_build_scheme_1_1]
+		.BYTE	<[_build_scheme_2_2]
+		.BYTE	<[_build_scheme_3_3]
+		.BYTE	<[_build_scheme_4_4]
+_build_schemes_lib_hi:
+		.BYTE	>[_build_scheme_1_1]
+		.BYTE	>[_build_scheme_2_2]
+		.BYTE	>[_build_scheme_3_3]
+		.BYTE	>[_build_scheme_4_4]
+_build_scheme_1_1:
 		.BYTE	$00,$80
-byte_150BD7:
+_build_scheme_2_2:
 		.BYTE	$00,$4C,$4D,$01,$80
-byte_150BDC:
+_build_scheme_3_3:
 		.BYTE	$00,$4C,$4D,$01,$98,$99,$9A,$4E,$02,$80
-byte_150BE6:
+_build_scheme_4_4:
 		.BYTE	$00,$4C,$4D,$01,$98,$99,$9A,$4E,$02,$E4,$E5,$E6,$E7,$9B,$4F,$03
 		.BYTE	$80
 

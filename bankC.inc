@@ -31,7 +31,7 @@ loc_13601B:
 		.WORD	_game_state05_regular_building_name_and_cost_hud_draw
 		.WORD	_game_state06_game_hud_redraw
 		.WORD	_game_state07
-		.WORD	_game_state08
+		.WORD	_game_state08_build
 		.WORD	_game_state09_presents_building_name_and_cost_hud_draw
 		.WORD	_game_state0A_power_build_menu
 		.WORD	_game_state0B_gui_ctrl_menu
@@ -139,7 +139,7 @@ loc_136105:
 		JSR		_scroll_msg_reset
 		JMP		_game_state_common
 loc_136128:
-		LDA		byte_70
+		LDA		_anim_pos_is_load
 		AND		#$03
 		BEQ		loc_13614A
 		LSR
@@ -158,7 +158,7 @@ loc_13613F:
 		STA		_cur_screen_tile._COL
 		JMP		loc_13616A
 loc_13614A:
-		LDA		byte_70
+		LDA		_anim_pos_is_load
 		AND		#$0C
 		BEQ		loc_13616A
 		AND		#$04
@@ -177,7 +177,7 @@ loc_136162:
 		STA		_cur_screen_tile._ROW
 loc_13616A:
 		LDA		#$00
-		STA		byte_70
+		STA		_anim_pos_is_load
 		JMP		_game_state_common
 loc_136171:
 		LDA		_pad0_held
@@ -190,7 +190,7 @@ loc_13617C:
 loc_13617F:
 		LDA		_pad0_held
 		AND		#$0F
-		STA		byte_70
+		STA		_anim_pos_is_load
 		AND		#$03
 		BEQ		loc_1361EA
 		LSR
@@ -212,7 +212,7 @@ loc_1361A4:
 		LDA		#$FF
 		STA		byte_71
 		LDA		#$F8
-		STA		byte_72
+		STA		_anim_pos_col
 		LDA		#$1F
 		STA		byte_73
 		JSR		sub_150124
@@ -238,7 +238,7 @@ loc_1361D4:
 		LDA		#$FF
 		STA		byte_71
 		LDA		#$19
-		STA		byte_72
+		STA		_anim_pos_col
 		LDA		#$00
 		STA		byte_73
 		JSR		sub_150124
@@ -271,7 +271,7 @@ loc_13620D:
 		LDA		#$00
 		STA		byte_71
 		LDA		#$F8
-		STA		byte_72
+		STA		_anim_pos_col
 		LDA		#$16
 		STA		byte_73
 		JSR		sub_150124
@@ -297,7 +297,7 @@ loc_13623D:
 		LDA		#$00
 		STA		byte_71
 		LDA		#$15
-		STA		byte_72
+		STA		_anim_pos_col
 		LDA		#$15
 		STA		byte_73
 		JSR		sub_150124
@@ -324,14 +324,14 @@ _game_state07:
 		STA		_game_msg_wnd_active_flag
 		JMP		_game_state_common
 loc_13626D:
-		PUSHB	_cur_const_palette_press_idx
+		PUSHB	_const_palette_press_idx
 		JSR		_is_constr_palette_item_active
 		PLA
 		BCS		_j_apu_se_error
-		CMP		_prev_constr_palette_press_idx
+		CMP		_const_palette_selected_idx
 		BEQ		sub_1362C0
-		STA		byte_B1
-		STA		_prev_constr_palette_press_idx
+		STA		_cur_const_palette_selected_idx
+		STA		_const_palette_selected_idx
 		TAX
 		JSR		_apu_se_consrt_palette_click
 		LDA		_cur_game_cursor_scr_pos._COL
@@ -420,33 +420,33 @@ _palette_activity_flags:
 		.BYTE	$00,$02
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state08:
+_game_state08_build:
 		LDA		byte_5C
 		BEQ		loc_136325
 		JMP		_game_state_common
 loc_136325:
-		LDA		_prev_constr_palette_press_idx
-		BNE		loc_13632C
-		JMP		loc_1363F8
-loc_13632C:
+		LDA		_const_palette_selected_idx
+		BNE		.other_builds
+		JMP		_bulldoze_area
+.other_builds:
 		CMP		#$04
-		BEQ		loc_136375
-		BCS		loc_1363AE
-		LDA		_pad0_held
-		CMP		_pad0_prev_held
-		BNE		loc_136346
+		BEQ		_garden_area
+		BCS		.large_buildings
+		LDA		_pad0_held						; here we start to build 1-tile
+		CMP		_pad0_prev_held					; areas - roads, rails, electrics
+		BNE		.something_changed				; buttons changes, test if we need to do something
 		LDA		_constr_cursor_tile._COL
 		CMP		_prev_constr_cursor_tile._COL
-		BNE		loc_136346
+		BNE		.something_changed				; as well as cursor position changed
 		LDA		_constr_cursor_tile._ROW
 		CMP		_prev_constr_cursor_tile._ROW
-		BEQ		loc_13636F
-loc_136346:
-		JSR		sub_150498
-		JSR		sub_1504FD
-		FJSRA	sub_B8183,PRG7,PRGD
+		BEQ		.no_changes
+.something_changed:
+		JSR		_get_cur_building_price
+		JSR		_get_cur_constr_cursor_map_tile
+		FJSRA	_get_valid_1X1_building_tile,PRG7,PRGD
 		BCC		loc_136358
-		JMP		loc_1363EF
+		JMP		.cant_build_anything_beep
 loc_136358:
 		JSR		sub_15050A
 		JSR		sub_15055A
@@ -457,10 +457,12 @@ loc_136358:
 		STA		_prev_constr_cursor_tile._COL
 		LDA		_constr_cursor_tile._ROW
 		JSR		_apu_se_small_build
-loc_13636F:
+.no_changes:
 		JSR		_save_constr_cursor_pos
 		JMP		_game_state_common
-loc_136375:
+
+; =============== S U B	R O U T	I N E =======================================
+_garden_area:
 		LDA		_pad0_held
 		CMP		_pad0_prev_held
 		BNE		loc_136389
@@ -469,12 +471,12 @@ loc_136375:
 		BNE		loc_136389
 		LDA		_constr_cursor_tile._ROW
 		CMP		_prev_constr_cursor_tile._ROW
-		BEQ		loc_13636F
+		BEQ		.no_changes
 loc_136389:
-		JSR		sub_150498
-		JSR		sub_1504FD
+		JSR		_get_cur_building_price
+		JSR		_get_cur_constr_cursor_map_tile
 		FJSRA	sub_B83A7,PRG7,PRGD
-		BCS		loc_1363EF
+		BCS		.cant_build_anything_beep
 		JSR		sub_15050A
 		JSR		sub_15055A
 		JSR		sub_1509D5
@@ -483,20 +485,20 @@ loc_136389:
 		JSR		_apu_se_small_build
 		JSR		_save_constr_cursor_pos
 		JMP		_game_state_common
-loc_1363AE:
+.large_buildings:
 		LDA		_pad0_autorep_press
 		BPL		loc_1363F5
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$0D
 		BNE		loc_1363BE
 		LDA		_constr_palette_flags
 		AND		#$02
-		BNE		loc_1363EF
+		BNE		.cant_build_anything_beep
 loc_1363BE:
-		JSR		sub_150498
-		JSR		sub_1504FD
+		JSR		_get_cur_building_price
+		JSR		_get_cur_constr_cursor_map_tile
 		FJSRA	sub_B83A7,PRG7,PRGD
-		BCS		loc_1363EF
+		BCS		.cant_build_anything_beep
 		JSR		sub_15050A
 		JSR		sub_15055A
 		JSR		sub_1509D5
@@ -505,19 +507,21 @@ loc_1363BE:
 		JSR		_apu_se_large_build
 		JSR		_bank_build_year_init
 		JSR		_present_remove_from_list
-		LDA		_prev_constr_palette_press_idx
+		LDA		_const_palette_selected_idx
 		CMP		#$0D
 		BNE		loc_1363F5
 		LDA		#$FF
 		STA		_presents_building_name_and_cost_hud_draw_req
 		BNE		loc_1363F5
-loc_1363EF:
+.cant_build_anything_beep:
 		JSR		_save_constr_cursor_pos
 		JSR		_apu_se_error
 loc_1363F5:
 		JMP		_game_state_common
-loc_1363F8:
-		JSR		sub_150498
+
+; =============== S U B	R O U T	I N E =======================================
+_bulldoze_area:
+		JSR		_get_cur_building_price
 		JSR		sub_1508BC
 		BCS		loc_13641E
 		JSR		sub_150551
@@ -940,7 +944,7 @@ loc_1366D4:
 		LDA		#$07
 		JMP		_set_game_state_idx
 loc_1366E4:
-		LDA		_pad0_autorep_release
+		LDA		_pad0_autorep_release			; push A button action in map window
 		AND		#$80
 		BEQ		loc_1366F3
 		LDA		_cur_game_cursor_area
@@ -1565,7 +1569,7 @@ _building_name_and_cost_hud_draw:
 		LDA		_extnt_queue_pos_head					; screen scroll
 		STA		_ptr0+1
 		JSR		_building_name_and_cost_hud_pos_calc
-		LDA		_prev_constr_palette_press_idx			; check for additional
+		LDA		_const_palette_selected_idx			; check for additional
 		CMP		#$0B									; buildings
 		BNE		loc_136C1D
 		LDX		_cur_power_type_select_idx				; if power plant selected

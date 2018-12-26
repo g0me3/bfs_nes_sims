@@ -90,7 +90,7 @@ _sram_state_flag:
 		.BYTE	0
 _disasters_flags:
 		.BYTE	0
-_money_delta:
+_cur_building_price:
 		.BYTE	0,0
 _hud_money_redraw_req:
 		.BYTE	0
@@ -194,15 +194,15 @@ word_6C:
 		.BYTE	0,0
 _tmp6E:
 		.BYTE	0,0
-byte_70:
+_anim_pos_is_load:
 		.BYTE	0
 byte_71:
 		.BYTE	0
-byte_72:
+_anim_pos_col:
 		.BYTE	0
 byte_73:
 		.BYTE	0
-byte_74:
+_anim_pos_row:
 		.BYTE	0
 byte_75:
 		.BYTE	0
@@ -297,17 +297,22 @@ _regular_building_name_and_cost_hud_draw_req:
 		.BYTE	0
 _constr_palette_flags:
 		.BYTE	0,0,0,0
-byte_B1:
+
+; NOTE: this is a copy of _const_palette_selected_idx and has the same
+; value as it, used only in const palette enable test routine
+;
+_cur_const_palette_selected_idx:
 		.BYTE	0
+
 word_B2:
 		.BYTE	0,0
 _tmp_extnt_dst_ofs:
 		.BYTE	0,0
 byte_B6:
 		.BYTE	0
-_prev_constr_palette_press_idx:
+_const_palette_selected_idx:
 		.BYTE	0
-_cur_const_palette_press_idx:
+_const_palette_press_idx:
 		.BYTE	0
 _cur_game_cursor_area:
 		.BYTE	0
@@ -322,19 +327,19 @@ _unref_10:
 		.BYTE	0
 _cur_selected_buildings_size:
 		.BYTE	0
-word_C1:
+_tmp_ptrC1:
 		.BYTE	0,0
-word_C3:
+_tmp_ptrC3:
 		.BYTE	0,0
-word_C5:
+_tmp_ptrC5:
 		.BYTE	0,0
-byte_C7:
+_cur_build_sample_tile_idx:
 		.BYTE	0
 _cur_power_type_select_idx:
 		.BYTE	0
 _cur_port_type_select_idx:
 		.BYTE	0
-byte_CA:
+_cur_build_store_tile_idx:
 		.BYTE	0
 byte_CB:
 		.BYTE	0

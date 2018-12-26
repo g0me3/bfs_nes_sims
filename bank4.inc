@@ -130,7 +130,7 @@ loc_7011D:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
 loc_7011E:
-		LDA		byte_70199,Y
+		LDA		_anim_pos_is_load199,Y
 		EXTQMOVA
 		INY
 		DEC		_tmp4
@@ -149,7 +149,7 @@ loc_70166:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_70167:
-		LDA		byte_701B1,Y
+		LDA		_anim_pos_is_load1B1,Y
 		PPUQMOVA
 		INY
 		DEC		_tmp4
@@ -161,14 +161,14 @@ loc_70196:
 		PPUQEND
 		RTS
 
-byte_70199:
+_anim_pos_is_load199:
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
 		.BYTE	$8B,$8B,$8B,$8B
-byte_701B1:
+_anim_pos_is_load1B1:
 		.BYTE	$04,$05,$06,$09
 		.BYTE	$14,$15,$16,$19
 		.BYTE	$04,$07,$08,$09
@@ -192,27 +192,27 @@ loc_701D5:
 		STA		_tmp2
 		CLC
 		ADC		#<[_tlm_nt_game_msg_presentss_icons_lib]
-		STA		word_C1
+		STA		_tmp_ptrC1
 		TXA
 		ADC		#>[_tlm_nt_game_msg_presentss_icons_lib]
-		STA		word_C1+1
+		STA		_tmp_ptrC1+1
 		LDA		_tmp2
 		CLC
 		ADC		#<[_tlm_extnt_game_msg_presentss_icons_lib]
-		STA		word_C3
+		STA		_tmp_ptrC3
 		TXA
 		ADC		#>[_tlm_extnt_game_msg_presentss_icons_lib]
-		STA		word_C3+1
+		STA		_tmp_ptrC3+1
 		JSR		_game_msg_presents_pos_calc
 		LDX		_ptr0+1
-		LDY		byte_7020D,X
+		LDY		_anim_pos_is_load20D,X
 		JSR		_game_msg_presents_icon_line_draw
 		PLA
 		DEC		_ptr0+1
 		BPL		loc_701D5
 		RTS
 
-byte_7020D:
+_anim_pos_is_load20D:
 		.BYTE	$00,$03,$06
 
 _game_msg_presentss_list:
@@ -232,7 +232,7 @@ loc_70251:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
 loc_70252:
-		LDA		(word_C3),Y
+		LDA		(_tmp_ptrC3),Y
 		EXTQMOVA
 		INY
 		DEC		_tmp4
@@ -252,7 +252,7 @@ loc_70299:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_7029A:
-		LDA		(word_C1),Y
+		LDA		(_tmp_ptrC1),Y
 		PPUQMOVA
 		INY
 		DEC		_tmp4
@@ -373,7 +373,7 @@ _anim_seq_cmd_list:
 ;
 ;		.BYTE	$FB,$FB,$FB,$FB					; UNUSED, 36 msgs, here 40 entries
 
-_anim_seq_size_list:
+_anim_seq_obj_count_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$02,$01
 		.BYTE	$02,$02,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01
@@ -477,10 +477,10 @@ _anim_seq1B:
 		.BYTE	$11
 _anim_seq1C:
 		.BYTE	$12
-_anim_param_lo:
+_anim_pos_col_list:
 		.BYTE	$20,$20,$9C,$20,$20,$1F,$C8,$A0,$9C,$9C,$D4,$D4,$20,$20,$20,$20
 		.BYTE	$20,$20,$20
-_anim_param_hi:
+_anim_pos_row_list:
 		.BYTE	$B8,$B8,$B8,$B8,$B8,$C0,$B8,$B8,$B8,$B8,$B8,$B8,$B8,$B8,$B8,$B8
 		.BYTE	$B8,$B8,$B8
 _anim_spr_lib_lo:
@@ -919,6 +919,10 @@ _anim_dataA_12:
 _anim_dataB_12:
 		.BYTE	$46,$10,$E0,$E0,$E0,$48,$FE,$06,$00
 
+		SECTION_END 302
+
+		SECTION_START 303
+
 _game_msg_screens_count_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$03,$02,$01,$01,$01
@@ -1164,12 +1168,12 @@ off_70F43:
 		.WORD	asc_70F5F
 		.WORD	aATown_
 		.WORD	aYourPopulationIs
-		.WORD	byte_70F88
+		.WORD	_anim_pos_is_loadF88
 aCongratulations:		.BYTE	" Congratulations!",$F
 asc_70F5F:				.BYTE	" ",$40,$24,$30," becomes",$F
 aATown_:				.BYTE	"a town.",$F
 aYourPopulationIs:		.BYTE	" Your population is",$F
-byte_70F88:				.BYTE	$40,$23,$30,".",$F
+_anim_pos_is_loadF88:				.BYTE	$40,$23,$30,".",$F
 
 _msg02_city:
 		.WORD	off_70F8F
@@ -1192,7 +1196,7 @@ off_70FD8:
 		.WORD	asc_70F5F
 		.WORD	aACapital_
 		.WORD	aYourPopulationIs
-		.WORD	byte_70F88
+		.WORD	_anim_pos_is_loadF88
 							;	" Congratulations!",$F
 							;	" ",$40,$24,$30," becomes",$F
 aACapital_:				.BYTE	"a capital.",$F
@@ -1206,7 +1210,7 @@ off_70FEF:
 		.WORD	asc_70F5F
 		.WORD	aAMetropolis_
 		.WORD	aYourPopulationIs
-		.WORD	byte_70F88
+		.WORD	_anim_pos_is_loadF88
 							;	" Congratulations!",$F
 							;	" ",$40,$24,$30," becomes",$F
 aAMetropolis_:			.BYTE	"a metropolis.",$F
@@ -1220,7 +1224,7 @@ off_71009:
 		.WORD	asc_70F5F
 		.WORD	aAMegalopolis_
 		.WORD	aYourPopulationIs
-		.WORD	byte_70F88
+		.WORD	_anim_pos_is_loadF88
 							;	" Congratulations!",$F
 							;	" ",$40,$24,$30," becomes",$F
 aAMegalopolis_:			.BYTE	"a megalopolis.",$F
@@ -1730,6 +1734,6 @@ aYouCanDoIsWait:		.BYTE	"you can do is wait",$F
 aWhileItDestroysEvery:	.BYTE	"while it destroys every"
 aThingInItSPath_:		.BYTE	"thing in it*s path.",$F
 
-		SECTION_END 302
+		SECTION_END 303
 
 		BANK_END F4,$A000

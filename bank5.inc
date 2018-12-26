@@ -3453,7 +3453,7 @@ loc_88CD1:
 		MOVW	_spr_insert_raw_args._pos,_cur_game_cursor_scr_pos
 		JMP		_spr_lib_raw_insert
 loc_88CE0:
-		LDX		_prev_constr_palette_press_idx
+		LDX		_const_palette_selected_idx
 		LDA		_constr_building_sizes_list,X
 		CPX		#$0C
 		BNE		loc_88CEC
