@@ -12,28 +12,29 @@
 - Fixed BUGS#1
 - Fixed BUGS#2
 - Fixed BUGS#3
-- TODO  BUGS#4
+- TODO BUGS#4
 - Fixed BUGS#5, also removed redundant CPU cycles at Scenario select screen due to RAM address mistake there.
 - Fixed BUGS#6
-- TODO  BUGS#7
+- TODO BUGS#7
 - Fixed BUGS#8
-- TODO	BUGS#9
+- TODO BUGS#9
 - Fixed BUGS#10
-- TODO	BUGS#11
-- TODO	BUGS#12
-- TODO	BUGS#13
-- TODO	BUGS#14
+- TODO BUGS#11
+- TODO BUGS#12
+- TODO BUGS#13
+- TODO BUGS#14
 - Fixed BUGS#15
-- TODO	BUGS#16
-- TODO	BUGS#17
-- TODO	BUGS#18
+- TODO BUGS#16
+- TODO BUGS#17
+- TODO BUGS#18
 - Fixed	BUGS#19
 - Restored UNFINISHED#3 sound effect, can be heard with var $00F1 set to value $80. Still have no idea where it should be used.
 - Restored UNFINISHED#5 Ship object using existing movement logic with some corrections to work somehow. Some wrong code was removed (UNFINISHED#5.1-#5.5). Also fixed UNFINISHED#5.6. The specail water tile isn't used, ship will sail anywhere randomly on the map. Since there are some special tiles on the Detroit map, the code to handle a special bridges is left.
-- TODO  Make ship able to sail under the bridges and road/wires with hiding animations.
-- TODO  Reuse the actual FE water tile for those scenarios which use it.
+- TODO Make ship able to sail under the bridges and road/wires with hiding animations.
+- TODO Re-use the actual FE water tile for those scenarios which use it.
 - TODO UNFINISHED#7, proper fixed point conversions, re-use scaler values calculated once store, scale two adjascent graphs by it's max values combined (so we could see the actual relative values).
 - Restored UNFINISHED#9 4-frame animation for Helicopter. Have no idea wether it was removed on purpose or by accident. 4-frame looks much more blinking, maybe epilepsy issues?
+- Restored UNFINISHED#14, moved the FAR routine to the local PRG9, so fixed problem with damaging the decimal buffer.
 - Added attributes of the pressed buttons on the Name Entry Screens are now not inverted while pushed. However, they may invert it on purpose, but this looks odd actually. The evidence it may be done on purpose that non-sprite push button ("CL") animation uses attr switch the same way as sprites does.
 - Added random turn logic for Ship object to be similar to the SNES version also all the missing code for selecting the deploy position and deploying the object.
 
@@ -91,6 +92,7 @@
 	12.3 Scene 9. The mayor character at the middle of the screen with crutch and a bandage on its head, explaining something. Sprites aren't used enywhere else also. Most probably should be used for earnings about disasters or low funding of medicine. FIX GG: PANAPGLE
 	12.4 Scenes 10-11. The "Mayor" character constantly running from the left side to the right side of the window. The green cloud is floating after him. Most probalby this animation is for pollution warning message. Also exceeded the 8 sprites limit at some point. In any case, there aren't messages of pollution warning in the game. FIX GG: ZAEAPGPA+ZANAPGLE+LANAZGGE+LUEZYALU
 13. While build transport and power lines on the Water, there are no code for testing a valid bends with water type of tiles. You can do only straight lines continuing other straight lines. Can't bend the road on the water. Just can connect with another straight line starting from the grounds.
+14. The New city generation screen has 6 small triangle buttons at the borrom-right corner for selecting the map number. There are two tiles for drawing the regular and pressed buttons. There even has some portions of code that loads pressed button tile indexes. But then code goes to number rorate animation code and the pressed button tiles are never showed. The problem was that the button anim code reside in external bank and the FAR call routine uses the tmp values at $000,$001,$002 addresses in RAM, the same addresses used by the number display routine to store an actual decimal value. So they just removed one extra call for the sprite, fixed the glitch but disabled the button pressing animation.
 
 	BUGS
 

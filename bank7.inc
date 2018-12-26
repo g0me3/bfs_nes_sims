@@ -708,7 +708,7 @@ _title_screen:
 		AND		#$CA
 		CMP		#$CA
 		BNE		loc_B8526
-		FJSRA	_sram_reset,SRAM,PRG3
+		FJSRA	_sram_reset,SRAM,PRG3			; call with FAR routine to switch WRAM on
 loc_B8526:
 		JSR		_title_sub_exec
 		BIT		_title_sub_idx					; exit when idx = $80
@@ -2403,10 +2403,10 @@ loc_B958B:
 ;		FJSRA	_printf_txt_lib,PRG7,PRG9		; this sub were called from PRG9 as PRG7/PRG9
 ;		FJSRA	_printf_history_year,PRG7,PRG9	; here we call back PRG9 routine as far call
 ; -
-		JSR		_buffers_force_flush			; but this call - not?! WHY?!
+		JSR		_buffers_force_flush			; but this call - not! they know it!
 		PPUQSTART
 		LDY		_tmp118+9
-		LDA		_history_delimiter_pos_list,Y
+		LDA		_history_delimiter_pos_list,Y	; put ':' between date and text record
 		INY
 		PPUQMOVA
 		LDA		_history_delimiter_pos_list,Y
@@ -2668,73 +2668,38 @@ _spr_map_info_arrows:
 		.BYTE	$FF
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B962F:
-		LDY		_cur_info_maps_button_idx
-		LDA		byte_B9665,Y
-		TAY
-		LDA		_info_maps_city_map_modes_idx,Y
+; set fixed menu positions for extra menu windows for selecting the
+; detailed map information type for city overall, population and police/fire
+; map modes
+;
+_get_info_maps_wnd_menu_cursor_pos:
+		LDY		_cur_info_maps_button_idx		; for info maps with multiple
+		LDA		_info_maps_options_list,Y		; options, get the ram ofs of
+		TAY										; option idx var
+		LDA		_info_maps_city_map_modes_idx,Y	; now get the actual value
 		STA		_ptr0
 		TYA
-		ASL
-		ASL
-		CLC
-		ADC		_ptr0
-		TAX
-		LDA		byte_B9659,X
-		STA		_cur_game_cursor_scr_pos._ROW
-		LDA		byte_B964D,X
+		ASL										; we may have 4 options for all menus
+		ASL										; but two of three uses only 2
+		CLC										; so we have some redundancy
+		ADC		_ptr0							; in data here
+		TAX										; X = map idx * 4 + sub menu idx
+		LDA		_info_maps_sub_menu_pos_row_list,X
+		STA		_cur_game_cursor_scr_pos._ROW	; set cursor pos to corresponding
+		LDA		_info_maps_sub_menu_pos_col_list,X	; position
 		STA		_cur_game_cursor_scr_pos._COL
 		RTS
-byte_B964D:
-		.BYTE	$60,$90,$60,$90,$60,$98,$60,$98,$60,$90,$60,$90
-byte_B9659:
-		.BYTE	$50,$50,$78,$78,$80,$80,$80,$80,$B8,$B8,$B8,$B8
-byte_B9665:
+
+_info_maps_sub_menu_pos_col_list:
+		.BYTE	$60,$90,$60,$90	; 4 menu options
+		.BYTE	$60,$98,$60,$98	; 2 menu options, NOTE, last two bytes *unused* as well
+		.BYTE	$60,$90			; 2 menu options ,$60,$90 REDUNDANT, *unused*
+_info_maps_sub_menu_pos_row_list:
+		.BYTE	$50,$50,$78,$78	; 4 menu options
+		.BYTE	$80,$80,$80,$80 ; 2 menu options NOTE, last two bytes *unused* as well
+		.BYTE	$B8,$B8			; 2 menu options ,$B8,$B8 REDUNDANT, *unused*
+_info_maps_options_list:
 		.BYTE	$00,$FF,$01,$FF,$FF,$FF,$FF,$FF,$02
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B966E:
-		LDY		#$00
-		LDX		#$60
-loc_B9672:
-		LDA		byte_B9681,Y
-		STA		_spr_buf,X
-		INX
-		INY
-		CPY		#$20
-		BCC		loc_B9672
-		STX		_spr_buf_pos
-		RTS
-byte_B9681:
-		.BYTE	$80,$90,$00,$40
-		.BYTE	$80,$91,$00,$48
-		.BYTE	$80,$92,$00,$50
-		.BYTE	$80,$93,$00,$58
-		.BYTE	$80,$94,$00,$60
-		.BYTE	$80,$A0,$00,$68
-		.BYTE	$80,$A1,$00,$70
-		.BYTE	$80,$A2,$00,$78
-
-; =============== S U B	R O U T	I N E =======================================
-sub_B96A1:
-		PHA
-		LDY		#$FF
-		BIT		byte_15E
-		BPL		loc_B96AB
-		LDY		#$02
-loc_B96AB:
-		LDA		byte_15E
-loc_B96AE:
-		LSR
-		INY
-		BCC		loc_B96AE
-		LDA		byte_B96BB,Y
-		TAX
-		PLA
-		STA		_spr_buf,X
-		RTS
-byte_B96BB:
-		.BYTE	$1D,$21,$25,$11,$15,$19
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_header_year_draw:
@@ -2744,35 +2709,49 @@ _wnd_header_year_draw:
 		LDA		_scr_res_idx
 		AND		#$FE
 		CMP		#$04
-		BNE		loc_B96F9
-		LDA		#$A1
+		BNE		.regular_header_year_wnd		; a different BG color for screen 4
+		LDA		#$A1							; 16x8 character, draw two lines
 		STA		_tmp4
 		LDA		#$67
-		JSR		sub_B9754
+		JSR		_info_wnd_year_nt_queue1		; draw numbers AS-IS
 		LDA		#$B1
 		STA		_tmp4
 		LDA		#$87
-		JSR		sub_B9754
+		JSR		_info_wnd_year_nt_queue1
 		PPUQEND
-		MOVWO	_tmp2,byte_B9774
+		MOVWO	_tmp2,_tlm_extnt_year_header0	; draw extnt data
 		JMP		_info_wnd_year_extnt_queue
-
-loc_B96F9:
+.regular_header_year_wnd:
 		LDA		#$00
 		STA		_tmp4
 		LDA		#$66
-		JSR		_info_wnd_year_nt_queue
+		JSR		_info_wnd_year_nt_queue0		; draw numbers with conversion
 		LDA		#$40
 		STA		_tmp4
 		LDA		#$86
-		JSR		_info_wnd_year_nt_queue
+		JSR		_info_wnd_year_nt_queue0
 		PPUQEND
-		MOVWO	_tmp2,off_B9745
-		JMP		_info_wnd_year_extnt_queue
+		MOVWO	_tmp2,_tlm_extnt_year_header1
+;		JMP		_info_wnd_year_extnt_queue		; REDUNDANT
 
+; !FALLTHROUGH!
 
 ; =============== S U B	R O U T	I N E =======================================
-_info_wnd_year_nt_queue:
+_info_wnd_year_extnt_queue:
+		EXTQSTART
+		LDY		#$00
+loc_B9787:
+		LDA		(_tmp2),Y
+		BEQ		loc_B9792
+		EXTQMOVA
+		INY
+		BNE		loc_B9787
+loc_B9792:
+		EXTQEND
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_info_wnd_year_nt_queue0:
 		PPUQMOVA
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	#$04,OP_NOP,0
@@ -2792,15 +2771,9 @@ loc_B973B:
 		DEY
 		BPL		loc_B972B
 		RTS
-off_B9745:
-		.WORD	_MMC5_EXRAM+$66
-		.BYTE	$04,$98,$98,$98,$98
-		.WORD	_MMC5_EXRAM+$86
-		.BYTE	$04,$98,$98,$98,$98
-		.BYTE	0
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_B9754:
+_info_wnd_year_nt_queue1:
 		PPUQMOVA
 		PPUQMOVB	#$24,OP_NOP,0
 		PPUQMOVB	#$04,OP_NOP,0
@@ -2813,32 +2786,19 @@ loc_B9766:
 		DEY
 		BPL		loc_B9766
 		RTS
-byte_B9774:
-		.BYTE	$67,$5C,$04,$4B,$4B,$4B,$4B,$87,$5C,$04,$4B,$4B,$4B,$4B,$00
 
-; =============== S U B	R O U T	I N E =======================================
-_info_wnd_year_extnt_queue:
-		EXTQSTART
-		LDY		#$00
-loc_B9787:
-		LDA		(_tmp2),Y
-		BEQ		loc_B9792
-		EXTQMOVA
-		INY
-		BNE		loc_B9787
-loc_B9792:
-		EXTQEND
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_wnd_common_cursor_spr_clear:
-		LDX		#$0F
-		LDA		#$FA
-loc_B97FC:
-		STA		_spr_buf,X
-		DEX
-		BPL		loc_B97FC
-		RTS
+_tlm_extnt_year_header1:
+		.WORD	_MMC5_EXRAM+$66
+		.BYTE	$04,$98,$98,$98,$98
+		.WORD	_MMC5_EXRAM+$86
+		.BYTE	$04,$98,$98,$98,$98
+		.BYTE	$00
+_tlm_extnt_year_header0:
+		.WORD	_MMC5_EXRAM+$67
+		.BYTE	$04,$4B,$4B,$4B,$4B
+		.WORD	_MMC5_EXRAM+$87
+		.BYTE	$04,$4B,$4B,$4B,$4B
+		.BYTE	$00
 
 		SECTION_END 903
 

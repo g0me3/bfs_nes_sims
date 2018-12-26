@@ -543,9 +543,9 @@ byte_15B:
 		.BYTE	0
 byte_15C:
 		.BYTE	0
-byte_15D:
+_new_city_digit_spr_y_pos:
 		.BYTE	0
-byte_15E:
+_new_city_button_idx:
 		.BYTE	0
 _unref_17:
 		.BYTE	0

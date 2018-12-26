@@ -179,7 +179,8 @@ _scr_res_common:
 		JSR		_pal_fade_in
 .scr_res_loop:
 		JSR		_wait_for_nmi
-		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9
+;		FJSRA	_wnd_common_cursor_spr_clear,PRG7,PRG9	; REDUNDANT
+		JSR		_wnd_common_cursor_spr_clear	; OPTIMIZED, now local
 		JSR		_spr_finish
 		FJSRA	_scr_res_cursor_move,PRG6,PRG9
 		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
@@ -190,7 +191,7 @@ _scr_res_common:
 		STA		_apu_se_flags
 ;		FJSRA	_scr_res_wnd_close,PRG6,PRG9	; REDUNDANT
 ;		RTS
-		JMP		_scr_res_wnd_close				; FIX, now local
+		JMP		_scr_res_wnd_close				; OPTIMIZED, now local
 .scr_res_quick_warp_test:
 		LDA		_scr_res_control_flags
 		CMP		#$10
@@ -199,6 +200,16 @@ _scr_res_common:
 
 byte_EA08C:
 		.BYTE	$00,$00,$20,$08,$08,$08,$08,$A8
+
+; =============== S U B	R O U T	I N E =======================================
+_wnd_common_cursor_spr_clear:
+		LDX		#$0F
+		LDA		#$FA
+loc_B97FC:
+		STA		_spr_buf,X
+		DEX
+		BPL		loc_B97FC
+		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; handles 2, 3, 5, 6 are called once before tha main loop
@@ -238,7 +249,24 @@ _scr_res_hndl7_A_new_city_gen_init:
 		INC		_scr_res_idx
 		LDA		#$10
 		STA		_tmp6D0
-		JMP		sub_EA29D
+;		JMP		sub_EA29D						; REDUNDANT
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+sub_EA29D:
+		JSR		sub_EA405
+		JSR		sub_EACE4
+;		FJSRA	_new_city_please_wait_spr_draw,PRG7,PRG9	; REDUNDANT
+		JSR		_new_city_please_wait_spr_draw	; OPTIMIZED, local now
+		JSR		_wait_for_nmi
+		JSR		_sram_on
+		FJSRA	_generate_new_map,SRAM,PRG3
+		LDA		#$80
+		STA		_scr_res_control_flags
+		LDA		#$00
+		STA		byte_15B
+		JMP		sub_EA405
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl7_B_new_city_gen_input:
@@ -397,19 +425,20 @@ sub_EA1F4:
 		BEQ		loc_EA203
 		LDX		#$80
 loc_EA203:
-		STX		byte_15E
+		STX		_new_city_button_idx
 		LDY		byte_141
 		LDA		byte_EA2E2,Y
-		ORA		byte_15E
-		STA		byte_15E
+		ORA		_new_city_button_idx
+		STA		_new_city_button_idx
 		LDA		#$80
 		STA		byte_15C
 		STA		byte_15B
-		FJSRA	sub_B96A1,PRG7,PRG9
+;		FJSRA	_new_city_map_num_button_update,PRG7,PRG9	; REDUNDANT
+		JSR		_new_city_map_num_button_update	; FIX, now local
 		MOVW	_ptr0,_new_map_number
 		JSR		_hex_to_dec9999
 		LDY		byte_141
-		BIT		byte_15E
+		BIT		_new_city_button_idx
 		BPL		loc_EA242
 		LDA		_ptr0,Y
 		BNE		loc_EA23D
@@ -449,34 +478,50 @@ loc_EA24E:
 		STA		_ptr0+1
 		STA		_new_map_number+1
 		JSR		_hex_to_dec9999
-		JSR		sub_EA422
-		LDA		#$F2
-		BIT		byte_15E
-		BPL		loc_EA289
-		LDA		#$F7
+		JSR		_new_city_map_def_spr_insert
+		LDA		#$F2							; BUG, see, this is tiles for pressed
+		BIT		_new_city_button_idx	; number selection arrows, but
+		BPL		loc_EA289						; ...
+		LDA		#$F7							; here is NO button update code!
 loc_EA289:
-		JSR		sub_EA433
-		LDA		#$F1
-		BIT		byte_15E
+		JSR		_new_city_map_num_button_update	; FIX. now buttons animated!
+		JSR		_new_city_map_num_roll_anim		; after press we do rolling number anim here
+		LDA		#$F1							; and restore button back, unpush!
+		BIT		_new_city_button_idx
 		BPL		loc_EA295
 		LDA		#$F6
 loc_EA295:
-		FJSRA	sub_B96A1,PRG7,PRG9
+;		FJSRA	_new_city_map_num_button_update,PRG7,PRG9	; here is the proper routine called!
+		JSR		_new_city_map_num_button_update	; FIX, now local
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA29D:
-		JSR		sub_EA405
-		JSR		sub_EACE4
-		FJSRA	sub_B966E,PRG7,PRG9
-		JSR		_wait_for_nmi
-		JSR		_sram_on
-		FJSRA	_generate_new_map,SRAM,PRG3
-		LDA		#$80
-		STA		_scr_res_control_flags
-		LDA		#$00
-		STA		byte_15B
-		JMP		sub_EA405
+; updates one particular button tile with a custom one. seems planned to animate
+; pushes of the buttons, but writes always the same values.
+; moved from PRG7, now local here
+;
+_new_city_map_num_button_update:
+		PHA
+		LDY		#$FF							; valid indexes 04 02 01
+		BIT		_new_city_button_idx			;               84 82 81
+		BPL		loc_B96AB
+		LDY		#$02
+loc_B96AB:
+		LDA		_new_city_button_idx
+loc_B96AE:
+		LSR										; calc spr buf pos idx
+		INY
+		BCC		loc_B96AE
+		LDA		_new_city_ctrl_spr_pos_list,Y
+		TAX
+		PLA
+		STA		_spr_buf,X						; set the map num select button tile
+		RTS
+
+_new_city_ctrl_spr_pos_list:
+		.BYTE	$1D,$21,$25
+		.BYTE	$11,$15,$19
+
 byte_EA2C4:
 		.BYTE	$00,$00
 		.BYTE	$64,$00
@@ -532,9 +577,9 @@ loc_EA327:
 		BNE		loc_EA342
 		LDA		#$07
 loc_EA342:
-		STA		byte_15E
-		JSR		sub_EA422
-		JSR		sub_EA433
+		STA		_new_city_button_idx
+		JSR		_new_city_map_def_spr_insert
+		JSR		_new_city_map_num_roll_anim
 		JSR		sub_EA29D
 		MOVWO	_ptr0,byte_EA3B5
 		MOVWO	_tmp2,byte_EA3CA
@@ -588,20 +633,20 @@ byte_EA3EE:
 
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA405:
-		JSR		sub_EA422
+		JSR		_new_city_map_def_spr_insert
 		MOVW	_ptr0,_new_map_number
 		JSR		_hex_to_dec9999
 		LDX		#$50
 		LDY		#$02
 loc_EA419:
 		LDA		#$BE
-		JSR		sub_EA4CE
+		JSR		_new_city_map_num_digit_spr_draw
 		DEY
 		BPL		loc_EA419
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA422:
+_new_city_map_def_spr_insert:
 		LDX		#$10
 		LDY		#$3B
 loc_EA426:
@@ -613,19 +658,25 @@ loc_EA426:
 		STX		_spr_buf_pos
 		RTS
 
+byte_EB787:
+		.BYTE	$D0,$02,$EA,$AE,$D8,$02,$EB,$AE,$E0,$02,$EC,$AE,$D0,$01,$ED,$B6
+		.BYTE	$D8,$01,$ED,$B6,$E0,$01,$EE,$B6,$D0,$01,$EF,$C6,$D8,$01,$EF,$C6
+		.BYTE	$E0,$01,$F0,$C6,$D0,$03,$F1,$CE,$D8,$03,$F1,$CE,$E0,$03,$F1,$CE
+		.BYTE	$D0,$03,$F6,$D6,$D8,$03,$F6,$D6,$E0,$03,$F6,$D6
+
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA433:
+_new_city_map_num_roll_anim:
 		LDA		#$BE
-		STA		byte_15D
+		STA		_new_city_digit_spr_y_pos
 		LDY		#$02
 		LDX		#$50
 loc_EA43C:
-		LDA		byte_15E
-		AND		byte_EA4CB,Y
+		LDA		_new_city_button_idx
+		AND		_new_city_map_num_bitmasks,Y
 		BNE		loc_EA44F
-		LDA		byte_15D
-		JSR		sub_EA4CE
-		LDA		byte_15D
+		LDA		_new_city_digit_spr_y_pos
+		JSR		_new_city_map_num_digit_spr_draw
+		LDA		_new_city_digit_spr_y_pos
 		BNE		loc_EA46D
 loc_EA44F:
 		LDA		_ptr0,Y
@@ -633,44 +684,44 @@ loc_EA44F:
 		JSR		sub_EA4EA
 		PLA
 		STA		_ptr0,Y
-		BIT		byte_15E
+		BIT		_new_city_button_idx
 		BPL		loc_EA467
-		LDA		byte_15D
+		LDA		_new_city_digit_spr_y_pos
 		SEC
 		SBC		#$0C
 		BNE		loc_EA46D
 loc_EA467:
-		LDA		byte_15D
+		LDA		_new_city_digit_spr_y_pos
 		CLC
 		ADC		#$0C
 loc_EA46D:
-		JSR		sub_EA4CE
+		JSR		_new_city_map_num_digit_spr_draw
 		DEY
 		BPL		loc_EA43C
 		STX		_spr_buf_pos
-		BIT		byte_15E
+		BIT		_new_city_button_idx
 		BPL		loc_EA489
 loc_EA47A:
 		JSR		_wait_for_nmi
-		INC		byte_15D
-		LDA		byte_15D
+		INC		_new_city_digit_spr_y_pos
+		LDA		_new_city_digit_spr_y_pos
 		CMP		#$CB
 		BEQ		loc_EA4C3
 		BNE		loc_EA496
 loc_EA489:
 		JSR		_wait_for_nmi
-		DEC		byte_15D
-		LDA		byte_15D
+		DEC		_new_city_digit_spr_y_pos
+		LDA		_new_city_digit_spr_y_pos
 		CMP		#$B1
 		BEQ		loc_EA4C3
 loc_EA496:
-		LDA		byte_15E
+		LDA		_new_city_button_idx
 		LDY		#$02
 		LDX		#$10
 loc_EA49D:
 		LSR
 		BCC		loc_EA4B3
-		BIT		byte_15E
+		BIT		_new_city_button_idx
 		BMI		loc_EA4AD
 		DEC		_spr_buf+$50,X
 		DEC		_spr_buf+$54,X
@@ -685,20 +736,21 @@ loc_EA4B3:
 		PLA
 		DEY
 		BPL		loc_EA49D
-		BIT		byte_15E
+		BIT		_new_city_button_idx
 		BPL		loc_EA489
 		BMI		loc_EA47A
 loc_EA4C3:
 		LDX		#$68
 		STA		_spr_buf_pos
 		RTS
+
 byte_EA4C8:
 		.BYTE	$00,$00,$08
-byte_EA4CB:
+_new_city_map_num_bitmasks:
 		.BYTE	$01,$02,$04
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EA4CE:
+_new_city_map_num_digit_spr_draw:
 		STA		_spr_buf,X
 		INX
 		LDA		_ptr0,Y
@@ -709,14 +761,17 @@ sub_EA4CE:
 		LDA		#$00
 		STA		_spr_buf,X
 		INX
-		LDA		byte_EB784,Y
+		LDA		_new_city_map_num_digit_pos_list,Y
 		STA		_spr_buf,X
 		INX
 		RTS
 
+_new_city_map_num_digit_pos_list:
+		.BYTE	$E0,$D8,$D0
+
 ; =============== S U B	R O U T	I N E =======================================
 sub_EA4EA:
-		BIT		byte_15E
+		BIT		_new_city_button_idx
 		BPL		loc_EA4FD
 		LDA		_ptr0,Y
 		CMP		#$09
@@ -734,8 +789,8 @@ loc_EA4FD:
 		LDA		#$09
 loc_EA507:
 		STA		_ptr0,Y
-		LDA		byte_15D
-		JMP		sub_EA4CE
+		LDA		_new_city_digit_spr_y_pos
+		JMP		_new_city_map_num_digit_spr_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl0_A_info_maps_draw:
@@ -1712,7 +1767,7 @@ loc_EABCF:
 		AND		#$03
 		STA		_info_maps_city_map_modes_idx,Y
 loc_EABF6:
-		FJSRA	sub_B962F,PRG7,PRG9
+		FJSRA	_get_info_maps_wnd_menu_cursor_pos,PRG7,PRG9
 		FJSRA	_scr_res_cursor_draw,PRG6,PRG9
 		JSR		_spr_finish
 		JMP		loc_EABCF
@@ -1853,7 +1908,8 @@ loc_EAD3A:
 		LDA		_mini_map_cur_row
 		CMP		#$08
 		BCC		loc_EAD58
-		FJSRA	sub_B966E,PRG7,PRG9
+;		FJSRA	_new_city_please_wait_spr_draw,PRG7,PRG9
+		JSR		_new_city_please_wait_spr_draw	; OPTIMIZED, local now
 loc_EAD58:
 		JSR		_wait_for_nmi
 		INC		_mini_map_cur_row
@@ -1863,6 +1919,30 @@ loc_EAD58:
 		LDA		#$00
 		STA		_mini_map_cur_row
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_new_city_please_wait_spr_draw:
+		LDY		#$00
+		LDX		#$60
+loc_B9672:
+		LDA		_spr_please_wait,Y
+		STA		_spr_buf,X
+		INX
+		INY
+		CPY		#$20
+		BCC		loc_B9672
+		STX		_spr_buf_pos
+		RTS
+
+_spr_please_wait:
+		.BYTE	$80,$90,$00,$40
+		.BYTE	$80,$91,$00,$48
+		.BYTE	$80,$92,$00,$50
+		.BYTE	$80,$93,$00,$58
+		.BYTE	$80,$94,$00,$60
+		.BYTE	$80,$A0,$00,$68
+		.BYTE	$80,$A1,$00,$70
+		.BYTE	$80,$A2,$00,$78
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_date_HUD_draw:
@@ -1935,48 +2015,57 @@ _info_maps_arrows_move:
 		BEQ		loc_EADF4
 		LDX		#$04
 		STX		_pad0_dpad_autorep_delay
-		BNE		loc_EAE02
+		BNE		.arrows_move
 loc_EADF4:
 		LDA		_pad0_held
 		AND		#$0F
-		BEQ		loc_EAE05
+		BEQ		.arrows_draw
 		LDX		_pad0_dpad_autorep_delay
-		BEQ		loc_EAE02
+		BEQ		.arrows_move
 		DEC		_pad0_dpad_autorep_delay
-		BNE		loc_EAE05
-loc_EAE02:
-		JSR		sub_EAE0D
-loc_EAE05:
+		BNE		.arrows_draw
+.arrows_move:
+		JSR		_info_maps_rect_pos_adjust
+.arrows_draw:
 		FJSRA	_info_maps_spr_arrows_draw,PRG7,PRG9
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-sub_EAE0D:
-		LDX		#$01
+; A = d-pad button on start
+;
+_info_maps_rect_pos_adjust:
+;		LDX		#$01							; REDUNDANT
+		LDX		#$00							; FIX, when using the _tpos macro
+		LSR										; col/row addresses here are swapped!
+		BCS		.arrows_move_right				; hor movements
 		LSR
-		BCS		loc_EAE19
+		BCS		.arrows_move_left
+		INX										; switch to vert mvements var
 		LSR
-		BCS		loc_EAE28
-		DEX
-		LSR
-		BCC		loc_EAE28
-loc_EAE19:
+		BCC		.arrows_move_left				; now this is not right, but up
+.arrows_move_right:
 		LDA		_info_maps_rect_pos,X
-		CMP		byte_EB751,X
+		CMP		_info_maps_rect_limits_right_bottom,X
 		BCS		locret_EAE36
 		CLC
 		ADC		#$02
 		STA		_info_maps_rect_pos,X
 		RTS
-loc_EAE28:
+.arrows_move_left:
 		LDA		_info_maps_rect_pos,X
-		CMP		byte_EB74F,X
+		CMP		_info_maps_rect_limits_left_top,X
 		BEQ		locret_EAE36
 		SEC
 		SBC		#$02
-		STA		_info_maps_rect_pos,X
+		STA		_info_maps_rect_pos,X			; adjust pos with clapm
 locret_EAE36:
 		RTS
+
+; FIX, also swapped because of changing pos vars order
+_info_maps_rect_limits_left_top:
+		.BYTE	$45,$3C
+_info_maps_rect_limits_right_bottom:
+		.BYTE	$AB,$AA
 
 ; =============== S U B	R O U T	I N E =======================================
 _info_maps_city_name_HUD_draw:
@@ -3055,10 +3144,6 @@ byte_EB733:
 		.BYTE	$00,$01,$01,$02,$01,$02,$02,$03,$01,$02,$02,$03,$02,$03,$03,$04
 byte_EB743:
 		.BYTE	$00,$80,$00,$00,$80,$80,$80,$80,$00,$00,$40,$40
-byte_EB74F:
-		.BYTE	$3C,$45
-byte_EB751:
-		.BYTE	$AA,$AB
 byte_EB753:
 		.BYTE	$04,$04,$04,$04,$03
 byte_EB758:
@@ -3068,13 +3153,6 @@ byte_EB76C:
 		.BYTE	$00,$00,$07,$07,$08,$08,$09,$09,$0A,$0A,$0B,$0B
 byte_EB778:
 		.BYTE	$00,$00,$0C,$0C,$0D,$0D,$0E,$0E,$0F,$0F,$10,$10
-byte_EB784:
-		.BYTE	$E0,$D8,$D0
-byte_EB787:
-		.BYTE	$D0,$02,$EA,$AE,$D8,$02,$EB,$AE,$E0,$02,$EC,$AE,$D0,$01,$ED,$B6
-		.BYTE	$D8,$01,$ED,$B6,$E0,$01,$EE,$B6,$D0,$01,$EF,$C6,$D8,$01,$EF,$C6
-		.BYTE	$E0,$01,$F0,$C6,$D0,$03,$F1,$CE,$D8,$03,$F1,$CE,$E0,$03,$F1,$CE
-		.BYTE	$D0,$03,$F6,$D6,$D8,$03,$F6,$D6,$E0,$03,$F6,$D6
 byte_EB7C3:
 		.BYTE	$84,$26,$04,$7B,$7C,$7D,$7E,$90,$26,$01,$24,$79,$26,$03,$10,$11
 		.BYTE	$12,$99,$26,$03,$20,$21,$22,$B9,$26,$03,$30,$31,$32,$D8,$26,$06
