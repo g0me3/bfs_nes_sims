@@ -10,14 +10,21 @@
 		SECTION_START CD1
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_money_draw:
-		JSR		_cur_money_str_calc
-		JSR		_cur_money_str_pos_calc
-		JSR		_cur_money_str_queue
-		RTS
+_hud_money_draw:
+		JSR		_hud_money_to_str
+;		JSR		_hud_money_pos_calc				; OPTIMIZED, merged
+		LDA		#$16							; -
+		STA		_tmp2							; -
+		LDA		#$1C							; -
+		STA		_tmp3							; -
+		LDA		#$08							; -
+		STA		_tmp4							; -
+		JMP		_hud_str_pos_calc_and_queue		; -
+;		JSR		_pre_buf_str_queue				; -
+;		RTS										; -
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_money_str_calc:
+_hud_money_to_str:
 		MOVD	_ptr0,_city._money
 		LDA		#$00
 		STA		_tmp3							; tmp flag
@@ -60,60 +67,68 @@ loc_5804F:
 ; wrapLen =  (screenX < 20) ? 0 : (8 - LineLen)
 ; ppuOfs  = ((screenY * 20) + screenX) + 0x2000
 ;
-_cur_money_str_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-		WRAPA	_tmp2,_tmp3,#$08,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20		; FIX: regular macros takes less bytes
-		RTS
+;_hud_money_pos_calc:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$08,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00
+;		RTS
 
+; REDUNDANT, as soon as all three routines here appears exactly the same after
+; rearranged some constants and vars used, we can merge them and use only single
+; copy without any harm
+;
 ; =============== S U B	R O U T	I N E =======================================
-_cur_money_str_queue:
-		PPUQSTART
-		LDY		#$00
-		PPUQMOVB	_ptr0,OP_NOP,0
-loc_5810F:
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-loc_58110:
-		LDA		_pre_ppu_buf,Y
-		INY
-		PPUQMOVA
-		DEC		_tmp2
-		BNE		loc_58110
-		LDA		_tmp3
-		BEQ		loc_5813D
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-		PPUQMOVB	_ptr0,OP_AND,#$E0
-;		PPUQMOVB	_ptr0+1,OP_NOP,0
+;_hud_money_str_queue:
+;		PPUQSTART
+;		LDY		#$00
+;		PPUQMOVB	_ptr0,OP_NOP,0
+;loc_5810F:
+;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
 ;		PPUQMOVB	_tmp2,OP_NOP,0
-;		JMP		loc_58110
-		JMP		loc_5810F
-loc_5813D:
-		PPUQEND
-		RTS
+;loc_58110:
+;		LDA		_pre_ppu_buf,Y
+;		INY
+;		PPUQMOVA
+;		DEC		_tmp2
+;		BNE		loc_58110
+;		LDA		_tmp3
+;		BEQ		loc_5813D
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		JMP		loc_5810F
+;loc_5813D:
+;		PPUQEND
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_date_draw:
-		JSR		_cur_date_str_calc
-		JSR		_cur_date_str_pos_calc
-		JSR		_cur_date_str_queue
-		RTS
+_hud_date_draw:
+		JSR		_hud_date_to_str
+;		JSR		_hud_date_pos_calc					; OPTIMIZED, merged
+		LDA		#$16
+		STA		_tmp2
+		LDA		#$1A
+		STA		_tmp3
+		LDA		#$08
+		STA		_tmp4
+		JMP		_hud_str_pos_calc_and_queue
+;		JSR		_pre_buf_str_queue
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_date_str_calc:
+_hud_date_to_str:
 		LDX		#$00
-		JSR		_cur_year_str_queue
+		JSR		_hud_year_str_queue
 		LDA		#$DF
 		STA		_pre_ppu_buf,X
 		INX
-		JSR		_cur_month_str_queue
+		JSR		_hud_month_str_queue
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_year_str_queue:
+_hud_year_str_queue:
 		LDA		_city._cur_year
 		LDY		_city._cur_year+1
 		STA		_tmp0
@@ -179,7 +194,7 @@ loc_58E0E:
 ; =============== S U B	R O U T	I N E =======================================
 ; TODO: bank 9 different type of month display lib
 ;
-_cur_month_str_queue:
+_hud_month_str_queue:
 		LDA		_city._cur_month
 		STA		_ptr0
 		ASL
@@ -214,44 +229,43 @@ loc_58E2E:
 ;		.BYTE	_D,_E,_C
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_date_str_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
-		WRAPA	_tmp2,_tmp3,#$08,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$0000
-		RTS
+_hud_date_pos_calc:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$08,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZE, merged
+;		RTS
 
+; REDUNDANT, the same for this one
+;
 ; =============== S U B	R O U T	I N E =======================================
-_cur_date_str_queue:
-		PPUQSTART
-		LDY		#$00
-		LDA		_tmp2
-		STA		_tmp4
-		LDA		_tmp3
-		STA		_tmp5
-		PPUQMOVB	_ptr0,OP_NOP,0
-loc_58ED9:
-		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-loc_58EDA:
-		LDA		_pre_ppu_buf,Y
-		INY
-		PPUQMOVA
-		DEC		_tmp4
-		BNE		loc_58EDA
-		LDA		_tmp5
-		BEQ		loc_58F09
-		STA		_tmp4
-		LDA		#$00
-		STA		_tmp5
-		PPUQMOVB	_ptr0,OP_AND,#$E0
+;_hud_date_str_queue:
+;		PPUQSTART
+;		LDY		#$00
+;		LDA		_tmp2								; REDUNDANT, this is a leftover
+;		STA		_tmp4								; from using an extnt draw routine
+;		LDA		_tmp3								; below, to keep vars for it
+;		STA		_tmp5								; as soon as in unused, we don't need
+;		PPUQMOVB	_ptr0,OP_NOP,0					; these vars as well...
+;loc_58ED9:
 ;		PPUQMOVB	_ptr0+1,OP_ORA,#$20
-;		PPUQMOVB	_tmp4,OP_NOP,0
-;		JMP		loc_58EDA
-		JMP		loc_58ED9
-loc_58F09:
-		PPUQEND
-		RTS
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;loc_58EDA:
+;		LDA		_pre_ppu_buf,Y
+;		INY
+;		PPUQMOVA
+;		DEC		_tmp2
+;		BNE		loc_58EDA
+;		LDA		_tmp3
+;		BEQ		loc_58F09
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		JMP		loc_58ED9
+;loc_58F09:
+;		PPUQEND
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; unused/unref by the game, they do this somewhere else at once for all hud
@@ -297,17 +311,24 @@ loc_58F09:
 ;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_popul_draw:
-		JSR		_cur_popul_str_calc
-		JSR		_cur_popul_str_pos_set
-		JSR		_cur_popul_str_queue
-		RTS
+_hud_popul_draw:
+		JSR		_hud_popul_to_str
+;		JSR		_hud_popul_pos_calc					; OPTIMIZED, merged
+		LDA		#$0E
+		STA		_tmp2
+		LDA		#$1A
+		STA		_tmp3
+		LDA		#$06
+		STA		_tmp4
+		JMP		_hud_str_pos_calc_and_queue
+;		JSR		_pre_buf_str_queue
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 ; much simpler than money calc routine, no need to put extra symbols anywhere
 ; so you just need to track the first non-zero digit to trim first zeroes
 ;
-_cur_popul_str_calc:
+_hud_popul_to_str:
 		MOVD	_ptr0,_popul_cur
 		LDA		#$00
 		STA		_tmp3
@@ -413,20 +434,29 @@ loc_58076:
 ;		.BYTE	[[1000000 >> 16] & $FF] ; $0F
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_popul_str_pos_set:
-		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
-		WRAPA	_tmp2,_tmp3,#$06,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
-		RTS
+;_hud_popul_pos_calc:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$0E,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$06,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
-_cur_popul_str_queue:
+; let's make it common for all three pos calc routines as well
+; they are the same except position constants, and as soon as all
+; thre pair of routines uses both in row, let's combine them in one
+; sub as well.
+;
+_hud_str_pos_calc_and_queue:
+		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp3,NONE,#$1E
+		CIADDB	_tmp0,_cur_screen_tile._X,_tmp2,NONE,#$20
+		WRAPB	_tmp2,_tmp3,_tmp0,_tmp4,#$20
+		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp0)+#$2000
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_ptr0,OP_NOP,0
 loc_59B65:
-		PPUQMOVB	_ptr0+1,OP_NOP,0
+		PPUQMOVB	_ptr0+1,OP_ORA,#$20
 		PPUQMOVB	_tmp2,OP_NOP,0
 loc_59B66:
 		LDA		_pre_ppu_buf,Y
@@ -440,9 +470,6 @@ loc_59B66:
 		LDA		#$00
 		STA		_tmp3
 		PPUQMOVB	_ptr0,OP_AND,#$E0
-;		PPUQMOVB	_ptr0+1,OP_NOP,0
-;		PPUQMOVB	_tmp2,OP_NOP,0
-;		JMP		loc_59B66
 		JMP		loc_59B65
 loc_59B93:
 		PPUQEND
@@ -853,7 +880,7 @@ _game_msg_presents_pos_calc:
 		CIADDB	_tmp2,_cur_screen_tile._Y,#$0C,_tmp1,#$1E
 		CIADDB	_tmp3,_cur_screen_tile._X,#$11, NONE,#$20
 		WRAPB	_tmp4,_tmp5,_tmp3,#$03,#$20
-		BUFPOS	_tmp2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
+		BUFPOS	_ptr2,_tmp3,_tmp2,#$20,#$00	; DST=(_tmp2*#$20+_tmp3)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================

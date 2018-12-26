@@ -662,6 +662,10 @@ _apu_play_se0:
 		BCS		_j_apu_se40_start
 		LSR
 		BCS		_j_apu_se40_loop
+		LSR		_apu_se_flags				; re-enable unused sound effect
+		BCS		_j_apu_se80_start
+		LSR
+		BCS		_j_apu_se80_loop
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -712,12 +716,14 @@ _j_apu_se2_start:
 _j_apu_se2_loop:
 		JMP		_apu_se2_loop
 
+; FIX: re-enabled, TODO: find where may be used
+;
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se80_start_unref:
+_j_apu_se80_start:
 		JMP		_apu_se80_start
 
 ; =============== S U B	R O U T	I N E =======================================
-_j_apu_se80_loop_unref:
+_j_apu_se80_loop:
 		JMP		_apu_se80_loop
 
 ; =============== S U B	R O U T	I N E =======================================

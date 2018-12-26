@@ -36,11 +36,11 @@ loc_13601B:
 		.WORD	_game_state0A_power_build_menu
 		.WORD	_game_state0B_gui_ctrl_menu
 		.WORD	_game_state0C_RCI_meter_redraw
-		.WORD	_game_state0D_cur_date_redraw
+		.WORD	_game_state0D_hud_date_redraw
 		.WORD	_game_state0E
-		.WORD	_game_state0F_cur_money_redraw
+		.WORD	_game_state0F_hud_money_redraw
 		.WORD	_game_state10_fiscal_year_draw
-		.WORD	_game_state11_cur_popul_redraw
+		.WORD	_game_state11_hud_popul_redraw
 		.WORD	_game_state12_airport_build_menu
 		.WORD	_game_state13_msg_wnd_display
 		.WORD	_game_state14_presents_build_menu
@@ -72,11 +72,11 @@ _game_state_common:
 		ORA		_regular_building_name_and_cost_hud_draw_req
 		ORA		_presents_building_name_and_cost_hud_draw_req
 		ORA		_RCI_meter_redraw_req
-		ORA		_cur_date_redraw_req
-		ORA		_cur_popul_redraw_req
+		ORA		_hud_date_redraw_req
+		ORA		_hud_popul_redraw_req
 		ORA		_city_name_redraw_req
 		ORA		_game_core_stop_flag
-		ORA		_cur_money_redraw_req
+		ORA		_hud_money_redraw_req
 		ORA		_scroll_msg_active_flag
 		STA		byte_37
 		ORA		byte_5C
@@ -114,9 +114,9 @@ _game_state00:
 		ORA		#$01
 		STA		byte_3C
 		LDA		#$FF
-		STA		_cur_date_redraw_req
-		STA		_cur_money_redraw_req
-		STA		_cur_popul_redraw_req
+		STA		_hud_date_redraw_req
+		STA		_hud_money_redraw_req
+		STA		_hud_popul_redraw_req
 		STA		_city_name_redraw_req
 loc_1360DD:
 		JMP		_game_state_common
@@ -472,7 +472,7 @@ loc_136358:
 		JSR		sub_15055A
 		JSR		sub_1509D5
 		LDA		#$FF
-		STA		_cur_money_redraw_req
+		STA		_hud_money_redraw_req
 		LDA		_constr_cursor_tile._X
 		STA		_prev_constr_cursor_tile._X
 		LDA		_constr_cursor_tile._Y
@@ -499,7 +499,7 @@ loc_136389:
 		JSR		sub_15055A
 		JSR		sub_1509D5
 		LDA		#$FF
-		STA		_cur_money_redraw_req
+		STA		_hud_money_redraw_req
 		JSR		_apu_se_small_build
 		JSR		_save_constr_cursor_pos
 		JMP		_game_state_common
@@ -521,7 +521,7 @@ loc_1363BE:
 		JSR		sub_15055A
 		JSR		sub_1509D5
 		LDA		#$FF
-		STA		_cur_money_redraw_req
+		STA		_hud_money_redraw_req
 		JSR		_apu_se_large_build
 		JSR		_bank_build_year_init
 		JSR		_present_remove_from_list
@@ -543,7 +543,7 @@ loc_1363F8:
 		JSR		sub_150551
 		JSR		sub_1509CF
 		LDA		#$FF
-		STA		_cur_money_redraw_req
+		STA		_hud_money_redraw_req
 		LDX		byte_CC
 		DEX
 		BEQ		loc_136418
@@ -598,10 +598,10 @@ _game_state06_game_hud_redraw:
 		STA		_hud_redraw_req
 		LDA		#$FF
 		STA		_RCI_meter_redraw_req
-		STA		_cur_date_redraw_req
-		STA		_cur_popul_redraw_req
+		STA		_hud_date_redraw_req
+		STA		_hud_popul_redraw_req
 		STA		_city_name_redraw_req
-		STA		_cur_money_redraw_req
+		STA		_hud_money_redraw_req
 		JSR		_seasonal_pal_load
 loc_136472:
 		JMP		_game_state_common
@@ -709,12 +709,12 @@ loc_136548:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state0D_cur_date_redraw:
+_game_state0D_hud_date_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_13655C
-		FJSRA	_cur_date_draw,PRG7,PRG3
+		FJSRA	_hud_date_draw,PRG7,PRG3
 		LDA		#$00
-		STA		_cur_date_redraw_req
+		STA		_hud_date_redraw_req
 loc_13655C:
 		JMP		_game_state_common
 
@@ -741,12 +741,12 @@ loc_136582:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state0F_cur_money_redraw:
+_game_state0F_hud_money_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_136595
-		FJSRA	_cur_money_draw,PRGC,PRG3
+		FJSRA	_hud_money_draw,PRGC,PRG3
 		LDA		#$00
-		STA		_cur_money_redraw_req
+		STA		_hud_money_redraw_req
 loc_136595:
 		JMP		_game_state_common
 
@@ -773,12 +773,12 @@ loc_1365C8:
 		JMP		_game_state_common
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state11_cur_popul_redraw:
+_game_state11_hud_popul_redraw:
 		JSR		_ppu_queue_empty_test_0
 		BCS		loc_1365DC
-		FJSRA	_cur_popul_draw,PRG7,PRG3
+		FJSRA	_hud_popul_draw,PRG7,PRG3
 		LDA		#$00
-		STA		_cur_popul_redraw_req
+		STA		_hud_popul_redraw_req
 loc_1365DC:
 		JMP		_game_state_common
 
@@ -891,17 +891,17 @@ loc_136699:
 		LDA		#$16
 		JMP		_set_game_state_idx
 loc_1366A3:
-		LDA		_cur_money_redraw_req
+		LDA		_hud_money_redraw_req
 		BEQ		loc_1366AC
 		LDA		#$0F
 		JMP		_set_game_state_idx
 loc_1366AC:
-		LDA		_cur_date_redraw_req
+		LDA		_hud_date_redraw_req
 		BEQ		loc_1366B6
 		LDA		#$0D
 		JMP		_set_game_state_idx
 loc_1366B6:
-		LDA		_cur_popul_redraw_req
+		LDA		_hud_popul_redraw_req
 		BEQ		loc_1366C0
 		LDA		#$11
 		JMP		_set_game_state_idx
@@ -4270,5 +4270,133 @@ _seasonal_pal_load:
 		RTS
 _seasonal_pal_list:
 		.BYTE	$0E,$0E,$00,$00,$00,$0C,$0C,$0C,$0D,$0D,$0D,$0E
+
+; FIX: moved here from bankD to collect free space in one place
+;
+; =============== S U B	R O U T	I N E =======================================
+_game_state01:
+		JSR		sub_13671F
+		BCS		loc_150019
+		LDA		#$3A
+		STA		_MMC5_CHR_BANKSA+2
+		LDA		#$FF
+		STA		_presents_building_name_and_cost_hud_draw_req
+		LDA		byte_3C
+		ORA		#$02
+		STA		byte_3C
+		LDA		#$FF
+		STA		_RCI_meter_redraw_req
+loc_150019:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state09_presents_building_name_and_cost_hud_draw:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_150028
+		JSR		_building_name_and_cost_hud_draw
+		LDA		#$00
+		STA		_presents_building_name_and_cost_hud_draw_req
+loc_150028:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state14_presents_build_menu:
+		JSR		_ppu_queue_empty_test_0
+		BCS		loc_150055
+		JSR		_spr_clear
+		LDA		#$00
+		STA		_wnd_lvl_idx
+		LDA		#$0C
+		STA		_wnd_idx
+		LDA		#$07
+		STA		_wnd_left_tile
+		LDA		#$0D
+		STA		_wnd_top_tile
+		JSR		_wnd_draw
+		FJSRA	_presents_build_menu,PRGC,PRG2
+		JSR		_wnd_erase
+		LDA		#$00
+		STA		_presents_build_menu_req
+loc_150055:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_game_state15_game_cursor_area_switch:
+		LDA		_cur_game_cursor_area
+		BNE		loc_15006C
+		LDA		_game_map_area_cursor_pos_backup._X
+		BEQ		loc_150084
+		STA		_cur_game_cursor_scr_pos._X
+		LDA		_game_map_area_cursor_pos_backup._Y
+		STA		_cur_game_cursor_scr_pos._Y
+		INC		_cur_game_cursor_area
+		BNE		loc_150084
+loc_15006C:
+		LDA		_cur_game_cursor_scr_pos._X
+		STA		_game_map_area_cursor_pos_backup._X
+		LDA		_cur_game_cursor_scr_pos._Y
+		STA		_game_map_area_cursor_pos_backup._Y
+		LDA		_constr_palette_area_cursor_pos._X
+		STA		_cur_game_cursor_scr_pos._X
+		LDA		_constr_palette_area_cursor_pos._Y
+		STA		_cur_game_cursor_scr_pos._Y
+		LDA		#$00
+		STA		_cur_game_cursor_area
+loc_150084:
+		JMP		_game_state_common
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_error:
+		LDA		#$02
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se0_load:
+		STA		_apu_se_flags
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+;_unref_20:
+;		STA		_apu_mus_idx_req
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se1_load:
+		STA		_apu_se_flags+1
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_bulldozer:
+		LDA		#$08
+		BNE		_apu_se1_load
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_destroy:
+		LDA		#$04
+		BNE		_apu_se1_load
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_click:
+		LDA		#$01
+		BNE		_apu_se0_load
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_small_build:
+		LDA		#$04
+		BNE		_apu_se0_load
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_large_build:
+		LDA		#$08
+		BNE		_apu_se0_load
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_consrt_palette_click:
+		LDA		#$20
+		BNE		_apu_se1_load
+
+; =============== S U B	R O U T	I N E =======================================
+_apu_se_item_select:
+		LDA		#$40
+		BNE		_apu_se1_load
 
 		BANK_END FC,$A000

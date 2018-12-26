@@ -4,132 +4,6 @@
 		BANK_START $FD
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_state01:
-		JSR		sub_13671F
-		BCS		loc_150019
-		LDA		#$3A
-		STA		_MMC5_CHR_BANKSA+2
-		LDA		#$FF
-		STA		_presents_building_name_and_cost_hud_draw_req
-		LDA		byte_3C
-		ORA		#$02
-		STA		byte_3C
-		LDA		#$FF
-		STA		_RCI_meter_redraw_req
-loc_150019:
-		JMP		_game_state_common
-
-; =============== S U B	R O U T	I N E =======================================
-_game_state09_presents_building_name_and_cost_hud_draw:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_150028
-		JSR		_building_name_and_cost_hud_draw
-		LDA		#$00
-		STA		_presents_building_name_and_cost_hud_draw_req
-loc_150028:
-		JMP		_game_state_common
-
-; =============== S U B	R O U T	I N E =======================================
-_game_state14_presents_build_menu:
-		JSR		_ppu_queue_empty_test_0
-		BCS		loc_150055
-		JSR		_spr_clear
-		LDA		#$00
-		STA		_wnd_lvl_idx
-		LDA		#$0C
-		STA		_wnd_idx
-		LDA		#$07
-		STA		_wnd_left_tile
-		LDA		#$0D
-		STA		_wnd_top_tile
-		JSR		_wnd_draw
-		FJSRA	_presents_build_menu,PRGC,PRG2
-		JSR		_wnd_erase
-		LDA		#$00
-		STA		_presents_build_menu_req
-loc_150055:
-		JMP		_game_state_common
-
-; =============== S U B	R O U T	I N E =======================================
-_game_state15_game_cursor_area_switch:
-		LDA		_cur_game_cursor_area
-		BNE		loc_15006C
-		LDA		_game_map_area_cursor_pos_backup._X
-		BEQ		loc_150084
-		STA		_cur_game_cursor_scr_pos._X
-		LDA		_game_map_area_cursor_pos_backup._Y
-		STA		_cur_game_cursor_scr_pos._Y
-		INC		_cur_game_cursor_area
-		BNE		loc_150084
-loc_15006C:
-		LDA		_cur_game_cursor_scr_pos._X
-		STA		_game_map_area_cursor_pos_backup._X
-		LDA		_cur_game_cursor_scr_pos._Y
-		STA		_game_map_area_cursor_pos_backup._Y
-		LDA		_constr_palette_area_cursor_pos._X
-		STA		_cur_game_cursor_scr_pos._X
-		LDA		_constr_palette_area_cursor_pos._Y
-		STA		_cur_game_cursor_scr_pos._Y
-		LDA		#$00
-		STA		_cur_game_cursor_area
-loc_150084:
-		JMP		_game_state_common
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_error:
-		LDA		#$02
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se0_load:
-		STA		_apu_se_flags
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-;_unref_20:
-;		STA		_apu_mus_idx_req
-;		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se1_load:
-		STA		_apu_se_flags+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_bulldozer:
-		LDA		#$08
-		BNE		_apu_se1_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_destroy:
-		LDA		#$04
-		BNE		_apu_se1_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_click:
-		LDA		#$01
-		BNE		_apu_se0_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_small_build:
-		LDA		#$04
-		BNE		_apu_se0_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_large_build:
-		LDA		#$08
-		BNE		_apu_se0_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_consrt_palette_click:
-		LDA		#$20
-		BNE		_apu_se1_load
-
-; =============== S U B	R O U T	I N E =======================================
-_apu_se_item_select:
-		LDA		#$40
-		BNE		_apu_se1_load
-
-; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_pos_calc:
 		LDA		_cur_screen_tile._Y
 		LSR
@@ -4087,9 +3961,9 @@ loc_151F3B:
 		JSR		_ppu_flush_wait
 		JSR		_building_name_and_cost_hud_draw
 		JSR		_RCI_meters_draw
-		FJSRA	_cur_date_draw,PRG7,PRG3
-		FJSRA	_cur_money_draw,PRGC,PRG3
-		FJSRA	_cur_popul_draw,PRG7,PRG3
+		FJSRA	_hud_date_draw,PRG7,PRG3
+		FJSRA	_hud_money_draw,PRGC,PRG3
+		FJSRA	_hud_popul_draw,PRG7,PRG3
 		FJSRA	_city_name_draw,PRG7,PRG3
 		JSR		_ppu_flush_wait
 loc_151F6D:

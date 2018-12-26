@@ -8,10 +8,11 @@
 - Cleanup some portions of the code, minor optimizations on size logics.
 - Macrofication of the code for shorter and much easy readable listings.
 - Commented large portions of game logic and calcs.
+- Re-optimized redundant or duplicated code chunks, similar routines merged and used as system routines. Overall reducing of the code is about 4Kb.
+- Re-enabled unsed sound effect, can be heard with var $00F1 set to value $80.
 - Fixed extended scenario screen potentially crash, also fixed redundant cycles due to RAM address mistake there.
 - Fixed critical bug with ppu queue overflow in name entry screens.
 - Fixed attributes of the pressed buttons on the name entry screens (maybe they SHOULD be inverted upon press, but this looks odd actually. the only sign it may be done on purpose, no-sprite push button animations ("CL") uses attr switch as well as sprite animations).
-- Partially merged sprite routines.
 
 	CODES
 

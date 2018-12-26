@@ -94,7 +94,7 @@ _disasters_flags:
 		.BYTE	0
 _money_delta:
 		.BYTE	0,0
-_cur_money_redraw_req:
+_hud_money_redraw_req:
 		.BYTE	0
 byte_37:
 		.BYTE	0
@@ -633,7 +633,7 @@ byte_511:
 		.BYTE	0
 byte_512:
 		.BYTE	0
-_cur_date_redraw_req:
+_hud_date_redraw_req:
 		.BYTE	0
 byte_514:
 		.BYTE	0
@@ -709,7 +709,7 @@ _power_build_menu_req:
 		.BYTE	0
 _airport_build_menu_req:
 		.BYTE	0
-_cur_popul_redraw_req:
+_hud_popul_redraw_req:
 		.BYTE	0
 _city_name_redraw_req:
 		.BYTE	0
