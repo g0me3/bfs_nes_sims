@@ -443,7 +443,7 @@ _presents_build_menu:
 		BCS		.present_wnd_right				; top to bottom
 		SEC										; left
 		SBC		#$01
-		BVC		.present_wnd_input_end			; OPTIMIZE: V always 0 after SBC
+		BVC		.present_wnd_input_end			; OPTIMIZED: V always 0 after SBC
 ;		BCS		.present_wnd_input_end			; REDUNDANT, wrap 0 to 4 not needed
 ;		ADC		#$04							; -
 ;		BNE		.present_wnd_input_end
@@ -460,7 +460,7 @@ _presents_build_menu:
 ;		BCC		.present_wnd_input_end			; -
 ;		SBC		#$04							; -
 .present_wnd_input_end:
-		AND		#$03							; OPTIMIZE: simple and enough here
+		AND		#$03							; OPTIMIZED: simple and enough here
 		STA		_cur_present_select_idx			; save changed cursor pos
 		TAX
 		LDA		_city._presents_list,X			; preventing the empty slot selection

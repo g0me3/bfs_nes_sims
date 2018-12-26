@@ -2604,12 +2604,12 @@ _gui_ctrl_menu_icon_push_draw:
 ;		JSR		gui_ctrl_menu_icon_pos_calc
 ;		JSR		gui_ctrl_menu_icon_push_queue
 ;		RTS
-		LDY		#$00							; OPTIMIZE, merged
+		LDY		#$00							; OPTIMIZED, merged
 		BEQ		_gui_ctrl_menu_icon_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _gui_ctrl_menu_icon_release_draw:
-		LDY		#$01							; OPTIMIZE, merged
+		LDY		#$01							; OPTIMIZED, merged
 
 ; !FALLTHROUTH!
 
@@ -3992,12 +3992,6 @@ loc_5804F:
 		BEQ		loc_5804A
 
 ; =============== S U B	R O U T	I N E =======================================
-; screenY =  ((scrollX / 2) + 16) % 20
-; screenX =  ((scrollY / 2) + 1C) % 1E
-; lineLen =  (screenX < 20) ? 8 : (screenX - 1F)
-; wrapLen =  (screenX < 20) ? 0 : (8 - LineLen)
-; ppuOfs  = ((screenY * 20) + screenX) + 0x2000
-;
 ;_hud_money_pos_calc:
 ;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1C,NONE,#$1E
 ;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
@@ -4092,7 +4086,7 @@ loc_58DF9:
 ;		SBC		_dec_digit16_tbl+1,Y
 ;		STA		_tmp1
 ;		BCC		loc_58E0E
-		LDA		_tmp0						; OPTIMIZE
+		LDA		_tmp0						; OPTIMIZED
 		CMP		_dec_digit_tbl0,Y			; -
 		LDA		_tmp1						; -
 		SBC		_dec_digit_tbl1,Y			; -
@@ -4164,7 +4158,7 @@ _hud_date_pos_calc:
 ;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
 ;		CIADDB	_tmp0,_cur_screen_tile._X,#$16,NONE,#$20
 ;		WRAPA	_tmp2,_tmp3,#$08,#$20
-;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZE, merged
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$00			; OPTIMIZED, merged
 ;		RTS
 
 ; REDUNDANT, the same for this one
@@ -4304,7 +4298,7 @@ loc_5805A:
 ;		LDA		_tmp2
 ;		SBC		_dec_digit_tbl2,X
 ;		STA		_tmp2
-		LDA		_tmp0						; OPTIMIZE
+		LDA		_tmp0						; OPTIMIZED
 		CMP		_dec_digit_tbl0,X			; -
 		LDA		_tmp1						; -
 		SBC		_dec_digit_tbl1,X			; -
@@ -4336,61 +4330,98 @@ loc_58076:
 		LDA		_tmp4
 		RTS
 
+; FIX: moved here from bank7, now almost all routines are in it's
+; home, already reformatted to use common function with other cunctions
+;
 ; =============== S U B	R O U T	I N E =======================================
 _hud_city_name_draw:
-		JSR		_get_city_name_str
-		JSR		_hud_city_name_pos_set
-		JSR		_hud_city_name_str_queue
-		RTS
+		JSR		_hud_city_name_to_str
+		LDA		#$02							; -
+		STA		_tmp2							; -
+		LDA		#$1A							; -
+		STA		_tmp3							; -
+		LDA		#$0A							; -
+		STA		_tmp4							; -
+		JMP		_hud_str_pos_calc_and_queue		; -
 
 ; =============== S U B	R O U T	I N E =======================================
-_get_city_name_str:
+;_hud_city_name_draw:
+;		JSR		_get_city_name_str
+;		JSR		_hud_city_name_pos_set
+;		JSR		_hud_city_name_str_queue
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_hud_city_name_to_str:
+		LDA		#$0A
+		STA		_tmp2
 		LDX		_city._name
 		DEX
-		STX		byte_51A
 		MOVWO	word_DA,_city._name+1
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_city_name_pos_set:
-		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
-		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
-		WRAPA	_tmp2,_tmp3,#$0A,#$20
-		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
-		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_hud_city_name_str_queue:
-		PPUQSTART
 		LDY		#$00
-		PPUQMOVB	_ptr0,OP_NOP,0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
 loc_B8086:
-		LDA		byte_51A
+		CPX		#$00
 		BNE		loc_B808F
 		LDA		#$20
 		BNE		loc_B8095
 loc_B808F:
 		LDA		(word_DA),Y
-		DEC		byte_51A
-		INY
+		DEX
 loc_B8095:
-		PPUQMOVA
+		STA		_pre_ppu_buf,Y
+		INY
 		DEC		_tmp2
 		BNE		loc_B8086
-		LDA		_tmp3
-		BEQ		loc_B80BE
-		STA		_tmp2
-		LDA		#$00
-		STA		_tmp3
-		PPUQMOVB	_ptr0,OP_AND,#$E0
-		PPUQMOVB	_ptr0+1,OP_NOP,0
-		PPUQMOVB	_tmp2,OP_NOP,0
-		JMP		loc_B8086
-loc_B80BE:
-		PPUQEND
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+;_hud_city_name_to_str:
+;		LDX		_city._name
+;		DEX
+;		STX		byte_51A
+;		MOVWO	word_DA,_city._name+1
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+;_hud_city_name_pos_set:
+;		CIADDB	_tmp1,_cur_screen_tile._Y,#$1A,NONE,#$1E
+;		CIADDB	_tmp0,_cur_screen_tile._X,#$02,NONE,#$20
+;		WRAPA	_tmp2,_tmp3,#$0A,#$20
+;		BUFPOS	_ptr0,_tmp0,_tmp1,#$20,#$20	; DST=(_tmp1*#$20+_tmp0)+#$2000
+;		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+;_hud_city_name_str_queue:
+;		PPUQSTART
+;		LDY		#$00
+;		PPUQMOVB	_ptr0,OP_NOP,0
+;		PPUQMOVB	_ptr0+1,OP_NOP,0
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;loc_B8086:
+;		LDA		byte_51A
+;		BNE		loc_B808F
+;		LDA		#$20
+;		BNE		loc_B8095
+;loc_B808F:
+;		LDA		(word_DA),Y
+;		DEC		byte_51A
+;		INY
+;loc_B8095:
+;		PPUQMOVA
+;		DEC		_tmp2
+;		BNE		loc_B8086
+;		LDA		_tmp3
+;		BEQ		loc_B80BE
+;		STA		_tmp2
+;		LDA		#$00
+;		STA		_tmp3
+;		PPUQMOVB	_ptr0,OP_AND,#$E0
+;		PPUQMOVB	_ptr0+1,OP_NOP,0
+;		PPUQMOVB	_tmp2,OP_NOP,0
+;		JMP		loc_B8086
+;loc_B80BE:
+;		PPUQEND
+;		RTS
 
 ; REDUNDANT, merged to one common tables set
 ; in system bank
@@ -4433,6 +4464,12 @@ loc_B80BE:
 ; they are the same except position constants, and as soon as all
 ; thre pair of routines uses both in row, let's combine them in one
 ; sub as well.
+;
+; ppuY =  ((scrollX / 2) + screenX) % 32
+; ppuX =  ((scrollY / 2) + screenY) % 30
+; ppuLen =  (ppuX < 32) ? lineLen : (ppuX - 32 - 1)
+; wrapLen =  (ppuX < 32) ? 0 : (lineLen - ppuLen)
+; ppuOfs  = ((ppuY * 32) + ppuX) + 0x2000
 ;
 _hud_str_pos_calc_and_queue:
 		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp3,NONE,#$1E

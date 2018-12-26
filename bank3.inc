@@ -43,7 +43,7 @@ loc_58144:
 		JSR		_game_msg_wnd_draw
 		JSR		_spr_clear
 		JSR		_wait_for_nmi
-;		FJSRA	_game_msg_chr_setup,PRG2,PRG2		; OPTIMIZE
+;		FJSRA	_game_msg_chr_setup,PRG2,PRG2		; OPTIMIZED
 		JSR		_game_msg_chr_setup					; FIX: local sub now
 		LDA		#$00
 		STA		_ptr0
@@ -94,7 +94,7 @@ loc_581EC:
 		STA		_ppu_pal_dequeue_req
 		JSR		_game_chr_common_reload
 ;		JSR		_game_msg_chr1_load
-		LDA		_mmc5_chr_banks_shadow+1		; OPTIMIZE, restore CHR 1 from here
+		LDA		_mmc5_chr_banks_shadow+1		; OPTIMIZED, restore CHR 1 from here
 		STA		_MMC5_CHR_BANKSA+1
 ;		LDA		_mmc5_chr_banks_shadow+3		; REDUNDANT, already loaded in
 ;		STA		_MMC5_CHR_BANKSA+3				; _game_chr_common_reload routine!
@@ -120,20 +120,20 @@ loc_581EC:
 ;
 _game_msg_chr_setup:
 		LDX		_game_msg_idx
-;		LDA		_game_msg_chr0_list,X		; OPTIMIZE
+;		LDA		_game_msg_chr0_list,X		; OPTIMIZED
 		LDA		#$30
 		STA		_MMC5_CHR_BANKSA
-;		LDA		_game_msg_chr1_list,X		; OPTIMIZE
+;		LDA		_game_msg_chr1_list,X		; OPTIMIZED
 		LDA		#$31
 		STA		_MMC5_CHR_BANKSA+1
-;		LDA		_game_msg_chr2_list,X		; OPTIMIZE
+;		LDA		_game_msg_chr2_list,X		; OPTIMIZED
 		LDA		#$32
 		STA		_MMC5_CHR_BANKSA+2
 		LDA		_game_msg_chr3_list,X
 		STA		_MMC5_CHR_BANKSA+3
 		RTS
 
-; OPTIMIZE
+; OPTIMIZED
 ;_game_msg_chr0_list:
 ;		.BYTE	$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
 ;		.BYTE	$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30,$30
@@ -183,6 +183,7 @@ _game_msg_music_restore:
 loc_58262:
 		STY		_apu_mus_idx_req
 		RTS
+
 _game_msg_apu_types_list:
 		.BYTE	$01,$01,$01,$01,$01,$01,$02,$02,$02,$02,$02,$01,$01,$01,$01,$01
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$01,$02,$01
@@ -245,7 +246,6 @@ loc_BB84:
 		STA		_tmp2
 ;		LDA		_wnd_header_txt_pos,X			; OPTIMIZED
 ;		STA		_tmp2
-
 		JSR		_wnd_header_txt_pos_calc
 ;		LDA		_game_msg_idx					; REDUNDANT no need to calculate
 ;		ASL										; idx * 3 value, there is only single
@@ -290,7 +290,7 @@ _wnd_header_queue:
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp4,OP_NOP,0
-loc_BC1A:										; OPTIMIZE
+loc_BC1A:										; OPTIMIZED
 		PPUQMOVB	_tmp5,OP_ORA,#$20
 		PPUQMOVB	_tmp6,OP_NOP,0
 loc_BC1B:
@@ -315,7 +315,7 @@ loc_BC1C:										; -
 ;		PPUQMOVB	_tmp5,OP_ORA,#$20			; REDUNDANT, dupe of the code
 ;		PPUQMOVB	_tmp6,OP_NOP,0				; at the beginning of the loop,
 ;		JMP		loc_BC1B						; reuse them with longer jump
-		JMP		loc_BC1A						; OPTIMIZE
+		JMP		loc_BC1A						; OPTIMIZED
 loc_BC49:
 		PPUQEND
 		RTS
@@ -371,7 +371,7 @@ _wnd_header_txt_len:
 		LEN		aAircrash
 		LEN		aTornade
 
-; OPTIMIZE: instead of keep all dupes for three different encodings of one
+; OPTIMIZED: instead of keep all dupes for three different encodings of one
 ; header name line, we can just keep the difference between characters
 ; and a special symbol (space)
 ;
@@ -670,33 +670,36 @@ _game_msg_line_display:
 		LDA		(_tmp6),Y
 		STA		_tmp6+1
 		POPB	_tmp6
-; REDUNDANT: here is the code for extnt data queue for message lines
+; NOTE: here is the code for extnt data queue for message lines
 ; as you can see, it's always 0B, the same as drawn by the windows
 ; drawing routine, so they already 0B always, and never changes
 ; so we may remove it completely from here without harm
-;		PUSHB	_tmp4
-;		PUSHB	_tmp5
 ;
-;		EXTQSTART
-;		EXTQMOVB	_tmp2,OP_NOP,0
-;loc_58370:
-;		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-;		EXTQMOVB	_tmp4,OP_NOP,0
-;loc_58371:
-;		EXTQMOVB	#$0B,OP_NOP,0
-;		DEC		_tmp4
-;		BNE		loc_58371
-;		LDA		_tmp5
-;		BEQ		loc_5839E
-;		STA		_tmp4
-;		LDA		#$00
-;		STA		_tmp5
-;		EXTQMOVB	_tmp2,OP_AND,#$E0
-;		JMP		loc_58370
-;loc_5839E:
-;		EXTQEND
-;		POPB	_tmp5
-;		POPB	_tmp4
+; WARNING! a special icon at the second practice hint screen
+; changes color of Start word if this isn't used
+;
+		PUSHB	_tmp4
+		PUSHB	_tmp5
+		EXTQSTART
+		EXTQMOVB	_tmp2,OP_NOP,0
+loc_58370:
+		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
+		EXTQMOVB	_tmp4,OP_NOP,0
+loc_58371:
+		EXTQMOVB	#$0B,OP_NOP,0
+		DEC		_tmp4
+		BNE		loc_58371
+		LDA		_tmp5
+		BEQ		loc_5839E
+		STA		_tmp4
+		LDA		#$00
+		STA		_tmp5
+		EXTQMOVB	_tmp2,OP_AND,#$E0
+		JMP		loc_58370
+loc_5839E:
+		EXTQEND
+		POPB	_tmp5
+		POPB	_tmp4
 		PPUQSTART
 		LDY		#$00
 		PPUQMOVB	_tmp2,OP_NOP,0
@@ -825,31 +828,32 @@ _game_msg_presents_pos_calc:
 _game_msg_presents_line_clear:
 		EXTQSTART
 		LDY		#$0B
+		PUSHB		_tmp4
+		PUSHB		_tmp5
 		EXTQMOVB	_tmp2,OP_NOP,0
+loc_584FA:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp4,OP_NOP,0
-		STA		_tmp6
-		LDA		_tmp5
-		STA		_tmp6+1
 loc_584FB:
 		TYA
 		EXTQMOVA
-		DEC		_tmp6
+		DEC		_tmp4
 		BNE		loc_584FB
-		LDA		_tmp6+1
+		LDA		_tmp5
 		BEQ		loc_58527
-		STA		_tmp6
+		STA		_tmp4
 		LDA		#$00
-		STA		_tmp6+1
+		STA		_tmp5
 		EXTQMOVB	_tmp2,OP_AND,#$E0
-		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_tmp6,OP_NOP,0
-		JMP		loc_584FB
+		JMP		loc_584FA
 loc_58527:
 		EXTQEND
+		POPB	_tmp5
+		POPB	_tmp4
 		PPUQSTART
 		LDY		#$20
 		PPUQMOVB	_tmp2,OP_NOP,0
+loc_58540:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_58541:
@@ -863,9 +867,7 @@ loc_58541:
 		LDA		#$00
 		STA		_tmp5
 		PPUQMOVB	_tmp2,OP_AND,#$E0
-		PPUQMOVB	_tmp3,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_58541
+		JMP		loc_58540
 loc_5856D:
 		PPUQEND
 		RTS
@@ -1310,23 +1312,23 @@ loc_588F6:
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVWO	word_DA,_city._sister_name+1
+		MOVWO	word_DA,_city._sister_name+1			; empty in practice, scenarios does not need it
 		RTS
 loc_58908:
 		LDA		_city._bank_name
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVWO	word_DA,_city._bank_name+1
-		RTS
+		MOVWO	word_DA,_city._bank_name+1				; always empty, never initializes
+		RTS												; so displaying always just as "BANK"
 loc_5891A:
 		LDA		_city._unused_name3
 		SEC
 		SBC		#$01
 		STA		byte_51A
-		MOVWO	word_DA,_city._unused_name3+1
-		RTS
-loc_5892C:
+		MOVWO	word_DA,_city._unused_name3+1			; unused buffers/name
+		RTS												; there is unknown what they
+loc_5892C:												; were intended for
 		LDA		_city._unused_name4
 		SEC
 		SBC		#$01
@@ -1413,7 +1415,7 @@ loc_589D1:
 ;		LDA		_tmp_popul_hex+2
 ;		SBC		_dec_digit_tbl2,Y
 ;		STA		_tmp_popul_hex+2
-		LDA		_tmp_popul_hex				; OPTIMIZE
+		LDA		_tmp_popul_hex				; OPTIMIZED
 		CMP		_dec_digit_tbl0,Y			; -
 		LDA		_tmp_popul_hex+1			; -
 		SBC		_dec_digit_tbl1,Y			; -
@@ -1483,31 +1485,31 @@ loc_589FA:
 ; event	19 item	D
 ; event	1A item	E
 ;
-; TODO: too complex, replace with table.
+; REDUNDANT: too complex, replace with table.
 ;
 _present_put_in_list:
-		LDX		#$0F
-		LDA		_game_msg_idx
-		CMP		#$02
-		BEQ		loc_58A5A
-		LDX		#$01
-		CMP		#$0B
-		BEQ		loc_58A5A
-		CMP		#$15
-		BEQ		locret_58A6D
-		CMP		#$0D
-		BCC		locret_58A6D
-		CMP		#$1B
-		BCS		locret_58A6D
-		SEC
-		SBC		#$0B
-		TAX
-		CPX		#$0B
-		BCC		loc_58A5A
-		DEX
-loc_58A5A:
-		TXA
-		PHA
+;		LDX		#$0F
+;		LDA		_game_msg_idx
+;		CMP		#$02
+;		BEQ		loc_58A5A
+;		LDX		#$01
+;		CMP		#$0B
+;		BEQ		loc_58A5A
+;		CMP		#$15
+;		BEQ		locret_58A6D
+;		CMP		#$0D
+;		BCC		locret_58A6D
+;		CMP		#$1B
+;		BCS		locret_58A6D
+;		SEC
+;		SBC		#$0B
+;		TAX
+;		CPX		#$0B
+;		BCC		loc_58A5A
+;		DEX
+;loc_58A5A:
+;		TXA
+;		PHA
 		LDX		#$FF
 		LDY		#$04
 loc_58A60:
@@ -1517,10 +1519,17 @@ loc_58A60:
 		DEY
 		BNE		loc_58A60
 loc_58A69:
-		PLA
+;		PLA
+		LDY		_game_msg_idx				; OPTIMIZED
+		LDA		_presents_list,Y
+		BMI		locret_58A6D
 		STA		_city._presents_list,X
 locret_58A6D:
 		RTS
+
+_presents_list:
+		.BYTE	$FF,$0F,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$01,$FF,$02,$03,$04
+		.BYTE	$05,$06,$07,$08,$09,$FF,$0A,$0B,$0C,$0D,$0E
 
 ; =============== S U B	R O U T	I N E =======================================
 _init_special_year_date:
@@ -1574,7 +1583,7 @@ loc_58AA8:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_pos_calc:
-		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp0,NONE,#$1E
+		CIADDB	_tmp1,_cur_screen_tile._Y,NONE,_tmp0,#$1E
 		CIADDB	_tmp2,_cur_screen_tile._X, #$07,NONE,#$20
 		WRAPB	_tmp3,_tmp4,_tmp2,#$19,#$20
 		BUFPOS	_tmp1,_tmp2,_tmp1,#$20,#$00	; DST=(_tmp1*#$20+_tmp2)+#$0000
@@ -1582,37 +1591,45 @@ _game_msg_wnd_line_pos_calc:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_wnd_line_draw:
-		LDX		_ptr0
+		LDX		_tmp0
 		LDY		_game_msg_wnd_nt_ofs_list,X
 		STY		_tmp6+1
+;		LDA		_tmp3
+;		STA		_tmp5
+;		LDA		_tmp4
+;		STA		_tmp6
+		PUSHB	_tmp3
+		PUSHB	_tmp4
 		PPUQSTART
-		LDA		_tmp3
-		STA		_tmp5
-		LDA		_tmp4
-		STA		_tmp6
 		PPUQMOVB	_ptr0+1,OP_NOP,0
+loc_58B37:
 		PPUQMOVB	_tmp2,OP_ORA,#$20
-		PPUQMOVB	_tmp5,OP_NOP,0
+		PPUQMOVB	_tmp3,OP_NOP,0
 loc_58B38:
 		LDA		_game_msg_wnd_extnt_frame_data,Y
 		INY
 		PPUQMOVA
-		DEC		_tmp5
+		DEC		_tmp3
 		BNE		loc_58B38
-		LDA		_tmp6
+		LDA		_tmp4
 		BEQ		loc_58B67
-		STA		_tmp5
+		STA		_tmp3
 		LDA		#$00
-		STA		_tmp6
+		STA		_tmp4
 		PPUQMOVB	_ptr0+1,OP_AND,#$E0
-		PPUQMOVB	_tmp2,OP_ORA,#$20
-		PPUQMOVB	_tmp5,OP_NOP,0
-		JMP		loc_58B38
+;		PPUQMOVB	_tmp2,OP_ORA,#$20
+;		PPUQMOVB	_tmp3,OP_NOP,0
+;		JMP		loc_58B38
+		JMP		loc_58B37
 loc_58B67:
 		LDY		_tmp6+1
-		STX		_tmp6+1
+;		STX		_tmp6+1
+		PPUQEND
+		POPB	_tmp4
+		POPB	_tmp3
 		EXTQSTART
 		EXTQMOVB	_ptr0+1,OP_NOP,0
+loc_58B80:
 		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
 		EXTQMOVB	_tmp3,OP_NOP,0
 loc_58B81:
@@ -1627,12 +1644,13 @@ loc_58B81:
 		LDA		#$00
 		STA		_tmp4
 		EXTQMOVB	_ptr0+1,OP_AND,#$E0
-		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_tmp3,OP_NOP,0
-		JMP		loc_58B81
+;		EXTQMOVB	_tmp2,OP_ORA,#>[_MMC5_EXRAM]
+;		EXTQMOVB	_tmp3,OP_NOP,0
+;		JMP		loc_58B81
+		JMP		loc_58B80
 loc_58BB0:
-		LDY		_tmp6+1
-		STY		_ppu_queue_pos_head
+;		LDY		_tmp6+1
+;		STY		_ppu_queue_pos_head
 		EXTQEND
 		RTS
 
@@ -1697,10 +1715,7 @@ _sram_reset:
 ; =============== S U B	R O U T	I N E =======================================
 _sram_sum_reinit:
 		JSR		_sram_sum_calc
-		LDA		_tmp2
-		STA		_sram_data_crc
-		LDA		_tmp3
-		STA		_sram_data_crc+1
+		MOVW	_sram_data_crc,_tmp2
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
@@ -1720,11 +1735,11 @@ _sram_init:
 		STA		_has_saved_city_data_flag
 		RTS
 loc_59C0E:
-		LDA		#>[_land_value_map_buf]			; TODO: rearrange to use macro!
-		STA		_ptr0+1
+		LDA		#>[_land_value_map_buf]			; CAUTION: low nibble is zero
+		STA		_ptr0+1							; here
 		LDA		#<[_land_value_map_buf]
 		STA		_ptr0
-		STA		_has_saved_city_data_flag
+		STA		_has_saved_city_data_flag		; zero goes here as well
 		TAY
 loc_59C1A:
 		STA		(_ptr0),Y
@@ -1833,7 +1848,7 @@ loc_58CE6:
 		STA		_scroll_msg_shift_pos
 		LDA		_scroll_msg_start_pos
 		LDX		_scroll_msg_idx
-		CMP		_scroll_msg_sizes_list,X
+		CMP		_scroll_msg_end_pos,X
 		BCC		locret_58D0C
 		LDA		#$00
 		STA		_scroll_msg_active_flag
@@ -1842,24 +1857,26 @@ loc_58CE6:
 locret_58D0C:
 		RTS
 loc_58D0D:
-		LDA		_debug_scroll_msg_flags
+		LDA		_debug_scroll_msg_flags			; hacky-hacky
 		CMP		#$03
 		BNE		loc_58D30
 		LDA		_city._game_flags
 		AND		#$10
 		BEQ		loc_58D21
-		LDA		#<[_scroll_txt_i_am_god]
-		LDX		#>[_scroll_txt_i_am_god]
+;		LDA		#<[_scroll_txt_i_am_god]		; REDUNDANT, why won't we have these message
+;		LDX		#>[_scroll_txt_i_am_god]		; in a common library as well?
+		LDA		#$19
 		BNE		loc_58D25
 loc_58D21:
-		LDA		#<[_scroll_txt_debug_off]
-		LDX		#>[_scroll_txt_debug_off]
+;		LDA		#<[_scroll_txt_debug_off]
+;		LDX		#>[_scroll_txt_debug_off]
+		LDA		#$1A
 loc_58D25:
-		STA		_tmp15
-		STX		_tmp15+1
-		LDA		#$01
-		STA		_scroll_msg_idx
-		BNE		loc_58D3D
+;		STA		_tmp15							; REDUNDANT actualy, the message size here is not
+;		STX		_tmp15+1						; identical to scroll_msg_idx == 1, but
+;		LDA		#$01							; it's not really important, since the rest
+		STA		_scroll_msg_idx					; of line filled with spaces in any case
+;		BNE		loc_58D3D
 loc_58D30:
 		LDX		_scroll_msg_idx
 		LDA		_scroll_msg_lib_lo,X
@@ -1894,33 +1911,33 @@ loc_58D49:
 		DEX
 		STX		_ppu_queue_pos_tail
 		LDY		_scroll_msg_end_char
-		PPUQMOVB	_tmp17,OP_NOP,0
-		PPUQMOVB	_tmp18,OP_NOP,0
+		PPUQMOVB	_tmp17,OP_NOP,0				; draw one char at a time,
+		PPUQMOVB	_tmp18,OP_NOP,0				; the rest is up to scroll
 		PPUQMOVB	#$01,OP_NOP,0
 		LDA		(_tmp15),Y
 		CMP		#$FF
-		BEQ		loc_58D9E
-		STA		_ppu_queue_buf,X
+		BNE		loc_58D93
+		LDA		#$DF
+		BNE		loc_58D930
+loc_58D93:
 		INC		_scroll_msg_end_char
+loc_58D930:
+		STA		_ppu_queue_buf,X
 loc_58D94:
 		LDA		_scroll_msg_shift_pos
 		CLC
 		ADC		#$02
 		STA		_scroll_msg_shift_pos
 		RTS
-loc_58D9E:
-		LDA		#$DF
-		STA		_ppu_queue_buf,X
-		BNE		loc_58D94
 
-_scroll_msg_sizes_list:
+; NOTE: the length of lines not actually so much inportant here,
+; we may assume all messages are the same max size and the only
+; noticeable effect of this is that short and long messages will
+; have the same duration on the screen.
+;
+_scroll_msg_end_pos:
 		.BYTE	$3D,$3C,$3C,$33,$36,$33,$3A,$3C,$3C,$41,$43,$43,$48,$49,$3D,$3F
-		.BYTE	$33,$32,$2F,$34,$39,$38,$32,$44,$36
-
-_scroll_txt_i_am_god:
-		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_I,__,_W,_I,_S,_H,__,_Y,_O,_U,__,_H,_A,_P,_P,_Y,$FF
-_scroll_txt_debug_off:
-		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_D,_E,_B,_U,_G,__,_O,_F,_F,$FF
+		.BYTE	$33,$32,$2F,$34,$39,$38,$32,$44,$36,$3B,$34
 
 _scroll_msg_lib_lo:
 		.BYTE	<[_scroll_txt00_more_residental]
@@ -1948,6 +1965,8 @@ _scroll_msg_lib_lo:
 		.BYTE	<[_scroll_txt16_explosion_detected]
 		.BYTE	<[_scroll_txt17_brownouts]
 		.BYTE	<[_scroll_txt18_heavy_traffic_repotrted]
+		.BYTE	<[_scroll_txt_i_am_god]
+		.BYTE	<[_scroll_txt_debug_off]
 _scroll_msg_lib_hi:
 		.BYTE	>[_scroll_txt00_more_residental]
 		.BYTE	>[_scroll_txt01_more_commercial]
@@ -1974,6 +1993,8 @@ _scroll_msg_lib_hi:
 		.BYTE	>[_scroll_txt16_explosion_detected]
 		.BYTE	>[_scroll_txt17_brownouts]
 		.BYTE	>[_scroll_txt18_heavy_traffic_repotrted]
+		.BYTE	>[_scroll_txt_i_am_god]
+		.BYTE	>[_scroll_txt_debug_off]
 
 _scroll_txt00_more_residental:
 		.BYTE	_M,_O,_R,_E,__,_R,_E,_S,_I,_D,_E,_N,_T,_I,_A,_L,__,_Z,_O,_N,_E,_S,__,_N,_E,_E,_D,_E,_D,$FF
@@ -2025,6 +2046,10 @@ _scroll_txt17_brownouts:
 		.BYTE	_B,_R,_O,_W,_N,_O,_U,_T,_S,__,__,_B,_U,_I,_L,_D,__,_A,_N,_O,_T,_H,_E,_R,__,_P,_O,_W,_E,_R,__,_P,_L,_A,_N,_T,$FF
 _scroll_txt18_heavy_traffic_repotrted:
 		.BYTE	_H,_E,_A,_V,_Y,__,_T,_R,_A,_F,_F,_I,_C,__,_R,_E,_P,_O,_R,_T,_E,_D,$FF
+_scroll_txt_i_am_god:
+		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_I,__,_W,_I,_S,_H,__,_Y,_O,_U,__,_H,_A,_P,_P,_Y,$FF
+_scroll_txt_debug_off:
+		.BYTE	_I,__,_A,_M,__,_G,_O,_D,__,__,__,_D,_E,_B,_U,_G,__,_O,_F,_F,$FF
 
 		SECTION_END F03
 
@@ -2046,26 +2071,30 @@ _game_menu_exec:
 		TAX
 		CPX		#$00
 		BNE		loc_58F72
-		LDA		#$01
-		STA		_apu_se_flags
-		FJSRA	_game_save_menu,SRAM,PRG3
+;		LDA		#$01							; move into function
+;		STA		_apu_se_flags
+;		FJSRA	_game_save_menu,SRAM,PRG3		; FIX: already enabled sram in FJSR for _game_menu_exec
+		JSR		_game_save_menu
 		JMP		_game_menu_break
 loc_58F72:
 		DEX
 		BNE		loc_58F7F
-		FJSRA	_game_load_menu,SRAM,PRG3
+;		FJSRA	_game_load_menu,SRAM,PRG3		; FIX: already enabled sram in FJSR for _game_menu_exec
+		JSR		_game_load_menu					; the only sub that can use two different se
 		JMP		_game_menu_break
 loc_58F7F:
 		DEX
 		BNE		loc_58F90
-		LDA		#$01
-		STA		_apu_se_flags
-		FJSRA	_game_title_return,SRAM,PRG3
+;		LDA		#$01							; move into function
+;		STA		_apu_se_flags
+;		FJSRA	_game_title_return,SRAM,PRG3	; FIX: already enabled sram in FJSR for _game_menu_exec
+		JSR		_game_title_return
 		JMP		_game_menu_break
 loc_58F90:
-		LDA		#$01
-		STA		_apu_se_flags
-		FJSRA	_game_quit,SRAM,PRG3
+;		LDA		#$01							; move into function
+;		STA		_apu_se_flags
+;		FJSRA	_game_quit,SRAM,PRG3			; FIX: already enabled sram in FJSR for _game_menu_exec
+		JSR		_game_quit
 _game_menu_break:
 		LDA		#$00
 		STA		_scr_mode_idx
@@ -2073,6 +2102,8 @@ _game_menu_break:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_save_menu:
+		LDA		#$01
+		STA		_apu_se_flags
 		JSR		_save_menu_exec
 		BCS		loc_58FBA
 		JSR		_sram_data_save
@@ -2130,18 +2161,23 @@ loc_58FFE:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+;_load_menu_exec:
+;		LDA		#$10
+;		BNE		_common_yes_no_question_menu
+
+; =============== S U B	R O U T	I N E =======================================
 _save_menu_exec:
+		LDA		#$0B
+
+; =============== S U B	R O U T	I N E =======================================
+_common_yes_no_question_menu:
+		STA		_wnd_idx+1
 		LDA		#$01
 		STA		_wnd_lvl_idx
-		LDA		#$0B
-		STA		_wnd_idx+1
 		LDA		#$09
 		STA		_wnd_left_tile+1
 		LDA		#$0C
 		STA		_wnd_top_tile+1
-
-; =============== S U B	R O U T	I N E =======================================
-_common_yes_no_question_menu:
 		LDA		#$80
 		STA		_pal_load_lib
 		LDA		#$01
@@ -2264,7 +2300,9 @@ loc_59103:
 		STA		_cur_game_mode
 		LDA		#$01
 		STA		_apu_se_flags
-		JSR		_load_menu_exec
+;		JSR		_load_menu_exec						; REDUNDANT
+		LDA		#$10								; FIX: load menu
+		JSR		_common_yes_no_question_menu
 		BCS		loc_5912E
 		JSR		_sram_data_load
 		JSR		_spr_clear
@@ -2281,18 +2319,6 @@ loc_59103:
 loc_5912E:
 		CLC
 		RTS
-
-; =============== S U B	R O U T	I N E =======================================
-_load_menu_exec:
-		LDA		#$01
-		STA		_wnd_lvl_idx
-		LDA		#$10
-		STA		_wnd_idx+1
-		LDA		#$09
-		STA		_wnd_left_tile+1
-		LDA		#$0C
-		STA		_wnd_top_tile+1
-		JMP		_common_yes_no_question_menu
 
 ; =============== S U B	R O U T	I N E =======================================
 _sram_data_load:
@@ -2335,6 +2361,8 @@ loc_59185:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_quit:
+		LDA		#$01
+		STA		_apu_se_flags
 		JSR		_save_menu_exec
 		BCC		loc_591A1
 		CMP		#$FF
@@ -2353,6 +2381,8 @@ loc_591B7:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_title_return:
+		LDA		#$01
+		STA		_apu_se_flags
 		JSR		_save_menu_exec
 		BCC		loc_591C5
 		CMP		#$FF
@@ -2431,10 +2461,7 @@ loc_5924A:
 		BNE		loc_59248
 		LDA		#$02
 		STA		_MMC5_CHR_MODE
-		LDA		#>[_MMC5_EXRAM]				; TODO: rearrange to use macros
-		STA		_ptr0+1
-		LDA		#<[_MMC5_EXRAM]
-		STA		_ptr0
+		MOVWO	_ptr0,_MMC5_EXRAM
 		LDY		#$00
 		LDX		#$04
 		LDA		#$59
@@ -2479,6 +2506,7 @@ loc_592A1:
 		BNE		loc_592A1
 locret_592AB:
 		RTS
+
 aTurnOffPowerSwitch:
 		.BYTE	"Turn off power switch"
 		.BYTE	$FF
@@ -2521,6 +2549,7 @@ loc_59301:
 loc_5930B:
 		STX		byte_582
 		RTS
+
 byte_5930F:
 		.BYTE	$0A,$A3
 		.BYTE	$16,$A4
@@ -2976,6 +3005,7 @@ loc_59692:
 		CPX		#$31
 		BCC		loc_59673
 		RTS
+
 byte_5969E:
 		.BYTE	$00,$00,$03,$03,$03,$00,$00
 		.BYTE	$00,$03,$02,$02,$02,$03,$00
@@ -3025,6 +3055,7 @@ loc_59755:
 		CPX		#$10
 		BCC		loc_59736
 		RTS
+
 byte_59761:
 		.BYTE	$00,$03,$03,$00
 		.BYTE	$03,$02,$02,$03
@@ -3163,6 +3194,7 @@ loc_5989A:
 		JMP		loc_5980A
 locret_598AC:
 		RTS
+
 byte_598AD:
 		.BYTE	$00,$00,$00,$00
 		.BYTE	$00,$16,$10,$13
@@ -3260,6 +3292,7 @@ loc_5999E:
 		JMP		loc_598C5
 locret_599B0:
 		RTS
+
 byte_599B1:
 		.BYTE	$FF,$01,$00,$00
 byte_599B5:

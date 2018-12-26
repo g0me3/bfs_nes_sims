@@ -3,6 +3,8 @@
 
 		BANK_START $F4
 
+		SECTION_START 301
+
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_pal_select:
 		LDA		_game_msg_idx
@@ -32,18 +34,16 @@ loc_7001E:
 		JSR		_game_msg_extra_icon5_draw
 		JSR		_game_msg_extra_icon4_draw
 		JSR		_game_msg_extra_icon3_draw
-		JSR		_game_msg_extra_icon2_draw
-		RTS
+		JMP		_game_msg_extra_icon2_draw
 loc_7002F:
 		JSR		_game_msg_extra_icon0_draw
-		JSR		_game_msg_extra_icon1_draw
-		RTS
+		JMP		_game_msg_extra_icon1_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon5_draw:
-		JSR		_game_msg_extra_icons_set_tmp3
+;		JSR		_game_msg_extra_icons_set_tmp3
 		LDA		#$06
-		STA		_ptr0+1
+		STA		_tmp1
 		LDA		#$11
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
@@ -52,9 +52,9 @@ _game_msg_extra_icon5_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon4_draw:
-		JSR		_game_msg_extra_icons_set_tmp3
+;		JSR		_game_msg_extra_icons_set_tmp3
 		LDA		#$07
-		STA		_ptr0+1
+		STA		_tmp1
 		LDA		#$11
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
@@ -63,9 +63,9 @@ _game_msg_extra_icon4_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon3_draw:
-		JSR		_game_msg_extra_icons_set_tmp3
+;		JSR		_game_msg_extra_icons_set_tmp3
 		LDA		#$09
-		STA		_ptr0+1
+		STA		_tmp1
 		LDA		#$1A
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
@@ -74,83 +74,82 @@ _game_msg_extra_icon3_draw:
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon2_draw:
-		JSR		_game_msg_extra_icons_set_tmp3
+;		JSR		_game_msg_extra_icons_set_tmp3
 		LDA		#$0A
-		STA		_ptr0+1
+		STA		_tmp1
 		LDA		#$1A
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
 		LDY		#$0C
-		JMP		_game_msg_extra_icons_draw
+		BNE		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon0_draw:
-		JSR		_game_msg_extra_icons_set_tmp3
+;		JSR		_game_msg_extra_icons_set_tmp3
 		LDA		#$06
-		STA		_ptr0+1
+		STA		_tmp1
 		LDA		#$16
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
 		LDY		#$10
-		JMP		_game_msg_extra_icons_draw
+		BNE		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icon1_draw:
-		JSR		_game_msg_extra_icons_set_tmp3
+;		JSR		_game_msg_extra_icons_set_tmp3
 		LDA		#$07
-		STA		_ptr0+1
+		STA		_tmp1
 		LDA		#$16
 		STA		_tmp2
 		JSR		_game_msg_extra_icons_pos_calc
 		LDY		#$14
-		JMP		_game_msg_extra_icons_draw
+		BNE		_game_msg_extra_icons_draw
 
 ; =============== S U B	R O U T	I N E =======================================
-_game_msg_extra_icons_set_tmp3:
-		LDA		#$04
-		STA		_tmp3
-		RTS
+;_game_msg_extra_icons_set_tmp3:
+;		LDA		#$04
+;		STA		_tmp3
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_pos_calc:
 		CIADDB	_tmp1,_cur_screen_tile._Y,_tmp1,NONE,#$1E
 		CIADDB	_tmp2,_cur_screen_tile._X,_tmp2,NONE,#$20
-		WRAPB	_tmp4,_tmp5,_tmp2,_tmp3,#$20
-		BUFPOS	_tmp2,_tmp2,_tmp1,#$20,#$00	; DST=(_ptr0+1*#$20+_tmp2)+#$0000
+		WRAPA	_tmp4,_tmp5,#$04,#$20
+		BUFPOS	_ptr2,_tmp2,_tmp1,#$20,#$00	; DST=(_ptr0+1*#$20+_tmp2)+#$0000
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_extra_icons_draw:
 		STY		_ptr0+1
+		PUSHB	_tmp4
+		PUSHB	_tmp5
 		EXTQSTART
 		EXTQMOVB	_tmp2,OP_NOP,0
+loc_7011D:
 		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		LDA		_tmp4
-		STA		_extnt_queue_buf,X
-		STA		_tmp6
-		LDA		_tmp5
-		STA		_tmp6+1
-		INX
+		EXTQMOVB	_tmp4,OP_NOP,0
 loc_7011E:
 		LDA		byte_70199,Y
 		EXTQMOVA
 		INY
-		DEC		_tmp6
+		DEC		_tmp4
 		BNE		loc_7011E
-		LDA		_tmp6+1
+		LDA		_tmp5
 		BEQ		loc_7014D
-		STA		_tmp6
+		STA		_tmp4
 		LDA		#$00
-		STA		_tmp6+1
+		STA		_tmp5
 		EXTQMOVB	_tmp2,OP_AND,#$E0
-		EXTQMOVB	_tmp3,OP_ORA,#>[_MMC5_EXRAM]
-		EXTQMOVB	_tmp6,OP_NOP,0
-		JMP		loc_7011E
+		JMP		loc_7011D
 loc_7014D:
 		EXTQEND
 		LDY		_ptr0+1
+		POPB	_tmp5
+		POPB	_tmp4
 		PPUQSTART
 		PPUQMOVB	_tmp2,OP_NOP,0
+loc_70166:
 		PPUQMOVB	_tmp3,OP_ORA,#$20
 		PPUQMOVB	_tmp4,OP_NOP,0
 loc_70167:
@@ -165,20 +164,25 @@ loc_70167:
 		LDA		#$00
 		STA		_tmp5
 		PPUQMOVB	_tmp2,OP_AND,#$E0
-		PPUQMOVB	_tmp3,OP_ORA,#$20
-		PPUQMOVB	_tmp4,OP_NOP,0
-		JMP		loc_70167
+		JMP		loc_70166
 loc_70196:
 		PPUQEND
 		RTS
+
 byte_70199:
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
-		.BYTE	$8B,$8B,$8B,$8B,$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B
+		.BYTE	$8B,$8B,$8B,$8B
 byte_701B1:
-		.BYTE	$04,$05,$06,$09,$14,$15,$16,$19
-		.BYTE	$04,$07,$08,$09,$14,$17,$18,$19
-		.BYTE	$00,$01,$02,$03,$10,$11,$12,$13
+		.BYTE	$04,$05,$06,$09
+		.BYTE	$14,$15,$16,$19
+		.BYTE	$04,$07,$08,$09
+		.BYTE	$14,$17,$18,$19
+		.BYTE	$00,$01,$02,$03
+		.BYTE	$10,$11,$12,$13
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_msg_presents_icon_draw:
@@ -215,6 +219,7 @@ loc_701D5:
 		DEC		_ptr0+1
 		BPL		loc_701D5
 		RTS
+
 byte_7020D:
 		.BYTE	$00,$03,$06
 _game_msg_presentss_list:
@@ -276,6 +281,7 @@ loc_7029A:
 loc_702C8:
 		PPUQEND
 		RTS
+
 _tlm_nt_game_msg_presentss_icons_lib:
 		.BYTE	$3A,$3B,$3C
 		.BYTE	$4A,$4B,$4C
@@ -368,6 +374,11 @@ _tlm_extnt_game_msg_presentss_icons_lib:
 		.BYTE	$12,$12,$12
 		.BYTE	$12,$12,$12
 		.BYTE	$12,$12,$12
+
+		SECTION_END 301
+
+		SECTION_START 302
+
 byte_703D9:
 		.BYTE	$FB,$FB,$FC,$FB,$FB,$FB,$FC,$FB
 		.BYTE	$FC,$FB,$FB,$FC,$FB,$FC,$FC,$FC
@@ -640,7 +651,6 @@ off_70529:
 		.BYTE	>[byte_70C4E]
 		.BYTE	>[byte_70CC7]
 		.BYTE	>[byte_70D35]
-off_7053B:
 		.BYTE	>[byte_70DF5]
 byte_7053C:
 		.BYTE	$26,$10,$11,$29,$11,$10,$00,$00,$00,$2A,$12,$13,$14,$13,$14,$00
@@ -1824,5 +1834,7 @@ aWhileItDestroysEvery:
 		.BYTE	"while it destroys every"
 aThingInItSPath_:
 		.BYTE	"thing in it*s path.",$F
+
+		SECTION_END 302
 
 		BANK_END F4,$A000

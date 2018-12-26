@@ -61,38 +61,22 @@ byte_EA08C:
 _scr_res_hndl_common_exec:
 		LDA		_scr_res_idx
 		JSR		_switch
-		.BYTE	>[_scr_res_hndl0_A_info_maps_draw]
-		.BYTE	<[_scr_res_hndl0_A_info_maps_draw]
-		.BYTE	>[_scr_res_hndl0_B_info_maps_input]
-		.BYTE	<[_scr_res_hndl0_B_info_maps_input]
-		.BYTE	>[_far_scr_res_hndl1_A_graphs_draw]
-		.BYTE	<[_far_scr_res_hndl1_A_graphs_draw]
-		.BYTE	>[_far_scr_res_hndl1_B_graphs_input]
-		.BYTE	<[_far_scr_res_hndl1_B_graphs_input]
-		.BYTE	>[_far_scr_res_hndl2_B_budget_input]
-		.BYTE	<[_far_scr_res_hndl2_B_budget_input]
-		.BYTE	>[_far_scr_res_hndl2_B_budget_input]
-		.BYTE	<[_far_scr_res_hndl2_B_budget_input]
-		.BYTE	>[_scr_res_hndl3_B_city_eval_input]
-		.BYTE	<[_scr_res_hndl3_B_city_eval_input]
-		.BYTE	>[_scr_res_hndl3_B_city_eval_input]
-		.BYTE	<[_scr_res_hndl3_B_city_eval_input]
-		.BYTE	>[_scr_res_hndl4_A_city_overview_draw]
-		.BYTE	<[_scr_res_hndl4_A_city_overview_draw]
-		.BYTE	>[_scr_res_hndl4_B_city_overview_input]
-		.BYTE	<[_scr_res_hndl4_B_city_overview_input]
-		.BYTE	>[_scr_res_hndl5_B_history_input]
-		.BYTE	<[_scr_res_hndl5_B_history_input]
-		.BYTE	>[_scr_res_hndl5_B_history_input]
-		.BYTE	<[_scr_res_hndl5_B_history_input]
-		.BYTE	>[_far_scr_res_hndl6_A_bank_draw]
-		.BYTE	<[_far_scr_res_hndl6_A_bank_draw]
-		.BYTE	>[_far_scr_res_hndl6_B_bank_input]
-		.BYTE	<[_far_scr_res_hndl6_B_bank_input]
-		.BYTE	>[_scr_res_hndl7_A_new_city_gen_init]
-		.BYTE	<[_scr_res_hndl7_A_new_city_gen_init]
-		.BYTE	>[_scr_res_hndl7_B_new_city_gen_input]
-		.BYTE	<[_scr_res_hndl7_B_new_city_gen_input]
+		.WORD	_scr_res_hndl0_A_info_maps_draw
+		.WORD	_scr_res_hndl0_B_info_maps_input
+		.WORD	_far_scr_res_hndl1_A_graphs_draw
+		.WORD	_far_scr_res_hndl1_B_graphs_input
+		.WORD	_far_scr_res_hndl2_B_budget_input
+		.WORD	_far_scr_res_hndl2_B_budget_input
+		.WORD	_scr_res_hndl3_B_city_eval_input
+		.WORD	_scr_res_hndl3_B_city_eval_input
+		.WORD	_scr_res_hndl4_A_city_overview_draw
+		.WORD	_scr_res_hndl4_B_city_overview_input
+		.WORD	_scr_res_hndl5_B_history_input
+		.WORD	_scr_res_hndl5_B_history_input
+		.WORD	_far_scr_res_hndl6_A_bank_draw
+		.WORD	_far_scr_res_hndl6_B_bank_input
+		.WORD	_scr_res_hndl7_A_new_city_gen_init
+		.WORD	_scr_res_hndl7_B_new_city_gen_input
 
 ; =============== S U B	R O U T	I N E =======================================
 _scr_res_hndl7_A_new_city_gen_init:
@@ -893,26 +877,16 @@ loc_EA702:
 _maps_info_line_draw:
 		LDA		_maps_info_mode_idx
 		JSR		_switch
-		.BYTE	>[_maps_info0_draw]
-		.BYTE	<[_maps_info0_draw]
-		.BYTE	>[_maps_info1_draw]
-		.BYTE	<[_maps_info1_draw]
-		.BYTE	>[_maps_info2356_draw]
-		.BYTE	<[_maps_info2356_draw]
-		.BYTE	>[_maps_info2356_draw]
-		.BYTE	<[_maps_info2356_draw]
-		.BYTE	>[_maps_info4_draw]
-		.BYTE	<[_maps_info4_draw]
-		.BYTE	>[_maps_info2356_draw]
-		.BYTE	<[_maps_info2356_draw]
-		.BYTE	>[_maps_info2356_draw]
-		.BYTE	<[_maps_info2356_draw]
-		.BYTE	>[_maps_info2356_draw]
-		.BYTE	<[_maps_info2356_draw]
-		.BYTE	>[_maps_info89_draw]
-		.BYTE	<[_maps_info89_draw]
-		.BYTE	>[_maps_info89_draw]
-		.BYTE	<[_maps_info89_draw]
+		.WORD	_maps_info0_draw
+		.WORD	_maps_info1_draw
+		.WORD	_maps_info2356_draw
+		.WORD	_maps_info2356_draw
+		.WORD	_maps_info4_draw
+		.WORD	_maps_info2356_draw
+		.WORD	_maps_info2356_draw
+		.WORD	_maps_info2356_draw
+		.WORD	_maps_info89_draw
+		.WORD	_maps_info89_draw
 
 ; =============== S U B	R O U T	I N E =======================================
 _maps_info0_draw:
@@ -2386,7 +2360,7 @@ _budget_funds_recalc:
 ; =============== S U B	R O U T	I N E =======================================
 _taxes_alloc_draw:
 ;		JSR		_taxes_alloc_hex_to_dec9999		; REDUNDANT
-		LDA		_tmp584							; OPTIMIZE, unufication
+		LDA		_tmp584							; OPTIMIZED, unufication
 		AND		#$FE							; -
 		TAY										; -
 		LDA		_tax_alloc,Y					; -
@@ -2690,25 +2664,26 @@ loc_EB4F8:
 		STA		_funding_level,Y
 		RTS
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-_switch:
-		ASL
-		STA		_ptr0
-		SEC
-		PLA
-		ADC		_ptr0
-		STA		_ptr0
-		PLA
-		ADC		#$00
-		STA		_ptr0+1
-		LDY		#$00
-		LDA		(_ptr0),Y
-		PHA
-		INY
-		LDA		(_ptr0),Y
-		STA		_ptr0
-		POPB	_ptr0+1
-		JMP		(_ptr0)
+;_switch:
+;		ASL
+;		STA		_ptr0
+;		SEC
+;		PLA
+;		ADC		_ptr0
+;		STA		_ptr0
+;		PLA
+;		ADC		#$00
+;		STA		_ptr0+1
+;		LDY		#$00
+;		LDA		(_ptr0),Y
+;		PHA
+;		INY
+;		LDA		(_ptr0),Y
+;		STA		_ptr0
+;		POPB	_ptr0+1
+;		JMP		(_ptr0)
 
 ; =============== S U B	R O U T	I N E =======================================
 _adc_ptr0_0:
@@ -2719,6 +2694,7 @@ _adc_ptr0_0:
 		INC		_ptr0+1
 locret_EB52A:
 		RTS
+
 byte_EB52B:
 		.BYTE	$01,$01,$01,$01,$01,$01,$01,$01,$01,$00,$00,$00,$00,$00
 byte_EB539:

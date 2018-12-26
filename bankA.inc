@@ -83,7 +83,6 @@ loc_10409D:
 		ADDW8	_tmpE6,#$05						; add 0.05fp
 		LDX		#$00
 		JSR		_RCI_meter_recalc				; R recalc
-
 		MOVW	_tmpE7,_tmp6AA					; dividend = L_R/8
 		MOVW	_tmpEA,_tmp6AC					; divider = L_I+L_C
 		LDA		#$00
@@ -112,7 +111,6 @@ loc_1040EA:
 		PLA
 		LDX		#$02
 		JSR		_RCI_meter_recalc				; I recalc
-
 		POPW	_tmpE6							; restore backup
 		MOVW	_tmpE8,_cur_RCI_levels_sum		; TODO: optimize me
 		PUSHW	_tmpE8
@@ -1723,6 +1721,62 @@ _presents_events_check:
 		LDA		_presents_events_lib_hi,Y
 		STA		_tmpE8
 		JMP		(_tmpE7)
+_presents_events_lib_lo:
+		.BYTE	<[nullsub_1]
+		.BYTE	<[_event01_city_growt]
+		.BYTE	<[_event01_city_growt]
+		.BYTE	<[_event01_city_growt]
+		.BYTE	<[_event01_city_growt]
+		.BYTE	<[_event01_city_growt]
+		.BYTE	<[_event06_total_jam]
+		.BYTE	<[_event07_traffic]
+		.BYTE	<[_event08_crime]
+		.BYTE	<[nullsub_3]
+		.BYTE	<[nullsub_3]
+		.BYTE	<[_event0B_bank]
+		.BYTE	<[_event0C_relationships]
+		.BYTE	<[_event0D_amusement]
+		.BYTE	<[_event0E_zoo]
+		.BYTE	<[_event0F_casino]
+		.BYTE	<[_event10_extra_land]
+		.BYTE	<[_event11_new_police]
+		.BYTE	<[_event12_new_fire]
+		.BYTE	<[_event13_10th_monument]
+		.BYTE	<[_event14_100th_monument]
+		.BYTE	<[_event15_expo]
+		.BYTE	<[_event16_expo_monument]
+		.BYTE	<[_event17_liberty]
+		.BYTE	<[_event18_library]
+		.BYTE	<[_event19_park]
+		.BYTE	<[_event1A_railroad]
+_presents_events_lib_hi:
+		.BYTE	>[nullsub_1]
+		.BYTE	>[_event01_city_growt]
+		.BYTE	>[_event01_city_growt]
+		.BYTE	>[_event01_city_growt]
+		.BYTE	>[_event01_city_growt]
+		.BYTE	>[_event01_city_growt]
+		.BYTE	>[_event06_total_jam]
+		.BYTE	>[_event07_traffic]
+		.BYTE	>[_event08_crime]
+		.BYTE	>[nullsub_3]
+		.BYTE	>[nullsub_3]
+		.BYTE	>[_event0B_bank]
+		.BYTE	>[_event0C_relationships]
+		.BYTE	>[_event0D_amusement]
+		.BYTE	>[_event0E_zoo]
+		.BYTE	>[_event0F_casino]
+		.BYTE	>[_event10_extra_land]
+		.BYTE	>[_event11_new_police]
+		.BYTE	>[_event12_new_fire]
+		.BYTE	>[_event13_10th_monument]
+		.BYTE	>[_event14_100th_monument]
+		.BYTE	>[_event15_expo]
+		.BYTE	>[_event16_expo_monument]
+		.BYTE	>[_event17_liberty]
+		.BYTE	>[_event18_library]
+		.BYTE	>[_event19_park]
+		.BYTE	>[_event1A_railroad]
 
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_1:
@@ -2033,86 +2087,12 @@ _popul_compare:
 		SBC		_popul_vals_lib2,X
 		RTS
 
-_presents_events_lib_lo:
-		.BYTE	<[nullsub_1]
-		.BYTE	<[_event01_city_growt]
-		.BYTE	<[_event01_city_growt]
-		.BYTE	<[_event01_city_growt]
-		.BYTE	<[_event01_city_growt]
-		.BYTE	<[_event01_city_growt]
-		.BYTE	<[_event06_total_jam]
-		.BYTE	<[_event07_traffic]
-		.BYTE	<[_event08_crime]
-		.BYTE	<[nullsub_3]
-		.BYTE	<[nullsub_3]
-		.BYTE	<[_event0B_bank]
-		.BYTE	<[_event0C_relationships]
-		.BYTE	<[_event0D_amusement]
-		.BYTE	<[_event0E_zoo]
-		.BYTE	<[_event0F_casino]
-		.BYTE	<[_event10_extra_land]
-		.BYTE	<[_event11_new_police]
-		.BYTE	<[_event12_new_fire]
-		.BYTE	<[_event13_10th_monument]
-		.BYTE	<[_event14_100th_monument]
-		.BYTE	<[_event15_expo]
-		.BYTE	<[_event16_expo_monument]
-		.BYTE	<[_event17_liberty]
-		.BYTE	<[_event18_library]
-		.BYTE	<[_event19_park]
-		.BYTE	<[_event1A_railroad]
-_presents_events_lib_hi:
-		.BYTE	>[nullsub_1]
-		.BYTE	>[_event01_city_growt]
-		.BYTE	>[_event01_city_growt]
-		.BYTE	>[_event01_city_growt]
-		.BYTE	>[_event01_city_growt]
-		.BYTE	>[_event01_city_growt]
-		.BYTE	>[_event06_total_jam]
-		.BYTE	>[_event07_traffic]
-		.BYTE	>[_event08_crime]
-		.BYTE	>[nullsub_3]
-		.BYTE	>[nullsub_3]
-		.BYTE	>[_event0B_bank]
-		.BYTE	>[_event0C_relationships]
-		.BYTE	>[_event0D_amusement]
-		.BYTE	>[_event0E_zoo]
-		.BYTE	>[_event0F_casino]
-		.BYTE	>[_event10_extra_land]
-		.BYTE	>[_event11_new_police]
-		.BYTE	>[_event12_new_fire]
-		.BYTE	>[_event13_10th_monument]
-		.BYTE	>[_event14_100th_monument]
-		.BYTE	>[_event15_expo]
-		.BYTE	>[_event16_expo_monument]
-		.BYTE	>[_event17_liberty]
-		.BYTE	>[_event18_library]
-		.BYTE	>[_event19_park]
-		.BYTE	>[_event1A_railroad]
 _popul_vals_lib0:
 		.BYTE	$D0,$10,$50,$A0,$20,$F0,$C0,$90,$40,$70
 _popul_vals_lib1:
 		.BYTE	$07,$27,$C3,$86,$A1,$49,$D4,$D0,$0D,$11
 _popul_vals_lib2:
 		.BYTE	$00,$00,$00,$01,$07,$02,$01,$03,$03,$01
-
-; =============== S U B	R O U T	I N E =======================================
-_scroll_msg_start:
-		PLA
-		PLA
-		LDA		_tmpEA
-		CMP		_scroll_msg_idx
-		BEQ		locret_105124
-
-; =============== S U B	R O U T	I N E =======================================
-_scroll_msg_force_start:
-		STA		_scroll_msg_idx
-		LDY		#$00
-		STY		_scroll_msg_start_pos
-		DEY
-		STY		_scroll_msg_active_flag
-locret_105124:
-		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scenario_mode_events_handler:
@@ -2234,60 +2214,83 @@ _exit:
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
+; scroll messages slector
+; always select random starting point, then test all handlers
+; RND -> F, 0 -> RND-1
+;
 _scroll_msg_manager:
-		LDA		#$10
+		LDA		#$10							; get RND in range 00-0F
 		JSR		_rand_clamp
 		STA		_tmpEB
-		TAY
+		TAY										; execute handlers from RND
 loc_105204:
-		STY		_tmpEA
+		STY		_tmpEA							; need for handlers as well
 		JSR		_scroll_msg_test
-		LDY		_tmpEA
+		LDY		_tmpEA							; keep cur loop counter
 		INY
-		CPY		#$10
+		CPY		#$10							; to 0F (max)
 		BNE		loc_105212
-		LDY		#$00
+		LDY		#$00							; wrap to 0
 loc_105212:
-		CPY		_tmpEB
+		CPY		_tmpEB							; test to RND-1
 		BNE		loc_105204
 		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg_test:
-		LDA		_tmpEA
-		ASL
-		TAY
-		LDA		_scroll_msg_test_lib,Y
+		LDA		_scroll_msg_test_lib_lo,Y
 		STA		_tmpE8
-		LDA		_scroll_msg_test_lib+1,Y
+		LDA		_scroll_msg_test_lib_hi,Y
 		STA		_tmpE9
-		MOVW	_tmpE6,_total_RCI_counts
 		JMP		(_tmpE8)
-_scroll_msg_test_lib:
-		.WORD	_scroll_msg00_test
-		.WORD	_scroll_msg01_test
-		.WORD	_scroll_msg02_test
-		.WORD	_scroll_msg03_test
-		.WORD	_scroll_msg04_test
-		.WORD	_scroll_msg05_test
-		.WORD	_scroll_msg06_test
-		.WORD	_scroll_msg07_test
-		.WORD	_scroll_msg08_test
-		.WORD	_scroll_msg09_test
-		.WORD	_scroll_msg0A_test
-		.WORD	nullsub_6
-		.WORD	_scroll_msg0C_test
-		.WORD	_scroll_msg0D_test
-		.WORD	_scroll_msg0E_test
-		.WORD	_scroll_msg0F_test
+_scroll_msg_test_lib_lo:
+		.BYTE	<[_scroll_msg00_test]
+		.BYTE	<[_scroll_msg01_test]
+		.BYTE	<[_scroll_msg02_test]
+		.BYTE	<[_scroll_msg03_test]
+		.BYTE	<[_scroll_msg04_test]
+		.BYTE	<[_scroll_msg05_test]
+		.BYTE	<[_scroll_msg06_test]
+		.BYTE	<[_scroll_msg07_test]
+		.BYTE	<[_scroll_msg08_test]
+		.BYTE	<[_scroll_msg09_test]
+		.BYTE	<[_scroll_msg0A_test]
+		.BYTE	<[nullsub_10]
+		.BYTE	<[_scroll_msg0C_test]
+		.BYTE	<[_scroll_msg0D_test]
+		.BYTE	<[_scroll_msg0E_test]
+		.BYTE	<[_scroll_msg0F_test]
+_scroll_msg_test_lib_hi:
+		.BYTE	>[_scroll_msg00_test]
+		.BYTE	>[_scroll_msg01_test]
+		.BYTE	>[_scroll_msg02_test]
+		.BYTE	>[_scroll_msg03_test]
+		.BYTE	>[_scroll_msg04_test]
+		.BYTE	>[_scroll_msg05_test]
+		.BYTE	>[_scroll_msg06_test]
+		.BYTE	>[_scroll_msg07_test]
+		.BYTE	>[_scroll_msg08_test]
+		.BYTE	>[_scroll_msg09_test]
+		.BYTE	>[_scroll_msg0A_test]
+		.BYTE	>[nullsub_10]
+		.BYTE	>[_scroll_msg0C_test]
+		.BYTE	>[_scroll_msg0D_test]
+		.BYTE	>[_scroll_msg0E_test]
+		.BYTE	>[_scroll_msg0F_test]
 
 ; =============== S U B	R O U T	I N E =======================================
-_scroll_msg00_test:
+_get_RCI_counts_div4:
+		MOVW	_tmpE6,_total_RCI_counts
 		LDA		_tmpE7
 		LSR
 		ROR		_tmpE6
 		LSR
 		ROR		_tmpE6
+		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scroll_msg00_test:
+		JSR		_get_RCI_counts_div4
 		STA		_tmpE7
 		CMPW	_tmpE6,_RCI_counts._R		; C_R < C_RCI / 4
 		BCC		nullsub_10
@@ -2295,11 +2298,7 @@ _scroll_msg00_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg01_test:
-		LDA		_tmpE7
-		LSR
-		ROR		_tmpE6
-		LSR
-		ROR		_tmpE6
+		JSR		_get_RCI_counts_div4
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
@@ -2309,11 +2308,7 @@ _scroll_msg01_test:
 
 ; =============== S U B	R O U T	I N E =======================================
 _scroll_msg02_test:
-		LDA		_tmpE7
-		LSR
-		ROR		_tmpE6
-		LSR
-		ROR		_tmpE6
+		JSR		_get_RCI_counts_div4
 		LSR
 		ROR		_tmpE6
 		STA		_tmpE7
@@ -2406,10 +2401,6 @@ _scroll_msg0A_test:
 		JMP		_scroll_msg_start
 
 ; =============== S U B	R O U T	I N E =======================================
-nullsub_6:
-		RTS									; FIXME: redundant
-
-; =============== S U B	R O U T	I N E =======================================
 _scroll_msg0C_test:
 		LDA		_city._tax_rate
 		CMP		#$0C
@@ -2446,6 +2437,27 @@ _scroll_msg0F_test:
 ; =============== S U B	R O U T	I N E =======================================
 nullsub_5:
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_scroll_msg_start:
+		PLA									; odd thing, if any new scroll msg is pending
+		PLA									; and not currently displayed, then we do break
+		LDA		_tmpEA						; from test loop and show this message
+		CMP		_scroll_msg_idx				; prevents from resetting the currently displayed
+		BEQ		locret_105124				; scroll message
+
+; !FALLTHROUGH!
+
+; =============== S U B	R O U T	I N E =======================================
+;
+_scroll_msg_force_start:
+		STA		_scroll_msg_idx				; but for "required" messages we will continue
+		LDY		#$00						; search and if next message is triggered,
+		STY		_scroll_msg_start_pos		; we will for sure not see the required one
+		DEY									; lowest priority messages? see if no other
+		STY		_scroll_msg_active_flag		; events happens? yes, but it should STOP
+locret_105124:								; any currently displayed one but seems this never
+		RTS									; happens just because of long checking period.
 
 _tlm_res_scenario_complete:
 		.WORD	$2000

@@ -22,7 +22,7 @@ loc_13600B:
 		JSR		_far_heavy_traffic_report_test
 loc_13601B:
 		LDA		_game_state_idx
-		JSR		_switch_0
+		JSR		_switch
 		.WORD	_game_state00
 		.WORD	_game_state01
 		.WORD	_game_state02_map_scroll
@@ -85,26 +85,6 @@ _game_state_common:
 		ORA		_fiscal_year_results_draw_req
 		STA		_game_core_state
 		JMP		_MAIN_LOOP
-
-; =============== S U B	R O U T	I N E =======================================
-_switch_0:
-		ASL
-		STA		_ptr0
-		SEC
-		PLA
-		ADC		_ptr0
-		STA		_ptr0
-		PLA
-		ADC		#$00
-		STA		_ptr0+1
-		LDY		#$00
-		LDA		(_ptr0),Y
-		PHA
-		INY
-		LDA		(_ptr0),Y
-		STA		_ptr0+1
-		POPB	_ptr0
-		JMP		(_ptr0)
 
 ; =============== S U B	R O U T	I N E =======================================
 _game_state00:
@@ -2625,7 +2605,8 @@ loc_137326:
 		RTS
 loc_137331:
 		LDX		_tmp5
-		FJSRA	_game_menu_exec,PRG7,PRG3
+;		FJSRA	_game_menu_exec,PRG7,PRG3	; FIX, no code use PRG7, but SRAM
+		FJSRA	_game_menu_exec,SRAM,PRG3
 		LDA		#$00
 		STA		_wnd_lvl_idx
 		RTS
@@ -2808,7 +2789,9 @@ loc_13746A:
 loc_137480:
 		JSR		_wnd_prequeue_data_line
 		JSR		_wnd_ppu_ofs_calc0
-		JSR		_wnd_ppu_data_backup_req_set
+;		JSR		_wnd_ppu_data_backup_req_set	; REDUNDANT
+		LDA		#$FF							; FIX
+		STA		_wnd_ppu_data_backup_req
 		JSR		_wnd_nt_line_queue0
 		JSR		_wnd_extnt_line_queue0
 		RTS
@@ -2822,7 +2805,9 @@ loc_137490:
 loc_13749B:
 		JSR		_wnd_prequeue_data_line
 		JSR		_wnd_ppu_ofs_calc1
-		JSR		_wnd_ppu_data_backup_req_set
+;		JSR		_wnd_ppu_data_backup_req_set	; REDUNDANT
+		LDA		#$FF							; FIX
+		STA		_wnd_ppu_data_backup_req
 		JSR		_wnd_nt_line_queue1
 		JSR		_wnd_extnt_line_queue1
 		RTS
@@ -3115,11 +3100,12 @@ loc_137681:
 		STA		_wnd_line_tmp_height
 		RTS
 
+; REDUNDANT
 ; =============== S U B	R O U T	I N E =======================================
-_wnd_ppu_data_backup_req_set:
-		LDA		#$FF
-		STA		_wnd_ppu_data_backup_req
-		RTS
+;_wnd_ppu_data_backup_req_set:
+;		LDA		#$FF
+;		STA		_wnd_ppu_data_backup_req
+;		RTS
 
 ; =============== S U B	R O U T	I N E =======================================
 _wnd_nt_line_queue0:

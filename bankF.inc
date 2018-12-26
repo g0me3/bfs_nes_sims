@@ -1585,7 +1585,7 @@ _thread1_init:
 		STA		_game_core_state				; threads core init
 		LDA		#$80
 		STA		_ppu_ctrl_shadow				; initial game CHR banks
-		JSR		_game_chr_common_reload		; OPTIMIZE
+		JSR		_game_chr_common_reload		; OPTIMIZED
 ;		LDA		#$34							; REDUNDANT, call routine above
 ;		STA		_MMC5_CHR_BANKSA				; instead.
 ;		STA		_mmc5_chr_banks_shadow
@@ -3665,6 +3665,26 @@ _mmc5_mul16to16:
 		STA		$106,X
 		LDX		_backup_var
 		RTS
+
+; =============== S U B	R O U T	I N E =======================================
+_switch:
+		ASL
+		STA		_ptr0
+		SEC
+		PLA
+		ADC		_ptr0
+		STA		_ptr0
+		PLA
+		ADC		#$00
+		STA		_ptr0+1
+		LDY		#$00
+		LDA		(_ptr0),Y
+		PHA
+		INY
+		LDA		(_ptr0),Y
+		STA		_ptr0+1
+		POPB	_ptr0
+		JMP		(_ptr0)
 
 _months_lib:
 		.BYTE	_J,_A,_N,$80

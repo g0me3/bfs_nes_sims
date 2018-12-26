@@ -486,7 +486,7 @@ _apu_tri_chnl_with_dpcm:
 		STA		_APU_STATUS
 		ORA		#$0F
 		STA		_APU_STATUS
-		BNE		_apu_tri_load					; OPTIMIZE
+		BNE		_apu_tri_load					; OPTIMIZED
 ;		LDA		#$01							; REDUNDANT
 ;		STA		_APU_TRI_COUNT
 ;		LDA		#$FF

@@ -1,6 +1,6 @@
 	NEW BUGS
 
--
+- sometimes, at the beginning of the Practice mode, when game message window appears at the same time as scroller message on the screen, the R left at the left-top corner. can't reproduce it every time. because of that I'm not completely shure it is new bug, but not the something old.
 
 	WHAT DONE
 

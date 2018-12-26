@@ -701,14 +701,10 @@ loc_B8534:
 _title_sub_exec:
 		LDA		_title_sub_idx
 		JSR		_switch
-		.BYTE	>[_title_sub0_init]
-		.BYTE	<[_title_sub0_init]
-		.BYTE	>[_title_sub1_title_input]
-		.BYTE	<[_title_sub1_title_input]
-		.BYTE	>[_title_sub2_menu_draw]
-		.BYTE	<[_title_sub2_menu_draw]
-		.BYTE	>[_title_sub3_menu_input]
-		.BYTE	<[_title_sub3_menu_input]
+		.WORD	_title_sub0_init
+		.WORD	_title_sub1_title_input
+		.WORD	_title_sub2_menu_draw
+		.WORD	_title_sub3_menu_input
 
 ; =============== S U B	R O U T	I N E =======================================
 _title_sub0_init:
@@ -988,24 +984,15 @@ locret_B8A34:
 _bank_scr_sub_exec:
 		LDA		_tmp118+2
 		JSR		_switch
-		.BYTE	>[_bank_scr_sub0_init]
-		.BYTE	<[_bank_scr_sub0_init]
-		.BYTE	>[_bank_scr_sub0_init]
-		.BYTE	<[_bank_scr_sub0_init]
-		.BYTE	>[_bank_scr_sub2_loan_select]
-		.BYTE	<[_bank_scr_sub2_loan_select]
-		.BYTE	>[_bank_scr_sub3_loan_done_init]
-		.BYTE	<[_bank_scr_sub3_loan_done_init]
-		.BYTE	>[_bank_scr_sub4_loan_done_animate]
-		.BYTE	<[_bank_scr_sub4_loan_done_animate]
-		.BYTE	>[_bank_scr_sub5_exit_wait_init]
-		.BYTE	<[_bank_scr_sub5_exit_wait_init]
-		.BYTE	>[_bank_scr_sub6_exit_wait_input]
-		.BYTE	<[_bank_scr_sub6_exit_wait_input]
-		.BYTE	>[_bank_scr_sub7_already_loan_draw]
-		.BYTE	<[_bank_scr_sub7_already_loan_draw]
-		.BYTE	>[_bank_scr_sub8_already_load_input]
-		.BYTE	<[_bank_scr_sub8_already_load_input]
+		.WORD	_bank_scr_sub0_init
+		.WORD	_bank_scr_sub0_init
+		.WORD	_bank_scr_sub2_loan_select
+		.WORD	_bank_scr_sub3_loan_done_init
+		.WORD	_bank_scr_sub4_loan_done_animate
+		.WORD	_bank_scr_sub5_exit_wait_init
+		.WORD	_bank_scr_sub6_exit_wait_input
+		.WORD	_bank_scr_sub7_already_loan_draw
+		.WORD	_bank_scr_sub8_already_load_input
 
 ; =============== S U B	R O U T	I N E =======================================
 _bank_scr_sub0_init:

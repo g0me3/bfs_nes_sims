@@ -335,7 +335,6 @@ NONE	EQU		-1
 	ENDM
 
 	;
-	;
 	MAC	PPUQSTART
 		LDX		_ppu_queue_pos_head
 	ENDM
@@ -431,6 +430,16 @@ OP_ADD	EQU	3
 		LDA		#$00
 		STA		{2}		; \6
 .2:
+	ENDM
+
+	; \t\tLDA\t\t(.*)\n\t\tBEQ\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\t
+	;
+	MAC	DO_WRAP
+		LDA		_tmp5
+		BEQ		loc_7014D
+		STA		_tmp4
+		LDA		#$00
+		STA		_tmp5
 	ENDM
 
 	; \t\tCLC\n\t\tADC\t\t(.*)\n\t\tCMP\t\t(.*)\n\t\tBCC\t\t(.*)\n\t\tSBC\t\t(.*)\n\t\tSTA\t\t(.*)\n\t\tLDA\t\t(.*)\n\t\tSEC\n\t\tSBC\t\t\5\n\t\tSTA\t\t(.*)\n\t\tBNE\t\t(.*)\n\3\:\n\t\tLDA\t\t\6\n\t\tSTA\t\t\7\n\t\tLDA\t\t\#\$00\n\t\tSTA\t\t\5\n\8\:\n

@@ -521,7 +521,7 @@ loc_2442D:
 		SEC										; every scenario has a DICT of 2x1 tiles, 15 each
 		SBC		#$80							; extract DICT entry idx
 		ASL
-		PHA										; OPTIMIZE
+		PHA										; OPTIMIZED
 		TAY
 		LDA		(_tmp2),Y
 		JSR		_scenario_map_put_block
@@ -530,7 +530,7 @@ loc_2442D:
 ;		SBC		#$80							; -
 ;		ASL										; -
 ;		TAY										; -
-		PLA										; OPTIMIZE, pop from stack
+		PLA										; OPTIMIZED, pop from stack
 		TAY										; -
 		INY
 		LDA		(_tmp2),Y
@@ -558,13 +558,13 @@ loc_24453:
 		BNE		loc_24453						; try again
 		BEQ		loc_244EC						; end of map, break unpack
 loc_2446F:
-		TXA										; OPTIMIZE: we need X here now
+		TXA										; OPTIMIZED: we need X here now
 		PHA
 		LDA		_tmp6+1
 		BMI		loc_244D9						; all tiles above 80 are single
-		LDX		#$0F							; OPTIMIZE
+		LDX		#$0F							; OPTIMIZED
 		CMP		#$64							; the reset are a large buildings
-		BEQ		loc_244D6						; OPTIMIZE
+		BEQ		loc_244D6						; OPTIMIZED
 ; REDUNDANT
 ;		BNE		loc_2449E						; draw airport 4x4 special tiles
 ;		LDY		#$03							; xxxxxx8E (03)
@@ -589,10 +589,10 @@ loc_2446F:
 ;		LDA		#$8B
 ;		STA		(_tmp4),Y
 loc_2449E:
-		LDX		#$03							; OPTIMIZE
+		LDX		#$03							; OPTIMIZED
 		CMP		#$60							; default draw 2x2 tiles
 		BCC		loc_244D6						; draw 3x3 buildings tiles
-		LDX		#$08							; OPTIMIZE
+		LDX		#$08							; OPTIMIZED
 ; REDUNDANT
 ;		LDY		#$02							; xxxx87
 ;		LDA		#$87							; xxxx86
@@ -624,7 +624,7 @@ loc_2449E:
 ;		STA		(_tmp4),Y
 ;		BNE		loc_244DA
 loc_244D6:
-		LDA		_special_tiles_ofs_list,X		; OPTIMIZE
+		LDA		_special_tiles_ofs_list,X		; OPTIMIZED
 		TAY										; -
 		LDA		_special_tiles_list,X			; -
 		STA		(_tmp4),Y						; -
