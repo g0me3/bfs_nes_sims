@@ -31,7 +31,7 @@
 - **MISC#14.** Judging from the Micropolis sources the Drive test for traffic calculation tries to drive from R to C and I areas, from I back to R, but for some reason from C either to R, C and I. The same behaviour ported to the NES version. So most of the C areas does not generate any traffic unless they are in a particular position near the other areas and as a side effect this not interfere with developement of C areas.
 - **MISC#15.** Surprisingly, the random trees in the park tiles are animated just like the fire. However, all 4 animation tiles are the same so you wont't see a difference. It is possible that parks had animated fountains, as in the original Macintosh version.
 - **MISC#16.** The real ingame taxes rates are calculated once at the end of the fiscal year. This means if you want to change funding at the budget screen, you must then wait for the next year to apply settings. You just can't change them any time or free some money by redistributing taxes.
-- **MISC#17.FIXED(BFS)** The PPU data transfer for regular and extendex name tables are separated long enough in the NMI handler for some reason which causes random garbage on the screen when one ppu data already set but the rest is not. Maybe there is the case when it needed, maybe need more tests.
+- **MISC#17.FIXED(BFS)** The PPU data transfer for regular and extended name tables are separated long enough in the NMI handler for some reason which causes random garbage on the screen when one ppu data already set but the rest is not. Maybe there is the case when it needed, maybe need more tests.
 
 ##	WHAT'S UNFINISHED IN THE GAME
 
