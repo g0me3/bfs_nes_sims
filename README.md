@@ -353,8 +353,8 @@ FF | - | - | - |
 - Restored sound effect (UNFINISHED#3) can be heard when var $00F1 write value $80. Still have no idea where it should be used.
 - Restored ship object (UNFINISHED#5) uses the existing movement logic with some corrections to be more like in the SNES version, and a totally new deploy code made by guess.
 - Restored water road drive ability (UNFINISHED#22) using additional unused tiles (UNFINISHED#10) also rewritten fetch routine to allow more tiles to be accessible.
-- Restored part of Present building descriptions for HUD display (UNFINISHED#10). Missing entries uses either common "BUild Monument" or "BuildPresent" strings.
-- Money can't drop down to zero now even with loan. If money are negative after the budget calcs, the "CITY GOME BROKE" message is displayed once after the end of the year or every time you exit the budget screen. Total city amount stay at 0 even if budget currently show negative balance.
+- Restored part of Present building descriptions for HUD display (UNFINISHED#10). Missing entries uses either common "Build Monument" or "BuildPresent" strings.
+- Money can't drop down to zero now even with loan. If money are negative after the budget calcs, the "CITY GONE BROKE" message is displayed once after the end of the year or every time you exit the budget screen. Total city amount stay at 0 even if budget currently show negative balance.
 
 ## BFS TODO
 
