@@ -2266,9 +2266,9 @@ _tlm_res_scenario_hdr_lib_hi:
 ; OPTIMIZED, by now, unless you add actual headers and briefings
 _tlm_res_scenario_hdr_dummy:
 		.WORD	$8520
-		.BYTE	$46,$00
+		.BYTE	$56,$00
 		.WORD	$A520
-		.BYTE	$46,$00
+		.BYTE	$56,$00
 		.BYTE	0
 ; REDUNDANT
 ;_tlm_res_scenario_hdr6:
@@ -2306,6 +2306,8 @@ _tlm_res_scenario_hdr3:
 		.BYTE	$10,$14,$2F,$2B,$39,$2F,$00,$0A,$21,$30,$21,$2E,$00,$1C,$3F,$3C,$1C
 		.WORD	$A820
 		.BYTE	$10,$54,$6F,$6B,$79,$6F,$BB,$4A,$61,$70,$61,$6E,$00,$5C,$7F,$7C,$5C
+		.WORD	$C820
+		.BYTE	$09,$94,$AF,$AB,$B9,$AF,$BA,$8A,$A1,$B0
 		.BYTE	0
 _tlm_res_scenario_hdr4:
 		.WORD	$8820
