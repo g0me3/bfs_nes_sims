@@ -192,47 +192,47 @@
 
 ## APPENDIX A - EVENTS/PRESENTS
 
-ADDRESS | EVENT | REQUIREMENTS | RESULTS | REPEATS | MESSAGE APPEAR | NOTES
---- | --- | --- | --- | --- | --- | ---
-01 | Becomes a Town | 2000 population | history record | once per game | yes  |
-02 | Becomes a City | 10000 population | history record | once per game | yes | present "White House"
-03 | Becomes a Capital | 50000 population | history record | once per game | yes  |
-04 | Becomes a Metropolis | 100000 population | history record | once per game | yes  |
-05 | Becomes a Megapolis | 500000 population | history record | once per game | yes  |
-06 | Traffic is bumper to bumper | traffic level 7 | - | every recalculation | yes  |
-07 | Commuters are grid-locket | traffic level 2 | - | every recalculation | yes  |
-08 | Crime rate is much too high | crime level 7 | - | every recalculation | yes  |
-09 | Monster disaster | scenario specific | monster appears, | scenario specific | yes | destroy all on its path
-0A | Eartquake disaster | scenario specific | ground shake, | scenario specific | yes | destroy random areas
-0B | Bank wants to build office | 5 years after White | present "Bank" | once per game | yes | House has built
-0C | City wants relationship | 150000 population | relationship begin | once per game | yes  |
-0D | Open amusement park | 120000 population | present "Amusement Park" | once per game | yes  |
-0E | Open a Zoo | 250000 population | present "Zoo" | once per game | yes  |
-0F | Open a Casino | 200000 population | present "Casino" | once per game | yes  |
-10 | Build an extra land | 2 sea ports | present "Extra Land" | once per game | no, see **BUGS#4**  |
-11 | New Police Station | 10 police stations | present "New Police St." | once per game | yes  |
-12 | New FireStation | 10 police stations | present "New Fire St." | once per game | yes  |
-13 | 10th anniversary monument | practice/city JAN 1910 | persent "10th Monument" | once per game | yes  |
-14 | 100th anniversary monument | practice/city JAN 2000 | present "100th Monument" | once per game | yes  |
-15 | Holding World Expo | practice/city JAN 1950 | expo starts | once per game | yes  |
-16 | Erect Expo monument | practice/city JAN 1951 | present "Expo Monument" | once per game | yes, see **BUGS#29**  |
-17 | Statue of Liberty present | practice/city 10 years, | present "Liberty" | once per game | yes, see **BUGS#29** | after City Sistership
-18 | Build a Library | 70000 population | present "Library" | once per game | no, see **BUGS#4**  |
-19 | Parks expand | 200 park squares | present "Extra Park" | once per game | yes  |
-1A | Railroad Station | 150 rail squares | present "Railroad St." | once per game | yes  |
-1B | Practice Intro | Practice FEB 1900 | - | once per game | yes  |
-1C | Practice Hint | Practice FEB 1901 | - | once per game | yes  |
-1D | Practice mode Failed | Practice FEB 1905, | - | once per game | no, see **BUGS#3** | <30000 population
-1E | Practice mode Complete | Prectice FEB 1905, | - | once per game | no, see **BUGS#3** | >=30000 population
-1F | Bank Hint | Bank has build | "BANK" button enabled | once per game | yes | at Budget screen
-20 | Fire disaster | manual request | burn random areas | scenatio specific | yes  |
-21 | Flood disaster | scenario specific | flood shore areas | scenario specific | yes  |
-22 | Airplane Crash | random or when PLANE | destroy single area | scenario specific | yes | collide with HELI
-23 | Tornado disaster | scenario specific | destroy all on its path | scenario specific | yes  |
+INDEX | EVENT | REQUIREMENTS | RESULTS | REPEATS | MESSAGE APPEAR
+--- | --- | --- | --- | --- | ---
+01 | Becomes a Town | 2000 population | history record | once per game | yes
+02 | Becomes a City | 10000 population | history record, present "White House" | once per game | yes
+03 | Becomes a Capital | 50000 population | history record | once per game | yes
+04 | Becomes a Metropolis | 100000 population | history record | once per game | yes
+05 | Becomes a Megapolis | 500000 population | history record | once per game | yes
+06 | Traffic is bumper to bumper | traffic level 7 | - | every recalculation | yes
+07 | Commuters are grid-locket | traffic level 2 | - | every recalculation | yes
+08 | Crime rate is much too high | crime level 7 | - | every recalculation | yes
+09 | Monster disaster | scenario specific | monster appears, destroy all on its path | scenario specific | yes
+0A | Eartquake disaster | scenario specific | ground shake, destroy random areas | scenario specific | yes
+0B | Bank wants to build office | 5 years after White House has built| present "Bank" | once per game | yes
+0C | City wants relationship | 150000 population | relationship begin | once per game | yes
+0D | Open amusement park | 120000 population | present "Amusement Park" | once per game | yes
+0E | Open a Zoo | 250000 population | present "Zoo" | once per game | yes
+0F | Open a Casino | 200000 population | present "Casino" | once per game | yes
+10 | Build an extra land | 2 sea ports | present "Extra Land" | once per game | no, see **BUGS#4**
+11 | New Police Station | 10 police stations | present "New Police St." | once per game | yes
+12 | New FireStation | 10 police stations | present "New Fire St." | once per game | yes
+13 | 10th anniversary monument | practice/city JAN 1910 | persent "10th Monument" | once per game | yes
+14 | 100th anniversary monument | practice/city JAN 2000 | present "100th Monument" | once per game | yes
+15 | Holding World Expo | practice/city JAN 1950 | expo starts | once per game | yes
+16 | Erect Expo monument | practice/city JAN 1951 | present "Expo Monument" | once per game | yes, see **BUGS#29**
+17 | Statue of Liberty present | practice/city 10 years after City Sistership | present "Liberty" | once per game | yes, see **BUGS#29**
+18 | Build a Library | 70000 population | present "Library" | once per game | no, see **BUGS#4**
+19 | Parks expand | 200 park squares | present "Extra Park" | once per game | yes
+1A | Railroad Station | 150 rail squares | present "Railroad St." | once per game | yes
+1B | Practice Intro | Practice FEB 1900 | - | once per game | yes
+1C | Practice Hint | Practice FEB 1901 | - | once per game | yes
+1D | Practice mode Failed | Practice FEB 1905, <30000 population | - | once per game | no, see **BUGS#3**
+1E | Practice mode Complete | Prectice FEB 1905, >=30000 population | - | once per game | no, see **BUGS#3**
+1F | Bank Hint | Bank has build | "BANK" button enabled at Budget screen | once per game | yes
+20 | Fire disaster | manual request | burn random areas | scenatio specific | yes
+21 | Flood disaster | scenario specific | flood shore areas | scenario specific | yes
+22 | Airplane Crash | random or when PLANE collide with HELI | destroy single area | scenario specific | yes
+23 | Tornado disaster | scenario specific | destroy all on its path | scenario specific | yes
 
 ## APPEND B. SCROLL MESSAGES
 
-ADDRESS | MESSAGE | REQUIREMENTS | FORCED | NOTES
+INDEX | MESSAGE | REQUIREMENTS | FORCED | NOTES
 --- | --- | --- | --- | ---
 00 | MORE RESIDENTIAL ZONES NEEDED | R<(R+C+I)/4 | no | -
 01 | MORE COMMERCIAL ZONES NEEDED | C<(R+C+I)/8 | no | -
@@ -262,7 +262,7 @@ ADDRESS | MESSAGE | REQUIREMENTS | FORCED | NOTES
 
 ## APPEND C. MAP TILE INDEXES
 
-ADDRESS | BUILDING | FLAGS | FLAG BITS | NOTES
+INDEX | BUILDING | FLAGS | FLAG BITS | NOTES
 --- | --- | --- | --- | ---
 00-18 | regular R area | CA | 11001010 |
 19 | hospital | CA | 11001010 |
