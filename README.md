@@ -212,7 +212,7 @@ INDEX | EVENT | REQUIREMENTS | RESULTS | REPEATS | MESSAGE APPEAR
 10 | Build an extra land | 2 sea ports | present "Extra Land" | once per game | no, see **BUGS#4**
 11 | New Police Station | 10 police stations | present "New Police St." | once per game | yes
 12 | New FireStation | 10 police stations | present "New Fire St." | once per game | yes
-13 | 10th anniversary monument | practice/city JAN 1910 | persent "10th Monument" | once per game | yes
+13 | 10th anniversary monument | practice/city JAN 1910 | present "10th Monument" | once per game | yes
 14 | 100th anniversary monument | practice/city JAN 2000 | present "100th Monument" | once per game | yes
 15 | Holding World Expo | practice/city JAN 1950 | expo starts | once per game | yes
 16 | Erect Expo monument | practice/city JAN 1951 | present "Expo Monument" | once per game | yes, see **BUGS#29**
