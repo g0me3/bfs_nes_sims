@@ -1748,7 +1748,7 @@ loc_1043D1:
 		LDX		#$0B
 loc_18ABB5:
 		LDA		_gui_ctrl_menu_pos_data,X		; copy initial positions for
-		STA		_city._menu_pos,X		; game configure windows
+		STA		_city._menu_pos,X				; game configure windows
 		DEX
 		BPL		loc_18ABB5
 ; -

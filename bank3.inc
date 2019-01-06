@@ -99,7 +99,7 @@ loc_581EC:
 ;		LDA		_mmc5_chr_banks_shadow+3		; REDUNDANT, already loaded in
 ;		STA		_MMC5_CHR_BANKSA+3				; _game_chr_common_reload routine!
 		LDA		#$FF
-		STA		_full_game_field_redraw_req			; set request for game area update
+		STA		_full_game_field_redraw_req		; set request for game area update
 		LDA		#$00
 		STA		_update_rect_left				; special counters for update area
 		STA		_update_rect_top				; choses the whole screen, the display
@@ -1508,7 +1508,8 @@ locret_58A6D:
 
 _presents_list:
 		.BYTE	$FF,$FF,$0F,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF,$01,$FF,$02,$03,$04
-		.BYTE	$05,$06,$07,$08,$09,$FF,$0A,$0B,$0C,$0D,$0E
+		.BYTE	$05,$06,$07,$08,$09,$FF,$0A,$0B,$0C,$0D,$0E,$FF,$FF,$FF,$FF,$FF
+		.BYTE	$FF,$FF,$FF,$FF
 
 ; =============== S U B	R O U T	I N E =======================================
 _init_special_year_date:
