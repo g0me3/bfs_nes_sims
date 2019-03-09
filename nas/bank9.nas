@@ -2,52 +2,52 @@
 		PROCESSOR 6502
 
 		SEG.u RAM
-		INCLUDE "..\ram.inc"
+		INCLUDE "../ram.inc"
 
 		SEG.u BANK0
-		INCLUDE "..\bank0.inc"
+		INCLUDE "../bank0.inc"
 
 		SEG.u BANK1
-		INCLUDE "..\bank1.inc"
+		INCLUDE "../bank1.inc"
 
 		SEG.u BANK2
-		INCLUDE "..\bank2.inc"
+		INCLUDE "../bank2.inc"
 
 		SEG.u BANK3
-		INCLUDE "..\bank3.inc"
+		INCLUDE "../bank3.inc"
 
 		SEG.u BANK4
-		INCLUDE "..\bank4.inc"
+		INCLUDE "../bank4.inc"
 
 		SEG.u BANK5
-		INCLUDE "..\bank5.inc"
+		INCLUDE "../bank5.inc"
 
 		SEG.u BANK6
-		INCLUDE "..\bank6.inc"
+		INCLUDE "../bank6.inc"
 
 		SEG.u BANK7
-		INCLUDE "..\bank7.inc"
+		INCLUDE "../bank7.inc"
 
 		SEG.u BANK8
-		INCLUDE "..\bank8.inc"
+		INCLUDE "../bank8.inc"
 
 		SEG   BANK9
-		INCLUDE "..\bank9.inc"
+		INCLUDE "../bank9.inc"
 
 		SEG.u BANKA
-		INCLUDE "..\bankA.inc"
+		INCLUDE "../bankA.inc"
 
 		SEG.u BANKB
-		INCLUDE "..\bankB.inc"
+		INCLUDE "../bankB.inc"
 
 		SEG.u BANKC
-		INCLUDE "..\bankC.inc"
+		INCLUDE "../bankC.inc"
 
 		SEG.u BANKD
-		INCLUDE "..\bankD.inc"
+		INCLUDE "../bankD.inc"
 
 		SEG.u BANKE
-		INCLUDE "..\bankE.inc"
+		INCLUDE "../bankE.inc"
 
 		SEG.u BANKF
-		INCLUDE "..\bankF.inc"
+		INCLUDE "../bankF.inc"
