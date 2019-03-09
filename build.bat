@@ -32,7 +32,7 @@ del !simcity.prg
 del !simcity.hdr
 del !simcity.chr
 
-copy /b !simcity.nes ../!simcity.nes > NUL
+copy /b !simcity.nes ..\!simcity.nes > NUL
 cd ..
 
 echo done.
