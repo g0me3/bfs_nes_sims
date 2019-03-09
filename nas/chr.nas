@@ -2,6 +2,6 @@
 		PROCESSOR 6502
 		ORG	$0000
 
-		INCLUDE	"..\macroses.inc"
+		INCLUDE	"../macroses.inc"
 
-		INCBIN	"..\chr\!simcity.chr"
+		INCBIN	"../chr/!simcity.chr"

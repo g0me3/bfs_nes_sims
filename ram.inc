@@ -1,5 +1,5 @@
 
-		INCLUDE		"..\macroses.inc"
+		INCLUDE		"../macroses.inc"
 
 ;--------------------R-A-M----------------------
 
