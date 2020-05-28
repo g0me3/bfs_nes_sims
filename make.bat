@@ -51,9 +51,9 @@ del !simcity.nes
 cd ..
 
 echo ===OLD ROM===
-g:\dos\m3checksum !simprev.nes
+if exist !simprev.nes nas\m3checksum !simprev.nes
 echo ===NEW ROM===
-g:\dos\m3checksum !simcity.nes
+if exist !simcity.nes nas\m3checksum !simcity.nes
 
 echo done.
 pause 0
